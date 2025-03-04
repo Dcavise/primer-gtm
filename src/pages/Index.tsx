@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { SearchForm } from "@/components/SearchForm";
 import { PermitList } from "@/components/PermitList";
@@ -17,6 +16,7 @@ import { FileTextIcon, MapIcon, BarChart3Icon, School, SearchIcon, ClipboardIcon
 import { Permit } from "@/types";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
+import { geocodeAddress } from "@/utils/geocoding";
 
 const Index = () => {
   // Permits data
@@ -42,6 +42,9 @@ const Index = () => {
   // Property summary data
   const { summary, status: summaryStatus, searchedAddress: summaryAddress, generateSummary, reset: resetSummary } = usePropertySummary();
   const isGeneratingSummary = summaryStatus === "loading";
+
+  // Geocoded coordinates
+  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
 
   // Consolidated state
   const [userAddress, setUserAddress] = useState("");
@@ -130,6 +133,7 @@ const Index = () => {
     resetCensus();
     resetSchools();
     resetSummary();
+    setCoordinates(null);
     
     // Then start the new search
     setUserAddress(address);
@@ -140,6 +144,12 @@ const Index = () => {
     });
     
     try {
+      // Geocode the address to get coordinates
+      const geocodingResult = await geocodeAddress(address);
+      if (geocodingResult) {
+        setCoordinates(geocodingResult.coordinates);
+      }
+      
       // Start all API requests concurrently
       await Promise.all([
         fetchPermits(params, address),
@@ -290,6 +300,8 @@ const Index = () => {
                 isLoading={isGeneratingSummary}
                 searchedAddress={displayedAddress}
                 onGenerateSummary={handleGenerateSummary}
+                schools={schools}
+                coordinates={coordinates}
               />
             </TabsContent>
             
