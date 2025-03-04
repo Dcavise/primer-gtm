@@ -34,8 +34,9 @@ serve(async (req) => {
       );
     }
 
-    // Make request to GreatSchools API - Using the correct endpoint and header format from documentation
-    const apiUrl = `https://gs-api.greatschools.org/nearby-schools?lat=${lat}&lon=${lon}&distance=${radius}&limit=25`;
+    // Based on the documentation, use the v2 endpoint with nearby-schools
+    // The URL structure has changed from the previous implementation
+    const apiUrl = `https://gs-api.greatschools.org/v2/schools?lat=${lat}&lon=${lon}&limit=25`;
     console.log(`Calling GreatSchools API: ${apiUrl}`);
 
     const response = await fetch(apiUrl, {
