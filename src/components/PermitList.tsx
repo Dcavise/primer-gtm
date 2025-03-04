@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { Permit } from "@/types";
 import { PermitCard } from "./PermitCard";
@@ -5,9 +6,10 @@ import { PermitDetail } from "./PermitDetail";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { LoadingState } from "./LoadingState";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building, FileText, Wrench, CreditCard, Map, CheckCircle, MapPin, ArrowUpDown } from "lucide-react";
+import { Building, FileText, Wrench, CreditCard, Map, CheckCircle, MapPin, ArrowUpDown, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/utils/format";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface PermitListProps {
   permits: Permit[];
@@ -142,6 +144,34 @@ export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListPr
 
   return (
     <>
+      {searchedAddress && (
+        <Alert 
+          className={`mb-6 ${exactMatches.length > 0 ? 'bg-green-50 border-green-200 dark:bg-green-900/10 dark:border-green-900/30' : 'bg-amber-50 border-amber-200 dark:bg-amber-900/10 dark:border-amber-900/30'}`}
+        >
+          <div className="flex items-start">
+            {exactMatches.length > 0 ? (
+              <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5" />
+            ) : (
+              <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+            )}
+            <div className="ml-3">
+              <AlertTitle className={exactMatches.length > 0 ? "text-green-800 dark:text-green-300" : "text-amber-800 dark:text-amber-300"}>
+                {exactMatches.length > 0 
+                  ? `${exactMatches.length} exact match${exactMatches.length > 1 ? 'es' : ''} found`
+                  : "No exact address matches found"
+                }
+              </AlertTitle>
+              <AlertDescription className={exactMatches.length > 0 ? "text-green-700 dark:text-green-400" : "text-amber-700 dark:text-amber-400"}>
+                {exactMatches.length > 0 
+                  ? `Found ${exactMatches.length} permit record${exactMatches.length > 1 ? 's' : ''} that exactly match the address "${searchedAddress}".`
+                  : `No permits with the exact address "${searchedAddress}" were found. Showing nearby permits instead.`
+                }
+              </AlertDescription>
+            </div>
+          </div>
+        </Alert>
+      )}
+
       {exactMatches.length > 0 && (
         <div className="mt-6 mb-8">
           <div className="flex items-center justify-between mb-4">
