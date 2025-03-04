@@ -6,7 +6,7 @@ import { CensusEmptyState } from "./census/CensusEmptyState";
 import { CensusOverviewStats } from "./census/CensusOverviewStats";
 import { CensusDetailedData } from "./census/CensusDetailedData";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { InfoIcon } from "lucide-react";
+import { InfoIcon, AlertCircleIcon } from "lucide-react";
 
 interface CensusListProps {
   censusData: CensusData | null;
@@ -40,6 +40,15 @@ export const CensusList = ({
     return null;
   }
 
+  // Extract tract information from raw data if available
+  const tractsInfo = censusData.rawData?.tractsInRadius ? 
+    censusData.rawData.tractsInRadius.map(tract => ({
+      state: tract.state,
+      county: tract.county,
+      tract: tract.tract,
+      distance: tract.distance ? `${tract.distance.toFixed(2)} miles` : 'unknown'
+    })) : [];
+
   return (
     <div className="py-6 space-y-6">
       <CensusHeader searchedAddress={searchedAddress} />
@@ -60,6 +69,30 @@ export const CensusList = ({
           <AlertTitle>Using Approximate Data</AlertTitle>
           <AlertDescription>
             The census data shown is for the Census tract containing this address. Census tracts are small statistical subdivisions of counties with 1,200-8,000 residents.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {censusResponse && (
+        <Alert className="bg-indigo-50 border-indigo-200">
+          <InfoIcon className="h-4 w-4 text-indigo-500" />
+          <AlertTitle>Census Data Source</AlertTitle>
+          <AlertDescription>
+            <div className="text-xs">
+              <p>Data collected from {censusResponse.tractsIncluded} census tract(s) within {censusResponse.radiusMiles} miles.</p>
+              {tractsInfo.length > 0 && (
+                <div className="mt-2">
+                  <p className="font-semibold">Tracts used:</p>
+                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                    {tractsInfo.map((tract, index) => (
+                      <li key={index}>
+                        State: {tract.state}, County: {tract.county}, Tract: {tract.tract}, Distance: {tract.distance}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
           </AlertDescription>
         </Alert>
       )}
