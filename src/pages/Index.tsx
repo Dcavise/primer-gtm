@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SearchForm } from "@/components/SearchForm";
 import { PermitList } from "@/components/PermitList";
 import { ZoningList } from "@/components/ZoningList";
@@ -11,12 +11,14 @@ import { useCensusData } from "@/hooks/use-census-data";
 import { useSchoolsData } from "@/hooks/use-schools-data";
 import { motion } from "framer-motion";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { FileTextIcon, MapIcon, BarChart3Icon, School } from "lucide-react";
+import { FileTextIcon, MapIcon, BarChart3Icon, School, SearchIcon } from "lucide-react";
 import { Permit } from "@/types";
+import { toast } from "sonner";
+import { Separator } from "@/components/ui/separator";
 
 const Index = () => {
   // Permits data
-  const { permits, status: permitStatus, searchedAddress, fetchPermits } = usePermits();
+  const { permits, status: permitStatus, searchedAddress: permitAddress, fetchPermits } = usePermits();
   const isSearchingPermits = permitStatus === "loading";
   const [testResults, setTestResults] = useState<{
     permits: Permit[],
@@ -35,20 +37,48 @@ const Index = () => {
   const { schools, status: schoolsStatus, searchedAddress: schoolsAddress, fetchSchoolsData } = useSchoolsData();
   const isSearchingSchools = schoolsStatus === "loading";
 
-  // Active tab state
-  const [activeTab, setActiveTab] = useState("permits");
+  // Consolidated state
+  const [userAddress, setUserAddress] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [activeSection, setActiveSection] = useState<"permits" | "zoning" | "census" | "schools">("permits");
+  
+  // Determine if any data is loading
+  const isAnyDataLoading = isSearchingPermits || isSearchingZoning || isSearchingCensus || isSearchingSchools;
+  
+  // Determine the current displayed address (prioritize the active section's address)
+  const displayedAddress = activeSection === "permits" ? permitAddress : 
+                          activeSection === "zoning" ? zoningAddress :
+                          activeSection === "census" ? censusAddress : 
+                          schoolsAddress || userAddress;
 
-  const handleSearch = async (params: any, address: string) => {
+  const handleSearchAllData = async (params: any, address: string) => {
+    setUserAddress(address);
+    setIsSearching(true);
     setTestResults(null);
-    if (activeTab === "permits") {
-      await fetchPermits(params, address);
-    } else if (activeTab === "zoning") {
-      await fetchZoningData(address);
-    } else if (activeTab === "census") {
-      await fetchCensusData(address);
-    } else if (activeTab === "schools") {
-      // For schools, we pass the params and address
-      await fetchSchoolsData(params, address);
+    
+    toast.info("Searching property data", {
+      description: "Fetching all available data for this location..."
+    });
+    
+    try {
+      // Start all API requests concurrently
+      await Promise.all([
+        fetchPermits(params, address),
+        fetchZoningData(address),
+        fetchCensusData(address),
+        fetchSchoolsData(params, address)
+      ]);
+      
+      toast.success("Property research complete", {
+        description: "All available data has been retrieved for this location."
+      });
+    } catch (error) {
+      console.error("Error in consolidated search:", error);
+      toast.error("Search error", {
+        description: "There was a problem retrieving some property data."
+      });
+    } finally {
+      setIsSearching(false);
     }
   };
 
@@ -71,140 +101,128 @@ const Index = () => {
           </div>
           
           <Tabs 
-            defaultValue="permits" 
-            value={activeTab} 
-            onValueChange={setActiveTab}
+            defaultValue="property-research" 
+            value="property-research"
             className="mb-6"
           >
             <TabsList className="bg-white/10 border-white/20 border">
-              <TabsTrigger value="permits" className="data-[state=active]:bg-white/20 data-[state=active]:text-white text-white/80">
-                <FileTextIcon className="h-4 w-4 mr-2" />
-                Permits
-              </TabsTrigger>
-              <TabsTrigger value="zoning" className="data-[state=active]:bg-white/20 data-[state=active]:text-white text-white/80">
-                <MapIcon className="h-4 w-4 mr-2" />
-                Zoning
-              </TabsTrigger>
-              <TabsTrigger value="census" className="data-[state=active]:bg-white/20 data-[state=active]:text-white text-white/80">
-                <BarChart3Icon className="h-4 w-4 mr-2" />
-                Census
-              </TabsTrigger>
-              <TabsTrigger value="schools" className="data-[state=active]:bg-white/20 data-[state=active]:text-white text-white/80">
-                <School className="h-4 w-4 mr-2" />
-                Schools
+              <TabsTrigger value="property-research" className="data-[state=active]:bg-white/20 data-[state=active]:text-white text-white/80">
+                <SearchIcon className="h-4 w-4 mr-2" />
+                Property Research
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="permits" className="mt-4">
+            <TabsContent value="property-research" className="mt-4">
               <p className="text-white/90 mb-8 text-balance max-w-2xl">
-                Search for building permits and land use data as part of property due diligence. Identify fire safety work, 
-                occupancy changes, and other critical permit history to assess property compliance and safety standards.
-              </p>
-            </TabsContent>
-            
-            <TabsContent value="zoning" className="mt-4">
-              <p className="text-white/90 mb-8 text-balance max-w-2xl">
-                Research property zoning regulations and land use requirements for your due diligence. Understand allowed uses, 
-                building restrictions, and development limitations to make informed investment decisions.
-              </p>
-            </TabsContent>
-            
-            <TabsContent value="census" className="mt-4">
-              <p className="text-white/90 mb-8 text-balance max-w-2xl">
-                Explore demographic and economic characteristics within a 5-mile radius of the property using U.S. Census data. 
-                Analyze population, income levels, housing values, and education statistics to better understand the neighborhood profile.
-              </p>
-            </TabsContent>
-            
-            <TabsContent value="schools" className="mt-4">
-              <p className="text-white/90 mb-8 text-balance max-w-2xl">
-                Find nearby schools within a 5-mile radius of the property. View detailed information about elementary, middle, and high schools
-                including ratings, enrollment, grades served, and contact information to evaluate educational options.
+                Search for property data to support your due diligence. Get comprehensive information on building permits, 
+                zoning regulations, demographic statistics, and nearby schools - all from a single address search.
               </p>
             </TabsContent>
           </Tabs>
           
           <SearchForm 
-            onSearch={handleSearch} 
-            isSearching={activeTab === "permits" ? isSearchingPermits : 
-                         activeTab === "zoning" ? isSearchingZoning : 
-                         activeTab === "census" ? isSearchingCensus :
-                         isSearchingSchools}
-            searchType={activeTab as "permits" | "zoning" | "census" | "schools"}
+            onSearch={handleSearchAllData} 
+            isSearching={isAnyDataLoading}
+            searchType="property-research"
           />
         </div>
       </motion.header>
 
       <main className="flex-1 container mx-auto px-4 md:px-8 py-8 max-w-5xl">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
-          <TabsContent value="permits" className="mt-0 animate-in fade-in-50">
-            {(searchedAddress || (testResults && testResults.address)) && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.5 }}
-              >
-                <h2 className="text-lg md:text-xl font-medium mb-1">Results for</h2>
-                <p className="text-muted-foreground">{searchedAddress || testResults?.address}</p>
-              </motion.div>
-            )}
+        {displayedAddress && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="mb-6"
+          >
+            <h2 className="text-lg md:text-xl font-medium mb-1">Results for</h2>
+            <p className="text-muted-foreground">{displayedAddress}</p>
+          </motion.div>
+        )}
+        
+        {!displayedAddress && !isAnyDataLoading && (
+          <motion.div 
+            className="py-16 text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+          >
+            <h2 className="text-2xl font-medium mb-3">Enter an address to get started</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Search for any property address to retrieve comprehensive information for your due diligence:
+            </p>
+            <ul className="mt-4 text-muted-foreground max-w-lg mx-auto text-left list-disc pl-8">
+              <li className="mb-2">Building permits and code compliance history</li>
+              <li className="mb-2">Zoning regulations and land use requirements</li>
+              <li className="mb-2">Demographic and economic statistics</li>
+              <li className="mb-2">Nearby schools with ratings and details</li>
+            </ul>
+          </motion.div>
+        )}
+        
+        {displayedAddress && (
+          <Tabs 
+            defaultValue="permits" 
+            value={activeSection} 
+            onValueChange={(value) => setActiveSection(value as any)}
+            className="mt-6"
+          >
+            <TabsList className="bg-background border-b w-full justify-start overflow-x-auto">
+              <TabsTrigger value="permits" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                <FileTextIcon className="h-4 w-4 mr-2" />
+                Permits
+              </TabsTrigger>
+              <TabsTrigger value="zoning" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                <MapIcon className="h-4 w-4 mr-2" />
+                Zoning
+              </TabsTrigger>
+              <TabsTrigger value="census" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                <BarChart3Icon className="h-4 w-4 mr-2" />
+                Census
+              </TabsTrigger>
+              <TabsTrigger value="schools" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                <School className="h-4 w-4 mr-2" />
+                Schools
+              </TabsTrigger>
+            </TabsList>
             
-            <PermitList 
-              permits={testResults ? testResults.permits : permits} 
-              isLoading={isSearchingPermits && !testResults} 
-              searchedAddress={searchedAddress || (testResults ? testResults.address : "")}
-            />
+            <TabsContent value="permits" className="py-6 animate-in fade-in-50">
+              <PermitList 
+                permits={testResults ? testResults.permits : permits} 
+                isLoading={isSearchingPermits && !testResults} 
+                searchedAddress={permitAddress || (testResults ? testResults.address : "")}
+              />
+            </TabsContent>
             
-            {!searchedAddress && !testResults && !isSearchingPermits && (
-              <motion.div 
-                className="py-16 text-center"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3, duration: 0.6 }}
-              >
-                <h2 className="text-2xl font-medium mb-3">Enter an address to get started</h2>
-                <p className="text-muted-foreground max-w-2xl mx-auto">
-                  As part of property due diligence, search for critical permit records that may affect your investment decision. 
-                  This tool helps you identify:
-                </p>
-                <ul className="mt-4 text-muted-foreground max-w-lg mx-auto text-left list-disc pl-8">
-                  <li className="mb-2">Fire safety inspections, upgrades, or violations</li>
-                  <li className="mb-2">Occupancy use changes or certifications</li>
-                  <li className="mb-2">Building code compliance history</li>
-                  <li className="mb-2">Structural modifications and their approvals</li>
-                  <li className="mb-2">Historical permit patterns that may indicate property issues</li>
-                </ul>
-              </motion.div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="zoning" className="mt-0 animate-in fade-in-50">
-            <ZoningList
-              zoningData={zoningData}
-              isLoading={isSearchingZoning}
-              searchedAddress={zoningAddress}
-            />
-          </TabsContent>
-          
-          <TabsContent value="census" className="mt-0 animate-in fade-in-50">
-            <CensusList
-              censusData={censusData}
-              isLoading={isSearchingCensus}
-              searchedAddress={censusAddress}
-              isMockData={censusResponse?.tractsIncluded === 0}
-              censusResponse={censusResponse}
-              onTryMockData={() => useCensusData().loadMockData()}
-            />
-          </TabsContent>
-          
-          <TabsContent value="schools" className="mt-0 animate-in fade-in-50">
-            <SchoolsList
-              schools={schools}
-              isLoading={isSearchingSchools}
-              searchedAddress={schoolsAddress}
-            />
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="zoning" className="py-6 animate-in fade-in-50">
+              <ZoningList
+                zoningData={zoningData}
+                isLoading={isSearchingZoning}
+                searchedAddress={zoningAddress}
+              />
+            </TabsContent>
+            
+            <TabsContent value="census" className="py-6 animate-in fade-in-50">
+              <CensusList
+                censusData={censusData}
+                isLoading={isSearchingCensus}
+                searchedAddress={censusAddress}
+                isMockData={censusResponse?.tractsIncluded === 0}
+                censusResponse={censusResponse}
+                onTryMockData={() => useCensusData().loadMockData()}
+              />
+            </TabsContent>
+            
+            <TabsContent value="schools" className="py-6 animate-in fade-in-50">
+              <SchoolsList
+                schools={schools}
+                isLoading={isSearchingSchools}
+                searchedAddress={schoolsAddress}
+              />
+            </TabsContent>
+          </Tabs>
+        )}
       </main>
 
       <footer className="bg-slate-50 dark:bg-slate-900 py-6 px-4 border-t border-slate-200 dark:border-slate-800">
