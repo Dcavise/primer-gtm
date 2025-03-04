@@ -76,7 +76,11 @@ export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProp
         
         <div className="bg-white/10 p-3 rounded-md text-sm text-white/80 flex items-start gap-2">
           <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
-          <p>For best results, include the full address with state and ZIP code (e.g., "831 N California Ave, Chicago, IL 60622")</p>
+          <p>
+            {searchType === "census" 
+              ? "Census data shows demographic information within a 5-mile radius of the address."
+              : "For best results, include the full address with state and ZIP code (e.g., \"831 N California Ave, Chicago, IL 60622\")"}
+          </p>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-4">

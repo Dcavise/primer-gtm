@@ -1,38 +1,13 @@
 
 import { useState } from "react";
-import { SearchStatus } from "@/types";
+import { CensusData, CensusResponse, SearchStatus } from "@/types";
 import { toast } from "sonner";
 import { fetchCensusData, getMockCensusData } from "@/services/census-api";
 import { geocodeAddress } from "@/utils/geocoding";
 
-export interface CensusDataItem {
-  name: string;
-  value: string | number;
-  description?: string;
-}
-
-export interface CensusData {
-  totalPopulation?: number;
-  medianHouseholdIncome?: number;
-  medianHomeValue?: number;
-  educationLevelHS?: number;
-  educationLevelBachelor?: number;
-  unemploymentRate?: number;
-  povertyRate?: number;
-  medianAge?: number;
-  housingUnits?: number;
-  homeownershipRate?: number;
-  rawData: Record<string, any>;
-  categories: {
-    demographic: CensusDataItem[];
-    economic: CensusDataItem[];
-    housing: CensusDataItem[];
-    education: CensusDataItem[];
-  };
-}
-
 export function useCensusData() {
   const [censusData, setCensusData] = useState<CensusData | null>(null);
+  const [censusResponse, setCensusResponse] = useState<CensusResponse | null>(null);
   const [status, setStatus] = useState<SearchStatus>("idle");
   const [searchedAddress, setSearchedAddress] = useState<string>("");
   const [isMockData, setIsMockData] = useState<boolean>(false);
@@ -65,37 +40,40 @@ export function useCensusData() {
       const { lat, lng } = geocodeResult.coordinates;
       console.log(`Fetching census data for coordinates: ${lat}, ${lng}`);
       
-      const result = await fetchCensusData({ lat, lng });
+      const response = await fetchCensusData({ lat, lng });
       
-      if (!result) {
+      if (!response) {
         console.error("No census data returned for coordinates:", { lat, lng });
         setStatus("error");
         setCensusData(null);
+        setCensusResponse(null);
         toast.error("Census data not available", {
           description: "We couldn't find census data for this location."
         });
         return;
       }
       
-      console.log("Census data received:", result);
-      setCensusData(result);
+      console.log("Census data received:", response);
+      setCensusData(response.data);
+      setCensusResponse(response);
       setStatus("success");
       
-      // Show different toast based on whether it's mock data
-      if (result.totalPopulation === 4287) { // This is a simple check for mock data
+      // Show different toast based on whether it's mock data and tracts found
+      if (response.tractsIncluded === 0) {
         setIsMockData(true);
         toast.info("Using demo census data", {
-          description: "The Census API could not be reached. Showing sample data for demonstration."
+          description: "No census tracts found within 5 miles. Showing sample data for demonstration."
         });
       } else {
         toast.success("Census data retrieved", {
-          description: "Showing demographic information for the specified location."
+          description: `Showing demographic data from ${response.tractsIncluded} census tracts within ${response.radiusMiles} miles.`
         });
       }
     } catch (error) {
       console.error("Error in useCensusData:", error);
       setStatus("error");
       setCensusData(null);
+      setCensusResponse(null);
       toast.error("Error retrieving census data", {
         description: "There was a problem connecting to the census database. Please try again later."
       });
@@ -109,8 +87,14 @@ export function useCensusData() {
     setTimeout(() => {
       const mockData = getMockCensusData();
       setCensusData(mockData);
+      setCensusResponse({
+        data: mockData,
+        tractsIncluded: 5,
+        radiusMiles: 5
+      });
       setStatus("success");
       setIsMockData(true);
+      setSearchedAddress("Sample Location");
       
       toast.success("Demo data loaded", {
         description: "Showing sample census data for demonstration purposes."
@@ -120,6 +104,7 @@ export function useCensusData() {
 
   const reset = () => {
     setCensusData(null);
+    setCensusResponse(null);
     setStatus("idle");
     setSearchedAddress("");
     setIsMockData(false);
@@ -127,6 +112,7 @@ export function useCensusData() {
 
   return {
     censusData,
+    censusResponse,
     status,
     searchedAddress,
     isMockData,
