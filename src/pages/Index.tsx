@@ -37,7 +37,8 @@ const Index = () => {
             <h1 className="text-xl md:text-3xl font-semibold">Primer Permit Explorer</h1>
           </div>
           <p className="text-white/90 mb-8 text-balance max-w-2xl">
-            Search for building permits and land use data by address. Discover historical permit information for properties and analyze zoning changes.
+            Search for building permits and land use data as part of property due diligence. Identify fire safety work, 
+            occupancy changes, and other critical permit history to assess property compliance and safety standards.
           </p>
           <SearchForm onSearch={handleSearch} isSearching={isSearching} />
         </div>
@@ -70,9 +71,16 @@ const Index = () => {
           >
             <h2 className="text-2xl font-medium mb-3">Enter an address to get started</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Search for building permits and land use data by address. Discover historical permit information for properties and analyze zoning regulations. 
-              The tool will retrieve all permit records associated with the specified location.
+              As part of property due diligence, search for critical permit records that may affect your investment decision. 
+              This tool helps you identify:
             </p>
+            <ul className="mt-4 text-muted-foreground max-w-lg mx-auto text-left list-disc pl-8">
+              <li className="mb-2">Fire safety inspections, upgrades, or violations</li>
+              <li className="mb-2">Occupancy use changes or certifications</li>
+              <li className="mb-2">Building code compliance history</li>
+              <li className="mb-2">Structural modifications and their approvals</li>
+              <li className="mb-2">Historical permit patterns that may indicate property issues</li>
+            </ul>
           </motion.div>
         )}
       </main>
