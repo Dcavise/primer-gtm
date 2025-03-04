@@ -14,79 +14,66 @@ interface PermitListProps {
   searchedAddress: string;
 }
 
-// Helper function to get icon based on category
-const getCategoryIcon = (category: string) => {
-  switch (category) {
-    case "Building":
-      return <Building className="h-4 w-4" />;
-    case "Construction":
-      return <Wrench className="h-4 w-4" />;
-    case "Zoning":
-      return <Map className="h-4 w-4" />;
-    case "Business":
-      return <CreditCard className="h-4 w-4" />;
-    case "Other":
-      return <FileText className="h-4 w-4" />;
-    case "All":
-      return <CheckCircle className="h-4 w-4" />;
-    default:
-      return <Globe className="h-4 w-4" />;
+// Helper function to get icon based on permit type
+const getPermitTypeIcon = (permitType: string) => {
+  const type = permitType.toLowerCase();
+  
+  if (type.includes("build") || type.includes("renovation") || type.includes("remodel")) {
+    return <Building className="h-4 w-4" />;
+  } else if (type.includes("construct") || type.includes("install") || type.includes("repair")) {
+    return <Wrench className="h-4 w-4" />;
+  } else if (type.includes("zone") || type.includes("land") || type.includes("plan")) {
+    return <Map className="h-4 w-4" />;
+  } else if (type.includes("business") || type.includes("license") || type.includes("commercial")) {
+    return <CreditCard className="h-4 w-4" />;
+  } else if (type.includes("all")) {
+    return <CheckCircle className="h-4 w-4" />;
+  } else {
+    return <FileText className="h-4 w-4" />;
   }
 };
 
 export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListProps) => {
   const [selectedPermit, setSelectedPermit] = useState<Permit | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [activeCategory, setActiveCategory] = useState("All");
+  const [activeType, setActiveType] = useState("All");
 
   const handlePermitClick = (permit: Permit) => {
     setSelectedPermit(permit);
     setIsDetailOpen(true);
   };
 
-  // Function to categorize permits
-  const categorizePermits = (permits: Permit[]) => {
-    const categories: Record<string, Permit[]> = {
-      "All": [],
-      "Building": [],
-      "Construction": [],
-      "Zoning": [],
-      "Business": [],
-      "Other": [],
+  // Function to organize permits by their project_type
+  const categorizePermitsByType = (permits: Permit[]) => {
+    const types: Record<string, Permit[]> = {
+      "All": permits, // Always include an "All" category with all permits
     };
-
-    // Add all permits to the All category
-    categories["All"] = permits;
-
-    // Categorize each permit
+    
+    // Create a set of unique permit types
+    const uniqueTypes = new Set<string>();
     permits.forEach(permit => {
-      const projectType = permit.project_type?.toLowerCase() || "";
-      
-      if (projectType.includes("build") || projectType.includes("renovation") || projectType.includes("remodel")) {
-        categories["Building"].push(permit);
-      } else if (projectType.includes("construct") || projectType.includes("install") || projectType.includes("repair")) {
-        categories["Construction"].push(permit);
-      } else if (projectType.includes("zone") || projectType.includes("land") || projectType.includes("plan")) {
-        categories["Zoning"].push(permit);
-      } else if (projectType.includes("business") || projectType.includes("license") || projectType.includes("commercial")) {
-        categories["Business"].push(permit);
-      } else {
-        categories["Other"].push(permit);
+      if (permit.project_type) {
+        uniqueTypes.add(permit.project_type);
       }
     });
-
-    return categories;
+    
+    // Add each unique type to the types object with filtered permits
+    uniqueTypes.forEach(type => {
+      types[type] = permits.filter(permit => permit.project_type === type);
+    });
+    
+    return types;
   };
 
   // Memoize the categorized permits to avoid recalculation on each render
-  const categorizedPermits = useMemo(() => categorizePermits(permits), [permits]);
+  const permitsByType = useMemo(() => categorizePermitsByType(permits), [permits]);
   
-  // Get active permits based on selected category
-  const activePermits = categorizedPermits[activeCategory] || [];
+  // Get active permits based on selected type
+  const activePermits = permitsByType[activeType] || [];
 
-  // Count permits in each category
-  const getCategoryCount = (category: string) => {
-    return categorizedPermits[category]?.length || 0;
+  // Count permits in each type
+  const getTypeCount = (type: string) => {
+    return permitsByType[type]?.length || 0;
   };
 
   if (isLoading) {
@@ -110,22 +97,22 @@ export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListPr
         <Tabs 
           defaultValue="All" 
           className="mt-6"
-          value={activeCategory}
-          onValueChange={setActiveCategory}
+          value={activeType}
+          onValueChange={setActiveType}
         >
           <div className="border-b">
             <TabsList className="bg-transparent h-auto p-0 mb-0 w-full overflow-x-auto flex justify-start gap-1">
-              {Object.keys(categorizedPermits).map(category => (
-                getCategoryCount(category) > 0 && (
+              {Object.keys(permitsByType).map(type => (
+                getTypeCount(type) > 0 && (
                   <TabsTrigger 
-                    key={category} 
-                    value={category}
+                    key={type} 
+                    value={type}
                     className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground h-10 px-4"
                   >
-                    {getCategoryIcon(category)}
-                    {category}
+                    {getPermitTypeIcon(type)}
+                    {type}
                     <span className="ml-1 bg-secondary/50 px-1.5 rounded-full text-xs">
-                      {getCategoryCount(category)}
+                      {getTypeCount(type)}
                     </span>
                   </TabsTrigger>
                 )
@@ -133,8 +120,8 @@ export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListPr
             </TabsList>
           </div>
 
-          {Object.keys(categorizedPermits).map(category => (
-            <TabsContent key={category} value={category} className="mt-4 animate-in fade-in-50">
+          {Object.keys(permitsByType).map(type => (
+            <TabsContent key={type} value={type} className="mt-4 animate-in fade-in-50">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {activePermits.map((permit, index) => (
                   <PermitCard
