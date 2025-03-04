@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { SearchForm } from "@/components/SearchForm";
 import { PermitList } from "@/components/PermitList";
@@ -19,7 +20,7 @@ import { Separator } from "@/components/ui/separator";
 
 const Index = () => {
   // Permits data
-  const { permits, status: permitStatus, searchedAddress: permitAddress, fetchPermits } = usePermits();
+  const { permits, status: permitStatus, searchedAddress: permitAddress, fetchPermits, reset: resetPermits } = usePermits();
   const isSearchingPermits = permitStatus === "loading";
   const [testResults, setTestResults] = useState<{
     permits: Permit[],
@@ -27,19 +28,19 @@ const Index = () => {
   } | null>(null);
 
   // Zoning data
-  const { zoningData, status: zoningStatus, searchedAddress: zoningAddress, fetchZoningData } = useZoningData();
+  const { zoningData, status: zoningStatus, searchedAddress: zoningAddress, fetchZoningData, reset: resetZoning } = useZoningData();
   const isSearchingZoning = zoningStatus === "loading";
 
   // Census data
-  const { censusData, censusResponse, status: censusStatus, searchedAddress: censusAddress, fetchCensusData } = useCensusData();
+  const { censusData, censusResponse, status: censusStatus, searchedAddress: censusAddress, fetchCensusData, reset: resetCensus } = useCensusData();
   const isSearchingCensus = censusStatus === "loading";
 
   // Schools data
-  const { schools, status: schoolsStatus, searchedAddress: schoolsAddress, fetchSchoolsData } = useSchoolsData();
+  const { schools, status: schoolsStatus, searchedAddress: schoolsAddress, fetchSchoolsData, reset: resetSchools } = useSchoolsData();
   const isSearchingSchools = schoolsStatus === "loading";
 
   // Property summary data
-  const { summary, status: summaryStatus, searchedAddress: summaryAddress, generateSummary } = usePropertySummary();
+  const { summary, status: summaryStatus, searchedAddress: summaryAddress, generateSummary, reset: resetSummary } = usePropertySummary();
   const isGeneratingSummary = summaryStatus === "loading";
 
   // Consolidated state
@@ -89,8 +90,11 @@ const Index = () => {
         census: false,
         schools: false
       });
+      
+      // Reset the summary when starting a new search
+      resetSummary();
     }
-  }, [isSearching]);
+  }, [isSearching, resetSummary]);
 
   // Update API call status when individual data fetches complete
   useEffect(() => {
@@ -118,9 +122,18 @@ const Index = () => {
   }, [schoolsStatus]);
 
   const handleSearchAllData = async (params: any, address: string) => {
+    // First, reset everything
+    setUserAddress("");
+    setTestResults(null);
+    resetPermits();
+    resetZoning();
+    resetCensus();
+    resetSchools();
+    resetSummary();
+    
+    // Then start the new search
     setUserAddress(address);
     setIsSearching(true);
-    setTestResults(null);
     
     toast.info("Searching property data", {
       description: "Fetching all available data for this location..."
@@ -157,6 +170,7 @@ const Index = () => {
   // Function to manually generate summary if not done automatically
   const handleGenerateSummary = () => {
     if (displayedAddress) {
+      resetSummary();
       generateSummary(displayedAddress, permits, zoningData, censusData, schools);
     }
   };
