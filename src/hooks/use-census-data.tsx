@@ -62,11 +62,17 @@ export function useCensusData() {
       // Now fetch census data using the coordinates
       const { lat, lng } = geocodeResult.coordinates;
       console.log(`Fetching census data for coordinates: ${lat}, ${lng}`);
+      
       const result = await fetchCensusData({ lat, lng });
       
       if (!result) {
         console.error("No census data returned for coordinates:", { lat, lng });
-        throw new Error("Failed to fetch census data");
+        setStatus("error");
+        setCensusData(null);
+        toast.error("Census data not available", {
+          description: "We couldn't find census data for this location."
+        });
+        return;
       }
       
       console.log("Census data received:", result);

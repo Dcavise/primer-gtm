@@ -1,5 +1,7 @@
 
 import { motion } from "framer-motion";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 
 interface CensusEmptyStateProps {
   searchedAddress: string;
@@ -8,11 +10,28 @@ interface CensusEmptyStateProps {
 export const CensusEmptyState = ({ searchedAddress }: CensusEmptyStateProps) => {
   if (searchedAddress) {
     return (
-      <div className="py-8 text-center">
-        <h2 className="text-xl font-medium mb-2">No census data available</h2>
-        <p className="text-muted-foreground">
-          We couldn't retrieve census data for this location. Please try a different address or check that you've entered a valid US address.
-        </p>
+      <div className="py-8 space-y-4">
+        <Alert variant="destructive" className="max-w-xl mx-auto">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>No census data available</AlertTitle>
+          <AlertDescription>
+            We couldn't retrieve census data for this location.
+          </AlertDescription>
+        </Alert>
+        
+        <div className="text-center space-y-3 max-w-xl mx-auto">
+          <p className="text-muted-foreground">
+            This could happen for several reasons:
+          </p>
+          <ul className="text-sm text-muted-foreground text-left list-disc px-6">
+            <li>The address is outside the United States (Census data is US-only)</li>
+            <li>The Census API service is temporarily unavailable</li>
+            <li>The address doesn't match any census geographic boundaries</li>
+          </ul>
+          <p className="text-sm pt-2">
+            Please try a different US address or try again later.
+          </p>
+        </div>
       </div>
     );
   }
