@@ -55,19 +55,19 @@ export const SearchForm = ({ onSearch, isSearching }: SearchFormProps) => {
       <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
         <div className="relative">
           <Input
-            className="h-12 pl-10 pr-4 border-border/60 focus:border-primary focus:ring-1 focus:ring-primary text-base"
+            className="h-12 pl-10 pr-4 bg-white/20 border-white/30 focus:border-white/50 focus:ring-1 focus:ring-white/50 text-white placeholder:text-white/70 text-base"
             type="text"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             placeholder="Enter a street address..."
             disabled={isSearching}
           />
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70 h-5 w-5" />
         </div>
         
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
-            <label className="text-sm text-muted-foreground mb-1 block">Search Radius (meters)</label>
+            <label className="text-sm text-white/80 mb-1 block">Search Radius (meters)</label>
             <Input
               type="range"
               min="50"
@@ -75,10 +75,10 @@ export const SearchForm = ({ onSearch, isSearching }: SearchFormProps) => {
               step="50"
               value={searchRadius}
               onChange={(e) => setSearchRadius(parseInt(e.target.value))}
-              className="w-full"
+              className="w-full accent-white"
               disabled={isSearching}
             />
-            <div className="flex justify-between text-xs text-muted-foreground mt-1">
+            <div className="flex justify-between text-xs text-white/70 mt-1">
               <span>50m</span>
               <span>{searchRadius}m</span>
               <span>500m</span>
@@ -87,7 +87,7 @@ export const SearchForm = ({ onSearch, isSearching }: SearchFormProps) => {
           
           <Button 
             type="submit" 
-            className="h-12 px-8 transition-all bg-zoneomics-blue hover:bg-zoneomics-blue/90"
+            className="h-12 px-8 transition-all bg-white text-blue-600 hover:bg-white/90"
             disabled={isSearching || !address.trim()}
           >
             {isSearching ? (

@@ -35,7 +35,7 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <motion.header 
-        className="bg-gradient-to-r from-zoneomics-blue to-zoneomics-blue/80 text-white py-12 px-6 md:py-16 md:px-8"
+        className="bg-gradient-to-r from-blue-600 to-blue-500 text-white py-12 px-6 md:py-16 md:px-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6 }}
@@ -56,7 +56,7 @@ const Index = () => {
             <Button 
               variant="secondary" 
               onClick={runMiamiTest}
-              className="hover:bg-white/30 bg-white/20 text-white"
+              className="hover:bg-white/30 bg-white/20 text-white border border-white/20"
             >
               Test with Miami Address
             </Button>
@@ -99,13 +99,13 @@ const Index = () => {
         )}
       </main>
 
-      <footer className="bg-muted py-6 px-4 border-t border-border/50">
+      <footer className="bg-slate-50 dark:bg-slate-900 py-6 px-4 border-t border-slate-200 dark:border-slate-800">
         <div className="container mx-auto max-w-5xl">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-slate-500 dark:text-slate-400">
               <p>Powered by Zoneomics API</p>
             </div>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-slate-500 dark:text-slate-400">
               <p>© {new Date().getFullYear()} Permit Explorer</p>
             </div>
           </div>
