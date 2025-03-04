@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const API_BASE_URL = "https://api.zoneomics.com/v2";
 
 // Function to securely get API keys from Supabase edge function
-export async function getApiKey(keyType: 'zoneomics' | 'census' | 'google_maps'): Promise<string> {
+export async function getApiKey(keyType: 'zoneomics' | 'census' | 'google_maps' | 'mapbox'): Promise<string> {
   try {
     const { data, error } = await supabase.functions.invoke('get-api-keys', {
       body: { key: keyType }
@@ -16,11 +16,11 @@ export async function getApiKey(keyType: 'zoneomics' | 'census' | 'google_maps')
       throw new Error(`Failed to fetch API key: ${error.message}`);
     }
 
-    if (!data || !data.apiKey) {
+    if (!data || !data.key) {
       throw new Error(`No API key returned for ${keyType}`);
     }
 
-    return data.apiKey;
+    return data.key;
   } catch (error) {
     console.error(`Error in getApiKey for ${keyType}:`, error);
     throw error;

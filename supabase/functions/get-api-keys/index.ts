@@ -12,7 +12,7 @@ const API_KEYS = {
   census: Deno.env.get('CENSUS_API_KEY') || '',
   greatschools: Deno.env.get('GREATSCHOOLS_API_KEY') || '',
   openai: Deno.env.get('OPENAI_API_KEY') || '',
-  mapbox: Deno.env.get('MAPBOX_ACCESS_TOKEN') || '',
+  mapbox: Deno.env.get('MAPBOX_TOKEN') || '',
 };
 
 serve(async (req) => {
