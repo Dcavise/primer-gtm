@@ -47,8 +47,8 @@ const Index = () => {
     } else if (activeTab === "census") {
       await fetchCensusData(address);
     } else if (activeTab === "schools") {
-      // For schools, we need both the address and coordinates
-      await fetchSchoolsData(address, params.top_right_lat, params.top_right_lng);
+      // For schools, we pass the params and address
+      await fetchSchoolsData(params, address);
     }
   };
 
