@@ -81,9 +81,17 @@ export function useCensusData() {
       setCensusData(result);
       setStatus("success");
       
-      toast.success("Census data retrieved", {
-        description: "Showing demographic information for the specified location."
-      });
+      // Show different toast based on whether it's mock data
+      if (result.totalPopulation === 4287) { // This is a simple check for mock data
+        setIsMockData(true);
+        toast.info("Using demo census data", {
+          description: "The Census API could not be reached. Showing sample data for demonstration."
+        });
+      } else {
+        toast.success("Census data retrieved", {
+          description: "Showing demographic information for the specified location."
+        });
+      }
     } catch (error) {
       console.error("Error in useCensusData:", error);
       setStatus("error");
