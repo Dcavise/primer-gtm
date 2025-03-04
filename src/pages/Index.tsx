@@ -5,13 +5,15 @@ import { PermitList } from "@/components/PermitList";
 import { ZoningList } from "@/components/ZoningList";
 import { CensusList } from "@/components/CensusList";
 import { SchoolsList } from "@/components/SchoolsList";
+import { PropertySummary } from "@/components/PropertySummary";
 import { usePermits } from "@/hooks/use-permits";
 import { useZoningData } from "@/hooks/use-zoning-data";
 import { useCensusData } from "@/hooks/use-census-data";
 import { useSchoolsData } from "@/hooks/use-schools-data";
+import { usePropertySummary } from "@/hooks/use-property-summary";
 import { motion } from "framer-motion";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { FileTextIcon, MapIcon, BarChart3Icon, School, SearchIcon } from "lucide-react";
+import { FileTextIcon, MapIcon, BarChart3Icon, School, SearchIcon, ClipboardIcon } from "lucide-react";
 import { Permit } from "@/types";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
@@ -37,18 +39,23 @@ const Index = () => {
   const { schools, status: schoolsStatus, searchedAddress: schoolsAddress, fetchSchoolsData } = useSchoolsData();
   const isSearchingSchools = schoolsStatus === "loading";
 
+  // Property summary data
+  const { summary, status: summaryStatus, searchedAddress: summaryAddress, generateSummary } = usePropertySummary();
+  const isGeneratingSummary = summaryStatus === "loading";
+
   // Consolidated state
   const [userAddress, setUserAddress] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [activeSection, setActiveSection] = useState<"permits" | "zoning" | "census" | "schools" | "property-research">("permits");
+  const [activeSection, setActiveSection] = useState<"summary" | "permits" | "zoning" | "census" | "schools" | "property-research">("summary");
   
   // Determine if any data is loading
-  const isAnyDataLoading = isSearchingPermits || isSearchingZoning || isSearchingCensus || isSearchingSchools;
+  const isAnyDataLoading = isSearchingPermits || isSearchingZoning || isSearchingCensus || isSearchingSchools || isGeneratingSummary;
   
   // Determine the current displayed address (prioritize the active section's address)
   const displayedAddress = activeSection === "permits" ? permitAddress : 
                           activeSection === "zoning" ? zoningAddress :
                           activeSection === "census" ? censusAddress : 
+                          activeSection === "summary" ? summaryAddress || userAddress :
                           schoolsAddress || userAddress;
 
   const handleSearchAllData = async (params: any, address: string) => {
@@ -69,6 +76,12 @@ const Index = () => {
         fetchSchoolsData(params, address)
       ]);
       
+      // Set active section to summary first
+      setActiveSection("summary");
+      
+      // Generate summary after all data is fetched
+      generateSummary(address, permits, zoningData, censusData, schools);
+      
       toast.success("Property research complete", {
         description: "All available data has been retrieved for this location."
       });
@@ -79,6 +92,13 @@ const Index = () => {
       });
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  // Function to manually generate summary if not done automatically
+  const handleGenerateSummary = () => {
+    if (displayedAddress) {
+      generateSummary(displayedAddress, permits, zoningData, censusData, schools);
     }
   };
 
@@ -163,12 +183,16 @@ const Index = () => {
         
         {displayedAddress && (
           <Tabs 
-            defaultValue="permits" 
+            defaultValue="summary" 
             value={activeSection} 
             onValueChange={(value) => setActiveSection(value as any)}
             className="mt-6"
           >
             <TabsList className="bg-background border-b w-full justify-start overflow-x-auto">
+              <TabsTrigger value="summary" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                <ClipboardIcon className="h-4 w-4 mr-2" />
+                Summary
+              </TabsTrigger>
               <TabsTrigger value="permits" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
                 <FileTextIcon className="h-4 w-4 mr-2" />
                 Permits
@@ -186,6 +210,15 @@ const Index = () => {
                 Schools
               </TabsTrigger>
             </TabsList>
+            
+            <TabsContent value="summary" className="py-6 animate-in fade-in-50">
+              <PropertySummary
+                summary={summary}
+                isLoading={isGeneratingSummary}
+                searchedAddress={displayedAddress}
+                onGenerateSummary={handleGenerateSummary}
+              />
+            </TabsContent>
             
             <TabsContent value="permits" className="py-6 animate-in fade-in-50">
               <PermitList 
