@@ -2,14 +2,25 @@
 import { useState } from "react";
 import { SearchStatus } from "@/types";
 import { toast } from "sonner";
+import { fetchZoneDetails } from "@/services/api";
 
 export interface ZoningData {
   id: string;
   zone_name: string;
+  zone_code: string;
   zone_type: string;
+  zone_sub_type?: string;
+  zone_guide?: string;
   permitted_uses: string[];
+  conditional_uses?: string[];
+  prohibited_uses?: string[];
   description: string;
-  date_updated: string;
+  last_updated?: string;
+  link?: string;
+  controls?: {
+    standard?: Record<string, any>;
+    "non-standard"?: Record<string, any>;
+  };
 }
 
 export function useZoningData() {
@@ -21,38 +32,39 @@ export function useZoningData() {
     setStatus("loading");
     
     try {
-      // Simulating API call with mock data for now
-      // In a real implementation, you would call an actual zoning API endpoint
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Extract the coordinates from the search params
+      const latitude = (params.top_right_lat + params.bottom_left_lat) / 2;
+      const longitude = (params.top_right_lng + params.bottom_left_lng) / 2;
       
-      const mockData: ZoningData[] = [
-        {
-          id: "zn-1",
-          zone_name: "R-1",
-          zone_type: "Residential",
-          permitted_uses: ["Single-family homes", "Parks", "Community facilities"],
-          description: "Low-density single-family residential district",
-          date_updated: "2023-05-15"
-        },
-        {
-          id: "zn-2",
-          zone_name: "C-1",
-          zone_type: "Commercial",
-          permitted_uses: ["Retail", "Offices", "Restaurants"],
-          description: "Neighborhood commercial district intended for small-scale retail and services",
-          date_updated: "2023-06-22"
-        },
-        {
-          id: "zn-3",
-          zone_name: "M-1",
-          zone_type: "Industrial",
-          permitted_uses: ["Manufacturing", "Warehousing", "Distribution"],
-          description: "Light manufacturing district with some commercial uses permitted",
-          date_updated: "2023-04-10"
-        }
-      ];
+      // Call the zoneDetail API with the point coordinates
+      const zoneDetail = await fetchZoneDetails({
+        lat: latitude,
+        lng: longitude,
+        output_fields: "plu,controls"
+      });
       
-      setZoningData(mockData);
+      if (!zoneDetail || !zoneDetail.data) {
+        throw new Error("No zoning data found for this location");
+      }
+      
+      // Transform the API response to our ZoningData format
+      const formattedData: ZoningData[] = [{
+        id: `zone-${Date.now()}`,
+        zone_name: zoneDetail.data.zone_name || "Unknown Zone",
+        zone_code: zoneDetail.data.zone_code || "N/A",
+        zone_type: zoneDetail.data.zone_type || "Unknown",
+        zone_sub_type: zoneDetail.data.zone_sub_type,
+        zone_guide: zoneDetail.data.zone_guide,
+        permitted_uses: zoneDetail.data.as_of_right || [],
+        conditional_uses: zoneDetail.data.conditional_uses || [],
+        prohibited_uses: zoneDetail.data.prohibited || [],
+        description: zoneDetail.data.zone_guide || "No description available",
+        last_updated: zoneDetail.data.last_updated,
+        link: zoneDetail.data.link,
+        controls: zoneDetail.data.controls
+      }];
+      
+      setZoningData(formattedData);
       setSearchedAddress(address);
       setStatus("success");
       

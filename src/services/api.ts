@@ -34,6 +34,65 @@ export async function searchPermits(params: PermitSearchParams): Promise<PermitR
   }
 }
 
+// New function to fetch zoning details
+export async function fetchZoneDetails(params: {
+  lat: number;
+  lng: number;
+  address?: string;
+  output_fields?: string;
+  group_plu?: string;
+  replace_STF?: boolean;
+}) {
+  try {
+    const queryParams = new URLSearchParams({
+      api_key: API_KEY,
+    });
+
+    // Add lat/lng parameters if provided
+    if (params.lat && params.lng) {
+      queryParams.append("lat", params.lat.toString());
+      queryParams.append("lng", params.lng.toString());
+    }
+
+    // Add address parameter if provided
+    if (params.address) {
+      queryParams.append("address", params.address);
+    }
+
+    // Add optional parameters if provided
+    if (params.output_fields) {
+      queryParams.append("output_fields", params.output_fields);
+    }
+
+    if (params.group_plu) {
+      queryParams.append("group_plu", params.group_plu);
+    }
+
+    if (params.replace_STF !== undefined) {
+      queryParams.append("replace_STF", params.replace_STF.toString());
+    }
+
+    const response = await fetch(`${API_BASE_URL}/zoneDetail?${queryParams}`);
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch zoning details");
+    }
+
+    const data = await response.json();
+    
+    if (!data.status || !data.data) {
+      throw new Error("Invalid response from zoning API");
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Error fetching zoning details:", error);
+    toast.error("Failed to fetch zoning data. Please try again.");
+    throw error;
+  }
+}
+
 // Test function for Miami address
 export async function testMiamiAddress(): Promise<PermitResponse | null> {
   try {

@@ -4,7 +4,8 @@ import { LoadingState } from "./LoadingState";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
-import { CalendarIcon, HomeIcon, Building2Icon, WarehouseIcon } from "lucide-react";
+import { CalendarIcon, HomeIcon, Building2Icon, WarehouseIcon, Link, CheckIcon, XIcon, AlertCircleIcon } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 interface ZoningListProps {
   zoningData: ZoningData[];
@@ -80,7 +81,7 @@ export const ZoningList = ({ zoningData, isLoading, searchedAddress }: ZoningLis
         </motion.div>
       )}
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {zoningData.map((zone, index) => (
           <motion.div
             key={zone.id}
@@ -90,28 +91,142 @@ export const ZoningList = ({ zoningData, isLoading, searchedAddress }: ZoningLis
           >
             <Card className="h-full">
               <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
+                <div className="flex justify-between items-start flex-wrap gap-2">
                   <div>
                     <Badge className="mb-2 font-medium" variant="outline">
                       {getZoneIcon(zone.zone_type)}
                       <span className="ml-1">{zone.zone_type}</span>
                     </Badge>
-                    <CardTitle className="text-xl">{zone.zone_name}</CardTitle>
+                    {zone.zone_sub_type && (
+                      <Badge className="mb-2 ml-2 font-medium" variant="secondary">
+                        {zone.zone_sub_type}
+                      </Badge>
+                    )}
+                    <CardTitle className="text-xl">{zone.zone_name} ({zone.zone_code})</CardTitle>
                   </div>
-                  <Badge variant="secondary" className="flex items-center gap-1 text-xs">
-                    <CalendarIcon className="h-3 w-3" />
-                    Updated {new Date(zone.date_updated).toLocaleDateString()}
-                  </Badge>
+                  {zone.last_updated && (
+                    <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                      <CalendarIcon className="h-3 w-3" />
+                      Updated {new Date(zone.last_updated).toLocaleDateString()}
+                    </Badge>
+                  )}
                 </div>
-                <CardDescription>{zone.description}</CardDescription>
+                <CardDescription className="mt-2">{zone.description}</CardDescription>
+                {zone.link && (
+                  <a 
+                    href={zone.link} 
+                    target="_blank"
+                    rel="noopener noreferrer" 
+                    className="flex items-center gap-1 text-xs text-blue-600 hover:underline mt-1"
+                  >
+                    <Link className="h-3 w-3" />
+                    View official zoning information
+                  </a>
+                )}
               </CardHeader>
               <CardContent>
-                <h4 className="font-medium mb-2 text-sm">Permitted Uses:</h4>
-                <ul className="text-sm text-muted-foreground">
-                  {zone.permitted_uses.map((use, i) => (
-                    <li key={i} className="mb-1">• {use}</li>
-                  ))}
-                </ul>
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="permitted-uses">
+                    <AccordionTrigger className="text-sm font-medium">
+                      <div className="flex items-center gap-1">
+                        <CheckIcon className="h-4 w-4 text-green-500" />
+                        Permitted Uses
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      {zone.permitted_uses.length > 0 ? (
+                        <ul className="text-sm text-muted-foreground">
+                          {zone.permitted_uses.map((use, i) => (
+                            <li key={i} className="mb-1">• {use}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No permitted uses information available.</p>
+                      )}
+                    </AccordionContent>
+                  </AccordionItem>
+                  
+                  {zone.conditional_uses && zone.conditional_uses.length > 0 && (
+                    <AccordionItem value="conditional-uses">
+                      <AccordionTrigger className="text-sm font-medium">
+                        <div className="flex items-center gap-1">
+                          <AlertCircleIcon className="h-4 w-4 text-amber-500" />
+                          Conditional Uses
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <ul className="text-sm text-muted-foreground">
+                          {zone.conditional_uses.map((use, i) => (
+                            <li key={i} className="mb-1">• {use}</li>
+                          ))}
+                        </ul>
+                      </AccordionContent>
+                    </AccordionItem>
+                  )}
+                  
+                  {zone.prohibited_uses && zone.prohibited_uses.length > 0 && (
+                    <AccordionItem value="prohibited-uses">
+                      <AccordionTrigger className="text-sm font-medium">
+                        <div className="flex items-center gap-1">
+                          <XIcon className="h-4 w-4 text-red-500" />
+                          Prohibited Uses
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <ul className="text-sm text-muted-foreground">
+                          {zone.prohibited_uses.map((use, i) => (
+                            <li key={i} className="mb-1">• {use}</li>
+                          ))}
+                        </ul>
+                      </AccordionContent>
+                    </AccordionItem>
+                  )}
+                  
+                  {zone.controls && (
+                    <AccordionItem value="building-controls">
+                      <AccordionTrigger className="text-sm font-medium">
+                        <div className="flex items-center gap-1">
+                          <Building2Icon className="h-4 w-4 text-blue-500" />
+                          Building Controls
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        {zone.controls.standard && Object.keys(zone.controls.standard).length > 0 ? (
+                          <div className="space-y-2">
+                            <h4 className="font-medium text-xs uppercase text-muted-foreground mb-1">Standard Controls</h4>
+                            <ul className="text-sm">
+                              {Object.entries(zone.controls.standard).map(([key, value]) => (
+                                <li key={key} className="mb-1 grid grid-cols-2 gap-2">
+                                  <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}:</span>
+                                  <span>{value}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : null}
+                        
+                        {zone.controls["non-standard"] && Object.keys(zone.controls["non-standard"]).length > 0 ? (
+                          <div className="space-y-2 mt-4">
+                            <h4 className="font-medium text-xs uppercase text-muted-foreground mb-1">Non-Standard Controls</h4>
+                            <ul className="text-sm">
+                              {Object.entries(zone.controls["non-standard"]).map(([key, value]) => (
+                                <li key={key} className="mb-1 grid grid-cols-2 gap-2">
+                                  <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}:</span>
+                                  <span>{value}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : null}
+                        
+                        {(!zone.controls.standard || Object.keys(zone.controls.standard).length === 0) && 
+                         (!zone.controls["non-standard"] || Object.keys(zone.controls["non-standard"]).length === 0) && (
+                          <p className="text-sm text-muted-foreground">No building controls information available.</p>
+                        )}
+                      </AccordionContent>
+                    </AccordionItem>
+                  )}
+                </Accordion>
               </CardContent>
             </Card>
           </motion.div>
