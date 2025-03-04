@@ -1,4 +1,3 @@
-<lov-code>
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import * as turf from 'https://esm.sh/@turf/turf@6.5.0';
 
@@ -699,4 +698,26 @@ async function processCensusData(
     
     // Calculate education percentages
     const higherEducationCount = bachelorsCount + mastersCount + professionalCount + doctorateCount;
-    const bachelorRate = population25Plus >
+    const bachelorRate = population25Plus > 0 ? (bachelorsCount / population25Plus) * 100 : 0;
+    const masterRate = population25Plus > 0 ? (mastersCount / population25Plus) * 100 : 0;
+    const professionalRate = population25Plus > 0 ? (professionalCount / population25Plus) * 100 : 0;
+    const doctorateRate = population25Plus > 0 ? (doctorateCount / population25Plus) * 100 : 0;
+    
+    return {
+      totalPopulation,
+      avgMedianAge,
+      avgMedianIncome,
+      avgHomeValue,
+      unemploymentRate,
+      povertyRate,
+      higherEducationCount,
+      bachelorRate,
+      masterRate,
+      professionalRate,
+      doctorateRate
+    };
+  } catch (error) {
+    console.error("Error processing census data:", error);
+    return null;
+  }
+}

@@ -91,8 +91,10 @@ export const CensusList = ({
             <div className="text-xs">
               {censusResponse.blockGroupsIncluded ? (
                 <p>Data collected from {censusResponse.blockGroupsIncluded} census block group(s) within {censusResponse.radiusMiles} miles.</p>
-              ) : (
+              ) : censusResponse.tractsIncluded ? (
                 <p>Data collected from {censusResponse.tractsIncluded} census tract(s) within {censusResponse.radiusMiles} miles.</p>
+              ) : (
+                <p>Data collected from census areas within {censusResponse.radiusMiles} miles.</p>
               )}
               
               {blockGroupsInfo.length > 0 ? (
