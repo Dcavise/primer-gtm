@@ -1,8 +1,7 @@
-
 import { useState } from "react";
 import { SearchStatus } from "@/types";
 import { toast } from "sonner";
-import { fetchZoneDetails } from "@/services/api";
+import { fetchZoneDetails } from "@/services/zoning-api";
 
 export interface ZoningData {
   id: string;

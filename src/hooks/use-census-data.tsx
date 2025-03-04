@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { SearchStatus } from "@/types";
 import { toast } from "sonner";
-import { fetchCensusData } from "@/services/api";
+import { fetchCensusData } from "@/services/census-api";
 import { geocodeAddress } from "@/utils/geocoding";
 
 export interface CensusDataItem {
