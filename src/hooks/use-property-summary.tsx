@@ -24,8 +24,10 @@ export function usePropertySummary() {
     censusData: CensusData | null,
     schools: School[]
   ) => {
+    // Reset the summary state when generating a new summary
     setStatus("loading");
     setSummary(null);
+    setSearchedAddress(address);
     
     console.log("Generating property summary for:", address);
     console.log("Data available for summary:", {
@@ -69,7 +71,7 @@ export function usePropertySummary() {
         return;
       }
       
-      console.log("Property summary generated successfully");
+      console.log("Property summary generated successfully for:", address);
       setSummary(data.summary);
       setSearchedAddress(address);
       setStatus("success");

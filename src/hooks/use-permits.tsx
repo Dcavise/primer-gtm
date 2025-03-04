@@ -11,8 +11,12 @@ export function usePermits() {
 
   const fetchPermits = async (params: PermitSearchParams, address: string) => {
     setStatus("loading");
+    console.log(`Fetching permits for address: ${address}`);
     
     try {
+      // Reset the permits when searching for a new address
+      setPermits([]);
+      
       const response = await searchPermits(params);
       
       // Process permits to ensure all have properly formatted dates
@@ -21,6 +25,8 @@ export function usePermits() {
         // Ensure date exists and is valid
         date: permit.date || permit.created_date || permit.last_updated_date || new Date().toISOString()
       }));
+      
+      console.log(`Found ${processedPermits.length} permits for address: ${address}`);
       
       setPermits(processedPermits);
       setSearchedAddress(address);

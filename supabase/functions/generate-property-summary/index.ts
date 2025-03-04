@@ -59,9 +59,11 @@ DEMOGRAPHIC DATA: ${censusSummary}
 
 SCHOOLS: ${schoolsSummary}
 
-Format your response as a real estate professional would, highlighting key insights about the property's development history, zoning restrictions, neighborhood demographics, and educational opportunities. Keep your summary under 400 words, focusing on the most relevant information for someone researching this property. Use bullet points where appropriate.
+Format your response as a real estate professional would, highlighting key insights about the property's development history, zoning restrictions, neighborhood demographics, and educational opportunities. Begin the summary with "Property Summary: ${address}" as the title. Keep your summary under 400 words, focusing on the most relevant information for someone researching this property. Use bullet points where appropriate.
 `;
 
+    console.log("Sending prompt to OpenAI:", prompt.substring(0, 200) + "...");
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -88,7 +90,7 @@ Format your response as a real estate professional would, highlighting key insig
     }
 
     const data = await response.json();
-    console.log("Summary generated successfully");
+    console.log("Summary generated successfully for address:", address);
     
     return new Response(
       JSON.stringify({ 
