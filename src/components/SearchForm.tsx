@@ -19,7 +19,7 @@ interface SearchFormProps {
 
 export const SearchForm = ({ onSearch, isSearching }: SearchFormProps) => {
   const [address, setAddress] = useState("");
-  const [searchRadius, setSearchRadius] = useState(200); // Default radius in meters
+  const [searchRadius, setSearchRadius] = useState(650); // Default radius in feet (about 200 meters)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +36,9 @@ export const SearchForm = ({ onSearch, isSearching }: SearchFormProps) => {
     if (!geocodeResult) return; // Error is already handled in geocodeAddress
     
     const { coordinates } = geocodeResult;
-    const { bottomLeft, topRight } = createBoundingBox(coordinates, searchRadius);
+    // Convert feet to meters for the bounding box calculation
+    const radiusInMeters = searchRadius * 0.3048;
+    const { bottomLeft, topRight } = createBoundingBox(coordinates, radiusInMeters);
     
     onSearch({
       bottom_left_lat: bottomLeft.lat,
@@ -67,21 +69,21 @@ export const SearchForm = ({ onSearch, isSearching }: SearchFormProps) => {
         
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
-            <label className="text-sm text-white/80 mb-1 block">Search Radius (meters)</label>
+            <label className="text-sm text-white/80 mb-1 block">Search Radius (feet)</label>
             <Input
               type="range"
-              min="50"
-              max="500"
-              step="50"
+              min="150"
+              max="1650"
+              step="150"
               value={searchRadius}
               onChange={(e) => setSearchRadius(parseInt(e.target.value))}
               className="w-full accent-white"
               disabled={isSearching}
             />
             <div className="flex justify-between text-xs text-white/70 mt-1">
-              <span>50m</span>
-              <span>{searchRadius}m</span>
-              <span>500m</span>
+              <span>150ft</span>
+              <span>{searchRadius}ft</span>
+              <span>1650ft</span>
             </div>
           </div>
           
