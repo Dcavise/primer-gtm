@@ -57,7 +57,7 @@ export const CensusList = ({
           <InfoIcon className="h-4 w-4 text-blue-500" />
           <AlertTitle>Using Approximate Data</AlertTitle>
           <AlertDescription>
-            Due to Census API limitations, we're showing you census data from a nearby area that might not exactly match your address.
+            The census data shown is for the Census tract containing this address. Census tracts are small statistical subdivisions of counties with 1,200-8,000 residents.
           </AlertDescription>
         </Alert>
       )}

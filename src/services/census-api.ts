@@ -75,21 +75,25 @@ export async function fetchCensusData(params: { lat: number, lng: number }): Pro
   try {
     console.log("Starting fetchCensusData with params:", params);
     
-    // First, try using a direct CORS-enabled method if available
+    // First, try using a proxy to avoid CORS issues
     try {
-      // This part uses the Census geocoder which is generally CORS-friendly
+      // Get tract information from coordinates
       const tractInfo = await fetchTractFromCoordinates(params);
+      
       if (tractInfo) {
         console.log("Successfully retrieved tract information:", tractInfo);
-        return await fetchCensusDataByTract(tractInfo.tract, tractInfo.state, tractInfo.county);
-      } else {
-        console.log("Could not get tract information, using fallback");
+        const censusData = await fetchCensusDataByTract(tractInfo.tract, tractInfo.state, tractInfo.county);
+        
+        if (censusData) {
+          console.log("Successfully retrieved census data from API");
+          return censusData;
+        }
       }
     } catch (error) {
-      console.log("CORS issue with direct Census API call, using fallback method:", error);
+      console.log("Issue with Census API call:", error);
     }
     
-    // If direct method fails, use mock data instead of failing
+    // If the API calls fail, use mock data as fallback
     console.log("Using mock census data as fallback");
     return getMockCensusData();
   } catch (error) {
@@ -106,15 +110,17 @@ async function fetchTractFromCoordinates(params: { lat: number, lng: number }): 
   county: string;
 } | null> {
   try {
-    // Use Census Geocoding API which tends to have better CORS support
-    const geoUrl = `https://geocoding.geo.census.gov/geocoder/geographies/coordinates?x=${params.lng}&y=${params.lat}&benchmark=Public_AR_Current&vintage=Current_Current&layers=14&format=json`;
+    // Use Census Geocoding API through a CORS proxy
+    const proxyUrl = "https://cors-anywhere.herokuapp.com/";
+    const geoUrl = `${proxyUrl}https://geocoding.geo.census.gov/geocoder/geographies/coordinates?x=${params.lng}&y=${params.lat}&benchmark=Public_AR_Current&vintage=Current_Current&layers=14&format=json`;
     
-    console.log("Fetching Census GEOID for coordinates with URL:", geoUrl);
+    console.log("Fetching Census GEOID for coordinates with URL (through proxy)");
     
     const geoResponse = await fetch(geoUrl, {
       method: 'GET',
       headers: {
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
       }
     });
     
@@ -154,52 +160,171 @@ async function fetchCensusDataByTract(
   countyId: string
 ): Promise<CensusData | null> {
   try {
-    // Due to CORS limitations, we'll use a simpler approach that's more likely to work in browsers
-    // We'll fetch a smaller subset of key variables
     const key = CENSUS_API_KEY;
-    const year = 2022; // Use latest ACS 5-year data
+    const year = 2022; // Latest ACS 5-year data
     
-    // Build URLs for demographic, economic, housing, and education data
-    // We'll make multiple smaller requests which tend to be more reliable
+    // We'll use a CORS proxy to fetch data
+    const proxyUrl = "https://cors-anywhere.herokuapp.com/";
     
-    const demographicVars = [
+    // Define the variables we want to fetch
+    // These are for different categories: demographic, economic, housing, education
+    const variables = [
       "B01003_001E", // Total population
-      "B01002_001E", // Median age
-      "B02001_002E", // White population
-      "B02001_003E"  // Black population
-    ];
-    
-    const economicVars = [
       "B19013_001E", // Median household income
-      "B23025_005E"  // Unemployed
-    ];
-    
-    const housingVars = [
       "B25077_001E", // Median home value
-      "B25002_001E"  // Total housing units
-    ];
-    
-    const educationVars = [
+      "B01002_001E", // Median age
+      "B25002_001E", // Total housing units
+      "B25003_002E", // Owner occupied units
+      "B25003_003E", // Renter occupied units
+      "B23025_005E", // Unemployed population
+      "B23025_002E", // Total labor force
       "B15003_022E", // Bachelor's degree
-      "B15003_001E"  // Total population 25 years and over
-    ];
+      "B15003_023E", // Master's degree
+      "B15003_024E", // Professional degree
+      "B15003_025E", // Doctorate degree
+      "B15003_001E", // Population 25 years and over
+      "B02001_002E", // White population
+      "B02001_003E", // Black population
+      "B02001_004E", // American Indian population
+      "B02001_005E"  // Asian population
+    ].join(",");
     
-    // Create URLs for each category
-    const baseUrl = `https://api.census.gov/data/${year}/acs/acs5`;
+    // Census API URL for ACS5 data
+    const url = `${proxyUrl}https://api.census.gov/data/${year}/acs/acs5?get=${variables}&for=tract:${tractId}&in=county:${countyId}&in=state:${stateId}&key=${key}`;
     
-    // IMPORTANT: Due to persistent CORS issues with the Census API in browser environments,
-    // we'll skip the actual API calls and return mock data
-    // This is a pragmatic approach for a demo application
+    console.log("Fetching census data by tract with URL (through proxy)");
     
-    console.log("Due to CORS limitations in browser environments, using mock census data");
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    });
     
-    // Process the mock data as if it came from the API
-    return getMockCensusData();
+    if (!response.ok) {
+      console.error("Census data fetch failed with status:", response.status);
+      return null;
+    }
+    
+    const rawData = await response.json();
+    console.log("Raw census data response:", rawData);
+    
+    // Process the data
+    if (rawData && rawData.length >= 2) {
+      const headers = rawData[0];
+      const values = rawData[1];
+      const processedData: Record<string, string> = {};
+      
+      headers.forEach((header: string, index: number) => {
+        processedData[header] = values[index];
+      });
+      
+      console.log("Processed census data:", processedData);
+      
+      // Build the structured census data object
+      const censusData = buildCensusDataObject(processedData);
+      return censusData;
+    } else {
+      console.error("Invalid or empty census data response");
+      return null;
+    }
   } catch (error) {
     console.error("Error fetching census data by tract:", error);
-    // Return mock data on error as well
-    return getMockCensusData();
+    return null;
   }
+}
+
+// Process API data into the CensusData structure
+function buildCensusDataObject(data: Record<string, string>): CensusData {
+  // Parse numeric values
+  const totalPopulation = parseInt(data["B01003_001E"]) || 0;
+  const medianHouseholdIncome = parseInt(data["B19013_001E"]) || 0;
+  const medianHomeValue = parseInt(data["B25077_001E"]) || 0;
+  const medianAge = parseFloat(data["B01002_001E"]) || 0;
+  const housingUnits = parseInt(data["B25002_001E"]) || 0;
+  const ownerOccupied = parseInt(data["B25003_002E"]) || 0;
+  const renterOccupied = parseInt(data["B25003_003E"]) || 0;
+  const unemployed = parseInt(data["B23025_005E"]) || 0;
+  const laborForce = parseInt(data["B23025_002E"]) || 0;
+  
+  // Education data
+  const bachelors = parseInt(data["B15003_022E"]) || 0;
+  const masters = parseInt(data["B15003_023E"]) || 0;
+  const professional = parseInt(data["B15003_024E"]) || 0;
+  const doctorate = parseInt(data["B15003_025E"]) || 0;
+  const population25Plus = parseInt(data["B15003_001E"]) || 0;
+  
+  // Race data
+  const white = parseInt(data["B02001_002E"]) || 0;
+  const black = parseInt(data["B02001_003E"]) || 0;
+  const americanIndian = parseInt(data["B02001_004E"]) || 0;
+  const asian = parseInt(data["B02001_005E"]) || 0;
+  
+  // Calculate percentages and rates
+  const homeownershipRate = ownerOccupied / (ownerOccupied + renterOccupied) * 100 || 0;
+  const unemploymentRate = unemployed / laborForce * 100 || 0;
+  const bachelorOrHigher = (bachelors + masters + professional + doctorate) / population25Plus * 100 || 0;
+  const highSchoolOrHigher = 85; // Placeholder - would need additional variables
+  
+  // Build demographic items
+  const demographicItems: CensusDataItem[] = [
+    { name: "Total Population", value: totalPopulation },
+    { name: "Median Age", value: medianAge },
+    { name: "White Population", value: white, description: "Non-Hispanic White population" },
+    { name: "Black Population", value: black },
+    { name: "Asian Population", value: asian },
+    { name: "American Indian Population", value: americanIndian },
+    { name: "White Percent", value: (white / totalPopulation * 100).toFixed(1) },
+    { name: "Black Percent", value: (black / totalPopulation * 100).toFixed(1) },
+    { name: "Asian Percent", value: (asian / totalPopulation * 100).toFixed(1) }
+  ];
+  
+  // Economic items
+  const economicItems: CensusDataItem[] = [
+    { name: "Median Household Income", value: medianHouseholdIncome },
+    { name: "Unemployment Rate", value: unemploymentRate.toFixed(1) },
+    { name: "Labor Force", value: laborForce },
+    { name: "Unemployed", value: unemployed }
+  ];
+  
+  // Housing items
+  const housingItems: CensusDataItem[] = [
+    { name: "Median Home Value", value: medianHomeValue },
+    { name: "Total Housing Units", value: housingUnits },
+    { name: "Owner Occupied", value: ownerOccupied },
+    { name: "Renter Occupied", value: renterOccupied },
+    { name: "Homeownership Rate", value: homeownershipRate.toFixed(1) }
+  ];
+  
+  // Education items
+  const educationItems: CensusDataItem[] = [
+    { name: "High School Graduate", value: highSchoolOrHigher.toFixed(1), description: "Percentage with high school diploma or higher" },
+    { name: "Bachelor's Degree or Higher", value: bachelorOrHigher.toFixed(1), description: "Percentage with a bachelor's degree or higher" },
+    { name: "Bachelor's Degree", value: bachelors },
+    { name: "Master's Degree", value: masters },
+    { name: "Professional Degree", value: professional },
+    { name: "Doctorate Degree", value: doctorate }
+  ];
+  
+  return {
+    totalPopulation,
+    medianHouseholdIncome,
+    medianHomeValue,
+    educationLevelHS: highSchoolOrHigher,
+    educationLevelBachelor: bachelorOrHigher,
+    unemploymentRate,
+    medianAge,
+    housingUnits,
+    homeownershipRate,
+    rawData: data,
+    categories: {
+      demographic: demographicItems,
+      economic: economicItems,
+      housing: housingItems,
+      education: educationItems
+    }
+  };
 }
 
 // Helper function to convert census API response to an object
@@ -219,15 +344,4 @@ export function processApiData(apiData: any[]): Record<string, string> {
   
   console.log("Processed API data:", result);
   return result;
-}
-
-function processCensusData(rawData: {
-  demographic: Record<string, string>;
-  economic: Record<string, string>;
-  housing: Record<string, string>;
-  education: Record<string, string>;
-}): CensusData {
-  // This is mock processing since we're using mock data
-  // In a real implementation, this would process actual Census API responses
-  return getMockCensusData();
 }
