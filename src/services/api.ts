@@ -96,13 +96,17 @@ export async function fetchZoneDetails(params: {
 // Census API Integration
 export async function fetchCensusData(params: { lat: number, lng: number }): Promise<CensusData | null> {
   try {
+    console.log("Starting fetchCensusData with params:", params);
+    
     // Step 1: Get the Census Block GEOID for the coordinates using the Geocoding API
     const geoUrl = `https://geocoding.geo.census.gov/geocoder/geographies/coordinates?x=${params.lng}&y=${params.lat}&benchmark=Public_AR_Current&vintage=Current_Current&layers=14&format=json`;
     
-    console.log("Fetching Census GEOID for coordinates:", params);
+    console.log("Fetching Census GEOID for coordinates with URL:", geoUrl);
     const geoResponse = await fetch(geoUrl);
     
     if (!geoResponse.ok) {
+      console.error("Census geocoding failed with status:", geoResponse.status);
+      console.error("Census geocoding response text:", await geoResponse.text());
       throw new Error("Failed to geocode location to census geography");
     }
     
@@ -110,7 +114,10 @@ export async function fetchCensusData(params: { lat: number, lng: number }): Pro
     console.log("Census geocoding response:", geoData);
     
     // Check if we have valid geographies data
-    if (!geoData.result?.geographies) {
+    if (!geoData.result?.geographies || 
+        !geoData.result?.geographies["Census Tracts"] || 
+        !geoData.result?.geographies["Census Tracts"][0]) {
+      console.error("Invalid or missing geographies data in Census response:", geoData);
       toast.error("Location not found in Census database");
       return null;
     }
@@ -178,38 +185,50 @@ export async function fetchCensusData(params: { lat: number, lng: number }): Pro
     // Fetch demographic data
     console.log("Fetching demographic census data...");
     const demographicUrl = `${censusBaseUrl}?get=${demographicVars}&for=tract:${tractId}&in=state:${stateId}%20county:${countyId}&key=${CENSUS_API_KEY}`;
+    console.log("Demographic URL:", demographicUrl);
     const demographicResponse = await fetch(demographicUrl);
     if (!demographicResponse.ok) {
+      console.error("Failed to fetch demographic data:", await demographicResponse.text());
       throw new Error("Failed to fetch demographic census data");
     }
     const demographicData = await demographicResponse.json();
+    console.log("Demographic data:", demographicData);
     
     // Fetch economic data
     console.log("Fetching economic census data...");
     const economicUrl = `${censusBaseUrl}?get=${economicVars}&for=tract:${tractId}&in=state:${stateId}%20county:${countyId}&key=${CENSUS_API_KEY}`;
+    console.log("Economic URL:", economicUrl);
     const economicResponse = await fetch(economicUrl);
     if (!economicResponse.ok) {
+      console.error("Failed to fetch economic data:", await economicResponse.text());
       throw new Error("Failed to fetch economic census data");
     }
     const economicData = await economicResponse.json();
+    console.log("Economic data:", economicData);
     
     // Fetch housing data
     console.log("Fetching housing census data...");
     const housingUrl = `${censusBaseUrl}?get=${housingVars}&for=tract:${tractId}&in=state:${stateId}%20county:${countyId}&key=${CENSUS_API_KEY}`;
+    console.log("Housing URL:", housingUrl);
     const housingResponse = await fetch(housingUrl);
     if (!housingResponse.ok) {
+      console.error("Failed to fetch housing data:", await housingResponse.text());
       throw new Error("Failed to fetch housing census data");
     }
     const housingData = await housingResponse.json();
+    console.log("Housing data:", housingData);
     
     // Fetch education data
     console.log("Fetching education census data...");
     const educationUrl = `${censusBaseUrl}?get=${educationVars}&for=tract:${tractId}&in=state:${stateId}%20county:${countyId}&key=${CENSUS_API_KEY}`;
+    console.log("Education URL:", educationUrl);
     const educationResponse = await fetch(educationUrl);
     if (!educationResponse.ok) {
+      console.error("Failed to fetch education data:", await educationResponse.text());
       throw new Error("Failed to fetch education census data");
     }
     const educationData = await educationResponse.json();
+    console.log("Education data:", educationData);
     
     console.log("All census data fetched successfully!");
     
@@ -220,6 +239,8 @@ export async function fetchCensusData(params: { lat: number, lng: number }): Pro
       housing: processApiData(housingData),
       education: processApiData(educationData)
     };
+    
+    console.log("Processed raw data:", rawData);
     
     // Extract key statistics
     const totalPopulation = parseInt(rawData.demographic["B01003_001E"]) || 0;
@@ -293,7 +314,7 @@ export async function fetchCensusData(params: { lat: number, lng: number }): Pro
     ];
     
     // Return formatted census data
-    return {
+    const finalData: CensusData = {
       totalPopulation,
       medianHouseholdIncome,
       medianHomeValue,
@@ -316,6 +337,9 @@ export async function fetchCensusData(params: { lat: number, lng: number }): Pro
         education: educationItems
       }
     };
+    
+    console.log("Final processed census data:", finalData);
+    return finalData;
   } catch (error) {
     console.error("Error fetching census data:", error);
     toast.error("Failed to retrieve census data. Please try again.");
@@ -326,6 +350,7 @@ export async function fetchCensusData(params: { lat: number, lng: number }): Pro
 // Helper function to convert census API response to an object
 function processApiData(apiData: any[]): Record<string, string> {
   if (!apiData || apiData.length < 2) {
+    console.error("Invalid API data format:", apiData);
     return {};
   }
   
@@ -337,6 +362,7 @@ function processApiData(apiData: any[]): Record<string, string> {
     result[header] = values[index];
   });
   
+  console.log("Processed API data:", result);
   return result;
 }
 

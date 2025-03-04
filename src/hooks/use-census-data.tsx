@@ -38,15 +38,22 @@ export function useCensusData() {
 
   const fetchDataForAddress = async (address: string) => {
     setStatus("loading");
+    console.log("Fetching census data for address:", address);
     
     try {
       // First geocode the address to get coordinates
       const geocodeResult = await geocodeAddress(address.trim());
       
       if (!geocodeResult) {
+        console.error("Geocoding failed for address:", address);
         setStatus("error");
+        toast.error("Could not find location coordinates", {
+          description: "Please check the address and try again"
+        });
         return;
       }
+      
+      console.log("Geocode result:", geocodeResult);
       
       // Use the formatted address from geocoding
       const formattedAddress = geocodeResult.address;
@@ -54,12 +61,15 @@ export function useCensusData() {
       
       // Now fetch census data using the coordinates
       const { lat, lng } = geocodeResult.coordinates;
+      console.log(`Fetching census data for coordinates: ${lat}, ${lng}`);
       const result = await fetchCensusData({ lat, lng });
       
       if (!result) {
+        console.error("No census data returned for coordinates:", { lat, lng });
         throw new Error("Failed to fetch census data");
       }
       
+      console.log("Census data received:", result);
       setCensusData(result);
       setStatus("success");
       
