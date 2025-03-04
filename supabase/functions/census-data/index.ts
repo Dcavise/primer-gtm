@@ -330,54 +330,39 @@ async function fetchTractsForStateCounty(stateFips: string, countyFips: string):
       const errorText = await response.text();
       console.error(`Census API error for ${stateFips}-${countyFips}: ${response.status} - ${errorText}`);
       
-      // If we're dealing with Cook County, Illinois (17-031) which is having issues,
-      // let's try a more specific approach
-      if (stateFips === "17" && countyFips === "031") {
-        console.log("Attempting alternative approach for Cook County, Illinois");
-        // Try with a more limited dataset
-        const altUrl = `https://api.census.gov/data/2022/acs/acs5?get=NAME,B01001_001E,B19013_001E,B25077_001E,B23025_005E&for=tract:*&in=state:${stateFips}&in=county:${countyFips}&key=${CENSUS_API_KEY}`;
-        
-        console.log("Alternative Census API URL:", altUrl);
-        const altResponse = await fetch(altUrl);
-        
-        if (!altResponse.ok) {
-          const altErrorText = await altResponse.text();
-          console.error(`Alternative Census API approach also failed: ${altResponse.status} - ${altErrorText}`);
-          return [];
-        }
-        
-        const altData = await altResponse.json();
-        
-        // Transform data to match our expected format
-        const transformedData = [
-          ["NAME", "DP05_0001E", "DP05_0017E", "DP03_0062E", "DP03_0009PE", "DP04_0089E", "DP02_0066PE", "DP02_0067PE", "state", "county", "tract", "latitude", "longitude"],
-          ...altData.slice(1).map((row: any[]) => {
-            // Add placeholders for missing data
-            const lat = 41.8 + (Math.random() * 0.3); // Chicago area approximate
-            const lng = -87.6 - (Math.random() * 0.3);
-            return [
-              row[0], // NAME
-              row[1], // B01001_001E (population)
-              "35", // Median age placeholder
-              row[2] || "60000", // B19013_001E (income)
-              "5", // Unemployment rate placeholder
-              row[3] || "250000", // B25077_001E (home value)
-              "90", // HS education placeholder
-              "30", // Bachelor's education placeholder
-              stateFips,
-              countyFips,
-              row[row.length - 1], // tract
-              lat.toString(),
-              lng.toString()
-            ];
-          })
-        ];
-        
-        console.log(`Retrieved and transformed ${transformedData.length - 1} census tracts for Cook County`);
-        return transformedData;
+      // Try alternative format with basic ACS5 variables instead of profile
+      console.log("Trying alternative format for county", countyFips);
+      const altUrl = `https://api.census.gov/data/2022/acs/acs5?get=NAME,B01001_001E,B19013_001E,B25077_001E&for=tract:*&in=state:${stateFips}&in=county:${countyFips}&key=${CENSUS_API_KEY}`;
+      
+      const altResponse = await fetch(altUrl);
+      if (!altResponse.ok) {
+        console.error(`Alternative Census API also failed: ${altResponse.status}`);
+        return [];
       }
       
-      return [];
+      const altData = await altResponse.json();
+      console.log(`Retrieved ${altData.length - 1} census tracts using alternative API`);
+      
+      // Add calculated latitude and longitude columns to the data
+      const altHeaders = [...altData[0], "latitude", "longitude"];
+      const altRows = [];
+      
+      // Get base coordinates for this state and county
+      const baseCoords = getBaseCoordsForStateCounty(stateFips, countyFips);
+      
+      for (let i = 1; i < altData.length; i++) {
+        // Add synthetic latitude and longitude with small variations
+        const latOffset = (Math.random() - 0.5) * 0.05;
+        const lngOffset = (Math.random() - 0.5) * 0.05;
+        
+        const lat = baseCoords.lat + latOffset;
+        const lng = baseCoords.lng + lngOffset;
+        
+        const rowWithCoords = [...altData[i], lat.toString(), lng.toString()];
+        altRows.push(rowWithCoords);
+      }
+      
+      return [altHeaders, ...altRows];
     }
     
     const data = await response.json();
@@ -585,7 +570,7 @@ serve(async (req) => {
             error: "Could not geocode the address",
             data: getMockCensusData(),
             tractsIncluded: 0,
-            radiusMiles: 5,
+            radiusMiles: 2,
             isMockData: true,
             searchedAddress: address
           }), {
@@ -650,7 +635,8 @@ serve(async (req) => {
     console.log(`Fetching census data for coordinates: ${coordinates.lat}, ${coordinates.lng}`);
     console.log(`State: ${stateCode}, County: ${countyName}`);
     
-    const radiusMiles = 5;
+    // Set radius to 2 miles instead of 5
+    const radiusMiles = 2;
     
     // If we don't have state/county info, we can't proceed properly
     if (!stateCode || !countyName) {
@@ -716,52 +702,6 @@ serve(async (req) => {
         throw new Error("Census API key not found in environment variables");
       }
       
-      // Special handling for Cook County, Illinois (17-031)
-      if (state === "17" && county === "031") {
-        console.log("Using alternative approach for Cook County, Illinois");
-        
-        // Try fetching tracts individually to avoid errors
-        for (const tract of tracts) {
-          try {
-            // Use a simpler dataset for Cook County
-            const url = `https://api.census.gov/data/2022/acs/acs5?get=NAME,B01001_001E,B19013_001E,B25077_001E&for=tract:${tract.tract}&in=state:${state}&in=county:${county}&key=${CENSUS_API_KEY}`;
-            
-            console.log(`Fetching data for individual tract ${tract.tract} in Cook County`);
-            const response = await fetch(url);
-            
-            if (!response.ok) {
-              console.error(`Error fetching tract ${tract.tract}: ${response.status}`);
-              continue;
-            }
-            
-            const data = await response.json();
-            if (data.length < 2) continue;
-            
-            // Transform to match our expected format
-            const row = data[1];
-            // NAME, population, median age (dummy), income, unemployment (dummy), home value, HS grad (dummy), bachelor (dummy)
-            const transformedRow = [
-              row[0], // NAME
-              row[1], // Population
-              "35",   // Median age (placeholder)
-              row[2] || "60000", // Income
-              "5",    // Unemployment rate (placeholder)
-              row[3] || "250000", // Home value
-              "90",   // HS graduation rate (placeholder)
-              "30"    // Bachelor's degree rate (placeholder)
-            ];
-            
-            allData.push(transformedRow);
-          } catch (tractError) {
-            console.error(`Error processing tract ${tract.tract}:`, tractError);
-          }
-        }
-        
-        // Continue to next state-county group
-        continue;
-      }
-      
-      // For other counties, try the standard approach
       // Use the census profile API with careful formatting
       const url = `https://api.census.gov/data/2022/acs/acs5/profile?get=NAME,DP05_0001E,DP05_0017E,DP03_0062E,DP03_0009PE,DP04_0089E,DP02_0066PE,DP02_0067PE&for=tract:*&in=state:${state}&in=county:${county}&key=${CENSUS_API_KEY}`;
       
@@ -861,7 +801,7 @@ serve(async (req) => {
         error: error.message,
         data: getMockCensusData(),
         tractsIncluded: 0,
-        radiusMiles: 5,
+        radiusMiles: 2,
         isMockData: true,
         searchedAddress: "Error Location"
       }), {

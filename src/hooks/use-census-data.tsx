@@ -68,7 +68,7 @@ export function useCensusData() {
         toast.info("Using demo census data", {
           description: response.error 
             ? `${response.error}. Showing sample data for demonstration.`
-            : "No census tracts found within 5 miles. Showing sample data for demonstration."
+            : "No census tracts found within 2 miles. Showing sample data for demonstration."
         });
       } else if (response.tractsIncluded === 0) {
         toast.warning("Limited census data", {
@@ -102,7 +102,7 @@ export function useCensusData() {
       setCensusResponse({
         data: mockData,
         tractsIncluded: 5,
-        radiusMiles: 5
+        radiusMiles: 2
       });
       setStatus("success");
       setIsMockData(true);
