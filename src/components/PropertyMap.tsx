@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { LoadingState } from "@/components/LoadingState";
 import { School } from "@/types/schools";
 import { geocodeAddress } from "@/utils/geocoding";
-import { MapPin, School as SchoolIcon, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -56,31 +56,28 @@ export const PropertyMap = ({ address, schools = [], coordinates: propCoordinate
             throw new Error("No address provided");
           }
         }
+
+        // Get Mapbox API key
+        console.log("Fetching Mapbox token for map visualization");
+        const mapboxAccessToken = await getApiKey('mapbox');
         
-        try {
-          // Get Mapbox API key for map visualization
-          console.log("Fetching Mapbox token for map visualization");
-          const mapboxAccessToken = await getApiKey('mapbox');
-          
-          if (!mapboxAccessToken) {
-            throw new Error("Mapbox API key not available");
-          }
-          
-          console.log("Mapbox token retrieved successfully for visualization");
-          
-          // Set mapbox access token
-          mapboxgl.accessToken = mapboxAccessToken;
-          
-          // Create map instance only if not already created
-          if (map.current) return;
-          
+        if (!mapboxAccessToken) {
+          throw new Error("Mapbox API key not available");
+        }
+        
+        console.log("Mapbox token retrieved successfully for visualization");
+        
+        // Set mapbox access token
+        mapboxgl.accessToken = mapboxAccessToken;
+        
+        // Only create map if it doesn't exist
+        if (!map.current) {
           console.log("Initializing Mapbox map with coordinates:", coords);
           
-          // Initialize map
           map.current = new mapboxgl.Map({
             container: mapContainer.current,
             style: 'mapbox://styles/mapbox/streets-v12',
-            center: [coords.lng, coords.lat],
+            center: [coords!.lng, coords!.lat],
             zoom: 14
           });
           
@@ -90,7 +87,7 @@ export const PropertyMap = ({ address, schools = [], coordinates: propCoordinate
             'top-right'
           );
           
-          // Wait for map to load
+          // Handle map load event
           map.current.on('load', () => {
             if (!map.current) return;
             
@@ -160,10 +157,6 @@ export const PropertyMap = ({ address, schools = [], coordinates: propCoordinate
             
             setLoading(false);
           });
-        } catch (mapboxError) {
-          console.error("Error initializing Mapbox:", mapboxError);
-          setError("Failed to load map: " + (mapboxError.message || "Unknown error"));
-          setLoading(false);
         }
       } catch (err) {
         console.error("Error initializing map:", err);
