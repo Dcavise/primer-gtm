@@ -49,6 +49,16 @@ export const CensusList = ({
       distance: tract.distance ? `${tract.distance.toFixed(2)} miles` : 'unknown'
     })) : [];
 
+  // Extract block group information if available in the new approach
+  const blockGroupsInfo = censusData.rawData?.blockGroupsInRadius ?
+    censusData.rawData.blockGroupsInRadius.map(bg => ({
+      state: bg.state,
+      county: bg.county,
+      tract: bg.tract,
+      blockGroup: bg.blockGroup,
+      distance: bg.distance ? `${bg.distance.toFixed(2)} miles` : 'unknown'
+    })) : [];
+
   return (
     <div className="py-6 space-y-6">
       <CensusHeader searchedAddress={searchedAddress} />
@@ -79,8 +89,24 @@ export const CensusList = ({
           <AlertTitle>Census Data Source</AlertTitle>
           <AlertDescription>
             <div className="text-xs">
-              <p>Data collected from {censusResponse.tractsIncluded} census tract(s) within {censusResponse.radiusMiles} miles.</p>
-              {tractsInfo.length > 0 && (
+              {censusResponse.blockGroupsIncluded ? (
+                <p>Data collected from {censusResponse.blockGroupsIncluded} census block group(s) within {censusResponse.radiusMiles} miles.</p>
+              ) : (
+                <p>Data collected from {censusResponse.tractsIncluded} census tract(s) within {censusResponse.radiusMiles} miles.</p>
+              )}
+              
+              {blockGroupsInfo.length > 0 ? (
+                <div className="mt-2">
+                  <p className="font-semibold">Block groups used:</p>
+                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                    {blockGroupsInfo.map((bg, index) => (
+                      <li key={index}>
+                        State: {bg.state}, County: {bg.county}, Tract: {bg.tract}, Block Group: {bg.blockGroup}, Distance: {bg.distance}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : tractsInfo.length > 0 && (
                 <div className="mt-2">
                   <p className="font-semibold">Tracts used:</p>
                   <ul className="list-disc pl-5 mt-1 space-y-1">
