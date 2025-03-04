@@ -34,15 +34,16 @@ serve(async (req) => {
       );
     }
 
-    // Make request to GreatSchools API
-    const apiUrl = `https://api.greatschools.org/nearby-schools?lat=${lat}&lon=${lon}&distance=${radius}&limit=25`;
+    // Make request to GreatSchools API - Using the correct endpoint and header format from documentation
+    const apiUrl = `https://gs-api.greatschools.org/nearby-schools?lat=${lat}&lon=${lon}&distance=${radius}&limit=25`;
     console.log(`Calling GreatSchools API: ${apiUrl}`);
 
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
+        'Content-Type': 'application/json',
+        'X-API-Key': API_KEY
       }
     });
 
@@ -66,14 +67,53 @@ serve(async (req) => {
     const schoolsData = await response.json();
     console.log(`Found ${schoolsData.schools?.length || 0} schools near ${address}`);
 
+    // Transform the data to match our expected School type interface
+    const formattedSchools = schoolsData.schools?.map(school => {
+      return {
+        id: school['universal-id'] || null,
+        name: school.name,
+        type: school.type,
+        educationLevel: mapLevelCodes(school['level-codes']),
+        grades: {
+          range: parseGrades(school.level)
+        },
+        enrollment: null, // API doesn't provide enrollment in this response
+        ratings: {
+          overall: parseRatingBand(school.rating_band)
+        },
+        location: {
+          address: {
+            streetAddress: school.street,
+            city: school.city,
+            state: school.state,
+            zipCode: school.zip
+          },
+          distanceMiles: null, // Distance will be calculated in a different endpoint
+          coordinates: {
+            latitude: school.lat,
+            longitude: school.lon
+          }
+        },
+        district: school['district-name'] ? {
+          id: school['district-id']?.toString() || null,
+          name: school['district-name']
+        } : null,
+        phone: school.phone,
+        links: {
+          website: school['web-site'],
+          profile: school['overview-url']
+        }
+      };
+    }) || [];
+
     // Return the data with detailed information
     return new Response(
       JSON.stringify({
-        schools: schoolsData.schools || [],
+        schools: formattedSchools,
         searchedAddress: address,
         coordinates: { lat, lon },
         radiusMiles: radius,
-        totalResults: schoolsData.schools?.length || 0
+        totalResults: formattedSchools.length
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -89,3 +129,51 @@ serve(async (req) => {
     );
   }
 });
+
+// Helper functions to map API data to our schema
+
+function mapLevelCodes(levelCodes) {
+  if (!levelCodes) return null;
+  
+  const codes = levelCodes.split(',');
+  
+  if (codes.includes('h')) return 'High School';
+  if (codes.includes('m')) return 'Middle School';
+  if (codes.includes('e')) return 'Elementary School';
+  if (codes.includes('p')) return 'Preschool';
+  
+  return null;
+}
+
+function parseGrades(levelString) {
+  if (!levelString) return { low: '', high: '' };
+  
+  const grades = levelString.split(',').filter(g => g !== 'UG' && g !== 'PK');
+  
+  if (grades.length === 0) return { low: '', high: '' };
+  
+  return {
+    low: grades[0],
+    high: grades[grades.length - 1]
+  };
+}
+
+function parseRatingBand(ratingBand) {
+  if (!ratingBand || ratingBand === 'null') return null;
+  
+  // Convert rating bands to numeric values
+  switch (ratingBand) {
+    case 'Well above average':
+      return 5;
+    case 'Above average':
+      return 4;
+    case 'Average':
+      return 3;
+    case 'Below average':
+      return 2;
+    case 'Well below average':
+      return 1;
+    default:
+      return null;
+  }
+}
