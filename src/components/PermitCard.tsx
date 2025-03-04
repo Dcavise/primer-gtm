@@ -4,14 +4,16 @@ import { formatDate } from "@/utils/format";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
+import { MapPin, CheckCircle } from "lucide-react";
 
 interface PermitCardProps {
   permit: Permit;
   onClick: () => void;
   delay?: number;
+  searchedAddress: string;
 }
 
-export const PermitCard = ({ permit, onClick, delay = 0 }: PermitCardProps) => {
+export const PermitCard = ({ permit, onClick, delay = 0, searchedAddress }: PermitCardProps) => {
   const getStatusColor = (status: string) => {
     const lowerStatus = status.toLowerCase();
     if (lowerStatus.includes("approved") || lowerStatus.includes("complete")) return "bg-green-500";
@@ -19,6 +21,19 @@ export const PermitCard = ({ permit, onClick, delay = 0 }: PermitCardProps) => {
     if (lowerStatus.includes("denied") || lowerStatus.includes("reject")) return "bg-red-500";
     return "bg-blue-500";
   };
+
+  // Function to check if the permit address is an exact match to the searched address
+  const isExactMatch = () => {
+    if (!searchedAddress) return false;
+    
+    // Normalize both addresses (remove extra spaces, make lowercase)
+    const normalizedPermitAddress = permit.address?.toLowerCase().trim();
+    const normalizedSearchAddress = searchedAddress.toLowerCase().trim();
+    
+    return normalizedPermitAddress === normalizedSearchAddress;
+  };
+
+  const exactMatch = isExactMatch();
 
   return (
     <motion.div
@@ -28,16 +43,24 @@ export const PermitCard = ({ permit, onClick, delay = 0 }: PermitCardProps) => {
       whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
     >
       <Card 
-        className="overflow-hidden border border-border/40 hover:border-border/80 transition-all cursor-pointer group bg-card/80 backdrop-blur-sm"
+        className={`overflow-hidden border transition-all cursor-pointer group backdrop-blur-sm ${
+          exactMatch 
+            ? "border-green-500 bg-green-50 dark:bg-green-900/10" 
+            : "border-border/40 hover:border-border/80 bg-card/80"
+        }`}
         onClick={onClick}
       >
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between">
             <div>
-              <CardTitle className="line-clamp-1 text-lg md:text-xl group-hover:text-primary transition-colors">
+              <CardTitle className="line-clamp-1 text-lg md:text-xl group-hover:text-primary transition-colors flex items-center gap-1">
                 {permit.project_type || "Unknown Project Type"}
+                {exactMatch && (
+                  <CheckCircle className="h-4 w-4 text-green-500 inline-block ml-1" />
+                )}
               </CardTitle>
-              <CardDescription className="line-clamp-1 mt-1">
+              <CardDescription className="line-clamp-1 mt-1 flex items-center gap-1">
+                <MapPin className="h-3 w-3 inline-block" />
                 {permit.address}
               </CardDescription>
             </div>
@@ -49,6 +72,15 @@ export const PermitCard = ({ permit, onClick, delay = 0 }: PermitCardProps) => {
             </Badge>
           </div>
         </CardHeader>
+        
+        {exactMatch && (
+          <div className="px-6 py-1 -mt-1 mb-1">
+            <Badge className="bg-green-100 hover:bg-green-200 text-green-800 border-green-200 w-full justify-center">
+              Exact Address Match
+            </Badge>
+          </div>
+        )}
+        
         <CardContent className="pb-3">
           <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
             <div>

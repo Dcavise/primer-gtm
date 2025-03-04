@@ -45,6 +45,7 @@ export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListPr
             permit={permit}
             onClick={() => handlePermitClick(permit)}
             delay={index}
+            searchedAddress={searchedAddress}
           />
         ))}
       </div>
