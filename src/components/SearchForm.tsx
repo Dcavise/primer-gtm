@@ -8,16 +8,20 @@ import { motion } from "framer-motion";
 import { Search, Loader2, Info } from "lucide-react";
 
 interface SearchFormProps {
-  onSearch: (params: {
-    top_right_lat: number;
-    top_right_lng: number;
-    bottom_left_lat: number;
-    bottom_left_lng: number;
-  }, address: string) => void;
+  onSearch: (
+    params: {
+      top_right_lat: number;
+      top_right_lng: number;
+      bottom_left_lat: number;
+      bottom_left_lng: number;
+    } | string,
+    address: string
+  ) => void;
   isSearching: boolean;
+  searchType: "permits" | "zoning";
 }
 
-export const SearchForm = ({ onSearch, isSearching }: SearchFormProps) => {
+export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProps) => {
   const [address, setAddress] = useState("");
   const [searchRadius, setSearchRadius] = useState(650); // Default radius in feet (about 200 meters)
 
@@ -31,13 +35,20 @@ export const SearchForm = ({ onSearch, isSearching }: SearchFormProps) => {
       return;
     }
     
+    // For zoning searches, we pass the address directly
+    if (searchType === "zoning") {
+      onSearch(address.trim(), address.trim());
+      return;
+    }
+    
+    // For permit searches, we use geocoding and bounding box
     const geocodeResult = await geocodeAddress(address.trim());
     
     if (!geocodeResult) return; // Error is already handled in geocodeAddress
     
     const { coordinates } = geocodeResult;
     toast.success(`Address found: ${geocodeResult.address}`, {
-      description: "Searching for permits in this area..."
+      description: `Searching for ${searchType} in this area...`
     });
     
     // Convert feet to meters for the bounding box calculation
@@ -77,24 +88,26 @@ export const SearchForm = ({ onSearch, isSearching }: SearchFormProps) => {
         </div>
         
         <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <label className="text-sm text-white/80 mb-1 block">Search Radius (feet)</label>
-            <Input
-              type="range"
-              min="150"
-              max="1650"
-              step="150"
-              value={searchRadius}
-              onChange={(e) => setSearchRadius(parseInt(e.target.value))}
-              className="w-full accent-white"
-              disabled={isSearching}
-            />
-            <div className="flex justify-between text-xs text-white/70 mt-1">
-              <span>150ft</span>
-              <span>{searchRadius}ft</span>
-              <span>1650ft</span>
+          {searchType === "permits" && (
+            <div className="flex-1">
+              <label className="text-sm text-white/80 mb-1 block">Search Radius (feet)</label>
+              <Input
+                type="range"
+                min="150"
+                max="1650"
+                step="150"
+                value={searchRadius}
+                onChange={(e) => setSearchRadius(parseInt(e.target.value))}
+                className="w-full accent-white"
+                disabled={isSearching}
+              />
+              <div className="flex justify-between text-xs text-white/70 mt-1">
+                <span>150ft</span>
+                <span>{searchRadius}ft</span>
+                <span>1650ft</span>
+              </div>
             </div>
-          </div>
+          )}
           
           <Button 
             type="submit" 
@@ -107,7 +120,7 @@ export const SearchForm = ({ onSearch, isSearching }: SearchFormProps) => {
                 Searching...
               </>
             ) : (
-              "Search Permits"
+              `Search ${searchType === "permits" ? "Permits" : "Zoning"}`
             )}
           </Button>
         </div>

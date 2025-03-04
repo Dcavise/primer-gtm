@@ -1,4 +1,3 @@
-
 import { PermitResponse, PermitSearchParams } from "@/types";
 import { toast } from "sonner";
 
@@ -34,10 +33,9 @@ export async function searchPermits(params: PermitSearchParams): Promise<PermitR
   }
 }
 
-// New function to fetch zoning details
 export async function fetchZoneDetails(params: {
-  lat: number;
-  lng: number;
+  lat?: number;
+  lng?: number;
   address?: string;
   output_fields?: string;
   group_plu?: string;
@@ -48,18 +46,15 @@ export async function fetchZoneDetails(params: {
       api_key: API_KEY,
     });
 
-    // Add lat/lng parameters if provided
     if (params.lat && params.lng) {
       queryParams.append("lat", params.lat.toString());
       queryParams.append("lng", params.lng.toString());
     }
 
-    // Add address parameter if provided
     if (params.address) {
       queryParams.append("address", params.address);
     }
 
-    // Add optional parameters if provided
     if (params.output_fields) {
       queryParams.append("output_fields", params.output_fields);
     }
@@ -72,6 +67,7 @@ export async function fetchZoneDetails(params: {
       queryParams.append("replace_STF", params.replace_STF.toString());
     }
 
+    console.log("Fetching zoning details with params:", queryParams.toString());
     const response = await fetch(`${API_BASE_URL}/zoneDetail?${queryParams}`);
     
     if (!response.ok) {
@@ -80,9 +76,10 @@ export async function fetchZoneDetails(params: {
     }
 
     const data = await response.json();
+    console.log("Zoning API response:", data);
     
-    if (!data.status || !data.data) {
-      throw new Error("Invalid response from zoning API");
+    if (!data || typeof data.success !== 'boolean') {
+      throw new Error("Invalid or incomplete response from zoning API");
     }
     
     return data;
@@ -93,10 +90,8 @@ export async function fetchZoneDetails(params: {
   }
 }
 
-// Test function for Miami address
 export async function testMiamiAddress(): Promise<PermitResponse | null> {
   try {
-    // Updated coordinates for Miami Beach area where permits are known to exist
     const miamiParams: PermitSearchParams = {
       bottom_left_lat: 25.7619,
       bottom_left_lng: -80.19,
@@ -118,13 +113,10 @@ export async function testMiamiAddress(): Promise<PermitResponse | null> {
   }
 }
 
-// Test function for a specific address with exact matches
 export async function testExactAddressMatch(): Promise<{permits: PermitResponse | null, address: string}> {
-  // This address is known to have permit data with exact matches
   const exactMatchAddress = "1601 Washington Ave, Miami Beach, FL 33139";
   
   try {
-    // Coordinates for the specific address (using a wider bounding box)
     const params: PermitSearchParams = {
       bottom_left_lat: 25.7850,
       bottom_left_lng: -80.1350,
@@ -141,7 +133,6 @@ export async function testExactAddressMatch(): Promise<{permits: PermitResponse 
       samplePermits: result.permits.slice(0, 3)
     });
     
-    // Filter permits to find exact matches for the test address
     const exactMatches = result.permits.filter(permit => {
       return permit.address && 
              permit.address.toLowerCase().includes("1601") &&
@@ -150,7 +141,6 @@ export async function testExactAddressMatch(): Promise<{permits: PermitResponse 
     
     console.log(`Found ${exactMatches.length} exact matches for the test address`);
     
-    // Return all permits, but ensure we have at least a few exact matches
     return {
       permits: {
         permits: result.permits,

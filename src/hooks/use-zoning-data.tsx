@@ -28,40 +28,45 @@ export function useZoningData() {
   const [status, setStatus] = useState<SearchStatus>("idle");
   const [searchedAddress, setSearchedAddress] = useState<string>("");
 
-  const fetchZoningData = async (params: any, address: string) => {
+  const fetchZoningData = async (address: string) => {
     setStatus("loading");
     
     try {
-      // Extract the coordinates from the search params
-      const latitude = (params.top_right_lat + params.bottom_left_lat) / 2;
-      const longitude = (params.top_right_lng + params.bottom_left_lng) / 2;
+      console.log("Fetching zoning data for address:", address);
       
-      // Call the zoneDetail API with the point coordinates
+      // Call the zoneDetail API with the address directly
       const zoneDetail = await fetchZoneDetails({
-        lat: latitude,
-        lng: longitude,
-        output_fields: "plu,controls"
+        address: address,
+        output_fields: "plu,controls",
+        replace_STF: true
       });
       
       if (!zoneDetail || !zoneDetail.data) {
         throw new Error("No zoning data found for this location");
       }
       
+      // Get the proper data structure from the response
+      const zoneData = zoneDetail.data.zone_details || zoneDetail.data;
+      const pluData = zoneDetail.data.permitted_land_uses || {};
+      const controlsData = zoneDetail.data.controls || {};
+      
+      console.log("Processed zoning data:", { zoneData, pluData, controlsData });
+      
       // Transform the API response to our ZoningData format
       const formattedData: ZoningData[] = [{
         id: `zone-${Date.now()}`,
-        zone_name: zoneDetail.data.zone_name || "Unknown Zone",
-        zone_code: zoneDetail.data.zone_code || "N/A",
-        zone_type: zoneDetail.data.zone_type || "Unknown",
-        zone_sub_type: zoneDetail.data.zone_sub_type,
-        zone_guide: zoneDetail.data.zone_guide,
-        permitted_uses: zoneDetail.data.as_of_right || [],
-        conditional_uses: zoneDetail.data.conditional_uses || [],
-        prohibited_uses: zoneDetail.data.prohibited || [],
-        description: zoneDetail.data.zone_guide || "No description available",
-        last_updated: zoneDetail.data.last_updated,
-        link: zoneDetail.data.link,
-        controls: zoneDetail.data.controls
+        zone_name: zoneData.zone_name || "Unknown Zone",
+        zone_code: zoneData.zone_code || "N/A",
+        zone_type: zoneData.zone_type || "Unknown",
+        zone_sub_type: zoneData.zone_sub_type,
+        zone_guide: zoneData.zone_guide,
+        permitted_uses: pluData.as_of_right || [],
+        conditional_uses: pluData.conditional_uses || [],
+        prohibited_uses: pluData.prohibited || [],
+        description: zoneData.zone_guide || "No description available",
+        last_updated: zoneDetail.data.meta?.last_updated,
+        link: zoneData.link,
+        controls: controlsData
       }];
       
       setZoningData(formattedData);
