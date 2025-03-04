@@ -1,14 +1,17 @@
+
 import { useState } from "react";
 import { SearchForm } from "@/components/SearchForm";
 import { PermitList } from "@/components/PermitList";
 import { ZoningList } from "@/components/ZoningList";
 import { CensusList } from "@/components/CensusList";
+import { SchoolsList } from "@/components/SchoolsList";
 import { usePermits } from "@/hooks/use-permits";
 import { useZoningData } from "@/hooks/use-zoning-data";
 import { useCensusData } from "@/hooks/use-census-data";
+import { useSchoolsData } from "@/hooks/use-schools-data";
 import { motion } from "framer-motion";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { FileTextIcon, MapIcon, BarChart3Icon } from "lucide-react";
+import { FileTextIcon, MapIcon, BarChart3Icon, School } from "lucide-react";
 import { Permit } from "@/types";
 
 const Index = () => {
@@ -28,6 +31,10 @@ const Index = () => {
   const { censusData, censusResponse, status: censusStatus, searchedAddress: censusAddress, fetchCensusData } = useCensusData();
   const isSearchingCensus = censusStatus === "loading";
 
+  // Schools data
+  const { schools, status: schoolsStatus, searchedAddress: schoolsAddress, fetchSchoolsData } = useSchoolsData();
+  const isSearchingSchools = schoolsStatus === "loading";
+
   // Active tab state
   const [activeTab, setActiveTab] = useState("permits");
 
@@ -39,6 +46,9 @@ const Index = () => {
       await fetchZoningData(address);
     } else if (activeTab === "census") {
       await fetchCensusData(address);
+    } else if (activeTab === "schools") {
+      // For schools, we need both the address and coordinates
+      await fetchSchoolsData(address, params.top_right_lat, params.top_right_lng);
     }
   };
 
@@ -79,6 +89,10 @@ const Index = () => {
                 <BarChart3Icon className="h-4 w-4 mr-2" />
                 Census
               </TabsTrigger>
+              <TabsTrigger value="schools" className="data-[state=active]:bg-white/20 data-[state=active]:text-white text-white/80">
+                <School className="h-4 w-4 mr-2" />
+                Schools
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="permits" className="mt-4">
@@ -101,14 +115,22 @@ const Index = () => {
                 Analyze population, income levels, housing values, and education statistics to better understand the neighborhood profile.
               </p>
             </TabsContent>
+            
+            <TabsContent value="schools" className="mt-4">
+              <p className="text-white/90 mb-8 text-balance max-w-2xl">
+                Find nearby schools within a 5-mile radius of the property. View detailed information about elementary, middle, and high schools
+                including ratings, enrollment, grades served, and contact information to evaluate educational options.
+              </p>
+            </TabsContent>
           </Tabs>
           
           <SearchForm 
             onSearch={handleSearch} 
             isSearching={activeTab === "permits" ? isSearchingPermits : 
                          activeTab === "zoning" ? isSearchingZoning : 
-                         isSearchingCensus}
-            searchType={activeTab as "permits" | "zoning" | "census"}
+                         activeTab === "census" ? isSearchingCensus :
+                         isSearchingSchools}
+            searchType={activeTab as "permits" | "zoning" | "census" | "schools"}
           />
         </div>
       </motion.header>
@@ -174,6 +196,14 @@ const Index = () => {
               onTryMockData={() => useCensusData().loadMockData()}
             />
           </TabsContent>
+          
+          <TabsContent value="schools" className="mt-0 animate-in fade-in-50">
+            <SchoolsList
+              schools={schools}
+              isLoading={isSearchingSchools}
+              searchedAddress={schoolsAddress}
+            />
+          </TabsContent>
         </Tabs>
       </main>
 
@@ -181,7 +211,7 @@ const Index = () => {
         <div className="container mx-auto max-w-5xl">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-sm text-slate-500 dark:text-slate-400">
-              <p>Powered by Zoneomics API & U.S. Census Bureau</p>
+              <p>Powered by Zoneomics API, U.S. Census Bureau & GreatSchools API</p>
             </div>
             <div className="text-sm text-slate-500 dark:text-slate-400">
               <p>© {new Date().getFullYear()} Primer Property Explorer</p>

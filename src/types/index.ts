@@ -1,3 +1,4 @@
+
 export interface Coordinates {
   lat: number;
   lng: number;
@@ -114,3 +115,5 @@ export interface CensusResponse {
   tractsIncluded: number;
   radiusMiles: number;
 }
+
+export * from './schools';
