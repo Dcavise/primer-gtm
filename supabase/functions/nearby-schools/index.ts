@@ -35,7 +35,7 @@ serve(async (req) => {
     }
 
     // Make request to GreatSchools API
-    const apiUrl = `https://gs-api.greatschools.org/nearby-schools?lat=${lat}&lon=${lon}&distance=${radius}&limit=25`;
+    const apiUrl = `https://api.greatschools.org/nearby-schools?lat=${lat}&lon=${lon}&distance=${radius}&limit=25`;
     console.log(`Calling GreatSchools API: ${apiUrl}`);
 
     const response = await fetch(apiUrl, {
