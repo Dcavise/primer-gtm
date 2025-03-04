@@ -26,12 +26,12 @@ const Index = () => {
   // Active tab state
   const [activeTab, setActiveTab] = useState("permits");
 
-  const handleSearch = async (params, address) => {
+  const handleSearch = async (params: any, address: string) => {
     setTestResults(null);
     if (activeTab === "permits") {
       await fetchPermits(params, address);
     } else {
-      await fetchZoningData(params, address);
+      await fetchZoningData(address);
     }
   };
 
@@ -87,7 +87,8 @@ const Index = () => {
           
           <SearchForm 
             onSearch={handleSearch} 
-            isSearching={activeTab === "permits" ? isSearchingPermits : isSearchingZoning} 
+            isSearching={activeTab === "permits" ? isSearchingPermits : isSearchingZoning}
+            searchType={activeTab as "permits" | "zoning"}
           />
         </div>
       </motion.header>

@@ -8,15 +8,7 @@ import { motion } from "framer-motion";
 import { Search, Loader2, Info } from "lucide-react";
 
 interface SearchFormProps {
-  onSearch: (
-    params: {
-      top_right_lat: number;
-      top_right_lng: number;
-      bottom_left_lat: number;
-      bottom_left_lng: number;
-    } | string,
-    address: string
-  ) => void;
+  onSearch: (params: any, address: string) => void;
   isSearching: boolean;
   searchType: "permits" | "zoning";
 }
