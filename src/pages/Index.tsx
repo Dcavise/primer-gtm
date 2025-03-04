@@ -1,13 +1,36 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SearchForm } from "@/components/SearchForm";
 import { PermitList } from "@/components/PermitList";
 import { usePermits } from "@/hooks/use-permits";
 import { motion } from "framer-motion";
+import { testMiamiAddress } from "@/services/api";
+import { Button } from "@/components/ui/button";
+import { Permit } from "@/types";
+import { toast } from "sonner";
 
 const Index = () => {
   const { permits, status, searchedAddress, fetchPermits } = usePermits();
   const isSearching = status === "loading";
+  const [testResults, setTestResults] = useState<{
+    permits: Permit[],
+    address: string
+  } | null>(null);
+
+  const runMiamiTest = async () => {
+    toast.info("Running test with Miami coordinates...");
+    const result = await testMiamiAddress();
+    
+    if (result && result.permits.length > 0) {
+      setTestResults({
+        permits: result.permits,
+        address: "Miami Beach Area (Test)"
+      });
+      toast.success(`Found ${result.permits.length} permits in Miami area`);
+    } else {
+      toast.error("Test failed or no permits found");
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -29,29 +52,38 @@ const Index = () => {
           <p className="text-white/90 mb-8 text-balance max-w-2xl">
             Search for building permits and land use data by address. Discover historical permit information for properties and analyze zoning changes.
           </p>
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <Button 
+              variant="secondary" 
+              onClick={runMiamiTest}
+              className="hover:bg-white/30 bg-white/20 text-white"
+            >
+              Test with Miami Address
+            </Button>
+          </div>
           <SearchForm onSearch={fetchPermits} isSearching={isSearching} />
         </div>
       </motion.header>
 
       <main className="flex-1 container mx-auto px-4 md:px-8 py-8 max-w-5xl">
-        {searchedAddress && (
+        {(searchedAddress || (testResults && testResults.address)) && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.5 }}
           >
             <h2 className="text-lg md:text-xl font-medium mb-1">Results for</h2>
-            <p className="text-muted-foreground">{searchedAddress}</p>
+            <p className="text-muted-foreground">{searchedAddress || testResults?.address}</p>
           </motion.div>
         )}
         
         <PermitList 
-          permits={permits} 
-          isLoading={isSearching} 
-          searchedAddress={searchedAddress}
+          permits={testResults ? testResults.permits : permits} 
+          isLoading={isSearching && !testResults} 
+          searchedAddress={searchedAddress || (testResults ? testResults.address : "")}
         />
         
-        {!searchedAddress && !isSearching && (
+        {!searchedAddress && !testResults && !isSearching && (
           <motion.div 
             className="py-16 text-center"
             initial={{ opacity: 0 }}

@@ -33,3 +33,28 @@ export async function searchPermits(params: PermitSearchParams): Promise<PermitR
     throw error;
   }
 }
+
+// Test function for Miami address
+export async function testMiamiAddress(): Promise<PermitResponse | null> {
+  try {
+    // Coordinates for Miami Beach area
+    const miamiParams: PermitSearchParams = {
+      bottom_left_lat: 25.7617,
+      bottom_left_lng: -80.1918,
+      top_right_lat: 25.7917,
+      top_right_lng: -80.1318
+    };
+    
+    console.log("Testing Miami address with coordinates:", miamiParams);
+    const result = await searchPermits(miamiParams);
+    console.log("API Test Result:", {
+      total: result.total,
+      samplePermits: result.permits.slice(0, 3)
+    });
+    
+    return result;
+  } catch (error) {
+    console.error("Miami test failed:", error);
+    return null;
+  }
+}
