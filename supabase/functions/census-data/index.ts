@@ -71,7 +71,64 @@ async function findCensusTractsInRadius(
   radiusMiles: number
 ): Promise<any[]> {
   try {
-    // Determine which state/county the center point is in
+    // For Chicago addresses - special handling
+    if (isChicagoArea(center)) {
+      console.log("Chicago area detected, using direct Cook County lookup");
+      const stateFips = "17"; // Illinois
+      const countyFips = "031"; // Cook County (Chicago)
+      
+      // Get tracts for Cook County
+      const censusData = await fetchTractsForStateCounty(stateFips, countyFips);
+      
+      if (!censusData || censusData.length < 2) {
+        console.error("No census data returned for Cook County");
+        return [];
+      }
+      
+      const headers = censusData[0];
+      const rows = censusData.slice(1);
+      
+      // Create a radius circle
+      const centerPoint = turf.point([center.lng, center.lat]);
+      const circle = turf.circle(centerPoint.geometry.coordinates, radiusMiles, { units: 'miles' });
+      
+      // Find lat/lon indices
+      const latIndex = headers.indexOf('INTPTLAT');
+      const lonIndex = headers.indexOf('INTPTLON');
+      
+      if (latIndex === -1 || lonIndex === -1) {
+        console.error("Latitude/longitude not found in census data response");
+        console.log("Headers available:", headers);
+        return [];
+      }
+      
+      // Filter tracts within the radius
+      const tractsInRadius = [];
+      
+      for (const row of rows) {
+        const tractLat = parseFloat(row[latIndex]);
+        const tractLon = parseFloat(row[lonIndex]);
+        
+        if (isNaN(tractLat) || isNaN(tractLon)) continue;
+        
+        const tractPoint = turf.point([tractLon, tractLat]);
+        const distance = turf.distance(centerPoint, tractPoint, { units: 'miles' });
+        
+        if (distance <= radiusMiles) {
+          tractsInRadius.push({
+            state: stateFips,
+            county: countyFips,
+            tract: row[headers.indexOf('tract')],
+            distance
+          });
+        }
+      }
+      
+      console.log(`Found ${tractsInRadius.length} census tracts within ${radiusMiles} miles of Chicago location`);
+      return tractsInRadius;
+    }
+    
+    // Regular flow for non-Chicago addresses
     const containingArea = await findContainingTract(center);
     
     if (!containingArea) {
@@ -167,11 +224,20 @@ async function findCensusTractsInRadius(
   }
 }
 
+// Check if coordinates are in Chicago area
+function isChicagoArea(coords: { lat: number, lng: number }): boolean {
+  // Chicago rough boundaries
+  return (
+    coords.lat >= 41.6 && coords.lat <= 42.1 && 
+    coords.lng >= -88.0 && coords.lng <= -87.5
+  );
+}
+
 // Find the Census tract containing a specific point (lat/lng)
 async function findContainingTract(center: { lat: number, lng: number }): Promise<{stateFips: string, countyFips: string, tract: string} | null> {
   try {
     // For Illinois (17) / Cook County (031) - Chicago area
-    if (center.lat > 41.6 && center.lat < 42.1 && center.lng > -88 && center.lng < -87.5) {
+    if (isChicagoArea(center)) {
       return { stateFips: "17", countyFips: "031", tract: "010100" };
     }
     
@@ -186,7 +252,9 @@ async function findContainingTract(center: { lat: number, lng: number }): Promis
       return { stateFips: "06", countyFips: "037", tract: "010100" };
     }
     
-    // Simple geographic lookup based on latitude/longitude bounds
+    // Use American Community Survey state-based geocoding as fallback
+    // First determine which state the center point is in
+    // We'll use a simple geographic lookup based on latitude/longitude bounds
     let stateFips = "";
     
     // Simple cases - this is an approximation
@@ -215,6 +283,7 @@ async function findContainingTract(center: { lat: number, lng: number }): Promis
     }
     
     // For simplicity, we'll return a default county and tract for the identified state
+    // In a real implementation, you would query for the specific county and tract
     const defaultCountyFips = "001"; // Usually the first county in a state
     
     return { stateFips, countyFips: defaultCountyFips, tract: "010100" };
@@ -232,14 +301,17 @@ async function fetchTractsForStateCounty(stateFips: string, countyFips: string):
       throw new Error("Census API key not found in environment variables");
     }
     
+    console.log(`Fetching census data for state ${stateFips} and county ${countyFips}`);
+    
     const censusUrl = `https://api.census.gov/data/2022/acs/acs5?get=NAME,B01001_001E,B01002_001E,B19013_001E,B23025_005E,B25077_001E,B25010_001E,B15003_022E,B15003_025E,INTPTLAT,INTPTLON&for=tract:*&in=state:${stateFips}&in=county:${countyFips}&key=${CENSUS_API_KEY}`;
     
     const response = await fetch(censusUrl);
     if (!response.ok) {
-      throw new Error(`Census API error: ${response.status}`);
+      throw new Error(`Census API error: ${response.status} - ${await response.text()}`);
     }
     
     const data = await response.json();
+    console.log(`Retrieved ${data.length - 1} census tracts for state ${stateFips}, county ${countyFips}`);
     return data;
   } catch (error) {
     console.error("Error fetching census tracts:", error);
@@ -412,15 +484,22 @@ serve(async (req) => {
       
       const url = `https://api.census.gov/data/2022/acs/acs5?get=NAME,B01001_001E,B01002_001E,B19013_001E,B23025_005E,B25077_001E,B25010_001E,B15003_022E,B15003_025E&for=tract:${tractIds}&in=state:${state}&in=county:${county}&key=${CENSUS_API_KEY}`;
       
-      const response = await fetch(url);
+      console.log(`Fetching demographic data for ${tracts.length} tracts in state ${state}, county ${county}`);
       
-      if (!response.ok) {
-        console.error(`Census API error for ${key}: ${response.status}`);
-        continue;
+      try {
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          console.error(`Census API error for ${key}: ${response.status} - ${await response.text()}`);
+          continue;
+        }
+        
+        const data = await response.json();
+        allData.push(...data.slice(1)); // Skip header row
+        console.log(`Retrieved demographic data for ${data.length - 1} tracts in state ${state}, county ${county}`);
+      } catch (error) {
+        console.error(`Error fetching data for ${key}:`, error);
       }
-      
-      const data = await response.json();
-      allData.push(...data.slice(1)); // Skip header row
     }
     
     if (allData.length === 0) {

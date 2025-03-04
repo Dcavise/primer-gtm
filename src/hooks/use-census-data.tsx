@@ -41,7 +41,10 @@ export function useCensusData() {
       const { lat, lng } = geocodeResult.coordinates;
       console.log(`Fetching census data for coordinates: ${lat}, ${lng}`);
       
-      // Call the Supabase Edge Function
+      // Call the Supabase Edge Function with debugging timestamp
+      const requestTime = new Date().toISOString();
+      console.log(`Making request to census-data edge function at ${requestTime}`);
+      
       const { data: response, error } = await supabase.functions.invoke('census-data', {
         body: { lat, lng, address: formattedAddress }
       });
