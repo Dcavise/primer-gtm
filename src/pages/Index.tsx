@@ -40,7 +40,7 @@ const Index = () => {
   // Consolidated state
   const [userAddress, setUserAddress] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [activeSection, setActiveSection] = useState<"permits" | "zoning" | "census" | "schools">("permits");
+  const [activeSection, setActiveSection] = useState<"permits" | "zoning" | "census" | "schools" | "property-research">("permits");
   
   // Determine if any data is loading
   const isAnyDataLoading = isSearchingPermits || isSearchingZoning || isSearchingCensus || isSearchingSchools;

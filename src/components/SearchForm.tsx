@@ -10,7 +10,7 @@ import { Search, Loader2, Info } from "lucide-react";
 interface SearchFormProps {
   onSearch: (params: any, address: string) => void;
   isSearching: boolean;
-  searchType: "permits" | "zoning" | "census" | "schools";
+  searchType: "permits" | "zoning" | "census" | "schools" | "property-research";
 }
 
 export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProps) => {
@@ -27,23 +27,38 @@ export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProp
       return;
     }
     
-    // For zoning, census, and schools searches, we pass the address directly
-    if (searchType === "zoning" || searchType === "census" || searchType === "schools") {
+    // For zoning, census, schools, and property-research searches, we use geocoding
+    if (searchType === "zoning" || searchType === "census" || searchType === "schools" || searchType === "property-research") {
       const geocodeResult = await geocodeAddress(address.trim());
       
       if (!geocodeResult) return; // Error is already handled in geocodeAddress
       
       const { coordinates } = geocodeResult;
       toast.success(`Address found: ${geocodeResult.address}`, {
-        description: `Searching for ${searchType} in this area...`
+        description: `Searching for ${searchType === "property-research" ? "property data" : searchType} in this area...`
       });
       
-      // For schools tab, we need both the address and coordinates
-      if (searchType === "schools") {
-        onSearch({
-          top_right_lat: coordinates.lat,
-          top_right_lng: coordinates.lng
-        }, geocodeResult.address);
+      // For property-research and schools tab, we need both the address and coordinates
+      if (searchType === "schools" || searchType === "property-research") {
+        // For property research, we need to create a bounding box for the permit search
+        if (searchType === "property-research") {
+          // Convert feet to meters for the bounding box calculation
+          const radiusInMeters = searchRadius * 0.3048;
+          const { bottomLeft, topRight } = createBoundingBox(coordinates, radiusInMeters);
+          
+          onSearch({
+            bottom_left_lat: bottomLeft.lat,
+            bottom_left_lng: bottomLeft.lng,
+            top_right_lat: topRight.lat,
+            top_right_lng: topRight.lng
+          }, geocodeResult.address);
+        } else {
+          // Just for schools
+          onSearch({
+            top_right_lat: coordinates.lat,
+            top_right_lng: coordinates.lng
+          }, geocodeResult.address);
+        }
       } else {
         // For zoning and census
         onSearch(geocodeResult.address, geocodeResult.address);
@@ -99,12 +114,14 @@ export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProp
               ? "Census data shows demographic information within a 5-mile radius of the address."
               : searchType === "schools"
               ? "Find schools within a 5-mile radius of the property including ratings, contact info, and more."
+              : searchType === "property-research"
+              ? "Enter an address to instantly retrieve permits, zoning, census, and school data for this location."
               : "For best results, include the full address with state and ZIP code (e.g., \"831 N California Ave, Chicago, IL 60622\")"}
           </p>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-4">
-          {searchType === "permits" && (
+          {(searchType === "permits" || searchType === "property-research") && (
             <div className="flex-1">
               <label className="text-sm text-white/80 mb-1 block">Search Radius (feet)</label>
               <Input
@@ -136,9 +153,11 @@ export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProp
                 Searching...
               </>
             ) : (
-              `Search ${searchType === "permits" ? "Permits" : 
-                     searchType === "zoning" ? "Zoning" : 
-                     searchType === "census" ? "Census Data" : "Schools"}`
+              searchType === "property-research" ? 
+                "Research Property" : 
+                `Search ${searchType === "permits" ? "Permits" : 
+                       searchType === "zoning" ? "Zoning" : 
+                       searchType === "census" ? "Census Data" : "Schools"}`
             )}
           </Button>
         </div>
