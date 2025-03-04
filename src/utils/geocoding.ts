@@ -1,3 +1,4 @@
+
 import { AddressSearchResult, Coordinates } from "@/types";
 import { toast } from "sonner";
 
@@ -84,7 +85,8 @@ async function geocodeWithGoogleMaps(address: string): Promise<AddressSearchResu
     const data = await response.json();
     
     if (data.status !== "OK" || !data.results || data.results.length === 0) {
-      toast.error("Address not found. Please try a different address.");
+      // This is a true geocoding error - address couldn't be found
+      toast.error("Address not found. Please try a different address or check the format.");
       return null;
     }
     

@@ -36,6 +36,10 @@ export const SearchForm = ({ onSearch, isSearching }: SearchFormProps) => {
     if (!geocodeResult) return; // Error is already handled in geocodeAddress
     
     const { coordinates } = geocodeResult;
+    toast.success(`Address found: ${geocodeResult.address}`, {
+      description: "Searching for permits in this area..."
+    });
+    
     // Convert feet to meters for the bounding box calculation
     const radiusInMeters = searchRadius * 0.3048;
     const { bottomLeft, topRight } = createBoundingBox(coordinates, radiusInMeters);
