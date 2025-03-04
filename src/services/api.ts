@@ -24,8 +24,8 @@ export async function searchPermits(params: PermitSearchParams): Promise<PermitR
 
     const data = await response.json();
     return {
-      permits: data.features || [],
-      total: data.features?.length || 0
+      permits: data.data || [],
+      total: data.data?.length || 0
     };
   } catch (error) {
     console.error("Error fetching permits:", error);
@@ -37,12 +37,12 @@ export async function searchPermits(params: PermitSearchParams): Promise<PermitR
 // Test function for Miami address
 export async function testMiamiAddress(): Promise<PermitResponse | null> {
   try {
-    // Coordinates for Miami Beach area
+    // Updated coordinates for Miami Beach area where permits are known to exist
     const miamiParams: PermitSearchParams = {
-      bottom_left_lat: 25.7617,
-      bottom_left_lng: -80.1918,
-      top_right_lat: 25.7917,
-      top_right_lng: -80.1318
+      bottom_left_lat: 25.7619,
+      bottom_left_lng: -80.19,
+      top_right_lat: 25.7903,
+      top_right_lng: -80.13
     };
     
     console.log("Testing Miami address with coordinates:", miamiParams);
