@@ -28,14 +28,25 @@ export function usePropertySummary() {
     setSummary(null);
     
     console.log("Generating property summary for:", address);
+    console.log("Data available for summary:", {
+      permits: permits?.length || 0,
+      zoningData: zoningData?.length || 0,
+      censusData: censusData ? "Yes" : "No",
+      schools: schools?.length || 0
+    });
     
     try {
+      // Check for minimum required data
+      if (!address) {
+        throw new Error("No address provided for summary generation");
+      }
+      
       const { data, error } = await supabase.functions.invoke('generate-property-summary', {
         body: { 
-          permitData: permits,
-          zoningData: zoningData,
-          censusData: censusData,
-          schoolsData: schools,
+          permitData: permits || [],
+          zoningData: zoningData || [],
+          censusData: censusData || null,
+          schoolsData: schools || [],
           address: address
         }
       });

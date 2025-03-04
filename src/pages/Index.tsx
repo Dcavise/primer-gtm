@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { SearchForm } from "@/components/SearchForm";
 import { PermitList } from "@/components/PermitList";
@@ -58,6 +57,65 @@ const Index = () => {
                           activeSection === "summary" ? summaryAddress || userAddress :
                           schoolsAddress || userAddress;
 
+  // Keep track of API call completion
+  const [apiCallsStatus, setApiCallsStatus] = useState({
+    permits: false,
+    zoning: false,
+    census: false,
+    schools: false
+  });
+
+  // Check if all API calls are complete and data is ready for summary generation
+  useEffect(() => {
+    const allComplete = apiCallsStatus.permits && 
+                        apiCallsStatus.zoning && 
+                        apiCallsStatus.census && 
+                        apiCallsStatus.schools;
+
+    // Generate summary only when all data is fetched AND we have an address
+    if (allComplete && userAddress && !summary && summaryStatus !== "loading") {
+      console.log("All API calls complete, generating summary for:", userAddress);
+      generateSummary(userAddress, permits, zoningData, censusData, schools);
+    }
+  }, [apiCallsStatus, userAddress, permits, zoningData, censusData, schools, summary, summaryStatus, generateSummary]);
+
+  // Reset API call status when starting a new search
+  useEffect(() => {
+    if (isSearching) {
+      setApiCallsStatus({
+        permits: false,
+        zoning: false,
+        census: false,
+        schools: false
+      });
+    }
+  }, [isSearching]);
+
+  // Update API call status when individual data fetches complete
+  useEffect(() => {
+    if (permitStatus === "success" || permitStatus === "error") {
+      setApiCallsStatus(prev => ({ ...prev, permits: true }));
+    }
+  }, [permitStatus]);
+
+  useEffect(() => {
+    if (zoningStatus === "success" || zoningStatus === "error") {
+      setApiCallsStatus(prev => ({ ...prev, zoning: true }));
+    }
+  }, [zoningStatus]);
+
+  useEffect(() => {
+    if (censusStatus === "success" || censusStatus === "error") {
+      setApiCallsStatus(prev => ({ ...prev, census: true }));
+    }
+  }, [censusStatus]);
+
+  useEffect(() => {
+    if (schoolsStatus === "success" || schoolsStatus === "error") {
+      setApiCallsStatus(prev => ({ ...prev, schools: true }));
+    }
+  }, [schoolsStatus]);
+
   const handleSearchAllData = async (params: any, address: string) => {
     setUserAddress(address);
     setIsSearching(true);
@@ -79,8 +137,8 @@ const Index = () => {
       // Set active section to summary first
       setActiveSection("summary");
       
-      // Generate summary after all data is fetched
-      generateSummary(address, permits, zoningData, censusData, schools);
+      // Summary generation is now handled by the useEffect above
+      // after all API calls complete
       
       toast.success("Property research complete", {
         description: "All available data has been retrieved for this location."
