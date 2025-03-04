@@ -1,3 +1,4 @@
+
 import { getApiKey } from "@/services/api-config";
 import { toast } from "sonner";
 
@@ -22,7 +23,7 @@ export async function geocodeAddress(address: string): Promise<GeocodingResult |
     const response = await fetch(url);
     const data = await response.json();
 
-    if (data.results && data.results.length > 0) {
+    if (data.status === "OK" && data.results && data.results.length > 0) {
       const result = data.results[0];
       const formattedAddress = result.formatted_address;
       const coordinates: Coordinates = {
@@ -32,6 +33,7 @@ export async function geocodeAddress(address: string): Promise<GeocodingResult |
 
       return { address: formattedAddress, coordinates };
     } else {
+      console.error("Geocoding failed:", data.status, data);
       toast.error("Could not find this address", {
         description: "Please check the address and try again"
       });

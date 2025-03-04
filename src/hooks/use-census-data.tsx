@@ -3,7 +3,6 @@ import { useState } from "react";
 import { CensusData, CensusResponse, SearchStatus } from "@/types";
 import { toast } from "sonner";
 import { getMockCensusData } from "@/services/census-api";
-import { geocodeAddress } from "@/utils/geocoding";
 import { supabase } from "@/integrations/supabase/client";
 
 export function useCensusData() {
@@ -19,34 +18,13 @@ export function useCensusData() {
     console.log("Fetching census data for address:", address);
     
     try {
-      // First geocode the address to get coordinates
-      const geocodeResult = await geocodeAddress(address.trim());
-      
-      if (!geocodeResult) {
-        console.error("Geocoding failed for address:", address);
-        setStatus("error");
-        toast.error("Could not find location coordinates", {
-          description: "Please check the address and try again"
-        });
-        return;
-      }
-      
-      console.log("Geocode result:", geocodeResult);
-      
-      // Use the formatted address from geocoding
-      const formattedAddress = geocodeResult.address;
-      setSearchedAddress(formattedAddress);
-      
-      // Now fetch census data using the coordinates
-      const { lat, lng } = geocodeResult.coordinates;
-      console.log(`Fetching census data for coordinates: ${lat}, ${lng}`);
-      
-      // Call the Supabase Edge Function with debugging timestamp
+      // Call the Supabase Edge Function with the address directly
+      // The edge function will handle geocoding internally
       const requestTime = new Date().toISOString();
       console.log(`Making request to census-data edge function at ${requestTime}`);
       
       const { data: response, error } = await supabase.functions.invoke('census-data', {
-        body: { lat, lng, address: formattedAddress }
+        body: { address: address.trim() }
       });
       
       if (error) {
@@ -61,7 +39,7 @@ export function useCensusData() {
       }
       
       if (!response || !response.data) {
-        console.error("No census data returned for coordinates:", { lat, lng });
+        console.error("No census data returned for address:", address);
         setStatus("error");
         setCensusData(null);
         setCensusResponse(null);
@@ -80,6 +58,7 @@ export function useCensusData() {
       });
       setStatus("success");
       setIsMockData(response.isMockData);
+      setSearchedAddress(response.searchedAddress || address);
       
       // Show different toast based on whether it's mock data and tracts found
       if (response.tractsIncluded === 0 || response.isMockData) {
