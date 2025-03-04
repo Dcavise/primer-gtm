@@ -4,7 +4,7 @@ import { formatDate } from "@/utils/format";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { MapPin, CheckCircle } from "lucide-react";
+import { MapPin, CheckCircle, Calendar } from "lucide-react";
 
 interface PermitCardProps {
   permit: Permit;
@@ -69,9 +69,10 @@ export const PermitCard = ({ permit, onClick, delay = 0, searchedAddress }: Perm
             </div>
             <Badge 
               variant="secondary"
-              className={`${getStatusColor(permit.status || "Unknown")} text-white text-xs whitespace-nowrap ml-2`}
+              className="bg-zoneomics-blue text-white text-xs whitespace-nowrap ml-2 flex items-center gap-1"
             >
-              {permit.status || "Unknown Status"}
+              <Calendar className="h-3 w-3" />
+              {permit.date ? formatDate(permit.date) : "Unknown"}
             </Badge>
           </div>
         </CardHeader>
@@ -83,13 +84,6 @@ export const PermitCard = ({ permit, onClick, delay = 0, searchedAddress }: Perm
             </Badge>
           </div>
         )}
-        
-        <CardContent className="py-3">
-          <div className="text-sm">
-            <span className="text-muted-foreground">Date: </span> 
-            <span className="font-medium">{permit.date ? formatDate(permit.date) : "Unknown"}</span>
-          </div>
-        </CardContent>
         
         <CardFooter className="pt-0 pb-3 text-xs text-muted-foreground">
           <div className="flex items-center">
