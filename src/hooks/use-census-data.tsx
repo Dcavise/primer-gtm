@@ -2,8 +2,9 @@
 import { useState } from "react";
 import { CensusData, CensusResponse, SearchStatus } from "@/types";
 import { toast } from "sonner";
-import { fetchCensusData, getMockCensusData } from "@/services/census-api";
+import { getMockCensusData } from "@/services/census-api";
 import { geocodeAddress } from "@/utils/geocoding";
+import { supabase } from "@/integrations/supabase/client";
 
 export function useCensusData() {
   const [censusData, setCensusData] = useState<CensusData | null>(null);
@@ -40,9 +41,23 @@ export function useCensusData() {
       const { lat, lng } = geocodeResult.coordinates;
       console.log(`Fetching census data for coordinates: ${lat}, ${lng}`);
       
-      const response = await fetchCensusData({ lat, lng });
+      // Call the Supabase Edge Function
+      const { data: response, error } = await supabase.functions.invoke('census-data', {
+        body: { lat, lng, address: formattedAddress }
+      });
       
-      if (!response) {
+      if (error) {
+        console.error("Error calling census-data function:", error);
+        setStatus("error");
+        setCensusData(null);
+        setCensusResponse(null);
+        toast.error("Census data not available", {
+          description: "We couldn't find census data for this location."
+        });
+        return;
+      }
+      
+      if (!response || !response.data) {
         console.error("No census data returned for coordinates:", { lat, lng });
         setStatus("error");
         setCensusData(null);
@@ -55,12 +70,16 @@ export function useCensusData() {
       
       console.log("Census data received:", response);
       setCensusData(response.data);
-      setCensusResponse(response);
+      setCensusResponse({
+        data: response.data,
+        tractsIncluded: response.tractsIncluded,
+        radiusMiles: response.radiusMiles
+      });
       setStatus("success");
+      setIsMockData(response.isMockData);
       
       // Show different toast based on whether it's mock data and tracts found
-      if (response.tractsIncluded === 0) {
-        setIsMockData(true);
+      if (response.tractsIncluded === 0 || response.isMockData) {
         toast.info("Using demo census data", {
           description: "No census tracts found within 5 miles. Showing sample data for demonstration."
         });
