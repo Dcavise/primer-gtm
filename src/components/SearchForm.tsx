@@ -10,7 +10,7 @@ import { Search, Loader2, Info } from "lucide-react";
 interface SearchFormProps {
   onSearch: (params: any, address: string) => void;
   isSearching: boolean;
-  searchType: "permits" | "zoning";
+  searchType: "permits" | "zoning" | "census";
 }
 
 export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProps) => {
@@ -27,8 +27,8 @@ export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProp
       return;
     }
     
-    // For zoning searches, we pass the address directly
-    if (searchType === "zoning") {
+    // For zoning and census searches, we pass the address directly
+    if (searchType === "zoning" || searchType === "census") {
       onSearch(address.trim(), address.trim());
       return;
     }
@@ -112,7 +112,8 @@ export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProp
                 Searching...
               </>
             ) : (
-              `Search ${searchType === "permits" ? "Permits" : "Zoning"}`
+              `Search ${searchType === "permits" ? "Permits" : 
+                     searchType === "zoning" ? "Zoning" : "Census Data"}`
             )}
           </Button>
         </div>

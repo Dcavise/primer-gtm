@@ -3,11 +3,13 @@ import { useState } from "react";
 import { SearchForm } from "@/components/SearchForm";
 import { PermitList } from "@/components/PermitList";
 import { ZoningList } from "@/components/ZoningList";
+import { CensusList } from "@/components/CensusList";
 import { usePermits } from "@/hooks/use-permits";
 import { useZoningData } from "@/hooks/use-zoning-data";
+import { useCensusData } from "@/hooks/use-census-data";
 import { motion } from "framer-motion";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { FileTextIcon, MapIcon } from "lucide-react";
+import { FileTextIcon, MapIcon, BarChart3Icon } from "lucide-react";
 import { Permit } from "@/types";
 
 const Index = () => {
@@ -23,6 +25,10 @@ const Index = () => {
   const { zoningData, status: zoningStatus, searchedAddress: zoningAddress, fetchZoningData } = useZoningData();
   const isSearchingZoning = zoningStatus === "loading";
 
+  // Census data
+  const { censusData, status: censusStatus, searchedAddress: censusAddress, fetchCensusData } = useCensusData();
+  const isSearchingCensus = censusStatus === "loading";
+
   // Active tab state
   const [activeTab, setActiveTab] = useState("permits");
 
@@ -30,8 +36,10 @@ const Index = () => {
     setTestResults(null);
     if (activeTab === "permits") {
       await fetchPermits(params, address);
-    } else {
+    } else if (activeTab === "zoning") {
       await fetchZoningData(address);
+    } else if (activeTab === "census") {
+      await fetchCensusData(address);
     }
   };
 
@@ -68,6 +76,10 @@ const Index = () => {
                 <MapIcon className="h-4 w-4 mr-2" />
                 Zoning
               </TabsTrigger>
+              <TabsTrigger value="census" className="data-[state=active]:bg-white/20 data-[state=active]:text-white text-white/80">
+                <BarChart3Icon className="h-4 w-4 mr-2" />
+                Census
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="permits" className="mt-4">
@@ -83,12 +95,21 @@ const Index = () => {
                 building restrictions, and development limitations to make informed investment decisions.
               </p>
             </TabsContent>
+            
+            <TabsContent value="census" className="mt-4">
+              <p className="text-white/90 mb-8 text-balance max-w-2xl">
+                Explore demographic and economic characteristics of the property's location using U.S. Census data. Analyze population, 
+                income levels, housing values, and education statistics to better understand the neighborhood profile.
+              </p>
+            </TabsContent>
           </Tabs>
           
           <SearchForm 
             onSearch={handleSearch} 
-            isSearching={activeTab === "permits" ? isSearchingPermits : isSearchingZoning}
-            searchType={activeTab as "permits" | "zoning"}
+            isSearching={activeTab === "permits" ? isSearchingPermits : 
+                         activeTab === "zoning" ? isSearchingZoning : 
+                         isSearchingCensus}
+            searchType={activeTab as "permits" | "zoning" | "census"}
           />
         </div>
       </motion.header>
@@ -143,6 +164,14 @@ const Index = () => {
               searchedAddress={zoningAddress}
             />
           </TabsContent>
+          
+          <TabsContent value="census" className="mt-0 animate-in fade-in-50">
+            <CensusList
+              censusData={censusData}
+              isLoading={isSearchingCensus}
+              searchedAddress={censusAddress}
+            />
+          </TabsContent>
         </Tabs>
       </main>
 
@@ -150,7 +179,7 @@ const Index = () => {
         <div className="container mx-auto max-w-5xl">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-sm text-slate-500 dark:text-slate-400">
-              <p>Powered by Zoneomics API</p>
+              <p>Powered by Zoneomics API & U.S. Census Bureau</p>
             </div>
             <div className="text-sm text-slate-500 dark:text-slate-400">
               <p>© {new Date().getFullYear()} Primer Property Explorer</p>
