@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { Permit } from "@/types";
 import { PermitCard } from "./PermitCard";
@@ -6,7 +5,9 @@ import { PermitDetail } from "./PermitDetail";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { LoadingState } from "./LoadingState";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building, FileText, Wrench, CreditCard, Map, CheckCircle, MapPin } from "lucide-react";
+import { Building, FileText, Wrench, CreditCard, Map, CheckCircle, MapPin, ArrowUpDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { formatDate } from "@/utils/format";
 
 interface PermitListProps {
   permits: Permit[];
@@ -37,17 +38,21 @@ export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListPr
   const [selectedPermit, setSelectedPermit] = useState<Permit | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [activeType, setActiveType] = useState("All");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
   const handlePermitClick = (permit: Permit) => {
     setSelectedPermit(permit);
     setIsDetailOpen(true);
   };
 
+  const toggleSortDirection = () => {
+    setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+  };
+
   // Function to check if the permit address is an exact match to the searched address
   const isExactMatch = (permit: Permit) => {
     if (!searchedAddress || !permit.address) return false;
     
-    // Normalize both addresses (remove extra spaces, make lowercase)
     const normalizedPermitAddress = permit.address.toLowerCase().trim();
     const normalizedSearchAddress = searchedAddress.toLowerCase().trim();
     
@@ -73,10 +78,9 @@ export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListPr
   // Function to organize permits by their project_type
   const categorizePermitsByType = (permits: Permit[]) => {
     const types: Record<string, Permit[]> = {
-      "All": permits, // Always include an "All" category with all permits
+      "All": permits,
     };
     
-    // Create a set of unique permit types
     const uniqueTypes = new Set<string>();
     permits.forEach(permit => {
       if (permit.project_type) {
@@ -84,7 +88,6 @@ export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListPr
       }
     });
     
-    // Add each unique type to the types object with filtered permits
     uniqueTypes.forEach(type => {
       types[type] = permits.filter(permit => permit.project_type === type);
     });
@@ -92,11 +95,30 @@ export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListPr
     return types;
   };
 
+  // Apply sorting to permits
+  const sortPermits = (permits: Permit[]) => {
+    return [...permits].sort((a, b) => {
+      const dateA = a.date ? new Date(a.date).getTime() : 0;
+      const dateB = b.date ? new Date(b.date).getTime() : 0;
+      
+      return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
+    });
+  };
+
   // Memoize the categorized permits to avoid recalculation on each render
   const permitsByType = useMemo(() => categorizePermitsByType(otherPermits), [otherPermits]);
   
-  // Get active permits based on selected type
-  const activePermits = permitsByType[activeType] || [];
+  // Get active permits based on selected type, with sorting applied
+  const activePermits = useMemo(() => 
+    sortPermits(permitsByType[activeType] || []), 
+    [permitsByType, activeType, sortDirection]
+  );
+
+  // Apply sorting to exact matches as well
+  const sortedExactMatches = useMemo(() => 
+    sortPermits(exactMatches), 
+    [exactMatches, sortDirection]
+  );
 
   // Count permits in each type
   const getTypeCount = (type: string) => {
@@ -122,15 +144,26 @@ export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListPr
     <>
       {exactMatches.length > 0 && (
         <div className="mt-6 mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <MapPin className="h-5 w-5 text-green-500" />
-            <h2 className="text-xl font-medium">Exact Address Matches</h2>
-            <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">
-              {exactMatches.length}
-            </span>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-green-500" />
+              <h2 className="text-xl font-medium">Exact Address Matches</h2>
+              <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                {exactMatches.length}
+              </span>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={toggleSortDirection}
+              className="flex items-center gap-1"
+            >
+              <ArrowUpDown className="h-4 w-4" />
+              {sortDirection === "desc" ? "Newest first" : "Oldest first"}
+            </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {exactMatches.map((permit, index) => (
+            {sortedExactMatches.map((permit, index) => (
               <PermitCard
                 key={`exact-${permit.id || index}`}
                 permit={permit}
@@ -145,12 +178,23 @@ export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListPr
 
       {otherPermits.length > 0 && (
         <div className={exactMatches.length > 0 ? "mt-10" : "mt-6"}>
-          <div className="flex items-center gap-2 mb-4">
-            <Map className="h-5 w-5 text-blue-500" />
-            <h2 className="text-xl font-medium">Nearby Permits</h2>
-            <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
-              {otherPermits.length}
-            </span>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Map className="h-5 w-5 text-blue-500" />
+              <h2 className="text-xl font-medium">Nearby Permits</h2>
+              <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                {otherPermits.length}
+              </span>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={toggleSortDirection}
+              className="flex items-center gap-1"
+            >
+              <ArrowUpDown className="h-4 w-4" />
+              {sortDirection === "desc" ? "Newest first" : "Oldest first"}
+            </Button>
           </div>
           
           <Tabs 

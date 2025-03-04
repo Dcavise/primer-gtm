@@ -14,16 +14,24 @@ export function usePermits() {
     
     try {
       const response = await searchPermits(params);
-      setPermits(response.permits);
+      
+      // Process permits to ensure all have properly formatted dates
+      const processedPermits = response.permits.map(permit => ({
+        ...permit,
+        // Ensure date exists and is valid
+        date: permit.date || permit.created_date || permit.last_updated_date || new Date().toISOString()
+      }));
+      
+      setPermits(processedPermits);
       setSearchedAddress(address);
       setStatus("success");
       
-      if (response.permits.length === 0) {
+      if (processedPermits.length === 0) {
         toast.info("No permits found for this location.", {
           description: "The address was found, but there are no permits in our database for this precise location or nearby area."
         });
       } else {
-        toast.success(`Found ${response.permits.length} permits`, {
+        toast.success(`Found ${processedPermits.length} permits`, {
           description: "Showing permit results for the specified location and nearby area."
         });
       }
