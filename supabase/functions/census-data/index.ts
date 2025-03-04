@@ -117,70 +117,6 @@ async function findCensusTractsInRadius(
   radiusMiles: number
 ): Promise<any[]> {
   try {
-    // For Chicago addresses - special handling
-    if (isChicagoArea(center)) {
-      console.log("Chicago area detected, using direct Cook County lookup");
-      const stateFips = "17"; // Illinois
-      const countyFips = "031"; // Cook County (Chicago)
-      
-      // Get tracts for Cook County
-      const censusData = await fetchTractsForStateCounty(stateFips, countyFips);
-      
-      if (!censusData || censusData.length < 2) {
-        console.error("No census data returned for Cook County");
-        return [];
-      }
-      
-      const headers = censusData[0];
-      const rows = censusData.slice(1);
-      
-      // Create a radius circle
-      const centerPoint = turf.point([center.lng, center.lat]);
-      
-      // Find latitude and longitude column indices
-      let latIndex = -1;
-      let lonIndex = -1;
-      
-      // Try to find latitude/longitude columns with different possible names
-      for (let i = 0; i < headers.length; i++) {
-        const header = headers[i].toLowerCase();
-        if (header === 'latitude') latIndex = i;
-        if (header === 'longitude') lonIndex = i;
-      }
-      
-      if (latIndex === -1 || lonIndex === -1) {
-        console.error("Latitude/longitude not found in census data response");
-        console.log("Headers available:", headers);
-        return [];
-      }
-      
-      // Filter tracts within the radius
-      const tractsInRadius = [];
-      
-      for (const row of rows) {
-        const tractLat = parseFloat(row[latIndex]);
-        const tractLon = parseFloat(row[lonIndex]);
-        
-        if (isNaN(tractLat) || isNaN(tractLon)) continue;
-        
-        const tractPoint = turf.point([tractLon, tractLat]);
-        const distance = turf.distance(centerPoint, tractPoint, { units: 'miles' });
-        
-        if (distance <= radiusMiles) {
-          tractsInRadius.push({
-            state: stateFips,
-            county: countyFips,
-            tract: row[headers.indexOf('tract')],
-            distance
-          });
-        }
-      }
-      
-      console.log(`Found ${tractsInRadius.length} census tracts within ${radiusMiles} miles of Chicago location`);
-      return tractsInRadius;
-    }
-    
-    // Regular flow for non-Chicago addresses
     const containingArea = await findContainingTract(center);
     
     if (!containingArea) {
@@ -283,40 +219,13 @@ async function findCensusTractsInRadius(
   }
 }
 
-// Check if coordinates are in Chicago area
-function isChicagoArea(coords: { lat: number, lng: number }): boolean {
-  // Chicago rough boundaries
-  return (
-    coords.lat >= 41.6 && coords.lat <= 42.1 && 
-    coords.lng >= -88.0 && coords.lng <= -87.5
-  );
-}
-
 // Find the Census tract containing a specific point (lat/lng)
 async function findContainingTract(center: { lat: number, lng: number }): Promise<{stateFips: string, countyFips: string, tract: string} | null> {
   try {
-    // For Illinois (17) / Cook County (031) - Chicago area
-    if (isChicagoArea(center)) {
-      return { stateFips: "17", countyFips: "031", tract: "010100" };
-    }
-    
-    // Try a few major metropolitan areas based on lat/lng bounds
-    // New York City area (36/061 - Manhattan)
-    if (center.lat > 40.6 && center.lat < 40.9 && center.lng > -74.1 && center.lng < -73.9) {
-      return { stateFips: "36", countyFips: "061", tract: "010100" };
-    }
-    
-    // Los Angeles area (06/037)
-    if (center.lat > 33.7 && center.lat < 34.3 && center.lng > -118.5 && center.lng < -118.1) {
-      return { stateFips: "06", countyFips: "037", tract: "010100" };
-    }
-    
-    // Use American Community Survey state-based geocoding as fallback
-    // First determine which state the center point is in
-    // We'll use a simple geographic lookup based on latitude/longitude bounds
+    // Use approximate location to determine state and county
     let stateFips = "";
     
-    // Simple cases - this is an approximation
+    // Simple cases - this is an approximation based on longitude/latitude
     if (center.lng < -114 && center.lat > 42) stateFips = "16"; // Idaho
     else if (center.lng < -114 && center.lat < 42) stateFips = "32"; // Nevada
     else if (center.lng < -109 && center.lat > 41) stateFips = "56"; // Wyoming
@@ -333,16 +242,21 @@ async function findContainingTract(center: { lat: number, lng: number }): Promis
     else if (center.lng < -84 && center.lat < 35) stateFips = "13"; // Georgia
     else if (center.lng < -75 && center.lat > 39.5) stateFips = "42"; // Pennsylvania
     else if (center.lng < -75 && center.lat < 39.5) stateFips = "24"; // Maryland
+    else if (center.lng > -75 && center.lat > 41) stateFips = "36"; // New York
+    else if (center.lng > -75 && center.lat < 41 && center.lat > 38) stateFips = "34"; // New Jersey
+    else if (center.lng > -85 && center.lat < 31) stateFips = "12"; // Florida
+    else if (center.lng < -120) stateFips = "06"; // California
+    else if (center.lng < -115) stateFips = "41"; // Oregon
+    else if (center.lng < -110 && center.lat > 45) stateFips = "30"; // Montana
     
     // If no state match, default to a commonly used example
     if (!stateFips) {
-      console.log("Could not identify state from coordinates, using Illinois as default");
-      stateFips = "17"; // Illinois
-      return { stateFips, countyFips: "031", tract: "010100" }; // Cook County, Chicago
+      console.log("Could not identify state from coordinates, using default");
+      stateFips = "06"; // California
+      return { stateFips, countyFips: "037", tract: "010100" }; // Los Angeles County
     }
     
-    // For simplicity, we'll return a default county and tract for the identified state
-    // In a real implementation, you would query for the specific county and tract
+    // For simplicity, we'll return a default county for the identified state
     const defaultCountyFips = "001"; // Usually the first county in a state
     
     return { stateFips, countyFips: defaultCountyFips, tract: "010100" };
@@ -412,6 +326,14 @@ function getBaseCoordsForStateCounty(stateFips: string, countyFips: string): { l
     return { lat: 40.7831, lng: -73.9712 }; // Manhattan, NY
   } else if (stateFips === "06" && countyFips === "037") {
     return { lat: 34.0522, lng: -118.2437 }; // Los Angeles, CA
+  } else if (stateFips === "04" && countyFips === "013") {
+    return { lat: 33.4484, lng: -112.0740 }; // Phoenix, AZ
+  } else if (stateFips === "48" && countyFips === "201") {
+    return { lat: 29.7604, lng: -95.3698 }; // Houston, TX
+  } else if (stateFips === "42" && countyFips === "101") {
+    return { lat: 39.9526, lng: -75.1652 }; // Philadelphia, PA
+  } else if (stateFips === "12" && countyFips === "086") {
+    return { lat: 25.7617, lng: -80.1918 }; // Miami, FL
   }
   
   // Default to center of US if unknown
