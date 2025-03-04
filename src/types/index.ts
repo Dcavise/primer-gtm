@@ -114,7 +114,6 @@ export interface CensusData {
 export interface CensusResponse {
   data: CensusData;
   tractsIncluded: number;
-  blockGroupsIncluded?: number; // Add this property for block group data
   radiusMiles: number;
 }
 
