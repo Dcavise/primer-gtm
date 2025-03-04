@@ -58,3 +58,39 @@ export async function testMiamiAddress(): Promise<PermitResponse | null> {
     return null;
   }
 }
+
+// Test function for a specific address with exact matches
+export async function testExactAddressMatch(): Promise<{permits: PermitResponse | null, address: string}> {
+  // This address is known to have permit data with exact matches
+  const exactMatchAddress = "1601 Washington Ave, Miami Beach, FL 33139";
+  
+  try {
+    // Coordinates for the specific address (slightly tight bounding box)
+    const params: PermitSearchParams = {
+      bottom_left_lat: 25.7872,
+      bottom_left_lng: -80.1315,
+      top_right_lat: 25.7882,
+      top_right_lng: -80.1305
+    };
+    
+    console.log("Testing exact address match with coordinates:", params);
+    console.log("Test address:", exactMatchAddress);
+    
+    const result = await searchPermits(params);
+    console.log("Exact Address Test Result:", {
+      total: result.total,
+      samplePermits: result.permits.slice(0, 3)
+    });
+    
+    return {
+      permits: result,
+      address: exactMatchAddress
+    };
+  } catch (error) {
+    console.error("Exact address test failed:", error);
+    return {
+      permits: null,
+      address: exactMatchAddress
+    };
+  }
+}

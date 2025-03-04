@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { SearchForm } from "@/components/SearchForm";
 import { PermitList } from "@/components/PermitList";
 import { usePermits } from "@/hooks/use-permits";
 import { motion } from "framer-motion";
-import { testMiamiAddress } from "@/services/api";
+import { testMiamiAddress, testExactAddressMatch } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Permit } from "@/types";
 import { toast } from "sonner";
@@ -26,6 +27,21 @@ const Index = () => {
         address: "Miami Beach Area (Test)"
       });
       toast.success(`Found ${result.permits.length} permits in Miami area`);
+    } else {
+      toast.error("Test failed or no permits found");
+    }
+  };
+
+  const runExactAddressTest = async () => {
+    toast.info("Running test with an address known to have exact matches...");
+    const { permits: result, address } = await testExactAddressMatch();
+    
+    if (result && result.permits.length > 0) {
+      setTestResults({
+        permits: result.permits,
+        address: address
+      });
+      toast.success(`Found ${result.permits.length} permits for "${address}"`);
     } else {
       toast.error("Test failed or no permits found");
     }
@@ -62,7 +78,14 @@ const Index = () => {
               onClick={runMiamiTest}
               className="hover:bg-white/30 bg-white/20 text-white border border-white/20"
             >
-              Test with Miami Address
+              Test with Miami Area
+            </Button>
+            <Button 
+              variant="secondary" 
+              onClick={runExactAddressTest}
+              className="hover:bg-white/30 bg-white/20 text-white border border-white/20"
+            >
+              Test with Exact Address Match
             </Button>
           </div>
           <SearchForm onSearch={handleSearch} isSearching={isSearching} />
