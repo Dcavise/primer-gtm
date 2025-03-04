@@ -1,6 +1,6 @@
 
 import { toast } from "sonner";
-import { API_KEY, API_BASE_URL } from "./api-config";
+import { API_BASE_URL, getApiKey } from "./api-config";
 
 export async function fetchZoneDetails(params: {
   lat?: number;
@@ -11,8 +11,11 @@ export async function fetchZoneDetails(params: {
   replace_STF?: boolean;
 }) {
   try {
+    // Fetch the API key securely from Supabase
+    const apiKey = await getApiKey('zoneomics');
+    
     const queryParams = new URLSearchParams({
-      api_key: API_KEY,
+      api_key: apiKey,
     });
 
     if (params.lat && params.lng) {

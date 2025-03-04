@@ -1,12 +1,14 @@
-
 import { PermitResponse, PermitSearchParams } from "@/types";
 import { toast } from "sonner";
-import { API_KEY, API_BASE_URL } from "./api-config";
+import { API_BASE_URL, getApiKey } from "./api-config";
 
 export async function searchPermits(params: PermitSearchParams): Promise<PermitResponse> {
   try {
+    // Fetch the API key securely from Supabase
+    const apiKey = await getApiKey('zoneomics');
+    
     const queryParams = new URLSearchParams({
-      api_key: API_KEY,
+      api_key: apiKey,
       bottom_left_lat: params.bottom_left_lat.toString(),
       bottom_left_lng: params.bottom_left_lng.toString(),
       top_right_lat: params.top_right_lat.toString(),
