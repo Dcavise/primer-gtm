@@ -1,4 +1,3 @@
-
 import { getApiKey, GOOGLE_MAPS_API_KEY } from "@/services/api-config";
 import { toast } from "sonner";
 import mapboxgl from "mapbox-gl";
@@ -15,20 +14,26 @@ export interface GeocodingResult {
 
 export async function geocodeAddress(address: string): Promise<GeocodingResult | null> {
   try {
-    // First try to get the Mapbox token for geocoding
-    let mapboxToken;
+    // Primarily use Google Maps for geocoding
+    const googleResult = await geocodeWithGoogleMaps(address);
+    if (googleResult) {
+      return googleResult;
+    }
+    
+    // Only fall back to Mapbox if Google Maps fails
+    console.warn("Google Maps geocoding failed, trying Mapbox as fallback");
     try {
-      mapboxToken = await getApiKey('mapbox');
+      const mapboxToken = await getApiKey('mapbox');
       if (mapboxToken) {
-        console.log("Using Mapbox for geocoding");
+        console.log("Using Mapbox as fallback for geocoding");
         return await geocodeWithMapbox(address, mapboxToken);
       }
     } catch (error) {
-      console.warn("Failed to get Mapbox token, falling back to Google Maps:", error);
+      console.error("Mapbox fallback also failed:", error);
     }
     
-    // Fall back to Google Maps if Mapbox fails or isn't available
-    return await geocodeWithGoogleMaps(address);
+    // If we get here, both services failed
+    throw new Error("All geocoding services failed");
     
   } catch (error) {
     console.error("Geocoding error:", error);
@@ -36,37 +41,6 @@ export async function geocodeAddress(address: string): Promise<GeocodingResult |
       description: "Please check the address and try again"
     });
     return null;
-  }
-}
-
-async function geocodeWithMapbox(address: string, token: string): Promise<GeocodingResult | null> {
-  try {
-    console.log("Geocoding address with Mapbox:", address);
-    const encodedAddress = encodeURIComponent(address);
-    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${token}`;
-
-    const response = await fetch(url);
-    const data = await response.json();
-
-    if (data.features && data.features.length > 0) {
-      const result = data.features[0];
-      const formattedAddress = result.place_name;
-      
-      // Mapbox returns coordinates as [longitude, latitude]
-      const coordinates: Coordinates = {
-        lng: result.center[0],
-        lat: result.center[1]
-      };
-
-      console.log("Successfully geocoded with Mapbox:", formattedAddress, coordinates);
-      return { address: formattedAddress, coordinates };
-    } else {
-      console.error("Mapbox geocoding failed:", data);
-      return null;
-    }
-  } catch (error) {
-    console.error("Mapbox geocoding error:", error);
-    throw error;
   }
 }
 
@@ -109,7 +83,38 @@ async function geocodeWithGoogleMaps(address: string): Promise<GeocodingResult |
     }
   } catch (error) {
     console.error("Google Maps geocoding error:", error);
-    throw error;
+    return null; // Return null instead of throwing to allow fallback
+  }
+}
+
+async function geocodeWithMapbox(address: string, token: string): Promise<GeocodingResult | null> {
+  try {
+    console.log("Geocoding address with Mapbox:", address);
+    const encodedAddress = encodeURIComponent(address);
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${token}`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.features && data.features.length > 0) {
+      const result = data.features[0];
+      const formattedAddress = result.place_name;
+      
+      // Mapbox returns coordinates as [longitude, latitude]
+      const coordinates: Coordinates = {
+        lng: result.center[0],
+        lat: result.center[1]
+      };
+
+      console.log("Successfully geocoded with Mapbox:", formattedAddress, coordinates);
+      return { address: formattedAddress, coordinates };
+    } else {
+      console.error("Mapbox geocoding failed:", data);
+      return null;
+    }
+  } catch (error) {
+    console.error("Mapbox geocoding error:", error);
+    return null;
   }
 }
 

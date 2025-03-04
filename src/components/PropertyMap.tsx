@@ -39,7 +39,7 @@ export const PropertyMap = ({ address, schools = [], coordinates: propCoordinate
       try {
         setLoading(true);
         
-        // Get coordinates either from props or by geocoding
+        // Get coordinates either from props or by geocoding with Google Maps
         let coords = coordinates;
         if (!coords) {
           if (address) {
@@ -58,15 +58,15 @@ export const PropertyMap = ({ address, schools = [], coordinates: propCoordinate
         }
         
         try {
-          // Get Mapbox API key
-          console.log("Fetching Mapbox token");
+          // Get Mapbox API key for map visualization
+          console.log("Fetching Mapbox token for map visualization");
           const mapboxAccessToken = await getApiKey('mapbox');
           
           if (!mapboxAccessToken) {
             throw new Error("Mapbox API key not available");
           }
           
-          console.log("Mapbox token retrieved successfully");
+          console.log("Mapbox token retrieved successfully for visualization");
           
           // Set mapbox access token
           mapboxgl.accessToken = mapboxAccessToken;
@@ -74,7 +74,7 @@ export const PropertyMap = ({ address, schools = [], coordinates: propCoordinate
           // Create map instance only if not already created
           if (map.current) return;
           
-          console.log("Initializing map with coordinates:", coords);
+          console.log("Initializing Mapbox map with coordinates:", coords);
           
           // Initialize map
           map.current = new mapboxgl.Map({
