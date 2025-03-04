@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { SearchStatus } from "@/types";
 import { toast } from "sonner";
-import { fetchCensusData } from "@/services/census-api";
+import { fetchCensusData, getMockCensusData } from "@/services/census-api";
 import { geocodeAddress } from "@/utils/geocoding";
 
 export interface CensusDataItem {
@@ -35,9 +35,11 @@ export function useCensusData() {
   const [censusData, setCensusData] = useState<CensusData | null>(null);
   const [status, setStatus] = useState<SearchStatus>("idle");
   const [searchedAddress, setSearchedAddress] = useState<string>("");
+  const [isMockData, setIsMockData] = useState<boolean>(false);
 
   const fetchDataForAddress = async (address: string) => {
     setStatus("loading");
+    setIsMockData(false);
     console.log("Fetching census data for address:", address);
     
     try {
@@ -92,17 +94,36 @@ export function useCensusData() {
     }
   };
 
+  const loadMockData = () => {
+    setStatus("loading");
+    
+    // Short timeout to show loading state
+    setTimeout(() => {
+      const mockData = getMockCensusData();
+      setCensusData(mockData);
+      setStatus("success");
+      setIsMockData(true);
+      
+      toast.success("Demo data loaded", {
+        description: "Showing sample census data for demonstration purposes."
+      });
+    }, 500);
+  };
+
   const reset = () => {
     setCensusData(null);
     setStatus("idle");
     setSearchedAddress("");
+    setIsMockData(false);
   };
 
   return {
     censusData,
     status,
     searchedAddress,
+    isMockData,
     fetchCensusData: fetchDataForAddress,
+    loadMockData,
     reset
   };
 }

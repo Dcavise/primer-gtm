@@ -1,7 +1,73 @@
-
 import { toast } from "sonner";
 import { CENSUS_API_KEY } from "./api-config";
 import { CensusData, CensusDataItem } from "@/hooks/use-census-data";
+
+// Add mock census data function to provide reliable fallback
+export function getMockCensusData(): CensusData {
+  // Demographic mock data
+  const demographicItems: CensusDataItem[] = [
+    { name: "Total Population", value: 4287 },
+    { name: "Median Age", value: 36.2 },
+    { name: "White Population", value: 2893, description: "Non-Hispanic White population" },
+    { name: "Black Population", value: 547 },
+    { name: "Asian Population", value: 532 },
+    { name: "Hispanic Population", value: 315 },
+    { name: "White Percent", value: 67.5 },
+    { name: "Black Percent", value: 12.8 },
+    { name: "Asian Percent", value: 12.4 },
+    { name: "Hispanic Percent", value: 7.3 }
+  ];
+  
+  // Economic mock data
+  const economicItems: CensusDataItem[] = [
+    { name: "Median Household Income", value: 78540 },
+    { name: "Unemployment Rate", value: 4.2 },
+    { name: "Labor Force", value: 2354 },
+    { name: "Unemployed", value: 99 }
+  ];
+  
+  // Housing mock data
+  const housingItems: CensusDataItem[] = [
+    { name: "Median Home Value", value: 389000 },
+    { name: "Total Housing Units", value: 1842 },
+    { name: "Occupied Units", value: 1753 },
+    { name: "Owner Occupied", value: 1134 },
+    { name: "Renter Occupied", value: 619 },
+    { name: "Homeownership Rate", value: 64.7 },
+    { name: "Vacancy Rate", value: 4.8 }
+  ];
+  
+  // Education mock data
+  const educationItems: CensusDataItem[] = [
+    { name: "High School Graduate", value: 92.4, description: "Percentage with high school diploma or higher" },
+    { name: "Bachelor's Degree or Higher", value: 45.3, description: "Percentage with a bachelor's degree or higher" },
+    { name: "Graduate or Professional Degree", value: 18.7 }
+  ];
+  
+  return {
+    totalPopulation: 4287,
+    medianHouseholdIncome: 78540,
+    medianHomeValue: 389000,
+    educationLevelHS: 92.4,
+    educationLevelBachelor: 45.3,
+    unemploymentRate: 4.2,
+    medianAge: 36.2,
+    housingUnits: 1842,
+    homeownershipRate: 64.7,
+    rawData: {
+      // Mock raw data
+      "B01003_001E": "4287",
+      "B19013_001E": "78540",
+      "B25077_001E": "389000"
+    },
+    categories: {
+      demographic: demographicItems,
+      economic: economicItems,
+      housing: housingItems,
+      education: educationItems
+    }
+  };
+}
 
 // Census API Integration
 export async function fetchCensusData(params: { lat: number, lng: number }): Promise<CensusData | null> {

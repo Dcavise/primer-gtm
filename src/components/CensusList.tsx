@@ -12,15 +12,26 @@ interface CensusListProps {
   censusData: CensusData | null;
   isLoading: boolean;
   searchedAddress: string;
+  onTryMockData?: () => void;
+  isMockData?: boolean;
 }
 
-export const CensusList = ({ censusData, isLoading, searchedAddress }: CensusListProps) => {
+export const CensusList = ({ 
+  censusData, 
+  isLoading, 
+  searchedAddress, 
+  onTryMockData,
+  isMockData 
+}: CensusListProps) => {
   if (isLoading) {
     return <LoadingState message="Retrieving census data..." />;
   }
 
   if (!censusData && !isLoading) {
-    return <CensusEmptyState searchedAddress={searchedAddress} />;
+    return <CensusEmptyState 
+      searchedAddress={searchedAddress} 
+      onTryMockData={onTryMockData}
+    />;
   }
 
   if (!censusData) {
@@ -31,7 +42,17 @@ export const CensusList = ({ censusData, isLoading, searchedAddress }: CensusLis
     <div className="py-6 space-y-6">
       <CensusHeader searchedAddress={searchedAddress} />
       
-      {searchedAddress && censusData.totalPopulation && censusData.totalPopulation < 100 && (
+      {isMockData && (
+        <Alert className="bg-amber-50 border-amber-200">
+          <InfoIcon className="h-4 w-4 text-amber-500" />
+          <AlertTitle>Using Demo Data</AlertTitle>
+          <AlertDescription>
+            Showing sample census data for demonstration purposes. This is not real data for the specified location.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {searchedAddress && censusData.totalPopulation && censusData.totalPopulation < 100 && !isMockData && (
         <Alert className="bg-blue-50 border-blue-200">
           <InfoIcon className="h-4 w-4 text-blue-500" />
           <AlertTitle>Using Approximate Data</AlertTitle>

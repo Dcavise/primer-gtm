@@ -2,12 +2,14 @@
 import { motion } from "framer-motion";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface CensusEmptyStateProps {
   searchedAddress: string;
+  onTryMockData?: () => void;
 }
 
-export const CensusEmptyState = ({ searchedAddress }: CensusEmptyStateProps) => {
+export const CensusEmptyState = ({ searchedAddress, onTryMockData }: CensusEmptyStateProps) => {
   if (searchedAddress) {
     return (
       <div className="py-8 space-y-4">
@@ -31,6 +33,21 @@ export const CensusEmptyState = ({ searchedAddress }: CensusEmptyStateProps) => 
           <p className="text-sm pt-2">
             Please try a different US address or try again later.
           </p>
+          
+          {onTryMockData && (
+            <div className="pt-4">
+              <Button 
+                variant="outline" 
+                onClick={onTryMockData}
+                className="mt-2"
+              >
+                Use Demo Data Instead
+              </Button>
+              <p className="text-xs text-muted-foreground mt-2">
+                This will display sample census data for demonstration purposes.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     );
