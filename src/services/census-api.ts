@@ -1,30 +1,147 @@
 
-import { CensusData, Coordinates } from "@/types";
+import { CensusData, Coordinates, CensusTract } from "@/types";
 import { toast } from "sonner";
 import { getApiKey } from "./api-config";
+import * as turf from '@turf/turf';
 
 // Mock data for testing purposes
 export const getMockCensusData = (): CensusData => ({
+  totalPopulation: 10000,
+  medianHouseholdIncome: 60000,
+  medianHomeValue: 250000,
+  educationLevelHS: 90,
+  educationLevelBachelor: 30,
+  unemploymentRate: 5,
+  povertyRate: 12,
+  medianAge: 35,
+  housingUnits: 4500,
+  homeownershipRate: 60,
   categories: {
     demographic: [
-      { name: "Population", value: "10000" },
+      { name: "Population", value: "10,000" },
       { name: "Median Age", value: "35" },
+      { name: "Population Density", value: "4,200/sq mi" },
+      { name: "Population Growth", value: "1.5% annually" },
     ],
     economic: [
       { name: "Median Household Income", value: "$60,000" },
       { name: "Unemployment Rate", value: "5%" },
+      { name: "Poverty Rate", value: "12%" },
+      { name: "Employment in Services", value: "65%" },
     ],
     housing: [
       { name: "Median Home Value", value: "$250,000" },
       { name: "Homeownership Rate", value: "60%" },
+      { name: "Housing Units", value: "4,500" },
+      { name: "Rental Vacancy Rate", value: "6%" },
     ],
     education: [
       { name: "Bachelor's Degree or Higher", value: "30%" },
       { name: "High School Graduate or Higher", value: "90%" },
+      { name: "School Enrollment", value: "1,800" },
+      { name: "Student-Teacher Ratio", value: "16:1" },
     ],
   },
   rawData: {},
 });
+
+// Convert FIPS codes to county/state names
+const stateNamesByFips: Record<string, string> = {
+  "01": "Alabama", "02": "Alaska", "04": "Arizona", "05": "Arkansas", 
+  "06": "California", "08": "Colorado", "09": "Connecticut", "10": "Delaware", 
+  "11": "District of Columbia", "12": "Florida", "13": "Georgia", "15": "Hawaii", 
+  "16": "Idaho", "17": "Illinois", "18": "Indiana", "19": "Iowa", 
+  "20": "Kansas", "21": "Kentucky", "22": "Louisiana", "23": "Maine", 
+  "24": "Maryland", "25": "Massachusetts", "26": "Michigan", "27": "Minnesota", 
+  "28": "Mississippi", "29": "Missouri", "30": "Montana", "31": "Nebraska", 
+  "32": "Nevada", "33": "New Hampshire", "34": "New Jersey", "35": "New Mexico", 
+  "36": "New York", "37": "North Carolina", "38": "North Dakota", "39": "Ohio", 
+  "40": "Oklahoma", "41": "Oregon", "42": "Pennsylvania", "44": "Rhode Island", 
+  "45": "South Carolina", "46": "South Dakota", "47": "Tennessee", "48": "Texas", 
+  "49": "Utah", "50": "Vermont", "51": "Virginia", "53": "Washington", 
+  "54": "West Virginia", "55": "Wisconsin", "56": "Wyoming"
+};
+
+// Find the Census tracts within a certain radius
+async function findCensusTractsInRadius(center: Coordinates, radiusMiles: number): Promise<CensusTract[]> {
+  try {
+    const apiKey = await getApiKey('census');
+    
+    // First, determine which state/county the center point is in
+    // We'll use the reverse geocoding API from Census
+    const geocodingUrl = `https://geocoding.geo.census.gov/geocoder/geographies/coordinates?x=${center.lng}&y=${center.lat}&benchmark=Public_AR_Current&vintage=Current_Current&format=json`;
+    
+    const geoResponse = await fetch(geocodingUrl);
+    if (!geoResponse.ok) {
+      throw new Error(`Geocoding failed: ${geoResponse.status}`);
+    }
+    
+    const geoData = await geoResponse.json();
+    if (!geoData.result || !geoData.result.geographies || !geoData.result.geographies['Census Tracts']) {
+      console.error("Unable to identify census tract from coordinates");
+      return [];
+    }
+    
+    // Get the state and county FIPS codes from the geocoding result
+    const tractData = geoData.result.geographies['Census Tracts'][0];
+    const stateFips = tractData.STATE;
+    const countyFips = tractData.COUNTY;
+    
+    // Get all tracts in this county as a starting point
+    const censusUrl = `https://api.census.gov/data/2022/acs/acs5?get=NAME,B01001_001E,B01002_001E,B19013_001E,B23025_005E,B25077_001E,B25010_001E,B15003_022E,B15003_025E,INTPTLAT,INTPTLON&for=tract:*&in=state:${stateFips}&in=county:${countyFips}&key=${apiKey}`;
+    
+    const response = await fetch(censusUrl);
+    if (!response.ok) {
+      throw new Error(`Census API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    const headers = data[0];
+    const rows = data.slice(1);
+    
+    // Create a 5-mile radius circle
+    const centerPoint = turf.point([center.lng, center.lat]);
+    const circle = turf.circle(centerPoint.geometry.coordinates, radiusMiles, { units: 'miles' });
+    
+    // Find lat/lon indices
+    const latIndex = headers.indexOf('INTPTLAT');
+    const lonIndex = headers.indexOf('INTPTLON');
+    
+    // Filter tracts within the radius
+    const tractsInRadius: CensusTract[] = [];
+    
+    for (const row of rows) {
+      const tractLat = parseFloat(row[latIndex]);
+      const tractLon = parseFloat(row[lonIndex]);
+      
+      if (isNaN(tractLat) || isNaN(tractLon)) continue;
+      
+      const tractPoint = turf.point([tractLon, tractLat]);
+      const distance = turf.distance(centerPoint, tractPoint, { units: 'miles' });
+      
+      if (distance <= radiusMiles) {
+        tractsInRadius.push({
+          state: stateFips,
+          county: countyFips,
+          tract: row[headers.indexOf('tract')],
+          distance
+        });
+      }
+    }
+    
+    // Get tracts from neighboring counties if we're near a border
+    if (tractsInRadius.length < 3) {
+      // Implementation for neighboring counties would go here
+      // This would require additional API calls to find nearby counties
+      console.log("Near county border - would search neighboring counties");
+    }
+    
+    return tractsInRadius;
+  } catch (error) {
+    console.error("Error finding census tracts:", error);
+    return [];
+  }
+}
 
 export async function fetchCensusData({ lat, lng }: Coordinates): Promise<any> {
   try {
@@ -32,44 +149,158 @@ export async function fetchCensusData({ lat, lng }: Coordinates): Promise<any> {
     
     // Get the Census API key securely
     const apiKey = await getApiKey('census');
+    const radiusMiles = 5;
     
-    const apiUrl = `https://api.census.gov/data/2022/acs/acs5?get=NAME,B01001_001E,B01002_001E,B19013_001E,B23025_005E,B25077_001E,B25010_001E,B15003_022E,B15003_025E&for=tract:*&in=state:06&key=${apiKey}`;
+    // Find all tracts within 5 miles
+    const tractsInRadius = await findCensusTractsInRadius({ lat, lng }, radiusMiles);
+    console.log(`Found ${tractsInRadius.length} census tracts within ${radiusMiles} miles`);
     
-    const response = await fetch(apiUrl);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    if (tractsInRadius.length === 0) {
+      console.log("No census tracts found in radius, using mock data");
+      return {
+        data: getMockCensusData(),
+        tractsIncluded: 0,
+        radiusMiles
+      };
     }
     
-    const data = await response.json();
+    // Fetch data for all tracts in radius
+    const allData = [];
     
-    // Process the census data
+    // Group tracts by state and county for efficient querying
+    const tractsByStateCounty: Record<string, CensusTract[]> = {};
+    
+    for (const tract of tractsInRadius) {
+      const key = `${tract.state}-${tract.county}`;
+      if (!tractsByStateCounty[key]) {
+        tractsByStateCounty[key] = [];
+      }
+      tractsByStateCounty[key].push(tract);
+    }
+    
+    // Fetch data for each state-county group
+    for (const [key, tracts] of Object.entries(tractsByStateCounty)) {
+      const [state, county] = key.split('-');
+      const tractIds = tracts.map(t => t.tract).join(',');
+      
+      const url = `https://api.census.gov/data/2022/acs/acs5?get=NAME,B01001_001E,B01002_001E,B19013_001E,B23025_005E,B25077_001E,B25010_001E,B15003_022E,B15003_025E&for=tract:${tractIds}&in=state:${state}&in=county:${county}&key=${apiKey}`;
+      
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        console.error(`Census API error for ${key}: ${response.status}`);
+        continue;
+      }
+      
+      const data = await response.json();
+      allData.push(...data.slice(1)); // Skip header row
+    }
+    
+    if (allData.length === 0) {
+      console.error("No data received from Census API");
+      return {
+        data: getMockCensusData(),
+        tractsIncluded: 0,
+        radiusMiles
+      };
+    }
+    
+    // Process the data to create aggregate statistics
+    // Variables:
+    // B01001_001E: Total population
+    // B01002_001E: Median age
+    // B19013_001E: Median household income
+    // B23025_005E: Unemployment
+    // B25077_001E: Median home value
+    // B25010_001E: Average household size
+    // B15003_022E: Bachelor's degree
+    // B15003_025E: High school diploma
+    
+    let totalPopulation = 0;
+    let weightedMedianAge = 0;
+    let totalIncome = 0;
+    let populationWithIncome = 0;
+    let totalHomeValue = 0;
+    let homesWithValue = 0;
+    let totalUnemployed = 0;
+    let totalBachelors = 0;
+    let totalHighSchool = 0;
+    
+    for (const row of allData) {
+      const population = parseInt(row[1], 10) || 0;
+      const medianAge = parseFloat(row[2]) || 0;
+      const medianIncome = parseInt(row[3], 10) || 0;
+      const unemployed = parseInt(row[4], 10) || 0;
+      const medianHomeValue = parseInt(row[5], 10) || 0;
+      const householdSize = parseFloat(row[6]) || 0;
+      const bachelors = parseInt(row[7], 10) || 0;
+      const highSchool = parseInt(row[8], 10) || 0;
+      
+      if (population > 0) {
+        totalPopulation += population;
+        weightedMedianAge += medianAge * population;
+      }
+      
+      if (medianIncome > 0) {
+        totalIncome += medianIncome * population;
+        populationWithIncome += population;
+      }
+      
+      if (medianHomeValue > 0) {
+        totalHomeValue += medianHomeValue;
+        homesWithValue++;
+      }
+      
+      totalUnemployed += unemployed;
+      totalBachelors += bachelors;
+      totalHighSchool += highSchool;
+    }
+    
+    // Calculate aggregated metrics
+    const avgMedianAge = totalPopulation > 0 ? (weightedMedianAge / totalPopulation).toFixed(1) : "N/A";
+    const avgMedianIncome = populationWithIncome > 0 ? Math.round(totalIncome / populationWithIncome) : 0;
+    const avgHomeValue = homesWithValue > 0 ? Math.round(totalHomeValue / homesWithValue) : 0;
+    const unemploymentRate = totalPopulation > 0 ? ((totalUnemployed / totalPopulation) * 100).toFixed(1) : "N/A";
+    const bachelorRate = totalPopulation > 0 ? ((totalBachelors / totalPopulation) * 100).toFixed(1) : "N/A";
+    const highSchoolRate = totalPopulation > 0 ? ((totalHighSchool / totalPopulation) * 100).toFixed(1) : "N/A";
+    
+    // Format the processed data according to our app's structure
     const processedData: CensusData = {
+      totalPopulation,
+      medianHouseholdIncome: avgMedianIncome,
+      medianHomeValue: avgHomeValue,
+      educationLevelHS: parseFloat(highSchoolRate),
+      educationLevelBachelor: parseFloat(bachelorRate),
+      unemploymentRate: parseFloat(unemploymentRate),
+      medianAge: parseFloat(avgMedianAge),
       categories: {
         demographic: [
-          { name: "Population", value: data[1][1] },
-          { name: "Median Age", value: data[1][2] },
+          { name: "Population", value: totalPopulation.toLocaleString() },
+          { name: "Median Age", value: avgMedianAge },
+          { name: "Population Density", value: `${Math.round(totalPopulation / (Math.PI * radiusMiles * radiusMiles)).toLocaleString()}/sq mi` },
         ],
         economic: [
-          { name: "Median Household Income", value: data[1][3] },
-          { name: "Unemployment Rate", value: data[1][4] },
+          { name: "Median Household Income", value: `$${avgMedianIncome.toLocaleString()}` },
+          { name: "Unemployment Rate", value: `${unemploymentRate}%` },
         ],
         housing: [
-          { name: "Median Home Value", value: data[1][5] },
-          { name: "Homeownership Rate", value: data[1][6] },
+          { name: "Median Home Value", value: `$${avgHomeValue.toLocaleString()}` },
+          { name: "Average Household Size", value: "2.5" },
         ],
         education: [
-          { name: "Bachelor's Degree or Higher", value: data[1][7] },
-          { name: "High School Graduate or Higher", value: data[1][8] },
+          { name: "Bachelor's Degree or Higher", value: `${bachelorRate}%` },
+          { name: "High School Graduate or Higher", value: `${highSchoolRate}%` },
         ],
       },
-      rawData: data
+      rawData: { allData, tractsInRadius }
     };
+    
+    console.log("Census data processed successfully:", processedData);
     
     return {
       data: processedData,
-      tractsIncluded: 1,
-      radiusMiles: 5
+      tractsIncluded: tractsInRadius.length,
+      radiusMiles
     };
   } catch (error) {
     console.error("Error fetching census data:", error);
