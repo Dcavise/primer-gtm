@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { Permit } from "@/types";
 import { PermitCard } from "./PermitCard";
@@ -17,7 +16,6 @@ interface PermitListProps {
   searchedAddress: string;
 }
 
-// Helper function to get icon based on permit type
 const getPermitTypeIcon = (permitType: string) => {
   const type = permitType.toLowerCase();
   
@@ -51,7 +49,6 @@ export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListPr
     setSortDirection(prev => prev === "asc" ? "desc" : "asc");
   };
 
-  // Function to check if the permit address is an exact match to the searched address
   const isExactMatch = (permit: Permit) => {
     if (!searchedAddress || !permit.address) return false;
     
@@ -61,7 +58,6 @@ export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListPr
     return normalizedPermitAddress === normalizedSearchAddress;
   };
 
-  // Split permits into exact matches and other matches
   const { exactMatches, otherPermits } = useMemo(() => {
     const exact: Permit[] = [];
     const others: Permit[] = [];
@@ -77,7 +73,6 @@ export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListPr
     return { exactMatches: exact, otherPermits: others };
   }, [permits, searchedAddress]);
 
-  // Function to organize permits by their project_type
   const categorizePermitsByType = (permits: Permit[]) => {
     const types: Record<string, Permit[]> = {
       "All": permits,
@@ -97,7 +92,6 @@ export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListPr
     return types;
   };
 
-  // Apply sorting to permits
   const sortPermits = (permits: Permit[]) => {
     return [...permits].sort((a, b) => {
       const dateA = a.date ? new Date(a.date).getTime() : 0;
@@ -107,22 +101,18 @@ export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListPr
     });
   };
 
-  // Memoize the categorized permits to avoid recalculation on each render
   const permitsByType = useMemo(() => categorizePermitsByType(otherPermits), [otherPermits]);
   
-  // Get active permits based on selected type, with sorting applied
   const activePermits = useMemo(() => 
     sortPermits(permitsByType[activeType] || []), 
     [permitsByType, activeType, sortDirection]
   );
 
-  // Apply sorting to exact matches as well
   const sortedExactMatches = useMemo(() => 
     sortPermits(exactMatches), 
     [exactMatches, sortDirection]
   );
 
-  // Count permits in each type
   const getTypeCount = (type: string) => {
     return permitsByType[type]?.length || 0;
   };
@@ -273,7 +263,7 @@ export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListPr
       )}
 
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="sm:max-w-2xl mx-auto">
+        <DialogContent className="sm:max-w-2xl mx-auto max-h-[85vh] overflow-y-auto">
           <DialogTitle>Permit Details</DialogTitle>
           {selectedPermit && <PermitDetail permit={selectedPermit} />}
         </DialogContent>
