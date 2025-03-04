@@ -18,11 +18,14 @@ export interface School {
       state: string;
       zipCode: string;
     };
-    lat: number;
-    lon: number;
     distanceMiles: number;
+    coordinates: {
+      latitude: number;
+      longitude: number;
+    };
   };
   links?: {
+    website?: string;
     profile?: string;
     ratings?: string;
     reviews?: string;

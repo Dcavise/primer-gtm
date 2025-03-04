@@ -6,6 +6,32 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Calculate distance between two sets of coordinates using Haversine formula
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  // Earth's radius in miles
+  const earthRadius = 3958.8;
+  
+  // Convert latitude and longitude from degrees to radians
+  const latRad1 = lat1 * Math.PI / 180;
+  const lonRad1 = lon1 * Math.PI / 180;
+  const latRad2 = lat2 * Math.PI / 180;
+  const lonRad2 = lon2 * Math.PI / 180;
+  
+  // Differences in coordinates
+  const latDiff = latRad2 - latRad1;
+  const lonDiff = lonRad2 - lonRad1;
+  
+  // Haversine formula
+  const a = Math.sin(latDiff/2) * Math.sin(latDiff/2) +
+            Math.cos(latRad1) * Math.cos(latRad2) *
+            Math.sin(lonDiff/2) * Math.sin(lonDiff/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const distance = earthRadius * c;
+  
+  // Round to 1 decimal place
+  return Math.round(distance * 10) / 10;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -114,6 +140,14 @@ serve(async (req) => {
 
     // Transform the data to match our expected School type interface
     const formattedSchools = schoolsData.schools?.map(school => {
+      // Calculate distance from search coordinates to school
+      const distanceMiles = calculateDistance(
+        lat, 
+        lon, 
+        school.lat, 
+        school.lon
+      );
+      
       return {
         id: school['universal-id'] || null,
         name: school.name,
@@ -133,7 +167,7 @@ serve(async (req) => {
             state: school.state,
             zipCode: school.zip
           },
-          distanceMiles: null, // Distance will be calculated in a different endpoint
+          distanceMiles: distanceMiles,
           coordinates: {
             latitude: school.lat,
             longitude: school.lon
