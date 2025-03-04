@@ -11,10 +11,12 @@ export function useCensusData() {
   const [status, setStatus] = useState<SearchStatus>("idle");
   const [searchedAddress, setSearchedAddress] = useState<string>("");
   const [isMockData, setIsMockData] = useState<boolean>(false);
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
 
   const fetchDataForAddress = async (address: string) => {
     setStatus("loading");
     setIsMockData(false);
+    setErrorDetails(null);
     console.log("Fetching census data for address:", address);
     
     try {
@@ -31,6 +33,7 @@ export function useCensusData() {
         setStatus("error");
         setCensusData(null);
         setCensusResponse(null);
+        setErrorDetails(error.message || "Connection error");
         toast.error("Census data not available", {
           description: `Error: ${error.message || "We couldn't connect to the census database."}`
         });
@@ -42,6 +45,7 @@ export function useCensusData() {
         setStatus("error");
         setCensusData(null);
         setCensusResponse(null);
+        setErrorDetails("No data returned");
         toast.error("Census data not available", {
           description: "We couldn't find census data for this location."
         });
@@ -66,6 +70,10 @@ export function useCensusData() {
             ? `${response.error}. Showing sample data for demonstration.`
             : "No census tracts found within 5 miles. Showing sample data for demonstration."
         });
+      } else if (response.tractsIncluded === 0) {
+        toast.warning("Limited census data", {
+          description: "No census tracts found within search radius. Data may be less accurate."
+        });
       } else {
         toast.success("Census data retrieved", {
           description: `Showing demographic data from ${response.tractsIncluded} census tracts within ${response.radiusMiles} miles.`
@@ -76,6 +84,7 @@ export function useCensusData() {
       setStatus("error");
       setCensusData(null);
       setCensusResponse(null);
+      setErrorDetails(error instanceof Error ? error.message : "Unknown error");
       toast.error("Error retrieving census data", {
         description: "There was a problem connecting to the census database. Please try again later."
       });
@@ -84,6 +93,7 @@ export function useCensusData() {
 
   const loadMockData = () => {
     setStatus("loading");
+    setErrorDetails(null);
     
     // Short timeout to show loading state
     setTimeout(() => {
@@ -110,6 +120,7 @@ export function useCensusData() {
     setStatus("idle");
     setSearchedAddress("");
     setIsMockData(false);
+    setErrorDetails(null);
   };
 
   return {
@@ -118,6 +129,7 @@ export function useCensusData() {
     status,
     searchedAddress,
     isMockData,
+    errorDetails,
     fetchCensusData: fetchDataForAddress,
     loadMockData,
     reset
