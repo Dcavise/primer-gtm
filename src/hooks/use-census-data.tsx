@@ -19,7 +19,6 @@ export function useCensusData() {
     
     try {
       // Call the Supabase Edge Function with the address directly
-      // The edge function will handle geocoding internally
       const requestTime = new Date().toISOString();
       console.log(`Making request to census-data edge function at ${requestTime}`);
       
@@ -61,9 +60,11 @@ export function useCensusData() {
       setSearchedAddress(response.searchedAddress || address);
       
       // Show different toast based on whether it's mock data and tracts found
-      if (response.tractsIncluded === 0 || response.isMockData) {
+      if (response.isMockData) {
         toast.info("Using demo census data", {
-          description: "No census tracts found within 5 miles. Showing sample data for demonstration."
+          description: response.error 
+            ? `${response.error}. Showing sample data for demonstration.`
+            : "No census tracts found within 5 miles. Showing sample data for demonstration."
         });
       } else {
         toast.success("Census data retrieved", {

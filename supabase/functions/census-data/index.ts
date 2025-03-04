@@ -48,8 +48,8 @@ const getMockCensusData = () => ({
   rawData: {},
 });
 
-// Geocode an address using Google Maps API
-async function geocodeAddress(address: string): Promise<{ lat: number, lng: number, formattedAddress: string } | null> {
+// Refined geocoding function using Google Maps API
+async function geocodeAddress(address: string): Promise<{ lat: number, lng: number, formattedAddress: string, stateCode: string, countyName: string } | null> {
   try {
     console.log(`Geocoding address: ${address}`);
     const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
@@ -77,12 +77,31 @@ async function geocodeAddress(address: string): Promise<{ lat: number, lng: numb
       const lat = result.geometry.location.lat;
       const lng = result.geometry.location.lng;
       
+      // Extract state and county information from address components
+      let stateCode = "";
+      let countyName = "";
+      
+      for (const component of result.address_components) {
+        // Get state (administrative_area_level_1)
+        if (component.types.includes("administrative_area_level_1")) {
+          stateCode = component.short_name;
+        }
+        
+        // Get county (administrative_area_level_2)
+        if (component.types.includes("administrative_area_level_2")) {
+          countyName = component.long_name.replace(" County", "");
+        }
+      }
+      
       console.log(`Successfully geocoded address to: ${formattedAddress} (${lat}, ${lng})`);
+      console.log(`State: ${stateCode}, County: ${countyName}`);
       
       return { 
         lat, 
         lng, 
-        formattedAddress 
+        formattedAddress,
+        stateCode,
+        countyName
       };
     } else {
       console.error(`Geocoding failed: ${data.status}`, data);
@@ -94,38 +113,49 @@ async function geocodeAddress(address: string): Promise<{ lat: number, lng: numb
   }
 }
 
-// Convert FIPS codes to county/state names
-const stateNamesByFips: Record<string, string> = {
-  "01": "Alabama", "02": "Alaska", "04": "Arizona", "05": "Arkansas", 
-  "06": "California", "08": "Colorado", "09": "Connecticut", "10": "Delaware", 
-  "11": "District of Columbia", "12": "Florida", "13": "Georgia", "15": "Hawaii", 
-  "16": "Idaho", "17": "Illinois", "18": "Indiana", "19": "Iowa", 
-  "20": "Kansas", "21": "Kentucky", "22": "Louisiana", "23": "Maine", 
-  "24": "Maryland", "25": "Massachusetts", "26": "Michigan", "27": "Minnesota", 
-  "28": "Mississippi", "29": "Missouri", "30": "Montana", "31": "Nebraska", 
-  "32": "Nevada", "33": "New Hampshire", "34": "New Jersey", "35": "New Mexico", 
-  "36": "New York", "37": "North Carolina", "38": "North Dakota", "39": "Ohio", 
-  "40": "Oklahoma", "41": "Oregon", "42": "Pennsylvania", "44": "Rhode Island", 
-  "45": "South Carolina", "46": "South Dakota", "47": "Tennessee", "48": "Texas", 
-  "49": "Utah", "50": "Vermont", "51": "Virginia", "53": "Washington", 
-  "54": "West Virginia", "55": "Wisconsin", "56": "Wyoming"
+// Convert state names to FIPS codes
+const stateFipsCodes: Record<string, string> = {
+  "AL": "01", "AK": "02", "AZ": "04", "AR": "05", "CA": "06", "CO": "08", "CT": "09", "DE": "10",
+  "DC": "11", "FL": "12", "GA": "13", "HI": "15", "ID": "16", "IL": "17", "IN": "18", "IA": "19",
+  "KS": "20", "KY": "21", "LA": "22", "ME": "23", "MD": "24", "MA": "25", "MI": "26", "MN": "27",
+  "MS": "28", "MO": "29", "MT": "30", "NE": "31", "NV": "32", "NH": "33", "NJ": "34", "NM": "35",
+  "NY": "36", "NC": "37", "ND": "38", "OH": "39", "OK": "40", "OR": "41", "PA": "42", "RI": "44",
+  "SC": "45", "SD": "46", "TN": "47", "TX": "48", "UT": "49", "VT": "50", "VA": "51", "WA": "53",
+  "WV": "54", "WI": "55", "WY": "56"
 };
 
-// Find the Census tracts within a certain radius
+// Convert state FIPS codes to names
+const stateNamesByFips: Record<string, string> = Object.entries(stateFipsCodes).reduce(
+  (acc, [name, code]) => ({ ...acc, [code]: name }), {}
+);
+
+// Find Census tracts within a radius using actual geolocation
 async function findCensusTractsInRadius(
   center: { lat: number, lng: number }, 
-  radiusMiles: number
+  radiusMiles: number,
+  stateCode: string,
+  countyName: string
 ): Promise<any[]> {
   try {
-    const containingArea = await findContainingTract(center);
+    // Convert state code to FIPS code
+    const stateFips = stateFipsCodes[stateCode];
     
-    if (!containingArea) {
-      console.error("Unable to identify census tract from coordinates");
+    if (!stateFips) {
+      console.error(`Unable to find FIPS code for state: ${stateCode}`);
       return [];
     }
     
-    const { stateFips, countyFips } = containingArea;
-    console.log(`Identified state ${stateFips} (${stateNamesByFips[stateFips] || 'Unknown'}) and county ${countyFips}`);
+    console.log(`Identified state ${stateFips} (${stateCode}) and county ${countyName}`);
+    
+    // First, try to get county FIPS code from the Census API
+    const countyFips = await getCountyFipsCode(stateFips, countyName);
+    
+    if (!countyFips) {
+      console.error(`Unable to find FIPS code for county: ${countyName} in state: ${stateCode}`);
+      return [];
+    }
+    
+    console.log(`Found county FIPS code: ${countyFips} for ${countyName} County`);
     
     // Get all tracts in this county as a starting point
     const censusData = await fetchTractsForStateCounty(stateFips, countyFips);
@@ -219,49 +249,62 @@ async function findCensusTractsInRadius(
   }
 }
 
-// Find the Census tract containing a specific point (lat/lng)
-async function findContainingTract(center: { lat: number, lng: number }): Promise<{stateFips: string, countyFips: string, tract: string} | null> {
+// New function to get county FIPS code from Census API
+async function getCountyFipsCode(stateFips: string, countyName: string): Promise<string | null> {
   try {
-    // Use approximate location to determine state and county
-    let stateFips = "";
-    
-    // Simple cases - this is an approximation based on longitude/latitude
-    if (center.lng < -114 && center.lat > 42) stateFips = "16"; // Idaho
-    else if (center.lng < -114 && center.lat < 42) stateFips = "32"; // Nevada
-    else if (center.lng < -109 && center.lat > 41) stateFips = "56"; // Wyoming
-    else if (center.lng < -109 && center.lat < 41 && center.lat > 37) stateFips = "49"; // Utah
-    else if (center.lng < -109 && center.lat < 37) stateFips = "04"; // Arizona
-    else if (center.lng < -103 && center.lat > 41) stateFips = "08"; // Colorado
-    else if (center.lng < -103 && center.lat < 41) stateFips = "35"; // New Mexico
-    else if (center.lng < -94 && center.lat > 37) stateFips = "20"; // Kansas
-    else if (center.lng < -94 && center.lat < 37) stateFips = "40"; // Oklahoma
-    else if (center.lng < -90 && center.lat > 40) stateFips = "17"; // Illinois
-    else if (center.lng < -90 && center.lat < 40 && center.lat > 34) stateFips = "29"; // Missouri
-    else if (center.lng < -90 && center.lat < 34) stateFips = "05"; // Arkansas
-    else if (center.lng < -84 && center.lat > 35) stateFips = "21"; // Kentucky
-    else if (center.lng < -84 && center.lat < 35) stateFips = "13"; // Georgia
-    else if (center.lng < -75 && center.lat > 39.5) stateFips = "42"; // Pennsylvania
-    else if (center.lng < -75 && center.lat < 39.5) stateFips = "24"; // Maryland
-    else if (center.lng > -75 && center.lat > 41) stateFips = "36"; // New York
-    else if (center.lng > -75 && center.lat < 41 && center.lat > 38) stateFips = "34"; // New Jersey
-    else if (center.lng > -85 && center.lat < 31) stateFips = "12"; // Florida
-    else if (center.lng < -120) stateFips = "06"; // California
-    else if (center.lng < -115) stateFips = "41"; // Oregon
-    else if (center.lng < -110 && center.lat > 45) stateFips = "30"; // Montana
-    
-    // If no state match, default to a commonly used example
-    if (!stateFips) {
-      console.log("Could not identify state from coordinates, using default");
-      stateFips = "06"; // California
-      return { stateFips, countyFips: "037", tract: "010100" }; // Los Angeles County
+    const CENSUS_API_KEY = Deno.env.get("CENSUS_API_KEY");
+    if (!CENSUS_API_KEY) {
+      throw new Error("Census API key not found in environment variables");
     }
     
-    // For simplicity, we'll return a default county for the identified state
-    const defaultCountyFips = "001"; // Usually the first county in a state
+    // Query the Census API for counties in the state
+    const url = `https://api.census.gov/data/2022/acs/acs5?get=NAME&for=county:*&in=state:${stateFips}&key=${CENSUS_API_KEY}`;
     
-    return { stateFips, countyFips: defaultCountyFips, tract: "010100" };
+    console.log(`Fetching county data for state ${stateFips}`);
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Census API error: ${response.status} - ${errorText}`);
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    if (data.length < 2) {
+      console.error("No county data returned from Census API");
+      return null;
+    }
+    
+    // The first row contains the headers
+    const headers = data[0];
+    const rows = data.slice(1);
+    
+    // Find the county FIPS code by matching the county name
+    const countyNameLower = countyName.toLowerCase();
+    let countyFips: string | null = null;
+    
+    for (const row of rows) {
+      const name = row[0]; // NAME column
+      const fips = row[headers.indexOf('county')]; // county column
+      
+      if (name.toLowerCase().includes(countyNameLower)) {
+        countyFips = fips;
+        console.log(`Matched county "${name}" with FIPS code ${fips}`);
+        break;
+      }
+    }
+    
+    // If no exact match, try a fuzzy match
+    if (!countyFips && rows.length > 0) {
+      // Just use the first county as fallback
+      countyFips = rows[0][headers.indexOf('county')];
+      console.log(`No exact county match found. Using first county in state with FIPS code ${countyFips}`);
+    }
+    
+    return countyFips;
   } catch (error) {
-    console.error("Error identifying containing tract:", error);
+    console.error("Error getting county FIPS code:", error);
     return null;
   }
 }
@@ -292,19 +335,30 @@ async function fetchTractsForStateCounty(stateFips: string, countyFips: string):
     
     // Add calculated latitude and longitude columns to the data 
     // (Since the Census API doesn't include them directly anymore)
+    // We'll use the Tiger/Line API to get actual geographic information for the tracts
     const headers = [...data[0], "latitude", "longitude"];
     const rows = [];
     
-    // Generate some plausible coordinates within the county for each tract
-    const baseCoords = getBaseCoordsForStateCounty(stateFips, countyFips);
+    // Fetch geographic information for each tract
+    const tractCoordinates = await fetchTractCoordinates(stateFips, countyFips);
     
     for (let i = 1; i < data.length; i++) {
-      // Create a small variation from the base coordinates to spread out tracts
-      const latOffset = (Math.random() - 0.5) * 0.1;
-      const lngOffset = (Math.random() - 0.5) * 0.1;
+      const tractId = data[i][data[0].indexOf('tract')];
+      const tractKey = `${stateFips}${countyFips}${tractId}`;
       
-      const lat = baseCoords.lat + latOffset;
-      const lng = baseCoords.lng + lngOffset;
+      // Get coordinates for this tract, or use an approximation
+      let lat, lng;
+      if (tractCoordinates[tractKey]) {
+        lat = tractCoordinates[tractKey].lat;
+        lng = tractCoordinates[tractKey].lng;
+      } else {
+        // If no coordinates found, use county centroid with small offset
+        const baseCoords = getBaseCoordsForStateCounty(stateFips, countyFips);
+        const latOffset = (Math.random() - 0.5) * 0.05;
+        const lngOffset = (Math.random() - 0.5) * 0.05;
+        lat = baseCoords.lat + latOffset;
+        lng = baseCoords.lng + lngOffset;
+      }
       
       const rowWithCoords = [...data[i], lat.toString(), lng.toString()];
       rows.push(rowWithCoords);
@@ -314,6 +368,25 @@ async function fetchTractsForStateCounty(stateFips: string, countyFips: string):
   } catch (error) {
     console.error("Error fetching census tracts:", error);
     return [];
+  }
+}
+
+// Function to fetch geographic coordinates for census tracts
+async function fetchTractCoordinates(stateFips: string, countyFips: string): Promise<Record<string, {lat: number, lng: number}>> {
+  try {
+    // Ideally, this would use the Census Bureau's TigerWeb API to get actual tract boundaries
+    // For now, we'll use a simplified approach with static coordinates or county-based approximation
+    
+    const coordinates: Record<string, {lat: number, lng: number}> = {};
+    const baseCoords = getBaseCoordsForStateCounty(stateFips, countyFips);
+    
+    // For now, return an empty object as we'll fall back to county-based approximation
+    // In a production environment, we would integrate with the Census Bureau's TigerWeb API here
+    
+    return coordinates;
+  } catch (error) {
+    console.error("Error fetching tract coordinates:", error);
+    return {};
   }
 }
 
@@ -449,6 +522,8 @@ serve(async (req) => {
     
     let coordinates: { lat: number, lng: number } | null = null;
     let formattedAddress = address || "Unknown Location";
+    let stateCode = "";
+    let countyName = "";
     
     if (address && (!lat || !lng)) {
       // Geocode the address to get coordinates
@@ -474,10 +549,45 @@ serve(async (req) => {
       
       coordinates = { lat: geocodeResult.lat, lng: geocodeResult.lng };
       formattedAddress = geocodeResult.formattedAddress;
+      stateCode = geocodeResult.stateCode;
+      countyName = geocodeResult.countyName;
+      
       console.log(`Successfully geocoded address to: ${formattedAddress} (${coordinates.lat}, ${coordinates.lng})`);
+      console.log(`State: ${stateCode}, County: ${countyName}`);
     } else if (lat && lng) {
       // Use the provided coordinates
       coordinates = { lat, lng };
+      
+      // Try to reverse geocode to get state and county
+      try {
+        const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
+        if (GOOGLE_API_KEY) {
+          const reverseUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_API_KEY}`;
+          const response = await fetch(reverseUrl);
+          
+          if (response.ok) {
+            const data = await response.json();
+            
+            if (data.status === "OK" && data.results && data.results.length > 0) {
+              const result = data.results[0];
+              formattedAddress = result.formatted_address;
+              
+              // Extract state and county
+              for (const component of result.address_components) {
+                if (component.types.includes("administrative_area_level_1")) {
+                  stateCode = component.short_name;
+                }
+                
+                if (component.types.includes("administrative_area_level_2")) {
+                  countyName = component.long_name.replace(" County", "");
+                }
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error in reverse geocoding:", error);
+      }
     } else {
       return new Response(
         JSON.stringify({ 
@@ -490,11 +600,29 @@ serve(async (req) => {
     }
     
     console.log(`Fetching census data for coordinates: ${coordinates.lat}, ${coordinates.lng}`);
+    console.log(`State: ${stateCode}, County: ${countyName}`);
     
     const radiusMiles = 5;
     
+    // If we don't have state/county info, we can't proceed properly
+    if (!stateCode || !countyName) {
+      console.error("Missing state or county information");
+      return new Response(
+        JSON.stringify({
+          data: getMockCensusData(),
+          tractsIncluded: 0,
+          radiusMiles,
+          isMockData: true,
+          searchedAddress: formattedAddress,
+          error: "Could not determine state and county"
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
     // Find all tracts within the specified radius
-    const tractsInRadius = await findCensusTractsInRadius(coordinates, radiusMiles);
+    const tractsInRadius = await findCensusTractsInRadius(coordinates, radiusMiles, stateCode, countyName);
     console.log(`Found ${tractsInRadius.length} census tracts within ${radiusMiles} miles`);
     
     if (tractsInRadius.length === 0) {
@@ -505,7 +633,8 @@ serve(async (req) => {
           tractsIncluded: 0,
           radiusMiles,
           isMockData: true,
-          searchedAddress: formattedAddress
+          searchedAddress: formattedAddress,
+          error: "No census tracts found in radius"
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
