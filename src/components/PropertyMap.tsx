@@ -42,20 +42,28 @@ export const PropertyMap = ({ address, schools = [], coordinates: propCoordinate
   // When tab visibility changes, resize the map to ensure proper rendering
   useEffect(() => {
     if (isVisible && map.current) {
+      console.log("Map tab is now visible, resizing map");
       // Small delay to ensure DOM is ready
       setTimeout(() => {
         map.current?.resize();
-      }, 50);
+      }, 100); // Increased delay to ensure DOM is fully ready
     }
   }, [isVisible]);
 
   // Initialize map
   useEffect(() => {
-    if (!mapContainer.current || !isVisible || mapInitializedRef.current) return;
+    if (!mapContainer.current || !isVisible) return;
+    
+    // Only initialize once
+    if (mapInitializedRef.current && map.current) {
+      console.log("Map already initialized, skipping initialization");
+      return;
+    }
     
     const initializeMap = async () => {
       try {
         setLoading(true);
+        console.log("Starting map initialization process");
         
         // Get coordinates either from props or by geocoding with Google Maps
         let coords = coordinates;
@@ -94,9 +102,10 @@ export const PropertyMap = ({ address, schools = [], coordinates: propCoordinate
           
           map.current = new mapboxgl.Map({
             container: mapContainer.current,
-            style: 'mapbox://styles/mapbox/streets-v12',
+            style: 'mapbox://styles/mapbox/standard', // Using Mapbox Standard style
             center: [coords!.lng, coords!.lat],
-            zoom: 14
+            zoom: 14,
+            antialias: true // For better rendering quality
           });
           
           // Add navigation controls
@@ -111,6 +120,7 @@ export const PropertyMap = ({ address, schools = [], coordinates: propCoordinate
             
             console.log("Map loaded successfully");
             mapInitializedRef.current = true;
+            setLoading(false);
             
             // Add property marker
             const propertyMarker = new mapboxgl.Marker({ color: '#3b82f6' })
@@ -173,8 +183,6 @@ export const PropertyMap = ({ address, schools = [], coordinates: propCoordinate
                 maxZoom: 15
               });
             }
-            
-            setLoading(false);
           });
         }
       } catch (err) {
@@ -187,7 +195,7 @@ export const PropertyMap = ({ address, schools = [], coordinates: propCoordinate
     initializeMap();
   }, [address, schools, coordinates, isVisible]);
   
-  if (loading) {
+  if (loading && isVisible) {
     return <LoadingState className="h-full" message="Loading map..." />;
   }
   
