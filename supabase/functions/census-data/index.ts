@@ -90,11 +90,15 @@ async function findCensusTractsInRadius(
       
       // Create a radius circle
       const centerPoint = turf.point([center.lng, center.lat]);
-      const circle = turf.circle(centerPoint.geometry.coordinates, radiusMiles, { units: 'miles' });
       
-      // Find lat/lon indices
-      const latIndex = headers.indexOf('INTPTLAT');
-      const lonIndex = headers.indexOf('INTPTLON');
+      // Check if latitude and longitude columns exist in the response
+      const latIndex = headers.indexOf('LATITUDE') !== -1 ? 
+                        headers.indexOf('LATITUDE') : 
+                        headers.indexOf('latitude');
+                        
+      const lonIndex = headers.indexOf('LONGITUDE') !== -1 ? 
+                        headers.indexOf('LONGITUDE') : 
+                        headers.indexOf('longitude');
       
       if (latIndex === -1 || lonIndex === -1) {
         console.error("Latitude/longitude not found in census data response");
@@ -152,14 +156,19 @@ async function findCensusTractsInRadius(
     
     // Create a radius circle
     const centerPoint = turf.point([center.lng, center.lat]);
-    const circle = turf.circle(centerPoint.geometry.coordinates, radiusMiles, { units: 'miles' });
     
-    // Find lat/lon indices
-    const latIndex = headers.indexOf('INTPTLAT');
-    const lonIndex = headers.indexOf('INTPTLON');
+    // Check if latitude and longitude columns exist in the response
+    const latIndex = headers.indexOf('LATITUDE') !== -1 ? 
+                      headers.indexOf('LATITUDE') : 
+                      headers.indexOf('latitude');
+                      
+    const lonIndex = headers.indexOf('LONGITUDE') !== -1 ? 
+                      headers.indexOf('LONGITUDE') : 
+                      headers.indexOf('longitude');
     
     if (latIndex === -1 || lonIndex === -1) {
       console.error("Latitude/longitude not found in census data response");
+      console.log("Available headers:", headers);
       return [];
     }
     
@@ -303,15 +312,26 @@ async function fetchTractsForStateCounty(stateFips: string, countyFips: string):
     
     console.log(`Fetching census data for state ${stateFips} and county ${countyFips}`);
     
-    const censusUrl = `https://api.census.gov/data/2022/acs/acs5?get=NAME,B01001_001E,B01002_001E,B19013_001E,B23025_005E,B25077_001E,B25010_001E,B15003_022E,B15003_025E,INTPTLAT,INTPTLON&for=tract:*&in=state:${stateFips}&in=county:${countyFips}&key=${CENSUS_API_KEY}`;
+    // Updated Census API URL to include latitude and longitude fields directly
+    // Note: Using variables that are known to be supported (no INTPTLAT/INTPTLON)
+    const censusUrl = `https://api.census.gov/data/2022/acs/acs5/profile?get=NAME,DP05_0001E,DP05_0017E,DP03_0062E,DP03_0009PE,DP04_0089E,DP02_0066PE,DP02_0067PE,LATITUDE,LONGITUDE&for=tract:*&in=state:${stateFips}&in=county:${countyFips}&key=${CENSUS_API_KEY}`;
+    
+    console.log("Census API URL:", censusUrl);
     
     const response = await fetch(censusUrl);
     if (!response.ok) {
-      throw new Error(`Census API error: ${response.status} - ${await response.text()}`);
+      const errorText = await response.text();
+      throw new Error(`Census API error: ${response.status} - ${errorText}`);
     }
     
     const data = await response.json();
     console.log(`Retrieved ${data.length - 1} census tracts for state ${stateFips}, county ${countyFips}`);
+    
+    // Log the headers to help with debugging
+    if (data.length > 0) {
+      console.log("Census data headers:", data[0]);
+    }
+    
     return data;
   } catch (error) {
     console.error("Error fetching census tracts:", error);
@@ -319,21 +339,20 @@ async function fetchTractsForStateCounty(stateFips: string, countyFips: string):
   }
 }
 
+// Updated function to process census data with the new variables
 async function processCensusData(
   tractsInRadius: any[], 
   allData: any[], 
   radiusMiles: number
 ) {
-  // Process the data to create aggregate statistics
-  // Variables:
-  // B01001_001E: Total population
-  // B01002_001E: Median age
-  // B19013_001E: Median household income
-  // B23025_005E: Unemployment
-  // B25077_001E: Median home value
-  // B25010_001E: Average household size
-  // B15003_022E: Bachelor's degree
-  // B15003_025E: High school diploma
+  // Headers from the new API endpoint
+  // DP05_0001E: Total population
+  // DP05_0017E: Median age
+  // DP03_0062E: Median household income
+  // DP03_0009PE: Unemployment rate (percentage)
+  // DP04_0089E: Median home value
+  // DP02_0066PE: High school graduate or higher (percentage)
+  // DP02_0067PE: Bachelor's degree or higher (percentage)
   
   let totalPopulation = 0;
   let weightedMedianAge = 0;
@@ -341,23 +360,24 @@ async function processCensusData(
   let populationWithIncome = 0;
   let totalHomeValue = 0;
   let homesWithValue = 0;
-  let totalUnemployed = 0;
-  let totalBachelors = 0;
-  let totalHighSchool = 0;
+  let totalUnemploymentRate = 0;
+  let totalHighSchoolRate = 0;
+  let totalBachelorRate = 0;
+  let countTracts = 0;
   
   for (const row of allData) {
     const population = parseInt(row[1], 10) || 0;
     const medianAge = parseFloat(row[2]) || 0;
     const medianIncome = parseInt(row[3], 10) || 0;
-    const unemployed = parseInt(row[4], 10) || 0;
+    const unemploymentRate = parseFloat(row[4]) || 0;
     const medianHomeValue = parseInt(row[5], 10) || 0;
-    const householdSize = parseFloat(row[6]) || 0;
-    const bachelors = parseInt(row[7], 10) || 0;
-    const highSchool = parseInt(row[8], 10) || 0;
+    const highSchoolRate = parseFloat(row[6]) || 0;
+    const bachelorRate = parseFloat(row[7]) || 0;
     
     if (population > 0) {
       totalPopulation += population;
       weightedMedianAge += medianAge * population;
+      countTracts++;
     }
     
     if (medianIncome > 0) {
@@ -370,27 +390,27 @@ async function processCensusData(
       homesWithValue++;
     }
     
-    totalUnemployed += unemployed;
-    totalBachelors += bachelors;
-    totalHighSchool += highSchool;
+    if (!isNaN(unemploymentRate)) totalUnemploymentRate += unemploymentRate;
+    if (!isNaN(highSchoolRate)) totalHighSchoolRate += highSchoolRate;
+    if (!isNaN(bachelorRate)) totalBachelorRate += bachelorRate;
   }
   
   // Calculate aggregated metrics
   const avgMedianAge = totalPopulation > 0 ? (weightedMedianAge / totalPopulation).toFixed(1) : "N/A";
   const avgMedianIncome = populationWithIncome > 0 ? Math.round(totalIncome / populationWithIncome) : 0;
   const avgHomeValue = homesWithValue > 0 ? Math.round(totalHomeValue / homesWithValue) : 0;
-  const unemploymentRate = totalPopulation > 0 ? ((totalUnemployed / totalPopulation) * 100).toFixed(1) : "N/A";
-  const bachelorRate = totalPopulation > 0 ? ((totalBachelors / totalPopulation) * 100).toFixed(1) : "N/A";
-  const highSchoolRate = totalPopulation > 0 ? ((totalHighSchool / totalPopulation) * 100).toFixed(1) : "N/A";
+  const avgUnemploymentRate = countTracts > 0 ? (totalUnemploymentRate / countTracts).toFixed(1) : "N/A";
+  const avgHighSchoolRate = countTracts > 0 ? (totalHighSchoolRate / countTracts).toFixed(1) : "N/A";
+  const avgBachelorRate = countTracts > 0 ? (totalBachelorRate / countTracts).toFixed(1) : "N/A";
   
   // Format the processed data according to our app's structure
   return {
     totalPopulation,
     medianHouseholdIncome: avgMedianIncome,
     medianHomeValue: avgHomeValue,
-    educationLevelHS: parseFloat(highSchoolRate),
-    educationLevelBachelor: parseFloat(bachelorRate),
-    unemploymentRate: parseFloat(unemploymentRate),
+    educationLevelHS: parseFloat(avgHighSchoolRate),
+    educationLevelBachelor: parseFloat(avgBachelorRate),
+    unemploymentRate: parseFloat(avgUnemploymentRate),
     medianAge: parseFloat(avgMedianAge),
     categories: {
       demographic: [
@@ -400,15 +420,15 @@ async function processCensusData(
       ],
       economic: [
         { name: "Median Household Income", value: `$${avgMedianIncome.toLocaleString()}` },
-        { name: "Unemployment Rate", value: `${unemploymentRate}%` },
+        { name: "Unemployment Rate", value: `${avgUnemploymentRate}%` },
       ],
       housing: [
         { name: "Median Home Value", value: `$${avgHomeValue.toLocaleString()}` },
         { name: "Average Household Size", value: "2.5" },
       ],
       education: [
-        { name: "Bachelor's Degree or Higher", value: `${bachelorRate}%` },
-        { name: "High School Graduate or Higher", value: `${highSchoolRate}%` },
+        { name: "Bachelor's Degree or Higher", value: `${avgBachelorRate}%` },
+        { name: "High School Graduate or Higher", value: `${avgHighSchoolRate}%` },
       ],
     },
     rawData: { allData, tractsInRadius }
@@ -482,21 +502,29 @@ serve(async (req) => {
         throw new Error("Census API key not found in environment variables");
       }
       
-      const url = `https://api.census.gov/data/2022/acs/acs5?get=NAME,B01001_001E,B01002_001E,B19013_001E,B23025_005E,B25077_001E,B25010_001E,B15003_022E,B15003_025E&for=tract:${tractIds}&in=state:${state}&in=county:${county}&key=${CENSUS_API_KEY}`;
+      // Updated Census API URL to use supported variables
+      const url = `https://api.census.gov/data/2022/acs/acs5/profile?get=NAME,DP05_0001E,DP05_0017E,DP03_0062E,DP03_0009PE,DP04_0089E,DP02_0066PE,DP02_0067PE&for=tract:${tractIds}&in=state:${state}&in=county:${county}&key=${CENSUS_API_KEY}`;
       
       console.log(`Fetching demographic data for ${tracts.length} tracts in state ${state}, county ${county}`);
+      console.log("Census API URL:", url);
       
       try {
         const response = await fetch(url);
         
         if (!response.ok) {
-          console.error(`Census API error for ${key}: ${response.status} - ${await response.text()}`);
+          const errorText = await response.text();
+          console.error(`Census API error for ${key}: ${response.status} - ${errorText}`);
           continue;
         }
         
         const data = await response.json();
         allData.push(...data.slice(1)); // Skip header row
         console.log(`Retrieved demographic data for ${data.length - 1} tracts in state ${state}, county ${county}`);
+        
+        // Log the headers for debugging
+        if (data.length > 0) {
+          console.log("Data headers:", data[0]);
+        }
       } catch (error) {
         console.error(`Error fetching data for ${key}:`, error);
       }

@@ -55,7 +55,7 @@ export function useCensusData() {
         setCensusData(null);
         setCensusResponse(null);
         toast.error("Census data not available", {
-          description: "We couldn't find census data for this location."
+          description: `Error: ${error.message || "We couldn't connect to the census database."}`
         });
         return;
       }
