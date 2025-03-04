@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SearchForm } from "@/components/SearchForm";
 import { PermitList } from "@/components/PermitList";
@@ -168,9 +167,11 @@ const Index = () => {
           <TabsContent value="census" className="mt-0 animate-in fade-in-50">
             <CensusList
               censusData={censusData}
-              censusResponse={censusResponse}
               isLoading={isSearchingCensus}
               searchedAddress={censusAddress}
+              isMockData={censusResponse?.tractsIncluded === 0}
+              censusResponse={censusResponse}
+              onTryMockData={() => useCensusData().loadMockData()}
             />
           </TabsContent>
         </Tabs>

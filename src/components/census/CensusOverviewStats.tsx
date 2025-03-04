@@ -1,6 +1,6 @@
 
 import { Users, TrendingUp, Home, GraduationCap } from "lucide-react";
-import { CensusData } from "@/hooks/use-census-data";
+import { CensusData } from "@/types";
 import { CensusStatCard } from "./CensusStatCard";
 import { formatNumber, formatPercent } from "@/utils/format";
 

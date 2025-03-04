@@ -2,7 +2,7 @@
 import { motion } from "framer-motion";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { LucideIcon } from "lucide-react";
-import { CensusDataItem } from "@/hooks/use-census-data";
+import { CensusDataItem } from "@/types";
 import { formatNumber, formatPercent } from "@/utils/format";
 
 interface CensusDataCategoryProps {

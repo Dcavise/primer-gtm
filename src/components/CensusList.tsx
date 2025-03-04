@@ -1,5 +1,5 @@
 
-import { CensusData } from "@/hooks/use-census-data";
+import { CensusData, CensusResponse } from "@/types";
 import { LoadingState } from "@/components/LoadingState";
 import { CensusHeader } from "./census/CensusHeader";
 import { CensusEmptyState } from "./census/CensusEmptyState";
@@ -10,6 +10,7 @@ import { InfoIcon } from "lucide-react";
 
 interface CensusListProps {
   censusData: CensusData | null;
+  censusResponse?: CensusResponse | null;
   isLoading: boolean;
   searchedAddress: string;
   onTryMockData?: () => void;
@@ -21,7 +22,8 @@ export const CensusList = ({
   isLoading, 
   searchedAddress, 
   onTryMockData,
-  isMockData 
+  isMockData,
+  censusResponse 
 }: CensusListProps) => {
   if (isLoading) {
     return <LoadingState message="Retrieving census data..." />;
