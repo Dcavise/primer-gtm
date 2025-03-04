@@ -74,6 +74,17 @@ export const SchoolsList = ({ schools, isLoading, searchedAddress }: SchoolsList
     return schoolsByLevel[level]?.length || 0;
   };
 
+  // Sort tabs to ensure Elementary School is first
+  const sortedLevels = Object.keys(schoolsByLevel).sort((a, b) => {
+    if (a === "All") return -1; // All should always be first
+    if (b === "All") return 1;
+    if (a.toLowerCase().includes("elementary")) return -1; // Elementary comes next
+    if (b.toLowerCase().includes("elementary")) return 1;
+    if (a.toLowerCase().includes("middle") && !b.toLowerCase().includes("high")) return -1; // Middle comes before High
+    if (b.toLowerCase().includes("middle") && !a.toLowerCase().includes("high")) return 1;
+    return a.localeCompare(b); // Alphabetical for the rest
+  });
+
   const toggleSortBy = () => {
     setSortBy(prev => prev === "distance" ? "rating" : "distance");
   };
@@ -140,7 +151,7 @@ export const SchoolsList = ({ schools, isLoading, searchedAddress }: SchoolsList
           >
             <div className="border-b">
               <TabsList className="bg-transparent h-auto p-0 mb-0 w-full overflow-x-auto flex justify-start gap-1">
-                {Object.keys(schoolsByLevel).map(level => (
+                {sortedLevels.map(level => (
                   getLevelCount(level) > 0 && (
                     <TabsTrigger 
                       key={level} 
@@ -158,7 +169,7 @@ export const SchoolsList = ({ schools, isLoading, searchedAddress }: SchoolsList
               </TabsList>
             </div>
 
-            {Object.keys(schoolsByLevel).map(level => (
+            {sortedLevels.map(level => (
               <TabsContent key={level} value={level} className="mt-4 animate-in fade-in-50">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {activeSchools.map((school, index) => (
