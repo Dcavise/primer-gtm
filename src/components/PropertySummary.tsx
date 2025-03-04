@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { LoadingState } from "@/components/LoadingState";
 import { Permit } from "@/types";
@@ -44,21 +43,17 @@ export const PropertySummary = ({
 }: PropertySummaryProps) => {
   const [activeTab, setActiveTab] = useState<"summary" | "map">("summary");
   
-  // Get only elementary schools
   const elementarySchools = schools
     .filter(school => school.educationLevel?.toLowerCase().includes('elementary'))
     .sort((a, b) => (a.location?.distanceMiles || 0) - (b.location?.distanceMiles || 0))
     .slice(0, 5);
 
-  // Function to render the summary with formatting
   const renderFormattedSummary = (text: string) => {
     if (!text) return null;
     
-    // Split by bullet points and other formatting
     const parts = text.split(/\n+/);
     
     return parts.map((part, index) => {
-      // Check if it's a bullet point
       if (part.trim().startsWith('•') || part.trim().startsWith('-')) {
         return (
           <motion.li 
@@ -76,7 +71,6 @@ export const PropertySummary = ({
         );
       }
       
-      // Check if it's a header (assuming headers end with a colon)
       if (part.trim().endsWith(':')) {
         return (
           <motion.h4 
@@ -92,7 +86,6 @@ export const PropertySummary = ({
         );
       }
       
-      // Check if it contains "Property Summary" (the title)
       if (part.trim().includes('Property Summary:')) {
         return (
           <motion.h3 
@@ -107,7 +100,6 @@ export const PropertySummary = ({
         );
       }
       
-      // Regular paragraph
       return part.trim() ? (
         <motion.p 
           key={index} 
@@ -122,7 +114,6 @@ export const PropertySummary = ({
     });
   };
 
-  // Helper function to get icons for different summary sections
   const getHeaderIcon = (header: string) => {
     const lowerHeader = header.toLowerCase();
     
@@ -145,7 +136,6 @@ export const PropertySummary = ({
     return <ArrowRight className="h-4 w-4 text-gray-500" />;
   };
 
-  // If still loading
   if (isLoading) {
     return (
       <LoadingState 
@@ -155,7 +145,6 @@ export const PropertySummary = ({
     );
   }
 
-  // If no address entered yet
   if (!searchedAddress) {
     return (
       <div className="text-center py-10">
@@ -170,7 +159,6 @@ export const PropertySummary = ({
     );
   }
 
-  // If no summary is available but we have an address
   if (!summary && searchedAddress) {
     return (
       <div className="text-center py-10">
@@ -318,7 +306,6 @@ export const PropertySummary = ({
   );
 };
 
-// Helper function to get badge color based on school rating
 function getRatingColor(rating: number): string {
   if (rating >= 8) {
     return 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800/50';
