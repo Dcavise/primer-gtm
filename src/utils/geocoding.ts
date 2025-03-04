@@ -1,6 +1,7 @@
 
 import { getApiKey, GOOGLE_MAPS_API_KEY } from "@/services/api-config";
 import { toast } from "sonner";
+import mapboxgl from "mapbox-gl";
 
 export interface Coordinates {
   lat: number;
@@ -13,6 +14,63 @@ export interface GeocodingResult {
 }
 
 export async function geocodeAddress(address: string): Promise<GeocodingResult | null> {
+  try {
+    // First try to get the Mapbox token for geocoding
+    let mapboxToken;
+    try {
+      mapboxToken = await getApiKey('mapbox');
+      if (mapboxToken) {
+        console.log("Using Mapbox for geocoding");
+        return await geocodeWithMapbox(address, mapboxToken);
+      }
+    } catch (error) {
+      console.warn("Failed to get Mapbox token, falling back to Google Maps:", error);
+    }
+    
+    // Fall back to Google Maps if Mapbox fails or isn't available
+    return await geocodeWithGoogleMaps(address);
+    
+  } catch (error) {
+    console.error("Geocoding error:", error);
+    toast.error("Could not find this address", {
+      description: "Please check the address and try again"
+    });
+    return null;
+  }
+}
+
+async function geocodeWithMapbox(address: string, token: string): Promise<GeocodingResult | null> {
+  try {
+    console.log("Geocoding address with Mapbox:", address);
+    const encodedAddress = encodeURIComponent(address);
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${token}`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.features && data.features.length > 0) {
+      const result = data.features[0];
+      const formattedAddress = result.place_name;
+      
+      // Mapbox returns coordinates as [longitude, latitude]
+      const coordinates: Coordinates = {
+        lng: result.center[0],
+        lat: result.center[1]
+      };
+
+      console.log("Successfully geocoded with Mapbox:", formattedAddress, coordinates);
+      return { address: formattedAddress, coordinates };
+    } else {
+      console.error("Mapbox geocoding failed:", data);
+      return null;
+    }
+  } catch (error) {
+    console.error("Mapbox geocoding error:", error);
+    throw error;
+  }
+}
+
+async function geocodeWithGoogleMaps(address: string): Promise<GeocodingResult | null> {
   try {
     // Try to get the Google Maps API key securely from Supabase
     let apiKey;
@@ -28,7 +86,7 @@ export async function geocodeAddress(address: string): Promise<GeocodingResult |
       throw new Error("No Google Maps API key available");
     }
     
-    console.log("Geocoding address:", address);
+    console.log("Geocoding address with Google Maps:", address);
     const encodedAddress = encodeURIComponent(address);
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${apiKey}`;
 
@@ -43,21 +101,15 @@ export async function geocodeAddress(address: string): Promise<GeocodingResult |
         lng: result.geometry.location.lng,
       };
 
-      console.log("Successfully geocoded address:", formattedAddress, coordinates);
+      console.log("Successfully geocoded with Google Maps:", formattedAddress, coordinates);
       return { address: formattedAddress, coordinates };
     } else {
-      console.error("Geocoding failed:", data.status, data);
-      toast.error("Could not find this address", {
-        description: "Please check the address and try again"
-      });
+      console.error("Google Maps geocoding failed:", data.status, data);
       return null;
     }
   } catch (error) {
-    console.error("Geocoding error:", error);
-    toast.error("Could not find this address", {
-      description: "Please check the address and try again"
-    });
-    return null;
+    console.error("Google Maps geocoding error:", error);
+    throw error;
   }
 }
 

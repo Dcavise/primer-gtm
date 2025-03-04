@@ -39,7 +39,7 @@ export const PropertyMap = ({ address, schools = [], coordinates: propCoordinate
       try {
         setLoading(true);
         
-        // Use provided coordinates or geocode the address
+        // Get coordinates either from props or by geocoding
         let coords = coordinates;
         if (!coords) {
           if (address) {
@@ -71,7 +71,7 @@ export const PropertyMap = ({ address, schools = [], coordinates: propCoordinate
           // Set mapbox access token
           mapboxgl.accessToken = mapboxAccessToken;
           
-          // Create map instance
+          // Create map instance only if not already created
           if (map.current) return;
           
           console.log("Initializing map with coordinates:", coords);
