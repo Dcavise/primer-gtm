@@ -1,13 +1,10 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { SearchForm } from "@/components/SearchForm";
 import { PermitList } from "@/components/PermitList";
 import { usePermits } from "@/hooks/use-permits";
 import { motion } from "framer-motion";
-import { testMiamiAddress, testExactAddressMatch } from "@/services/api";
-import { Button } from "@/components/ui/button";
 import { Permit } from "@/types";
-import { toast } from "sonner";
 
 const Index = () => {
   const { permits, status, searchedAddress, fetchPermits } = usePermits();
@@ -16,36 +13,6 @@ const Index = () => {
     permits: Permit[],
     address: string
   } | null>(null);
-
-  const runMiamiTest = async () => {
-    toast.info("Running test with Miami coordinates...");
-    const result = await testMiamiAddress();
-    
-    if (result && result.permits.length > 0) {
-      setTestResults({
-        permits: result.permits,
-        address: "Miami Beach Area (Test)"
-      });
-      toast.success(`Found ${result.permits.length} permits in Miami area`);
-    } else {
-      toast.error("Test failed or no permits found");
-    }
-  };
-
-  const runExactAddressTest = async () => {
-    toast.info("Running test with an address known to have exact matches...");
-    const { permits: result, address } = await testExactAddressMatch();
-    
-    if (result && result.permits.length > 0) {
-      setTestResults({
-        permits: result.permits,
-        address: address
-      });
-      toast.success(`Found ${result.permits.length} permits for "${address}"`);
-    } else {
-      toast.error("Test failed or no permits found");
-    }
-  };
 
   const handleSearch = async (params, address) => {
     setTestResults(null);
@@ -72,22 +39,6 @@ const Index = () => {
           <p className="text-white/90 mb-8 text-balance max-w-2xl">
             Search for building permits and land use data by address. Discover historical permit information for properties and analyze zoning changes.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 mb-4">
-            <Button 
-              variant="secondary" 
-              onClick={runMiamiTest}
-              className="hover:bg-white/30 bg-white/20 text-white border border-white/20"
-            >
-              Test with Miami Area
-            </Button>
-            <Button 
-              variant="secondary" 
-              onClick={runExactAddressTest}
-              className="hover:bg-white/30 bg-white/20 text-white border border-white/20"
-            >
-              Test with Exact Address Match
-            </Button>
-          </div>
           <SearchForm onSearch={handleSearch} isSearching={isSearching} />
         </div>
       </motion.header>
