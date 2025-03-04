@@ -50,8 +50,8 @@ export const PropertySummary = ({
   if (isLoading) {
     return (
       <LoadingState 
-        title="Generating property summary" 
-        description="Our AI is analyzing all available property data to generate a comprehensive summary..."
+        message="Generating property summary..."
+        className="py-8"
       />
     );
   }
