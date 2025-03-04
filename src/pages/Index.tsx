@@ -32,6 +32,13 @@ const Index = () => {
     }
   };
 
+  // Modified the search handler to clear test results when a user performs a search
+  const handleSearch = async (params, address) => {
+    // Clear any test results before performing a search
+    setTestResults(null);
+    await fetchPermits(params, address);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <motion.header 
@@ -61,7 +68,7 @@ const Index = () => {
               Test with Miami Address
             </Button>
           </div>
-          <SearchForm onSearch={fetchPermits} isSearching={isSearching} />
+          <SearchForm onSearch={handleSearch} isSearching={isSearching} />
         </div>
       </motion.header>
 
@@ -92,7 +99,7 @@ const Index = () => {
           >
             <h2 className="text-2xl font-medium mb-3">Enter an address to get started</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Search for any address to find permit history, zoning information, and building regulations. 
+              Search for building permits and land use data by address. Discover historical permit information for properties and analyze zoning regulations. 
               The tool will retrieve all permit records associated with the specified location.
             </p>
           </motion.div>
