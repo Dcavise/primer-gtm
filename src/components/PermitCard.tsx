@@ -34,6 +34,9 @@ export const PermitCard = ({ permit, onClick, delay = 0, searchedAddress }: Perm
   };
 
   const exactMatch = isExactMatch();
+  
+  // Use project_brief as description, fallback to project_name, then project_type
+  const description = permit.project_brief || permit.project_name || permit.project_type || "Unknown Project";
 
   return (
     <motion.div
@@ -53,15 +56,15 @@ export const PermitCard = ({ permit, onClick, delay = 0, searchedAddress }: Perm
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between">
             <div>
-              <CardTitle className="line-clamp-1 text-lg md:text-xl group-hover:text-primary transition-colors flex items-center gap-1">
-                {permit.project_type || "Unknown Project Type"}
+              <CardTitle className="line-clamp-2 text-lg md:text-xl group-hover:text-primary transition-colors">
+                {description}
                 {exactMatch && (
                   <CheckCircle className="h-4 w-4 text-green-500 inline-block ml-1" />
                 )}
               </CardTitle>
               <CardDescription className="line-clamp-1 mt-1 flex items-center gap-1">
                 <MapPin className="h-3 w-3 inline-block" />
-                {permit.address}
+                {permit.address || "No address provided"}
               </CardDescription>
             </div>
             <Badge 
@@ -81,26 +84,13 @@ export const PermitCard = ({ permit, onClick, delay = 0, searchedAddress }: Perm
           </div>
         )}
         
-        <CardContent className="pb-3">
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-            <div>
-              <span className="text-muted-foreground">Applicant:</span> 
-              <span className="ml-1 font-medium">{permit.applicant || "Not specified"}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Date:</span> 
-              <span className="ml-1 font-medium">{permit.date ? formatDate(permit.date) : "Unknown"}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Project:</span> 
-              <span className="ml-1 font-medium line-clamp-1">{permit.project_name || "Not specified"}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">ID:</span> 
-              <span className="ml-1 font-medium">{permit.record_id || "Unknown"}</span>
-            </div>
+        <CardContent className="py-3">
+          <div className="text-sm">
+            <span className="text-muted-foreground">Date: </span> 
+            <span className="font-medium">{permit.date ? formatDate(permit.date) : "Unknown"}</span>
           </div>
         </CardContent>
+        
         <CardFooter className="pt-0 pb-3 text-xs text-muted-foreground">
           <div className="flex items-center">
             <span className="inline-block w-2 h-2 rounded-full bg-zoneomics-blue mr-2"></span>
