@@ -1,0 +1,106 @@
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { geocodeAddress, createBoundingBox } from "@/utils/geocoding";
+import { toast } from "sonner";
+import { motion } from "framer-motion";
+import { Search, Loader2 } from "lucide-react";
+
+interface SearchFormProps {
+  onSearch: (params: {
+    top_right_lat: number;
+    top_right_lng: number;
+    bottom_left_lat: number;
+    bottom_left_lng: number;
+  }, address: string) => void;
+  isSearching: boolean;
+}
+
+export const SearchForm = ({ onSearch, isSearching }: SearchFormProps) => {
+  const [address, setAddress] = useState("");
+  const [searchRadius, setSearchRadius] = useState(200); // Default radius in meters
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!address.trim()) {
+      toast.error("Please enter an address to search", {
+        description: "The address field cannot be empty."
+      });
+      return;
+    }
+    
+    const geocodeResult = await geocodeAddress(address.trim());
+    
+    if (!geocodeResult) return; // Error is already handled in geocodeAddress
+    
+    const { coordinates } = geocodeResult;
+    const { bottomLeft, topRight } = createBoundingBox(coordinates, searchRadius);
+    
+    onSearch({
+      bottom_left_lat: bottomLeft.lat,
+      bottom_left_lng: bottomLeft.lng,
+      top_right_lat: topRight.lat,
+      top_right_lng: topRight.lng
+    }, geocodeResult.address);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
+        <div className="relative">
+          <Input
+            className="h-12 pl-10 pr-4 border-border/60 focus:border-primary focus:ring-1 focus:ring-primary text-base"
+            type="text"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="Enter a street address..."
+            disabled={isSearching}
+          />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
+        </div>
+        
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <label className="text-sm text-muted-foreground mb-1 block">Search Radius (meters)</label>
+            <Input
+              type="range"
+              min="50"
+              max="500"
+              step="50"
+              value={searchRadius}
+              onChange={(e) => setSearchRadius(parseInt(e.target.value))}
+              className="w-full"
+              disabled={isSearching}
+            />
+            <div className="flex justify-between text-xs text-muted-foreground mt-1">
+              <span>50m</span>
+              <span>{searchRadius}m</span>
+              <span>500m</span>
+            </div>
+          </div>
+          
+          <Button 
+            type="submit" 
+            className="h-12 px-8 transition-all bg-zoneomics-blue hover:bg-zoneomics-blue/90"
+            disabled={isSearching || !address.trim()}
+          >
+            {isSearching ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Searching...
+              </>
+            ) : (
+              "Search Permits"
+            )}
+          </Button>
+        </div>
+      </form>
+    </motion.div>
+  );
+};
