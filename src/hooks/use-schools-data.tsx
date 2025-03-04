@@ -11,13 +11,18 @@ export function useSchoolsData() {
   const [searchedAddress, setSearchedAddress] = useState<string>("");
   const [searchResponse, setSearchResponse] = useState<SchoolsResponse | null>(null);
 
-  const fetchSchoolsData = async (address: string, lat: number, lon: number) => {
+  const fetchSchoolsData = async (params: { top_right_lat: number, top_right_lng: number }, address: string) => {
     setStatus("loading");
-    console.log(`Fetching schools data for address: ${address}, coordinates: (${lat}, ${lon})`);
+    console.log(`Fetching schools data for address: ${address}, coordinates: (${params.top_right_lat}, ${params.top_right_lng})`);
     
     try {
       const { data: response, error } = await supabase.functions.invoke('nearby-schools', {
-        body: { address, lat, lon, radius: 5 }
+        body: { 
+          address, 
+          lat: params.top_right_lat, 
+          lon: params.top_right_lng, 
+          radius: 5 
+        }
       });
       
       if (error) {
