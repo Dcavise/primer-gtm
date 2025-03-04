@@ -27,23 +27,67 @@ serve(async (req) => {
     const { lat, lon, address, radius = 5 } = await req.json();
     console.log(`Searching for schools near: ${address} (${lat}, ${lon}), radius: ${radius}mi`);
 
-    if (!lat || !lon) {
+    if (!lat || !lon || !address) {
       return new Response(
-        JSON.stringify({ error: 'Latitude and longitude are required' }),
+        JSON.stringify({ error: 'Latitude, longitude, and address are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Based on the documentation, use the v2 endpoint with nearby-schools
-    // The URL structure has changed from the previous implementation
-    const apiUrl = `https://gs-api.greatschools.org/v2/schools?lat=${lat}&lon=${lon}&limit=25`;
+    // Extract zip code from address if possible
+    const zipRegex = /\b\d{5}(?:-\d{4})?\b/;
+    const zipMatch = address.match(zipRegex);
+    const zip = zipMatch ? zipMatch[0] : null;
+    
+    // Extract state from address (assuming format like "City, ST ZIP")
+    const stateRegex = /\b([A-Z]{2})\b/;
+    const stateMatch = address.match(stateRegex);
+    const state = stateMatch ? stateMatch[0] : null;
+    
+    // Construct API URL based on available data
+    let apiUrl;
+    
+    if (zip) {
+      // If we have a zip code, use that (primary approach)
+      apiUrl = `https://gs-api.greatschools.org/v2/schools?zip=${zip}&limit=25`;
+      console.log(`Using zip code search with: ${zip}`);
+    } else if (state) {
+      // If we have a state but no zip, try to extract city and use city+state
+      // This is a simplified approach and might need refinement
+      const cityMatch = address.match(/([^,]+),/);
+      const city = cityMatch ? cityMatch[1].trim() : null;
+      
+      if (city) {
+        apiUrl = `https://gs-api.greatschools.org/v2/schools?city=${encodeURIComponent(city)}&state=${state}&limit=25`;
+        console.log(`Using city/state search with: ${city}, ${state}`);
+      } else {
+        // Fallback to nearby schools endpoint if we can't extract proper parameters
+        return new Response(
+          JSON.stringify({ 
+            error: 'Could not extract city and state from address', 
+            message: "The address format couldn't be parsed correctly."
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } else {
+      // We couldn't extract needed parameters
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid address format', 
+          message: "Could not extract zip code or city/state from the provided address."
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
     console.log(`Calling GreatSchools API: ${apiUrl}`);
 
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json',
+        'Content': 'application/json',
         'X-API-Key': API_KEY
       }
     });
