@@ -20,3 +20,20 @@ export function formatDate(dateString: string): string {
     return dateString;
   }
 }
+
+export function formatNumber(num: number): string {
+  if (isNaN(num)) return "N/A";
+  
+  return new Intl.NumberFormat('en-US', {
+    maximumFractionDigits: 0
+  }).format(num);
+}
+
+export function formatPercent(num: number): string {
+  if (isNaN(num)) return "N/A";
+  
+  return new Intl.NumberFormat('en-US', {
+    maximumFractionDigits: 1,
+    minimumFractionDigits: 1
+  }).format(num);
+}
