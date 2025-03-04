@@ -1,3 +1,4 @@
+
 import { CensusData, Coordinates } from "@/types";
 import { toast } from "sonner";
 import { getApiKey } from "./api-config";
@@ -6,27 +7,23 @@ import { getApiKey } from "./api-config";
 export const getMockCensusData = (): CensusData => ({
   categories: {
     demographic: [
-      { label: "Population", value: "10000" },
-      { label: "Median Age", value: "35" },
+      { name: "Population", value: "10000" },
+      { name: "Median Age", value: "35" },
     ],
     economic: [
-      { label: "Median Household Income", value: "$60,000" },
-      { label: "Unemployment Rate", value: "5%" },
+      { name: "Median Household Income", value: "$60,000" },
+      { name: "Unemployment Rate", value: "5%" },
     ],
     housing: [
-      { label: "Median Home Value", value: "$250,000" },
-      { label: "Homeownership Rate", value: "60%" },
+      { name: "Median Home Value", value: "$250,000" },
+      { name: "Homeownership Rate", value: "60%" },
     ],
     education: [
-      { label: "Bachelor's Degree or Higher", value: "30%" },
-      { label: "High School Graduate or Higher", value: "90%" },
+      { name: "Bachelor's Degree or Higher", value: "30%" },
+      { name: "High School Graduate or Higher", value: "90%" },
     ],
   },
-  location: {
-    address: "Sample Location",
-    latitude: 34.0522,
-    longitude: -118.2437,
-  },
+  rawData: {},
 });
 
 export async function fetchCensusData({ lat, lng }: Coordinates): Promise<any> {
@@ -50,27 +47,23 @@ export async function fetchCensusData({ lat, lng }: Coordinates): Promise<any> {
     const processedData: CensusData = {
       categories: {
         demographic: [
-          { label: "Population", value: data[1][1] },
-          { label: "Median Age", value: data[1][2] },
+          { name: "Population", value: data[1][1] },
+          { name: "Median Age", value: data[1][2] },
         ],
         economic: [
-          { label: "Median Household Income", value: data[1][3] },
-          { label: "Unemployment Rate", value: data[1][4] },
+          { name: "Median Household Income", value: data[1][3] },
+          { name: "Unemployment Rate", value: data[1][4] },
         ],
         housing: [
-          { label: "Median Home Value", value: data[1][5] },
-          { label: "Homeownership Rate", value: data[1][6] },
+          { name: "Median Home Value", value: data[1][5] },
+          { name: "Homeownership Rate", value: data[1][6] },
         ],
         education: [
-          { label: "Bachelor's Degree or Higher", value: data[1][7] },
-          { label: "High School Graduate or Higher", value: data[1][8] },
+          { name: "Bachelor's Degree or Higher", value: data[1][7] },
+          { name: "High School Graduate or Higher", value: data[1][8] },
         ],
       },
-      location: {
-        address: "Fetched Coordinates",
-        latitude: lat,
-        longitude: lng,
-      },
+      rawData: data
     };
     
     return {
