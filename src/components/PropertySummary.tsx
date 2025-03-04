@@ -264,6 +264,7 @@ export const PropertySummary = ({
               address={searchedAddress}
               schools={elementarySchools}
               coordinates={coordinates}
+              isVisible={activeTab === "map"}
             />
           </div>
           

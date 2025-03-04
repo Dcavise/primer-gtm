@@ -13,27 +13,45 @@ interface PropertyMapProps {
   address: string;
   schools?: School[];
   coordinates?: { lat: number; lng: number } | null;
+  isVisible?: boolean;
 }
 
-export const PropertyMap = ({ address, schools = [], coordinates: propCoordinates }: PropertyMapProps) => {
+export const PropertyMap = ({ address, schools = [], coordinates: propCoordinates, isVisible = true }: PropertyMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(propCoordinates || null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const mapInitializedRef = useRef(false);
   
   // Clean up markers when component unmounts
   useEffect(() => {
     return () => {
       markersRef.current.forEach(marker => marker.remove());
       markersRef.current = [];
+      
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+        mapInitializedRef.current = false;
+      }
     };
   }, []);
 
+  // When tab visibility changes, resize the map to ensure proper rendering
+  useEffect(() => {
+    if (isVisible && map.current) {
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        map.current?.resize();
+      }, 50);
+    }
+  }, [isVisible]);
+
   // Initialize map
   useEffect(() => {
-    if (!mapContainer.current) return;
+    if (!mapContainer.current || !isVisible || mapInitializedRef.current) return;
     
     const initializeMap = async () => {
       try {
@@ -92,6 +110,7 @@ export const PropertyMap = ({ address, schools = [], coordinates: propCoordinate
             if (!map.current) return;
             
             console.log("Map loaded successfully");
+            mapInitializedRef.current = true;
             
             // Add property marker
             const propertyMarker = new mapboxgl.Marker({ color: '#3b82f6' })
@@ -166,14 +185,7 @@ export const PropertyMap = ({ address, schools = [], coordinates: propCoordinate
     };
     
     initializeMap();
-    
-    return () => {
-      if (map.current) {
-        map.current.remove();
-        map.current = null;
-      }
-    };
-  }, [address, schools, coordinates]);
+  }, [address, schools, coordinates, isVisible]);
   
   if (loading) {
     return <LoadingState className="h-full" message="Loading map..." />;
