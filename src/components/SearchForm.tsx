@@ -10,7 +10,7 @@ import { Search, Loader2, Info } from "lucide-react";
 interface SearchFormProps {
   onSearch: (params: any, address: string) => void;
   isSearching: boolean;
-  searchType: "permits" | "zoning" | "census";
+  searchType: "permits" | "zoning" | "census" | "schools";
 }
 
 export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProps) => {
@@ -27,9 +27,27 @@ export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProp
       return;
     }
     
-    // For zoning and census searches, we pass the address directly
-    if (searchType === "zoning" || searchType === "census") {
-      onSearch(address.trim(), address.trim());
+    // For zoning, census, and schools searches, we pass the address directly
+    if (searchType === "zoning" || searchType === "census" || searchType === "schools") {
+      const geocodeResult = await geocodeAddress(address.trim());
+      
+      if (!geocodeResult) return; // Error is already handled in geocodeAddress
+      
+      const { coordinates } = geocodeResult;
+      toast.success(`Address found: ${geocodeResult.address}`, {
+        description: `Searching for ${searchType} in this area...`
+      });
+      
+      // For schools tab, we need both the address and coordinates
+      if (searchType === "schools") {
+        onSearch({
+          top_right_lat: coordinates.lat,
+          top_right_lng: coordinates.lng
+        }, geocodeResult.address);
+      } else {
+        // For zoning and census
+        onSearch(geocodeResult.address, geocodeResult.address);
+      }
       return;
     }
     
@@ -79,6 +97,8 @@ export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProp
           <p>
             {searchType === "census" 
               ? "Census data shows demographic information within a 5-mile radius of the address."
+              : searchType === "schools"
+              ? "Find schools within a 5-mile radius of the property including ratings, contact info, and more."
               : "For best results, include the full address with state and ZIP code (e.g., \"831 N California Ave, Chicago, IL 60622\")"}
           </p>
         </div>
@@ -117,7 +137,8 @@ export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProp
               </>
             ) : (
               `Search ${searchType === "permits" ? "Permits" : 
-                     searchType === "zoning" ? "Zoning" : "Census Data"}`
+                     searchType === "zoning" ? "Zoning" : 
+                     searchType === "census" ? "Census Data" : "Schools"}`
             )}
           </Button>
         </div>
