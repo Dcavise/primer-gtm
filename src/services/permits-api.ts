@@ -1,3 +1,4 @@
+
 import { PermitResponse, PermitSearchParams } from "@/types";
 import { toast } from "sonner";
 import { API_BASE_URL, getApiKey } from "./api-config";
@@ -23,6 +24,22 @@ export async function searchPermits(params: PermitSearchParams): Promise<PermitR
     }
 
     const data = await response.json();
+    
+    // Filter for exact address matches if exact_address is provided
+    if (params.exact_address && data.data && data.data.length > 0) {
+      const exactAddress = params.exact_address.toLowerCase().trim();
+      const exactMatches = data.data.filter((permit: any) => {
+        if (!permit.address) return false;
+        
+        return permit.address.toLowerCase().trim() === exactAddress;
+      });
+      
+      return {
+        permits: exactMatches || [],
+        total: exactMatches.length || 0
+      };
+    }
+    
     return {
       permits: data.data || [],
       total: data.data?.length || 0

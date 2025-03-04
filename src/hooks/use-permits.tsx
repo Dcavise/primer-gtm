@@ -27,12 +27,12 @@ export function usePermits() {
       setStatus("success");
       
       if (processedPermits.length === 0) {
-        toast.info("No permits found for this location.", {
-          description: "The address was found, but there are no permits in our database for this precise location or nearby area."
+        toast.info("No permits found for this address.", {
+          description: "We couldn't find any permits that match this exact address in our database."
         });
       } else {
         toast.success(`Found ${processedPermits.length} permits`, {
-          description: "Showing permit results for the specified location and nearby area."
+          description: "Showing permit results for this exact address."
         });
       }
     } catch (error) {

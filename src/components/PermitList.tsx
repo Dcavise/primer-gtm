@@ -49,30 +49,6 @@ export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListPr
     setSortDirection(prev => prev === "asc" ? "desc" : "asc");
   };
 
-  const isExactMatch = (permit: Permit) => {
-    if (!searchedAddress || !permit.address) return false;
-    
-    const normalizedPermitAddress = permit.address.toLowerCase().trim();
-    const normalizedSearchAddress = searchedAddress.toLowerCase().trim();
-    
-    return normalizedPermitAddress === normalizedSearchAddress;
-  };
-
-  const { exactMatches, otherPermits } = useMemo(() => {
-    const exact: Permit[] = [];
-    const others: Permit[] = [];
-    
-    permits.forEach(permit => {
-      if (isExactMatch(permit)) {
-        exact.push(permit);
-      } else {
-        others.push(permit);
-      }
-    });
-    
-    return { exactMatches: exact, otherPermits: others };
-  }, [permits, searchedAddress]);
-
   const categorizePermitsByType = (permits: Permit[]) => {
     const types: Record<string, Permit[]> = {
       "All": permits,
@@ -101,16 +77,11 @@ export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListPr
     });
   };
 
-  const permitsByType = useMemo(() => categorizePermitsByType(otherPermits), [otherPermits]);
+  const permitsByType = useMemo(() => categorizePermitsByType(permits), [permits]);
   
   const activePermits = useMemo(() => 
     sortPermits(permitsByType[activeType] || []), 
     [permitsByType, activeType, sortDirection]
-  );
-
-  const sortedExactMatches = useMemo(() => 
-    sortPermits(exactMatches), 
-    [exactMatches, sortDirection]
   );
 
   const getTypeCount = (type: string) => {
@@ -126,50 +97,45 @@ export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListPr
       <div className="py-12 text-center">
         <h3 className="text-xl font-medium mb-2">No permits found</h3>
         <p className="text-muted-foreground">
-          We couldn't find any permit data for this location. Try adjusting your search or try a different address.
+          We couldn't find any permit data for this exact address. This could be because:
         </p>
+        <ul className="mt-4 text-left max-w-md mx-auto list-disc pl-6">
+          <li className="mb-2">The address has no permit history in our database</li>
+          <li className="mb-2">The address format may be different in the permit database</li>
+          <li className="mb-2">The property may be newer than our permit records</li>
+        </ul>
       </div>
     );
   }
 
   return (
     <>
-      {searchedAddress && (
+      {searchedAddress && permits.length > 0 && (
         <Alert 
-          className={`mb-6 ${exactMatches.length > 0 ? 'bg-green-50 border-green-200 dark:bg-green-900/10 dark:border-green-900/30' : 'bg-amber-50 border-amber-200 dark:bg-amber-900/10 dark:border-amber-900/30'}`}
+          className="mb-6 bg-green-50 border-green-200 dark:bg-green-900/10 dark:border-green-900/30"
         >
           <div className="flex items-start">
-            {exactMatches.length > 0 ? (
-              <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5" />
-            ) : (
-              <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
-            )}
+            <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5" />
             <div className="ml-3">
-              <AlertTitle className={exactMatches.length > 0 ? "text-green-800 dark:text-green-300" : "text-amber-800 dark:text-amber-300"}>
-                {exactMatches.length > 0 
-                  ? `${exactMatches.length} exact match${exactMatches.length > 1 ? 'es' : ''} found`
-                  : "No exact address matches found"
-                }
+              <AlertTitle className="text-green-800 dark:text-green-300">
+                {`${permits.length} permit${permits.length > 1 ? 's' : ''} found`}
               </AlertTitle>
-              <AlertDescription className={exactMatches.length > 0 ? "text-green-700 dark:text-green-400" : "text-amber-700 dark:text-amber-400"}>
-                {exactMatches.length > 0 
-                  ? `Found ${exactMatches.length} permit record${exactMatches.length > 1 ? 's' : ''} that exactly match the address "${searchedAddress}".`
-                  : `No permits with the exact address "${searchedAddress}" were found. Showing nearby permits instead.`
-                }
+              <AlertDescription className="text-green-700 dark:text-green-400">
+                {`Found ${permits.length} permit record${permits.length > 1 ? 's' : ''} that match the address "${searchedAddress}".`}
               </AlertDescription>
             </div>
           </div>
         </Alert>
       )}
 
-      {exactMatches.length > 0 && (
-        <div className="mt-6 mb-8">
+      {permits.length > 0 && (
+        <div className="mt-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <MapPin className="h-5 w-5 text-green-500" />
-              <h2 className="text-xl font-medium">Exact Address Matches</h2>
+              <h2 className="text-xl font-medium">Address Permits</h2>
               <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">
-                {exactMatches.length}
+                {permits.length}
               </span>
             </div>
             <Button 
@@ -182,83 +148,51 @@ export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListPr
               {sortDirection === "desc" ? "Newest first" : "Oldest first"}
             </Button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {sortedExactMatches.map((permit, index) => (
-              <PermitCard
-                key={`exact-${permit.id || index}`}
-                permit={permit}
-                onClick={() => handlePermitClick(permit)}
-                delay={index}
-                searchedAddress={searchedAddress}
-              />
-            ))}
-          </div>
-        </div>
-      )}
 
-      {otherPermits.length > 0 && (
-        <div className={exactMatches.length > 0 ? "mt-10" : "mt-6"}>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Map className="h-5 w-5 text-blue-500" />
-              <h2 className="text-xl font-medium">Nearby Permits</h2>
-              <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
-                {otherPermits.length}
-              </span>
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={toggleSortDirection}
-              className="flex items-center gap-1"
+          {permits.length > 0 && (
+            <Tabs 
+              defaultValue="All" 
+              className="mt-2"
+              value={activeType}
+              onValueChange={setActiveType}
             >
-              <ArrowUpDown className="h-4 w-4" />
-              {sortDirection === "desc" ? "Newest first" : "Oldest first"}
-            </Button>
-          </div>
-          
-          <Tabs 
-            defaultValue="All" 
-            className="mt-2"
-            value={activeType}
-            onValueChange={setActiveType}
-          >
-            <div className="border-b">
-              <TabsList className="bg-transparent h-auto p-0 mb-0 w-full overflow-x-auto flex justify-start gap-1">
-                {Object.keys(permitsByType).map(type => (
-                  getTypeCount(type) > 0 && (
-                    <TabsTrigger 
-                      key={type} 
-                      value={type}
-                      className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground h-10 px-4"
-                    >
-                      {getPermitTypeIcon(type)}
-                      {type}
-                      <span className="ml-1 bg-secondary/50 px-1.5 rounded-full text-xs">
-                        {getTypeCount(type)}
-                      </span>
-                    </TabsTrigger>
-                  )
-                ))}
-              </TabsList>
-            </div>
-
-            {Object.keys(permitsByType).map(type => (
-              <TabsContent key={type} value={type} className="mt-4 animate-in fade-in-50">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {activePermits.map((permit, index) => (
-                    <PermitCard
-                      key={`nearby-${permit.id || index}`}
-                      permit={permit}
-                      onClick={() => handlePermitClick(permit)}
-                      delay={index}
-                      searchedAddress={searchedAddress}
-                    />
+              <div className="border-b">
+                <TabsList className="bg-transparent h-auto p-0 mb-0 w-full overflow-x-auto flex justify-start gap-1">
+                  {Object.keys(permitsByType).map(type => (
+                    getTypeCount(type) > 0 && (
+                      <TabsTrigger 
+                        key={type} 
+                        value={type}
+                        className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground h-10 px-4"
+                      >
+                        {getPermitTypeIcon(type)}
+                        {type}
+                        <span className="ml-1 bg-secondary/50 px-1.5 rounded-full text-xs">
+                          {getTypeCount(type)}
+                        </span>
+                      </TabsTrigger>
+                    )
                   ))}
-                </div>
-              </TabsContent>
-            ))}
-          </Tabs>
+                </TabsList>
+              </div>
+
+              {Object.keys(permitsByType).map(type => (
+                <TabsContent key={type} value={type} className="mt-4 animate-in fade-in-50">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {activePermits.map((permit, index) => (
+                      <PermitCard
+                        key={`permit-${permit.id || index}`}
+                        permit={permit}
+                        onClick={() => handlePermitClick(permit)}
+                        delay={index}
+                        searchedAddress={searchedAddress}
+                      />
+                    ))}
+                  </div>
+                </TabsContent>
+              ))}
+            </Tabs>
+          )}
         </div>
       )}
 

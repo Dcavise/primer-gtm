@@ -15,7 +15,6 @@ interface SearchFormProps {
 
 export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProps) => {
   const [address, setAddress] = useState("");
-  const [searchRadius, setSearchRadius] = useState(650); // Default radius in feet (about 200 meters)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,17 +39,18 @@ export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProp
       
       // For property-research and schools tab, we need both the address and coordinates
       if (searchType === "schools" || searchType === "property-research") {
-        // For property research, we need to create a bounding box for the permit search
+        // For property research, we create a small bounding box just for the exact address
         if (searchType === "property-research") {
-          // Convert feet to meters for the bounding box calculation
-          const radiusInMeters = searchRadius * 0.3048;
+          // Create a very small bounding box around the exact coordinates
+          const radiusInMeters = 10; // Very small radius (10 meters) to get exact matches only
           const { bottomLeft, topRight } = createBoundingBox(coordinates, radiusInMeters);
           
           onSearch({
             bottom_left_lat: bottomLeft.lat,
             bottom_left_lng: bottomLeft.lng,
             top_right_lat: topRight.lat,
-            top_right_lng: topRight.lng
+            top_right_lng: topRight.lng,
+            exact_address: geocodeResult.address // Pass the exact address for matching
           }, geocodeResult.address);
         } else {
           // Just for schools
@@ -66,25 +66,26 @@ export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProp
       return;
     }
     
-    // For permit searches, we use geocoding and bounding box
+    // For permit searches, we use geocoding and a very small bounding box
     const geocodeResult = await geocodeAddress(address.trim());
     
     if (!geocodeResult) return; // Error is already handled in geocodeAddress
     
     const { coordinates } = geocodeResult;
     toast.success(`Address found: ${geocodeResult.address}`, {
-      description: `Searching for ${searchType} in this area...`
+      description: `Searching for ${searchType} at this address...`
     });
     
-    // Convert feet to meters for the bounding box calculation
-    const radiusInMeters = searchRadius * 0.3048;
+    // Create a very small bounding box around the exact coordinates
+    const radiusInMeters = 10; // Very small radius (10 meters) to get exact matches only
     const { bottomLeft, topRight } = createBoundingBox(coordinates, radiusInMeters);
     
     onSearch({
       bottom_left_lat: bottomLeft.lat,
       bottom_left_lng: bottomLeft.lng,
       top_right_lat: topRight.lat,
-      top_right_lng: topRight.lng
+      top_right_lng: topRight.lng,
+      exact_address: geocodeResult.address // Pass the exact address for matching
     }, geocodeResult.address);
   };
 
@@ -121,27 +122,6 @@ export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProp
         </div>
         
         <div className="flex flex-col sm:flex-row gap-4">
-          {(searchType === "permits" || searchType === "property-research") && (
-            <div className="flex-1">
-              <label className="text-sm text-white/80 mb-1 block">Search Radius (feet)</label>
-              <Input
-                type="range"
-                min="150"
-                max="1650"
-                step="150"
-                value={searchRadius}
-                onChange={(e) => setSearchRadius(parseInt(e.target.value))}
-                className="w-full accent-white"
-                disabled={isSearching}
-              />
-              <div className="flex justify-between text-xs text-white/70 mt-1">
-                <span>150ft</span>
-                <span>{searchRadius}ft</span>
-                <span>1650ft</span>
-              </div>
-            </div>
-          )}
-          
           <Button 
             type="submit" 
             className="h-12 px-8 transition-all bg-white text-blue-600 hover:bg-white/90"

@@ -9,6 +9,7 @@ export interface PermitSearchParams {
   top_right_lng: number;
   bottom_left_lat: number;
   bottom_left_lng: number;
+  exact_address?: string; // Add this new parameter for exact address matching
 }
 
 export interface PermitLocation {
