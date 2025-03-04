@@ -26,7 +26,10 @@ serve(async (req) => {
     
     if (!key || !API_KEYS[key]) {
       return new Response(
-        JSON.stringify({ error: 'Invalid key requested' }),
+        JSON.stringify({ 
+          error: 'Invalid key requested',
+          validKeys: Object.keys(API_KEYS)
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

@@ -43,10 +43,12 @@ export const PropertyMap = ({ address, schools = [], coordinates: propCoordinate
         let coords = coordinates;
         if (!coords) {
           if (address) {
+            console.log("Geocoding address for map:", address);
             const geocodingResult = await geocodeAddress(address);
             if (geocodingResult) {
               coords = geocodingResult.coordinates;
               setCoordinates(geocodingResult.coordinates);
+              console.log("Geocoded coordinates for map:", coords);
             } else {
               throw new Error("Could not geocode address");
             }
@@ -55,100 +57,114 @@ export const PropertyMap = ({ address, schools = [], coordinates: propCoordinate
           }
         }
         
-        // Get Mapbox API key
-        const mapboxAccessToken = await getApiKey('mapbox');
-        if (!mapboxAccessToken) {
-          throw new Error("Mapbox API key not available");
-        }
-        
-        // Set mapbox access token
-        mapboxgl.accessToken = mapboxAccessToken;
-        
-        // Create map instance
-        if (map.current) return;
-        
-        // Initialize map
-        map.current = new mapboxgl.Map({
-          container: mapContainer.current,
-          style: 'mapbox://styles/mapbox/streets-v12',
-          center: [coords.lng, coords.lat],
-          zoom: 14
-        });
-        
-        // Add navigation controls
-        map.current.addControl(
-          new mapboxgl.NavigationControl(),
-          'top-right'
-        );
-        
-        // Wait for map to load
-        map.current.on('load', () => {
-          if (!map.current) return;
+        try {
+          // Get Mapbox API key
+          console.log("Fetching Mapbox token");
+          const mapboxAccessToken = await getApiKey('mapbox');
           
-          // Add property marker
-          const propertyMarker = new mapboxgl.Marker({ color: '#3b82f6' })
-            .setLngLat([coords!.lng, coords!.lat])
-            .setPopup(new mapboxgl.Popup().setHTML(`<div class="font-medium">${address}</div>`))
-            .addTo(map.current);
+          if (!mapboxAccessToken) {
+            throw new Error("Mapbox API key not available");
+          }
           
-          markersRef.current.push(propertyMarker);
+          console.log("Mapbox token retrieved successfully");
           
-          // Add school markers
-          schools.forEach((school, index) => {
-            if (school.location?.coordinates?.latitude && school.location?.coordinates?.longitude) {
-              // Create a custom HTML element for the marker
-              const el = document.createElement('div');
-              el.className = 'flex items-center justify-center bg-blue-50 dark:bg-blue-900 rounded-full border-2 border-blue-500 w-6 h-6 text-xs font-bold text-blue-700 dark:text-blue-300';
-              el.innerHTML = `${index + 1}`;
-              
-              // Create the marker
-              const schoolMarker = new mapboxgl.Marker(el)
-                .setLngLat([school.location.coordinates.longitude, school.location.coordinates.latitude])
-                .setPopup(
-                  new mapboxgl.Popup({ offset: 25 })
-                    .setHTML(`
-                      <div>
-                        <div class="font-medium">${school.name}</div>
-                        <div class="text-xs text-gray-500">
-                          ${school.location.distanceMiles?.toFixed(1) || '?'} miles away
-                        </div>
-                        ${school.ratings?.overall ? 
-                          `<div class="text-xs mt-1 font-medium ${getRatingColorClass(school.ratings.overall)}">
-                            Rating: ${school.ratings.overall}/10
-                          </div>` : 
-                          ''
-                        }
-                      </div>
-                    `)
-                )
-                .addTo(map.current!);
-              
-              markersRef.current.push(schoolMarker);
-            }
+          // Set mapbox access token
+          mapboxgl.accessToken = mapboxAccessToken;
+          
+          // Create map instance
+          if (map.current) return;
+          
+          console.log("Initializing map with coordinates:", coords);
+          
+          // Initialize map
+          map.current = new mapboxgl.Map({
+            container: mapContainer.current,
+            style: 'mapbox://styles/mapbox/streets-v12',
+            center: [coords.lng, coords.lat],
+            zoom: 14
           });
           
-          // Create a bounds object that includes the property and all schools
-          if (schools.length > 0) {
-            const bounds = new mapboxgl.LngLatBounds([coords!.lng, coords!.lat]);
+          // Add navigation controls
+          map.current.addControl(
+            new mapboxgl.NavigationControl(),
+            'top-right'
+          );
+          
+          // Wait for map to load
+          map.current.on('load', () => {
+            if (!map.current) return;
             
-            schools.forEach(school => {
+            console.log("Map loaded successfully");
+            
+            // Add property marker
+            const propertyMarker = new mapboxgl.Marker({ color: '#3b82f6' })
+              .setLngLat([coords!.lng, coords!.lat])
+              .setPopup(new mapboxgl.Popup().setHTML(`<div class="font-medium">${address}</div>`))
+              .addTo(map.current);
+            
+            markersRef.current.push(propertyMarker);
+            
+            // Add school markers
+            schools.forEach((school, index) => {
               if (school.location?.coordinates?.latitude && school.location?.coordinates?.longitude) {
-                bounds.extend([
-                  school.location.coordinates.longitude,
-                  school.location.coordinates.latitude
-                ]);
+                // Create a custom HTML element for the marker
+                const el = document.createElement('div');
+                el.className = 'flex items-center justify-center bg-blue-50 dark:bg-blue-900 rounded-full border-2 border-blue-500 w-6 h-6 text-xs font-bold text-blue-700 dark:text-blue-300';
+                el.innerHTML = `${index + 1}`;
+                
+                // Create the marker
+                const schoolMarker = new mapboxgl.Marker(el)
+                  .setLngLat([school.location.coordinates.longitude, school.location.coordinates.latitude])
+                  .setPopup(
+                    new mapboxgl.Popup({ offset: 25 })
+                      .setHTML(`
+                        <div>
+                          <div class="font-medium">${school.name}</div>
+                          <div class="text-xs text-gray-500">
+                            ${school.location.distanceMiles?.toFixed(1) || '?'} miles away
+                          </div>
+                          ${school.ratings?.overall ? 
+                            `<div class="text-xs mt-1 font-medium ${getRatingColorClass(school.ratings.overall)}">
+                              Rating: ${school.ratings.overall}/10
+                            </div>` : 
+                            ''
+                          }
+                        </div>
+                      `)
+                  )
+                  .addTo(map.current!);
+                
+                markersRef.current.push(schoolMarker);
               }
             });
             
-            // Adjust the map to fit all markers with padding
-            map.current.fitBounds(bounds, {
-              padding: 60,
-              maxZoom: 15
-            });
-          }
-          
+            // Create a bounds object that includes the property and all schools
+            if (schools.length > 0) {
+              const bounds = new mapboxgl.LngLatBounds([coords!.lng, coords!.lat]);
+              
+              schools.forEach(school => {
+                if (school.location?.coordinates?.latitude && school.location?.coordinates?.longitude) {
+                  bounds.extend([
+                    school.location.coordinates.longitude,
+                    school.location.coordinates.latitude
+                  ]);
+                }
+              });
+              
+              // Adjust the map to fit all markers with padding
+              map.current.fitBounds(bounds, {
+                padding: 60,
+                maxZoom: 15
+              });
+            }
+            
+            setLoading(false);
+          });
+        } catch (mapboxError) {
+          console.error("Error initializing Mapbox:", mapboxError);
+          setError("Failed to load map: " + (mapboxError.message || "Unknown error"));
           setLoading(false);
-        });
+        }
       } catch (err) {
         console.error("Error initializing map:", err);
         setError(err instanceof Error ? err.message : "Unknown error initializing map");

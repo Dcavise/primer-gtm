@@ -1,5 +1,5 @@
 
-import { getApiKey } from "@/services/api-config";
+import { getApiKey, GOOGLE_MAPS_API_KEY } from "@/services/api-config";
 import { toast } from "sonner";
 
 export interface Coordinates {
@@ -14,9 +14,21 @@ export interface GeocodingResult {
 
 export async function geocodeAddress(address: string): Promise<GeocodingResult | null> {
   try {
-    // Get the Google Maps API key securely
-    const apiKey = await getApiKey('google_maps');
+    // Try to get the Google Maps API key securely from Supabase
+    let apiKey;
+    try {
+      apiKey = await getApiKey('google_maps');
+    } catch (error) {
+      console.warn("Failed to get Google Maps API key from edge function, using fallback:", error);
+      // Fall back to the deprecated but still functional API key as backup
+      apiKey = GOOGLE_MAPS_API_KEY;
+    }
     
+    if (!apiKey) {
+      throw new Error("No Google Maps API key available");
+    }
+    
+    console.log("Geocoding address:", address);
     const encodedAddress = encodeURIComponent(address);
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${apiKey}`;
 
@@ -31,6 +43,7 @@ export async function geocodeAddress(address: string): Promise<GeocodingResult |
         lng: result.geometry.location.lng,
       };
 
+      console.log("Successfully geocoded address:", formattedAddress, coordinates);
       return { address: formattedAddress, coordinates };
     } else {
       console.error("Geocoding failed:", data.status, data);

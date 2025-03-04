@@ -7,6 +7,7 @@ export const API_BASE_URL = "https://api.zoneomics.com/v2";
 // Function to securely get API keys from Supabase edge function
 export async function getApiKey(keyType: 'zoneomics' | 'census' | 'google_maps' | 'mapbox'): Promise<string> {
   try {
+    console.log(`Fetching ${keyType} API key from Supabase edge function`);
     const { data, error } = await supabase.functions.invoke('get-api-keys', {
       body: { key: keyType }
     });
@@ -20,6 +21,7 @@ export async function getApiKey(keyType: 'zoneomics' | 'census' | 'google_maps' 
       throw new Error(`No API key returned for ${keyType}`);
     }
 
+    console.log(`Successfully retrieved ${keyType} API key`);
     return data.key;
   } catch (error) {
     console.error(`Error in getApiKey for ${keyType}:`, error);
@@ -28,7 +30,7 @@ export async function getApiKey(keyType: 'zoneomics' | 'census' | 'google_maps' 
 }
 
 // Default placeholder values (will be replaced with actual values from Supabase)
-// These are used to maintain backward compatibility during the transition
+// These are used to maintain backward compatibility during the transition and as fallbacks
 export const API_KEY = "9287beef057a695d64806257059567fbee26524d"; // Will be deprecated
 export const CENSUS_API_KEY = "9cc42f8030aeecf163f664dde9ad2167f9a41a5b"; // Will be deprecated
 export const GOOGLE_MAPS_API_KEY = "AIzaSyCPAIVrJFBNaO9gMtvHwKfzUwqS1WUkz3c"; // Will be deprecated
