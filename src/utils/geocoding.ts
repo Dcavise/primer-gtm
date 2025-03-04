@@ -1,11 +1,32 @@
-
 import { AddressSearchResult, Coordinates } from "@/types";
 import { toast } from "sonner";
 
 // Using OpenStreetMap's Nominatim service for geocoding
 const GEOCODING_URL = "https://nominatim.openstreetmap.org/search";
+// Google Maps Geocoding API key
+const GOOGLE_MAPS_API_KEY = "AIzaSyCPAIVrJFBNaO9gMtvHwKfzUwqS1WUkz3c";
+const GOOGLE_GEOCODING_URL = "https://maps.googleapis.com/maps/api/geocode/json";
 
 export async function geocodeAddress(address: string): Promise<AddressSearchResult | null> {
+  try {
+    // First attempt with OpenStreetMap
+    const result = await geocodeWithOpenStreetMap(address);
+    
+    // If OSM fails, try with Google Maps API
+    if (!result) {
+      console.log("OpenStreetMap geocoding failed, trying Google Maps API");
+      return await geocodeWithGoogleMaps(address);
+    }
+    
+    return result;
+  } catch (error) {
+    console.error("Error geocoding address:", error);
+    toast.error("Unable to find the location. Please try a different address.");
+    return null;
+  }
+}
+
+async function geocodeWithOpenStreetMap(address: string): Promise<AddressSearchResult | null> {
   try {
     const params = new URLSearchParams({
       q: address,
@@ -22,13 +43,13 @@ export async function geocodeAddress(address: string): Promise<AddressSearchResu
     });
     
     if (!response.ok) {
-      throw new Error("Geocoding service unavailable");
+      throw new Error("OpenStreetMap geocoding service unavailable");
     }
     
     const data = await response.json();
     
     if (!data || data.length === 0) {
-      toast.error("Address not found. Please try a different address.");
+      console.log("No results found with OpenStreetMap");
       return null;
     }
     
@@ -42,7 +63,44 @@ export async function geocodeAddress(address: string): Promise<AddressSearchResu
       }
     };
   } catch (error) {
-    console.error("Error geocoding address:", error);
+    console.error("Error with OpenStreetMap geocoding:", error);
+    return null;
+  }
+}
+
+async function geocodeWithGoogleMaps(address: string): Promise<AddressSearchResult | null> {
+  try {
+    const params = new URLSearchParams({
+      address: address,
+      key: GOOGLE_MAPS_API_KEY
+    });
+    
+    const response = await fetch(`${GOOGLE_GEOCODING_URL}?${params}`);
+    
+    if (!response.ok) {
+      throw new Error("Google Maps geocoding service unavailable");
+    }
+    
+    const data = await response.json();
+    
+    if (data.status !== "OK" || !data.results || data.results.length === 0) {
+      toast.error("Address not found. Please try a different address.");
+      return null;
+    }
+    
+    const result = data.results[0];
+    const formattedAddress = result.formatted_address;
+    const location = result.geometry.location;
+    
+    return {
+      address: formattedAddress,
+      coordinates: {
+        lat: location.lat,
+        lng: location.lng
+      }
+    };
+  } catch (error) {
+    console.error("Error with Google Maps geocoding:", error);
     toast.error("Unable to find the location. Please try a different address.");
     return null;
   }

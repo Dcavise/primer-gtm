@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { geocodeAddress, createBoundingBox } from "@/utils/geocoding";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader2, Info } from "lucide-react";
 
 interface SearchFormProps {
   onSearch: (params: {
@@ -61,10 +61,15 @@ export const SearchForm = ({ onSearch, isSearching }: SearchFormProps) => {
             type="text"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            placeholder="Enter a street address..."
+            placeholder="Enter a full address (e.g., 123 Main St, City, State, ZIP)"
             disabled={isSearching}
           />
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70 h-5 w-5" />
+        </div>
+        
+        <div className="bg-white/10 p-3 rounded-md text-sm text-white/80 flex items-start gap-2">
+          <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+          <p>For best results, include the full address with state and ZIP code (e.g., "831 N California Ave, Chicago, IL 60622")</p>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-4">
@@ -105,4 +110,4 @@ export const SearchForm = ({ onSearch, isSearching }: SearchFormProps) => {
       </form>
     </motion.div>
   );
-};
+}
