@@ -37,6 +37,15 @@ export function usePropertySummary() {
       schools: schools?.length || 0
     });
     
+    // Log the actual zoning data being passed to ensure it's current
+    if (zoningData && zoningData.length > 0) {
+      console.log("Current zoning data being used for summary:", {
+        zone_code: zoningData[0].zone_code,
+        zone_name: zoningData[0].zone_name,
+        zone_type: zoningData[0].zone_type
+      });
+    }
+    
     try {
       // Check for minimum required data
       if (!address) {

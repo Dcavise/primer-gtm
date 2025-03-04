@@ -75,6 +75,7 @@ const Index = () => {
     // Generate summary only when all data is fetched AND we have an address
     if (allComplete && userAddress && !summary && summaryStatus !== "loading") {
       console.log("All API calls complete, generating summary for:", userAddress);
+      console.log("Using current zoning data:", zoningData);
       generateSummary(userAddress, permits, zoningData, censusData, schools);
     }
   }, [apiCallsStatus, userAddress, permits, zoningData, censusData, schools, summary, summaryStatus, generateSummary]);

@@ -29,6 +29,15 @@ serve(async (req) => {
     console.log(`Generating property summary for: ${address}`);
     console.log(`Data available: Permits: ${permitData?.length || 0}, Zoning: ${zoningData?.length || 0}, Schools: ${schoolsData?.length || 0}, Census: ${censusData ? 'Yes' : 'No'}`);
     
+    // Log the actual zoning data to debug
+    if (zoningData && zoningData.length > 0) {
+      console.log("Zoning data used in summary generation:", {
+        zone_code: zoningData[0].zone_code,
+        zone_name: zoningData[0].zone_name,
+        zone_type: zoningData[0].zone_type
+      });
+    }
+    
     // Prepare the data for OpenAI in a structured way
     const permitSummary = permitData && permitData.length > 0 
       ? `${permitData.length} permits found, including: ${permitData.slice(0, 3).map(p => p.project_type || p.project_name || "Unknown project").join(", ")}${permitData.length > 3 ? "..." : ""}`
