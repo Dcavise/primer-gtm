@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { WeeklyLeadCount } from '@/hooks/salesforce/types';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Label } from 'recharts';
 import { format, parseISO } from 'date-fns';
+import { TREND_COLORS, KPI_COLORS, getKpiColor } from '@/utils/chartColors';
 
 interface LeadsChartDialogProps {
   open: boolean;
@@ -26,7 +27,7 @@ interface LeadsChartDialogProps {
 const CustomizedLabel = (props: any) => {
   const { x, y, value } = props;
   return (
-    <text x={x} y={y - 10} fill="#1F77B4" textAnchor="middle" dominantBaseline="middle">
+    <text x={x} y={y - 10} fill={TREND_COLORS.primary} textAnchor="middle" dominantBaseline="middle">
       {value}
     </text>
   );
@@ -62,9 +63,6 @@ export const LeadsChartDialog: React.FC<LeadsChartDialogProps> = ({
     
     return { ...item, growthPercent };
   });
-
-  console.log("Weekly lead counts data:", weeklyLeadCounts);
-  console.log("Formatted chart data with growth:", chartDataWithGrowth);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -103,7 +101,7 @@ export const LeadsChartDialog: React.FC<LeadsChartDialogProps> = ({
                   type="monotone" 
                   dataKey="count" 
                   name="New Leads" 
-                  stroke="#1F77B4" 
+                  stroke={TREND_COLORS.primary} 
                   strokeWidth={2} 
                   activeDot={{ r: 8 }} 
                   label={<CustomizedLabel />}
@@ -121,24 +119,35 @@ export const LeadsChartDialog: React.FC<LeadsChartDialogProps> = ({
           <div className="mt-4 p-4 bg-gray-50 rounded-md">
             <h3 className="text-sm font-medium mb-2">Weekly Lead Counts</h3>
             <div className="grid grid-cols-4 gap-4">
-              {chartDataWithGrowth.map((item, index) => (
-                <div key={index} className="bg-white p-2 rounded border">
-                  <div className="text-xs text-gray-500">Week of {item.formattedWeek}</div>
-                  <div className="text-lg font-semibold">{item.count} leads</div>
-                  
-                  {/* Growth percentage badge */}
-                  {index > 0 && item.growthPercent !== null && (
-                    <div className="mt-1">
-                      <Badge 
-                        variant={item.growthPercent >= 0 ? "default" : "destructive"}
-                        className={item.growthPercent >= 0 ? "bg-green-100 text-green-800 hover:bg-green-200" : "bg-red-100 text-red-800 hover:bg-red-200"}
-                      >
-                        {item.growthPercent >= 0 ? "+" : ""}{item.growthPercent.toFixed(1)}% WoW
-                      </Badge>
-                    </div>
-                  )}
-                </div>
-              ))}
+              {chartDataWithGrowth.map((item, index) => {
+                // Determine growth percentage color based on value
+                const growthColor = item.growthPercent !== null 
+                  ? getKpiColor(item.growthPercent) 
+                  : KPI_COLORS.neutral;
+                
+                return (
+                  <div key={index} className="bg-white p-2 rounded border">
+                    <div className="text-xs text-gray-500">Week of {item.formattedWeek}</div>
+                    <div className="text-lg font-semibold">{item.count} leads</div>
+                    
+                    {/* Growth percentage badge */}
+                    {index > 0 && item.growthPercent !== null && (
+                      <div className="mt-1">
+                        <Badge 
+                          variant={item.growthPercent >= 0 ? "default" : "destructive"}
+                          className={`bg-opacity-20 text-${item.growthPercent >= 0 ? 'green' : 'red'}-800`}
+                          style={{
+                            backgroundColor: `${growthColor}20`,
+                            color: growthColor
+                          }}
+                        >
+                          {item.growthPercent >= 0 ? "+" : ""}{item.growthPercent.toFixed(1)}% WoW
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

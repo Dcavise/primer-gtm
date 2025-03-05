@@ -9,6 +9,15 @@ interface PropertyPhaseChartProps {
   properties: RealEstateProperty[];
 }
 
+// Color palette based on design system for categorical data
+const PHASE_COLORS = [
+  '#1F77B4', // Blue
+  '#FF7F0E', // Orange
+  '#2CA02C', // Green
+  '#D62728', // Red
+  '#9467BD'  // Purple
+];
+
 export const PropertyPhaseChart: React.FC<PropertyPhaseChartProps> = ({ properties }) => {
   const phaseData = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -19,7 +28,12 @@ export const PropertyPhaseChart: React.FC<PropertyPhaseChartProps> = ({ properti
     });
     
     return Object.entries(counts)
-      .map(([name, value]) => ({ name, value }))
+      .map(([name, value], index) => ({ 
+        name, 
+        value,
+        // Assign a color from the palette, cycling if needed
+        color: PHASE_COLORS[index % PHASE_COLORS.length] 
+      }))
       .sort((a, b) => b.value - a.value);
   }, [properties]);
 
@@ -38,8 +52,27 @@ export const PropertyPhaseChart: React.FC<PropertyPhaseChartProps> = ({ properti
           <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
           <XAxis type="number" />
           <YAxis type="category" dataKey="name" width={70} />
-          <Tooltip formatter={(value) => [`${value} properties`, 'Count']} />
-          <Bar dataKey="value" fill="#1F77B4" barSize={20} radius={[0, 4, 4, 0]} />
+          <Tooltip 
+            formatter={(value) => [`${value} properties`, 'Count']}
+            labelFormatter={(name) => `Phase: ${name}`}
+          />
+          {/* Use the custom color from our data objects */}
+          <Bar 
+            dataKey="value" 
+            barSize={20} 
+            radius={[0, 4, 4, 0]}
+            fill="#1F77B4" // Default color
+            name="Properties"
+          >
+            {
+              phaseData.map((entry, index) => (
+                <rect 
+                  key={`rect-${index}`} 
+                  fill={entry.color}
+                />
+              ))
+            }
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
     </div>
