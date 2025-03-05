@@ -14,11 +14,20 @@ const SPREADSHEET_ID = "1Lz5_CWhpQ1rJiIhThRoPRC1rgBhXyn2AIUsZO-hvVtA";
 const SHEET_RANGE = "Sheet1!A2:F"; // Starting from row 2 to skip headers, all columns (A-F)
 
 // Function to fetch data from Google Sheets
-async function fetchGoogleSheetData(serviceAccountCredentials: any) {
+async function fetchGoogleSheetData(serviceAccountCredentials: string) {
   try {
+    // Parse the credentials string to JSON
+    let credentials;
+    try {
+      credentials = JSON.parse(serviceAccountCredentials);
+    } catch (error) {
+      console.error("Error parsing service account credentials:", error);
+      throw new Error("Invalid service account credentials format");
+    }
+    
     // Create a JWT for Google API authentication
     const jwtPayload = {
-      iss: serviceAccountCredentials.client_email,
+      iss: credentials.client_email,
       scope: "https://www.googleapis.com/auth/spreadsheets.readonly",
       aud: "https://oauth2.googleapis.com/token",
       exp: Math.floor(Date.now() / 1000) + 3600,
@@ -27,7 +36,7 @@ async function fetchGoogleSheetData(serviceAccountCredentials: any) {
 
     // Sign the JWT with the private key from service account
     const encoder = new TextEncoder();
-    const privateKeyPEM = serviceAccountCredentials.private_key;
+    const privateKeyPEM = credentials.private_key;
     
     const privateKey = await crypto.subtle.importKey(
       "pkcs8",
@@ -75,8 +84,8 @@ async function fetchGoogleSheetData(serviceAccountCredentials: any) {
     );
 
     const data = await response.json();
-    console.log("Successfully fetched Google Sheet data:", data.values.length, "rows");
-    return data.values;
+    console.log("Successfully fetched Google Sheet data:", data.values?.length || 0, "rows");
+    return data.values || [];
   } catch (error) {
     console.error("Error fetching Google Sheet data:", error);
     throw error;
@@ -86,6 +95,8 @@ async function fetchGoogleSheetData(serviceAccountCredentials: any) {
 // Function to process and upsert data to Supabase
 async function upsertFellowsData(supabase: any, fellowsData: any[]) {
   try {
+    console.log("Processing", fellowsData.length, "rows of data");
+    
     const processedFellows = fellowsData.map(row => {
       // Map columns to our database schema
       // [Fellow ID, Fellow Name, Campus, Cohort, Grade Band, FTE Employment Status]
@@ -138,6 +149,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Starting sync-fellows-data function");
+    
     // Get Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
@@ -154,13 +167,11 @@ serve(async (req) => {
       throw new Error('Google service account credentials not found');
     }
 
-    const serviceAccountCredentials = JSON.parse(serviceAccountCredentialsJson);
-
-    // Fetch Google Sheet data
+    // Fetch Google Sheet data - pass the credentials as a string
     console.log("Fetching Google Sheet data...");
-    const sheetData = await fetchGoogleSheetData(serviceAccountCredentials);
+    const sheetData = await fetchGoogleSheetData(serviceAccountCredentialsJson);
     
-    if (!sheetData || !Array.isArray(sheetData) || sheetData.length === 0) {
+    if (!Array.isArray(sheetData) || sheetData.length === 0) {
       throw new Error('No data found in Google Sheet');
     }
 
