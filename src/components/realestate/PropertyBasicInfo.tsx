@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Edit, Save, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -32,19 +32,219 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
   onInputChange,
   onPhaseChange
 }) => {
-  const renderPhaseSelector = () => {
-    if (isEditing) {
-      return (
-        <PhaseSelector
-          value={formValues.phase || null}
-          onValueChange={onPhaseChange}
-        />
-      );
-    } else {
-      return (
-        <p className="font-medium">{property?.phase || 'Not specified'}</p>
-      );
+  // Individual field edit states
+  const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
+  const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+
+  // Initialize field values when property changes
+  React.useEffect(() => {
+    if (property) {
+      setFieldValues({
+        phase: property.phase || '',
+        sf_available: property.sf_available || '',
+        zoning: property.zoning || '',
+        permitted_use: property.permitted_use || '',
+        parking: property.parking || '',
+        fire_sprinklers: property.fire_sprinklers || '',
+        fiber: property.fiber || '',
+      });
     }
+  }, [property]);
+
+  const handleEditField = (fieldName: string) => {
+    setEditingFields(prev => ({ ...prev, [fieldName]: true }));
+    setFieldValues(prev => ({ ...prev, [fieldName]: property[fieldName as keyof RealEstateProperty] || '' }));
+  };
+
+  const handleCancelField = (fieldName: string) => {
+    setEditingFields(prev => ({ ...prev, [fieldName]: false }));
+    setFieldValues(prev => ({ ...prev, [fieldName]: property[fieldName as keyof RealEstateProperty] || '' }));
+  };
+
+  const handleFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFieldValues(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handlePhaseFieldChange = (value: string) => {
+    setFieldValues(prev => ({ ...prev, phase: value }));
+  };
+
+  const handleSaveField = async (fieldName: string) => {
+    if (!property.id) return;
+    
+    setSavingFields(prev => ({ ...prev, [fieldName]: true }));
+    
+    try {
+      const { error } = await supabase
+        .from('real_estate_pipeline')
+        .update({ [fieldName]: fieldValues[fieldName] })
+        .eq('id', property.id);
+      
+      if (error) {
+        console.error(`Error saving ${fieldName}:`, error);
+        return;
+      }
+      
+      setEditingFields(prev => ({ ...prev, [fieldName]: false }));
+      
+      // Also update the main form values so they stay in sync
+      if (onInputChange && fieldName !== 'phase') {
+        const syntheticEvent = {
+          target: { name: fieldName, value: fieldValues[fieldName] }
+        } as React.ChangeEvent<HTMLInputElement>;
+        onInputChange(syntheticEvent);
+      } else if (onPhaseChange && fieldName === 'phase') {
+        onPhaseChange(fieldValues.phase);
+      }
+      
+    } catch (error) {
+      console.error(`Error saving ${fieldName}:`, error);
+    } finally {
+      setSavingFields(prev => ({ ...prev, [fieldName]: false }));
+    }
+  };
+
+  const renderField = (fieldName: string, label: string, type: string = 'text') => {
+    const isFieldEditing = editingFields[fieldName];
+    const isFieldSaving = savingFields[fieldName];
+    
+    return (
+      <div className="space-y-1">
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-muted-foreground">{label}</p>
+          {!isEditing && !isFieldEditing && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => handleEditField(fieldName)}
+              className="h-6 px-2"
+            >
+              <Edit className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+        
+        {isFieldEditing ? (
+          <div className="space-y-2">
+            <Input 
+              name={fieldName} 
+              value={fieldValues[fieldName] || ''} 
+              onChange={handleFieldChange}
+              placeholder={`Enter ${label.toLowerCase()}`}
+              type={type}
+            />
+            <div className="flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handleCancelField(fieldName)}
+                disabled={isFieldSaving}
+                className="h-7 px-2 text-xs"
+              >
+                <X className="h-3 w-3 mr-1" /> Cancel
+              </Button>
+              <Button 
+                variant="default" 
+                size="sm" 
+                onClick={() => handleSaveField(fieldName)}
+                disabled={isFieldSaving}
+                className="h-7 px-2 text-xs"
+              >
+                {isFieldSaving ? (
+                  <LoadingState message="Saving..." showSpinner={true} />
+                ) : (
+                  <>
+                    <Save className="h-3 w-3 mr-1" /> Save
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        ) : isEditing ? (
+          <Input 
+            name={fieldName} 
+            value={formValues[fieldName as keyof RealEstateProperty] || ''} 
+            onChange={onInputChange}
+            placeholder={`Enter ${label.toLowerCase()}`}
+            type={type}
+          />
+        ) : (
+          <p className="font-medium">
+            {fieldName === 'sf_available' && property[fieldName] 
+              ? `${property[fieldName]} sq ft` 
+              : (property[fieldName as keyof RealEstateProperty] || 'Not specified')}
+          </p>
+        )}
+      </div>
+    );
+  };
+
+  const renderPhaseField = () => {
+    const fieldName = 'phase';
+    const isFieldEditing = editingFields[fieldName];
+    const isFieldSaving = savingFields[fieldName];
+    
+    return (
+      <div className="space-y-1">
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-muted-foreground">Phase</p>
+          {!isEditing && !isFieldEditing && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => handleEditField(fieldName)}
+              className="h-6 px-2"
+            >
+              <Edit className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+        
+        {isFieldEditing ? (
+          <div className="space-y-2">
+            <PhaseSelector
+              value={fieldValues.phase || null}
+              onValueChange={handlePhaseFieldChange}
+            />
+            <div className="flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handleCancelField(fieldName)}
+                disabled={isFieldSaving}
+                className="h-7 px-2 text-xs"
+              >
+                <X className="h-3 w-3 mr-1" /> Cancel
+              </Button>
+              <Button 
+                variant="default" 
+                size="sm" 
+                onClick={() => handleSaveField(fieldName)}
+                disabled={isFieldSaving}
+                className="h-7 px-2 text-xs"
+              >
+                {isFieldSaving ? (
+                  <LoadingState message="Saving..." showSpinner={true} />
+                ) : (
+                  <>
+                    <Save className="h-3 w-3 mr-1" /> Save
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        ) : isEditing ? (
+          <PhaseSelector
+            value={formValues.phase || null}
+            onValueChange={onPhaseChange}
+          />
+        ) : (
+          <p className="font-medium">{property?.phase || 'Not specified'}</p>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -86,7 +286,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
                 size="sm" 
                 onClick={onEdit}
               >
-                <Edit className="h-4 w-4 mr-1" /> Edit
+                <Edit className="h-4 w-4 mr-1" /> Edit All
               </Button>
             )}
           </div>
@@ -100,88 +300,13 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
         )}
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">Phase</p>
-          {renderPhaseSelector()}
-        </div>
-        <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">Available Space</p>
-          {isEditing ? (
-            <Input 
-              name="sf_available" 
-              value={formValues.sf_available || ''} 
-              onChange={onInputChange}
-              placeholder="Enter available square footage"
-            />
-          ) : (
-            <p className="font-medium">{property.sf_available ? `${property.sf_available} sq ft` : 'Not specified'}</p>
-          )}
-        </div>
-        <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">Zoning</p>
-          {isEditing ? (
-            <Input 
-              name="zoning" 
-              value={formValues.zoning || ''} 
-              onChange={onInputChange}
-              placeholder="Enter zoning"
-            />
-          ) : (
-            <p className="font-medium">{property.zoning || 'Not specified'}</p>
-          )}
-        </div>
-        <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">Permitted Use</p>
-          {isEditing ? (
-            <Input 
-              name="permitted_use" 
-              value={formValues.permitted_use || ''} 
-              onChange={onInputChange}
-              placeholder="Enter permitted use"
-            />
-          ) : (
-            <p className="font-medium">{property.permitted_use || 'Not specified'}</p>
-          )}
-        </div>
-        <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">Parking</p>
-          {isEditing ? (
-            <Input 
-              name="parking" 
-              value={formValues.parking || ''} 
-              onChange={onInputChange}
-              placeholder="Enter parking details"
-            />
-          ) : (
-            <p className="font-medium">{property.parking || 'Not specified'}</p>
-          )}
-        </div>
-        <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">Fire Sprinklers</p>
-          {isEditing ? (
-            <Input 
-              name="fire_sprinklers" 
-              value={formValues.fire_sprinklers || ''} 
-              onChange={onInputChange}
-              placeholder="Enter fire sprinkler details"
-            />
-          ) : (
-            <p className="font-medium">{property.fire_sprinklers || 'Not specified'}</p>
-          )}
-        </div>
-        <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">Fiber</p>
-          {isEditing ? (
-            <Input 
-              name="fiber" 
-              value={formValues.fiber || ''} 
-              onChange={onInputChange}
-              placeholder="Enter fiber details"
-            />
-          ) : (
-            <p className="font-medium">{property.fiber || 'Not specified'}</p>
-          )}
-        </div>
+        {renderPhaseField()}
+        {renderField('sf_available', 'Available Space')}
+        {renderField('zoning', 'Zoning')}
+        {renderField('permitted_use', 'Permitted Use')}
+        {renderField('parking', 'Parking')}
+        {renderField('fire_sprinklers', 'Fire Sprinklers')}
+        {renderField('fiber', 'Fiber')}
       </CardContent>
     </Card>
   );

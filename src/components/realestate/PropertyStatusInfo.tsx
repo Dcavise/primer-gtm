@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Edit, Save, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/LoadingState';
 import { RealEstateProperty } from '@/types/realEstate';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PropertyStatusInfoProps {
   property: RealEstateProperty;
@@ -28,6 +29,140 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
   onSave,
   onInputChange
 }) => {
+  // Individual field edit states
+  const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
+  const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+
+  // Initialize field values when property changes
+  React.useEffect(() => {
+    if (property) {
+      setFieldValues({
+        ahj_zoning_confirmation: property.ahj_zoning_confirmation || '',
+        ahj_building_records: property.ahj_building_records || '',
+        survey_status: property.survey_status || '',
+        test_fit_status: property.test_fit_status || '',
+      });
+    }
+  }, [property]);
+
+  const handleEditField = (fieldName: string) => {
+    setEditingFields(prev => ({ ...prev, [fieldName]: true }));
+    setFieldValues(prev => ({ ...prev, [fieldName]: property[fieldName as keyof RealEstateProperty] || '' }));
+  };
+
+  const handleCancelField = (fieldName: string) => {
+    setEditingFields(prev => ({ ...prev, [fieldName]: false }));
+    setFieldValues(prev => ({ ...prev, [fieldName]: property[fieldName as keyof RealEstateProperty] || '' }));
+  };
+
+  const handleFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFieldValues(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveField = async (fieldName: string) => {
+    if (!property.id) return;
+    
+    setSavingFields(prev => ({ ...prev, [fieldName]: true }));
+    
+    try {
+      const { error } = await supabase
+        .from('real_estate_pipeline')
+        .update({ [fieldName]: fieldValues[fieldName] })
+        .eq('id', property.id);
+      
+      if (error) {
+        console.error(`Error saving ${fieldName}:`, error);
+        return;
+      }
+      
+      setEditingFields(prev => ({ ...prev, [fieldName]: false }));
+      
+      // Also update the main form values so they stay in sync
+      if (onInputChange) {
+        const syntheticEvent = {
+          target: { name: fieldName, value: fieldValues[fieldName] }
+        } as React.ChangeEvent<HTMLInputElement>;
+        onInputChange(syntheticEvent);
+      }
+      
+    } catch (error) {
+      console.error(`Error saving ${fieldName}:`, error);
+    } finally {
+      setSavingFields(prev => ({ ...prev, [fieldName]: false }));
+    }
+  };
+
+  const renderField = (fieldName: string, label: string) => {
+    const isFieldEditing = editingFields[fieldName];
+    const isFieldSaving = savingFields[fieldName];
+    
+    return (
+      <div className="space-y-1">
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-muted-foreground">{label}</p>
+          {!isEditing && !isFieldEditing && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => handleEditField(fieldName)}
+              className="h-6 px-2"
+            >
+              <Edit className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+        
+        {isFieldEditing ? (
+          <div className="space-y-2">
+            <Input 
+              name={fieldName} 
+              value={fieldValues[fieldName] || ''} 
+              onChange={handleFieldChange}
+              placeholder={`Enter ${label.toLowerCase()}`}
+            />
+            <div className="flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handleCancelField(fieldName)}
+                disabled={isFieldSaving}
+                className="h-7 px-2 text-xs"
+              >
+                <X className="h-3 w-3 mr-1" /> Cancel
+              </Button>
+              <Button 
+                variant="default" 
+                size="sm" 
+                onClick={() => handleSaveField(fieldName)}
+                disabled={isFieldSaving}
+                className="h-7 px-2 text-xs"
+              >
+                {isFieldSaving ? (
+                  <LoadingState message="Saving..." showSpinner={true} />
+                ) : (
+                  <>
+                    <Save className="h-3 w-3 mr-1" /> Save
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        ) : isEditing ? (
+          <Input 
+            name={fieldName} 
+            value={formValues[fieldName as keyof RealEstateProperty] || ''} 
+            onChange={onInputChange}
+            placeholder={`Enter ${label.toLowerCase()}`}
+          />
+        ) : (
+          <p className="font-medium">{property[fieldName as keyof RealEstateProperty] || 'Not specified'}</p>
+        )}
+      </div>
+    );
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -67,65 +202,17 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
                 size="sm" 
                 onClick={onEdit}
               >
-                <Edit className="h-4 w-4 mr-1" /> Edit
+                <Edit className="h-4 w-4 mr-1" /> Edit All
               </Button>
             )}
           </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">AHJ Zoning Confirmation</p>
-          {isEditing ? (
-            <Input 
-              name="ahj_zoning_confirmation" 
-              value={formValues.ahj_zoning_confirmation || ''} 
-              onChange={onInputChange}
-              placeholder="Enter AHJ zoning confirmation"
-            />
-          ) : (
-            <p className="font-medium">{property.ahj_zoning_confirmation || 'Not specified'}</p>
-          )}
-        </div>
-        <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">AHJ Building Records</p>
-          {isEditing ? (
-            <Input 
-              name="ahj_building_records" 
-              value={formValues.ahj_building_records || ''} 
-              onChange={onInputChange}
-              placeholder="Enter AHJ building records"
-            />
-          ) : (
-            <p className="font-medium">{property.ahj_building_records || 'Not specified'}</p>
-          )}
-        </div>
-        <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">Survey Status</p>
-          {isEditing ? (
-            <Input 
-              name="survey_status" 
-              value={formValues.survey_status || ''} 
-              onChange={onInputChange}
-              placeholder="Enter survey status"
-            />
-          ) : (
-            <p className="font-medium">{property.survey_status || 'Not specified'}</p>
-          )}
-        </div>
-        <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">Test Fit Status</p>
-          {isEditing ? (
-            <Input 
-              name="test_fit_status" 
-              value={formValues.test_fit_status || ''} 
-              onChange={onInputChange}
-              placeholder="Enter test fit status"
-            />
-          ) : (
-            <p className="font-medium">{property.test_fit_status || 'Not specified'}</p>
-          )}
-        </div>
+        {renderField('ahj_zoning_confirmation', 'AHJ Zoning Confirmation')}
+        {renderField('ahj_building_records', 'AHJ Building Records')}
+        {renderField('survey_status', 'Survey Status')}
+        {renderField('test_fit_status', 'Test Fit Status')}
       </CardContent>
     </Card>
   );

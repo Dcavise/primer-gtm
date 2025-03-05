@@ -19,6 +19,7 @@ import PropertyDocuments from '@/components/realestate/PropertyDocuments';
 import PropertyDiscussion from '@/components/realestate/PropertyDiscussion';
 import PropertyLocation from '@/components/realestate/PropertyLocation';
 import PropertyProgress from '@/components/realestate/PropertyProgress';
+import { Stage } from '@/components/StageProgressBar';
 
 const PropertyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
