@@ -21,13 +21,15 @@ interface MetricsDashboardProps {
   opportunityMetrics: OpportunityMetricsData;
   attendanceMetrics: AttendanceMetricsData;
   selectedCampusName: string | null;
+  selectedCampusId: string | null;
 }
 
 export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
   leadsMetrics,
   opportunityMetrics,
   attendanceMetrics,
-  selectedCampusName
+  selectedCampusName,
+  selectedCampusId
 }) => {
   return (
     <Card className="mt-8">

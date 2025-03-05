@@ -62,6 +62,7 @@ const SalesforceLeadsPage: React.FC = () => {
         opportunityMetrics={opportunityMetrics}
         attendanceMetrics={attendanceMetrics}
         selectedCampusName={selectedCampusName}
+        selectedCampusId={selectedCampusId}
       />
     </div>
   );
