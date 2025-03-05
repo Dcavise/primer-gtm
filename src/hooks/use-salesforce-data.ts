@@ -67,12 +67,12 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
       const { data: allCampuses } = await supabase.from('campuses').select('campus_id, campus_name');
       console.log("Available campuses:", allCampuses);
       
-      // Fetch fellows count with fixed employment status filtering
+      // Fetch fellows count with modified employment status filtering
       let query = supabase
         .from('fellows')
         .select('*', { count: 'exact' });
       
-      // Correctly filter out "Exiting" and "Declined FTE Offer" statuses
+      // Only exclude "Exiting" and "Declined FTE Offer" statuses, but include NULL
       query = query.not('fte_employment_status', 'eq', 'Exiting')
                    .not('fte_employment_status', 'eq', 'Declined FTE Offer');
       
