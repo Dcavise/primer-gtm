@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -66,8 +67,11 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
       const { data: allCampuses } = await supabase.from('campuses').select('campus_id, campus_name');
       console.log("Available campuses:", allCampuses);
       
-      // Fetch fellows count with improved campus filtering
-      let query = supabase.from('fellows').select('fellow_id', { count: 'exact', head: true });
+      // Fetch fellows count with improved campus filtering and excluding specific employment statuses
+      let query = supabase
+        .from('fellows')
+        .select('fellow_id', { count: 'exact', head: true })
+        .not('fte_employment_status', 'in', '("Exiting","Decline FTE Offer")');
       
       if (selectedCampusId) {
         // For Fort Myers campus (special case)
@@ -76,7 +80,8 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
           query = supabase
             .from('fellows')
             .select('fellow_id', { count: 'exact', head: true })
-            .ilike('campus', '%fort%myers%');
+            .ilike('campus', '%fort%myers%')
+            .not('fte_employment_status', 'in', '("Exiting","Decline FTE Offer")');
         } else {
           // For other campuses
           const { data: campusData } = await supabase
@@ -90,7 +95,8 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
             query = supabase
               .from('fellows')
               .select('fellow_id', { count: 'exact', head: true })
-              .ilike('campus', `%${campusData.campus_name}%`);
+              .ilike('campus', `%${campusData.campus_name}%`)
+              .not('fte_employment_status', 'in', '("Exiting","Decline FTE Offer")');
           }
         }
       }
