@@ -123,7 +123,7 @@ async function fetchSalesforceLeads(token: string, instanceUrl: string): Promise
   
   const query = `
     SELECT Id, FirstName, LastName, CreatedDate, ConvertedDate, IsConverted, 
-           Status, LeadSource, Company
+           Status, LeadSource, Company, Preferred_Campus__c
     FROM Lead
     WHERE Id != null
     ORDER BY CreatedDate DESC
@@ -163,8 +163,8 @@ function transformLeads(salesforceLeads: SalesforceLead[], campusNames: string[]
     
     const stage = lead.Status || null;
     
-    // Store the Company field value as preferred_campus if it exists
-    let preferredCampus = lead.Company || null;
+    // Use the correct Preferred_Campus__c field instead of Company
+    let preferredCampus = lead.Preferred_Campus__c || null;
     
     return {
       lead_id: lead.Id,
