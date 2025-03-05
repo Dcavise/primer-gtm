@@ -1,4 +1,3 @@
-
 // Geocoding functions to convert addresses to coordinates
 import { GeocodingResult } from "./types.ts";
 

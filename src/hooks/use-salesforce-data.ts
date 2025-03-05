@@ -38,6 +38,8 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
     const checkDatabaseConnection = async () => {
       try {
         console.log("Checking Supabase database connection...");
+        console.log("Supabase URL:", supabase.supabaseUrl);
+        
         const { data, error } = await supabase.from('salesforce_leads').select('count').limit(1);
         
         if (error) {

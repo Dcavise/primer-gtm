@@ -3,9 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 
 // Base URLs
 export const API_BASE_URL = "https://api.zoneomics.com/v2";
+export const SUPABASE_URL = "https://pudncilureqpzxrxfupr.supabase.co";
 
 // Function to securely get API keys from Supabase edge function
-export async function getApiKey(keyType: 'zoneomics' | 'census' | 'google_maps' | 'mapbox'): Promise<string> {
+export async function getApiKey(keyType: 'zoneomics' | 'census' | 'google_maps' | 'mapbox' | 'greatschools'): Promise<string> {
   try {
     console.log(`Fetching ${keyType} API key from Supabase edge function`);
     

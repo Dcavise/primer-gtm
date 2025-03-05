@@ -1,5 +1,6 @@
 
 import { toast } from "sonner";
+import { SUPABASE_URL } from "@/services/api-config";
 
 // Define coordinate type
 export interface Coordinates {
@@ -16,12 +17,14 @@ export const geocodeAddress = async (address: string): Promise<{
     console.log(`Geocoding address: ${address}`);
     
     // Make API request to our supabase function that wraps Google Maps API
-    const response = await fetch(`https://pudncilureqpzxrxfupr.supabase.co/functions/v1/geocode-address`, {
+    // Use the consistent SUPABASE_URL from api-config
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/geocode-address`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         // Add cache-control to prevent caching issues
-        'Cache-Control': 'no-cache'
+        'Cache-Control': 'no-cache',
+        'Accept': 'application/json'
       },
       body: JSON.stringify({ address })
     });

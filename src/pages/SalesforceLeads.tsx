@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSalesforceData } from '@/hooks/use-salesforce-data';
 import { DashboardHeader } from '@/components/salesforce/DashboardHeader';
 import { CampusSelector } from '@/components/salesforce/CampusSelector';
@@ -7,10 +7,39 @@ import { StatsCardGrid } from '@/components/salesforce/StatsCardGrid';
 import { SyncErrorAlert } from '@/components/salesforce/SyncErrorAlert';
 import { MetricsDashboard } from '@/components/salesforce/MetricsDashboard';
 import { Navbar } from '@/components/Navbar';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const SalesforceLeadsPage: React.FC = () => {
   const [selectedCampusId, setSelectedCampusId] = useState<string | null>(null);
   const [selectedCampusName, setSelectedCampusName] = useState<string | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
+  
+  useEffect(() => {
+    // Check database connection on component mount
+    const checkConnection = async () => {
+      try {
+        console.log("Checking Supabase connectivity from Salesforce Leads page");
+        console.log("Supabase URL:", supabase.supabaseUrl);
+        
+        const { data, error } = await supabase.from('campuses').select('count').limit(1);
+        
+        if (error) {
+          console.error("Database connectivity test failed:", error);
+          setConnectionStatus('error');
+        } else {
+          console.log("Database connectivity test successful");
+          setConnectionStatus('connected');
+        }
+      } catch (error) {
+        console.error("Unexpected error during connectivity test:", error);
+        setConnectionStatus('error');
+      }
+    };
+    
+    checkConnection();
+  }, []);
   
   const {
     stats,
@@ -24,6 +53,7 @@ const SalesforceLeadsPage: React.FC = () => {
     syncLoading,
     syncError,
     lastRefreshed,
+    databaseConnection,
     syncSalesforceData
   } = useSalesforceData(selectedCampusId);
 
@@ -47,6 +77,17 @@ const SalesforceLeadsPage: React.FC = () => {
       </header>
       
       <main className="container mx-auto p-4">
+        {(connectionStatus === 'error' || databaseConnection === 'error') && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Database Connection Error</AlertTitle>
+            <AlertDescription>
+              Could not connect to the database. This may affect data loading and functionality.
+              Please check your network connection and try again.
+            </AlertDescription>
+          </Alert>
+        )}
+        
         {syncError && <SyncErrorAlert error={syncError} />}
 
         <CampusSelector 
