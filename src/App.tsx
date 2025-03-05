@@ -9,28 +9,54 @@ import FindContacts from '@/pages/FindContacts';
 import NotFound from '@/pages/NotFound';
 import Auth from '@/pages/Auth';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { ProtectedRouteWrapper } from '@/components/ProtectedRouteWrapper';
 import { Toaster } from "@/components/ui/toaster";
 import './App.css';
 import { Toaster as SonnerToaster } from 'sonner';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <SonnerToaster position="top-right" />
-        <Toaster />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/property_research" element={<PropertyResearch />} />
-          <Route path="/real-estate-pipeline" element={<RealEstatePipeline />} />
-          <Route path="/real-estate-pipeline/property/:id" element={<PropertyDetail />} />
-          <Route path="/salesforce-leads" element={<SalesforceLeads />} />
-          <Route path="/find-contacts" element={<FindContacts />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </AuthProvider>
-    </Router>
+    <QueryClientProvider client={queryClient}>
+      <Router>
+        <AuthProvider>
+          <SonnerToaster position="top-right" />
+          <Toaster />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/property_research" element={<PropertyResearch />} />
+            <Route path="/real-estate-pipeline" element={
+              <ProtectedRouteWrapper>
+                <RealEstatePipeline />
+              </ProtectedRouteWrapper>
+            } />
+            <Route path="/real-estate-pipeline/property/:id" element={
+              <ProtectedRouteWrapper>
+                <PropertyDetail />
+              </ProtectedRouteWrapper>
+            } />
+            <Route path="/salesforce-leads" element={
+              <ProtectedRouteWrapper>
+                <SalesforceLeads />
+              </ProtectedRouteWrapper>
+            } />
+            <Route path="/find-contacts" element={<FindContacts />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
+      </Router>
+    </QueryClientProvider>
   );
 }
 

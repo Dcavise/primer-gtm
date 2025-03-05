@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +11,8 @@ import { toast } from 'sonner';
 
 const Auth: React.FC = () => {
   const navigate = useNavigate();
-  const { signIn, signUp, user } = useAuth();
+  const location = useLocation();
+  const { signIn, signUp, user, loading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   
   // Login form state
@@ -22,11 +24,14 @@ const Auth: React.FC = () => {
   const [signupPassword, setSignupPassword] = useState('');
   const [signupFullName, setSignupFullName] = useState('');
 
+  // Get the return URL from location state or default to home
+  const from = location.state?.from?.pathname || '/real-estate-pipeline';
+
   useEffect(() => {
-    if (user) {
-      navigate('/real-estate-pipeline');
+    if (user && !loading) {
+      navigate(from, { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, loading, navigate, from]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +43,6 @@ const Auth: React.FC = () => {
         toast.error(error.message);
       } else {
         toast.success('Signed in successfully');
-        navigate('/real-estate-pipeline');
       }
     } catch (error: any) {
       toast.error(error.message || 'An error occurred during sign in');
@@ -62,6 +66,21 @@ const Auth: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  // If still checking auth status, show a loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p>Checking authentication status...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">

@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 
 type AuthContextType = {
@@ -23,42 +23,76 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const setData = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        setProfile(data);
-      }
-      
-      setLoading(false);
-    };
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+        if (error) {
+          console.error('Error fetching session:', error);
+          setLoading(false);
+          return;
+        }
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          supabase
+          const { data, error: profileError } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
-            .single()
-            .then(({ data }) => {
+            .single();
+          
+          if (profileError) {
+            console.error('Error fetching profile:', profileError);
+          } else {
+            setProfile(data);
+          }
+        }
+      } catch (error) {
+        console.error('Unexpected error during auth setup:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          try {
+            const { data, error } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+            
+            if (error) {
+              console.error('Error fetching profile on auth change:', error);
+            } else {
               setProfile(data);
-            });
+            }
+          } catch (error) {
+            console.error('Unexpected error fetching profile:', error);
+          }
         } else {
           setProfile(null);
+          
+          // Only redirect to auth page if we're on a protected route
+          // Avoid redirect loops by checking the current path
+          const protectedRoutes = ['/real-estate-pipeline', '/salesforce-leads'];
+          const isProtectedRoute = protectedRoutes.some(route => 
+            location.pathname.startsWith(route)
+          );
+          
+          if (isProtectedRoute && location.pathname !== '/auth') {
+            navigate('/auth');
+          }
         }
       }
     );
@@ -68,39 +102,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate, location.pathname]);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (!error) {
+        navigate('/real-estate-pipeline');
+      }
+      return { error };
+    } catch (error) {
+      console.error('Unexpected error during sign in:', error);
+      return { error };
+    }
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    // First, sign up the user
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
+    try {
+      // First, sign up the user
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
         },
-      },
-    });
-    
-    // If sign up is successful, automatically sign them in
-    if (!error && data.user) {
-      // After signup, immediately sign in the user
-      await signIn(email, password);
-      toast.success('Account created and logged in successfully!');
-      navigate('/real-estate-pipeline');
+      });
+      
+      // If sign up is successful, automatically sign them in
+      if (!error && data.user) {
+        // After signup, immediately sign in the user
+        await signIn(email, password);
+        toast.success('Account created and logged in successfully!');
+      }
+      
+      return { data, error };
+    } catch (error) {
+      console.error('Unexpected error during sign up:', error);
+      return { data: null, error };
     }
-    
-    return { data, error };
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    navigate('/auth');
+    try {
+      await supabase.auth.signOut();
+      navigate('/auth');
+    } catch (error) {
+      console.error('Error signing out:', error);
+      toast.error('Failed to sign out. Please try again.');
+    }
   };
 
   const value = {
