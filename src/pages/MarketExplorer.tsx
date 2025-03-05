@@ -2,14 +2,13 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getApiKey } from "@/services/api-config";
 import { toast } from "sonner";
 import { LoadingState } from "@/components/LoadingState";
 import { MarketSelector } from "@/components/MarketSelector";
 import { marketCoordinates } from "@/utils/marketCoordinates";
 import { useCampuses } from "@/hooks/salesforce/useCampuses";
 import { Navbar } from "@/components/Navbar";
-import { geocodeAddress } from "@/utils/geocoding";
+import { geocodeAddress, initializeMapboxToken, createCustomMarker } from "@/utils/geocoding";
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -18,19 +17,38 @@ import { useQuery } from '@tanstack/react-query';
 const MarketExplorer = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const markers = useRef<mapboxgl.Marker[]>([]);
   const [selectedMarket, setSelectedMarket] = useState<string>("default");
   const { campuses } = useCampuses();
-  const mapInitialized = useRef(false);
+  const [mapInitialized, setMapInitialized] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   
+  // Initialize Mapbox token once
+  const { isLoading: isTokenLoading, error: tokenError } = useQuery({
+    queryKey: ['mapbox-token-init'],
+    queryFn: async () => {
+      console.log("Initializing Mapbox token (ONCE ONLY)");
+      return initializeMapboxToken();
+    },
+    staleTime: Infinity,
+    gcTime: Infinity,
+    retry: 2
+  });
+
+  // Clear all markers from the map
+  const clearMarkers = useCallback(() => {
+    markers.current.forEach(marker => marker.remove());
+    markers.current = [];
+  }, []);
+  
+  // Create demo markers for the US overview
   const createDemoMap = useCallback((mapInstance: mapboxgl.Map) => {
     if (!mapInstance) return;
     
     console.log("Creating demo map for All Campuses view");
     
     try {
-      const existingMarkers = document.querySelectorAll('.mapboxgl-marker');
-      existingMarkers.forEach(marker => marker.remove());
+      clearMarkers();
       
       const demoLocations = [
         { name: "San Francisco", coordinates: marketCoordinates.sf.center, color: "#1F77B4" },
@@ -47,63 +65,43 @@ const MarketExplorer = () => {
       
       demoLocations.forEach(location => {
         try {
-          const el = document.createElement('div');
-          el.className = 'mapboxgl-marker';
-          el.style.width = '20px';
-          el.style.height = '20px';
-          el.style.borderRadius = '50%';
-          el.style.backgroundColor = location.color;
-          el.style.border = '2px solid white';
-          el.style.boxShadow = '0 0 4px rgba(0,0,0,0.3)';
+          const el = createCustomMarker(location.color);
           
           const popup = new mapboxgl.Popup({ offset: 25 })
             .setText(location.name);
           
-          new mapboxgl.Marker(el)
+          const marker = new mapboxgl.Marker(el)
             .setLngLat(location.coordinates)
             .setPopup(popup)
             .addTo(mapInstance);
+            
+          markers.current.push(marker);
         } catch (err) {
           console.error(`Error adding marker for ${location.name}:`, err);
         }
       });
       
+      // Smoothly fly to the default view
       mapInstance.flyTo({
         center: marketCoordinates.default.center,
         zoom: marketCoordinates.default.zoom,
         pitch: 30,
-        duration: 2000
+        duration: 2000,
+        essential: true
       });
     } catch (error) {
       console.error("Error creating demo map:", error);
     }
-  }, []);
+  }, [clearMarkers]);
   
-  const { 
-    data: mapboxToken, 
-    isLoading: isTokenLoading, 
-    error: tokenError 
-  } = useQuery({
-    queryKey: ['mapbox-token'],
-    queryFn: async () => {
-      console.log("Fetching Mapbox token (ONCE ONLY)");
-      return getApiKey('mapbox');
-    },
-    staleTime: Infinity,
-    gcTime: Infinity,
-    retry: 2
-  });
-
+  // Initialize map once Mapbox token is ready
   useEffect(() => {
-    if (!mapboxToken || !mapContainer.current || mapInitialized.current || map.current) return;
+    if (isTokenLoading || mapInitialized || !mapContainer.current || map.current) return;
     
     try {
-      console.log("Initializing Mapbox map (ONCE ONLY)...");
+      console.log("Initializing Mapbox map...");
       
-      mapboxgl.accessToken = mapboxToken;
-      
-      mapInitialized.current = true;
-      
+      // Create the map instance
       const newMap = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/light-v11',
@@ -111,9 +109,11 @@ const MarketExplorer = () => {
         zoom: marketCoordinates.default.zoom,
         pitch: 30,
         antialias: true,
-        attributionControl: false
+        attributionControl: false,
+        failIfMajorPerformanceCaveat: true
       });
 
+      // Add navigation controls
       newMap.addControl(
         new mapboxgl.NavigationControl({
           visualizePitch: true,
@@ -121,6 +121,7 @@ const MarketExplorer = () => {
         'top-right'
       );
       
+      // Add attribution in a more discreet location
       newMap.addControl(
         new mapboxgl.AttributionControl({
           compact: true
@@ -128,11 +129,15 @@ const MarketExplorer = () => {
         'bottom-right'
       );
 
+      // Store map reference
       map.current = newMap;
 
+      // Event handlers for map
       newMap.on('load', () => {
         console.log("✅ Map loaded successfully");
         setMapError(null);
+        setMapInitialized(true);
+        
         toast.success("Map loaded successfully", {
           description: "Market explorer is ready to use"
         });
@@ -148,38 +153,41 @@ const MarketExplorer = () => {
         setMapError(`Map failed to load correctly: ${errorMessage}`);
         toast.error(`Map failed to load correctly: ${errorMessage}`);
       });
+      
+      // Return cleanup function
+      return () => {
+        clearMarkers();
+        if (map.current) {
+          console.log("Cleaning up map instance");
+          map.current.remove();
+          map.current = null;
+          setMapInitialized(false);
+        }
+      };
     } catch (error) {
       console.error("Error initializing map:", error);
-      mapInitialized.current = false;
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       setMapError(`Failed to load map: ${errorMessage}`);
       toast.error(`Failed to load map: ${errorMessage}`);
     }
+  }, [isTokenLoading, selectedMarket, createDemoMap, mapInitialized, clearMarkers]);
 
-    return () => {
-      if (map.current) {
-        console.log("Cleaning up map instance");
-        map.current.remove();
-        map.current = null;
-        mapInitialized.current = false;
-      }
-    };
-  }, [mapboxToken, selectedMarket, createDemoMap]);
-
+  // Update map when selected market changes
   useEffect(() => {
-    if (!map.current || !mapInitialized.current) return;
+    if (!mapInitialized || !map.current) return;
     
     const updateMapView = async () => {
       console.log("Updating map view for selected market:", selectedMarket);
       
       try {
         // Clear existing markers
-        const existingMarkers = document.querySelectorAll('.mapboxgl-marker');
-        existingMarkers.forEach(marker => marker.remove());
+        clearMarkers();
         
+        // Set default coordinates
         let coordinates = marketCoordinates.default.center;
         let zoom = marketCoordinates.default.zoom;
         
+        // If default view is selected, show the demo map with multiple markers
         if (selectedMarket === "default") {
           if (map.current) {
             createDemoMap(map.current);
@@ -187,6 +195,7 @@ const MarketExplorer = () => {
           return;
         }
         
+        // Find the selected campus
         const selectedCampus = campuses.find(c => c.campus_id === selectedMarket);
         
         if (!selectedCampus) {
@@ -245,22 +254,18 @@ const MarketExplorer = () => {
         // Add marker for the selected campus
         if (map.current) {
           try {
-            const el = document.createElement('div');
-            el.className = 'mapboxgl-marker';
-            el.style.width = '20px';
-            el.style.height = '20px';
-            el.style.borderRadius = '50%';
-            el.style.backgroundColor = '#1F77B4';
-            el.style.border = '2px solid white';
-            el.style.boxShadow = '0 0 4px rgba(0,0,0,0.3)';
+            const el = createCustomMarker('#1F77B4');
             
-            new mapboxgl.Marker(el)
+            // Create and add the marker
+            const marker = new mapboxgl.Marker(el)
               .setLngLat(coordinates as [number, number])
               .setPopup(new mapboxgl.Popup().setText(selectedCampus.campus_name))
               .addTo(map.current);
               
-            // Fly to the coordinates
-            console.log("Flying to coordinates:", coordinates, "with zoom:", zoom);
+            // Store the marker reference
+            markers.current.push(marker);
+              
+            // Fly to the coordinates with smooth animation
             map.current.flyTo({
               center: coordinates,
               zoom: zoom,
@@ -281,7 +286,7 @@ const MarketExplorer = () => {
     };
     
     updateMapView();
-  }, [selectedMarket, campuses, createDemoMap]);
+  }, [selectedMarket, campuses, createDemoMap, mapInitialized, clearMarkers]);
 
   const handleMarketChange = (marketId: string) => {
     console.log("Market changed to:", marketId);
@@ -291,7 +296,7 @@ const MarketExplorer = () => {
   const isLoading = isTokenLoading;
 
   const displayError = mapError || (tokenError 
-    ? `Failed to fetch Mapbox token: ${tokenError instanceof Error ? tokenError.message : "Unknown error"}`
+    ? `Failed to initialize Mapbox: ${tokenError instanceof Error ? tokenError.message : "Unknown error"}`
     : null);
 
   return (

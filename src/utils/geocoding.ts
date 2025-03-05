@@ -1,7 +1,7 @@
 
 import { getApiKey } from "@/services/api-config";
 import { toast } from "sonner";
-import mapboxgl from "mapbox-gl";
+import mapboxgl from 'mapbox-gl';
 
 export interface Coordinates {
   lat: number;
@@ -32,6 +32,29 @@ export interface GeocodingOptions {
 }
 
 /**
+ * Sets the Mapbox access token for the application
+ */
+export async function initializeMapboxToken(): Promise<boolean> {
+  try {
+    const token = await getApiKey('mapbox');
+    if (!token || token.trim() === '') {
+      throw new Error("No Mapbox token available");
+    }
+    
+    // Set the token for the entire mapboxgl instance
+    mapboxgl.accessToken = token;
+    console.log("Successfully initialized Mapbox token");
+    return true;
+  } catch (error) {
+    console.error("Error initializing Mapbox token:", error);
+    toast.error("Could not authenticate with Mapbox", {
+      description: "Please check your API configuration"
+    });
+    return false;
+  }
+}
+
+/**
  * Geocode an address string into coordinates using Mapbox
  */
 export async function geocodeAddress(
@@ -46,25 +69,18 @@ export async function geocodeAddress(
   try {
     console.log(`Geocoding address with Mapbox: ${address}`);
     
-    // Get Mapbox token
-    let token;
-    try {
-      token = await getApiKey('mapbox');
-      if (!token || token.trim() === '') {
-        throw new Error("No Mapbox token available");
+    // Get Mapbox token if not already set
+    if (!mapboxgl.accessToken) {
+      const tokenInitialized = await initializeMapboxToken();
+      if (!tokenInitialized) {
+        throw new Error("Failed to initialize Mapbox token");
       }
-    } catch (error) {
-      console.error("Error fetching Mapbox token:", error);
-      toast.error("Could not authenticate with Mapbox", {
-        description: "Please check your API configuration"
-      });
-      return null;
     }
     
     const encodedAddress = encodeURIComponent(address);
     
     // Build URL with options
-    let url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${token}`;
+    let url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${mapboxgl.accessToken}`;
     
     // Add options to URL if provided
     if (options.types && options.types.length > 0) {
@@ -165,23 +181,16 @@ export async function reverseGeocode(
   try {
     console.log(`Reverse geocoding coordinates: ${coordinates.lat}, ${coordinates.lng}`);
     
-    // Get Mapbox token
-    let token;
-    try {
-      token = await getApiKey('mapbox');
-      if (!token || token.trim() === '') {
-        throw new Error("No Mapbox token available");
+    // Get Mapbox token if not already set
+    if (!mapboxgl.accessToken) {
+      const tokenInitialized = await initializeMapboxToken();
+      if (!tokenInitialized) {
+        throw new Error("Failed to initialize Mapbox token");
       }
-    } catch (error) {
-      console.error("Error fetching Mapbox token:", error);
-      toast.error("Could not authenticate with Mapbox", {
-        description: "Please check your API configuration"
-      });
-      return null;
     }
     
     // Build URL with options
-    let url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${coordinates.lng},${coordinates.lat}.json?access_token=${token}`;
+    let url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${coordinates.lng},${coordinates.lat}.json?access_token=${mapboxgl.accessToken}`;
     
     // Add options to URL if provided
     if (options.types && options.types.length > 0) {
@@ -281,4 +290,19 @@ export function createBoundingBox(center: Coordinates, radiusInMeters: number) {
   };
 
   return { bottomLeft, topRight };
+}
+
+/**
+ * Creates a marker element with custom styling
+ */
+export function createCustomMarker(color: string = '#1F77B4', size: number = 20): HTMLDivElement {
+  const el = document.createElement('div');
+  el.className = 'mapboxgl-marker';
+  el.style.width = `${size}px`;
+  el.style.height = `${size}px`;
+  el.style.borderRadius = '50%';
+  el.style.backgroundColor = color;
+  el.style.border = '2px solid white';
+  el.style.boxShadow = '0 0 4px rgba(0,0,0,0.3)';
+  return el;
 }

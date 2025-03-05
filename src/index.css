@@ -105,7 +105,7 @@
   }
 }
 
-/* Make sure the Mapbox map container has a defined height */
+/* Mapbox specific styles */
 .mapboxgl-map {
   width: 100% !important;
   height: 100% !important;
@@ -122,25 +122,54 @@
   height: 100% !important;
 }
 
-/* Make sure markers are visible */
+/* Make sure markers are visible and properly styled */
 .mapboxgl-marker {
   cursor: pointer;
   z-index: 2 !important;
+  transition: transform 0.2s;
 }
 
-/* Make sure popups are styled nicely */
+.mapboxgl-marker:hover {
+  transform: scale(1.2);
+}
+
+/* Style popups */
 .mapboxgl-popup {
   max-width: 200px;
   z-index: 3 !important;
 }
 
 .mapboxgl-popup-content {
-  padding: 10px;
-  border-radius: 4px;
+  padding: 10px 14px;
+  border-radius: 6px;
   font-size: 14px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
-/* Ensure map controls are visible */
+.mapboxgl-popup-close-button {
+  font-size: 18px;
+  padding: 4px 8px;
+}
+
+/* Position and style map controls */
 .mapboxgl-control-container {
   z-index: 2 !important;
+}
+
+.mapboxgl-ctrl-group {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1) !important;
+  border-radius: 6px !important;
+}
+
+.mapboxgl-ctrl-group button {
+  width: 32px !important;
+  height: 32px !important;
+}
+
+/* Fix attribution control */
+.mapboxgl-ctrl-attrib {
+  font-size: 10px !important;
+  padding: 2px 5px !important;
+  background-color: rgba(255, 255, 255, 0.7) !important;
+  border-radius: 3px 0 0 0 !important;
 }
