@@ -1,22 +1,23 @@
 
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { geocodeAddress } from '../geocoding-service';
 import { geocodeAddress as geocodeAddressUtil } from '@/utils/maps';
 import { toast } from 'sonner';
 
 // Mock dependencies
-jest.mock('@/utils/maps', () => ({
-  geocodeAddress: jest.fn(),
+vi.mock('@/utils/maps', () => ({
+  geocodeAddress: vi.fn(),
 }));
 
-jest.mock('sonner', () => ({
+vi.mock('sonner', () => ({
   toast: {
-    error: jest.fn(),
+    error: vi.fn(),
   },
 }));
 
 describe('geocodeAddress', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test('should return error when no address is provided', async () => {
@@ -37,7 +38,7 @@ describe('geocodeAddress', () => {
       coordinates: mockCoordinates,
     };
     
-    (geocodeAddressUtil as jest.Mock).mockResolvedValue(mockResult);
+    (geocodeAddressUtil as ReturnType<typeof vi.fn>).mockResolvedValue(mockResult);
     
     const result = await geocodeAddress('123 Test St');
     
@@ -50,7 +51,7 @@ describe('geocodeAddress', () => {
   });
 
   test('should return error when geocoding fails', async () => {
-    (geocodeAddressUtil as jest.Mock).mockResolvedValue(null);
+    (geocodeAddressUtil as ReturnType<typeof vi.fn>).mockResolvedValue(null);
     
     const result = await geocodeAddress('invalid address');
     
@@ -64,7 +65,7 @@ describe('geocodeAddress', () => {
 
   test('should handle exceptions and show toast', async () => {
     const errorMessage = 'Network error';
-    (geocodeAddressUtil as jest.Mock).mockRejectedValue(new Error(errorMessage));
+    (geocodeAddressUtil as ReturnType<typeof vi.fn>).mockRejectedValue(new Error(errorMessage));
     
     const result = await geocodeAddress('123 Test St');
     

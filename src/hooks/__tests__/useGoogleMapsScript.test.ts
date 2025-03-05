@@ -1,21 +1,22 @@
 
+import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useGoogleMapsScript } from '../useGoogleMapsScript';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 // Mock dependencies
-jest.mock('@/integrations/supabase/client', () => ({
+vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     functions: {
-      invoke: jest.fn(),
+      invoke: vi.fn(),
     },
   },
 }));
 
-jest.mock('sonner', () => ({
+vi.mock('sonner', () => ({
   toast: {
-    error: jest.fn(),
+    error: vi.fn(),
   },
 }));
 
@@ -29,10 +30,10 @@ describe('useGoogleMapsScript', () => {
     originalWindow = global.window;
     
     // Clear mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Reset document.head.appendChild mock implementation
-    jest.spyOn(document.head, 'appendChild').mockImplementation(jest.fn());
+    vi.spyOn(document.head, 'appendChild').mockImplementation(vi.fn());
   });
 
   afterEach(() => {
@@ -43,13 +44,13 @@ describe('useGoogleMapsScript', () => {
 
   test('should fetch API key and load script', async () => {
     // Mock successful API key fetch
-    (supabase.functions.invoke as jest.Mock).mockResolvedValue({
+    (supabase.functions.invoke as ReturnType<typeof vi.fn>).mockResolvedValue({
       data: { key: 'test-api-key' },
       error: null,
     });
     
     // Create script element spy
-    const appendChildSpy = jest.spyOn(document.head, 'appendChild');
+    const appendChildSpy = vi.spyOn(document.head, 'appendChild');
     
     // Render the hook
     const { result } = renderHook(() => useGoogleMapsScript());
@@ -92,7 +93,7 @@ describe('useGoogleMapsScript', () => {
   test('should handle API key fetch error', async () => {
     // Mock API key fetch error
     const errorMessage = 'Failed to fetch API key';
-    (supabase.functions.invoke as jest.Mock).mockResolvedValue({
+    (supabase.functions.invoke as ReturnType<typeof vi.fn>).mockResolvedValue({
       data: null,
       error: { message: errorMessage },
     });
@@ -116,13 +117,13 @@ describe('useGoogleMapsScript', () => {
 
   test('should handle script loading error', async () => {
     // Mock successful API key fetch
-    (supabase.functions.invoke as jest.Mock).mockResolvedValue({
+    (supabase.functions.invoke as ReturnType<typeof vi.fn>).mockResolvedValue({
       data: { key: 'test-api-key' },
       error: null,
     });
     
     // Create script element spy that simulates error
-    jest.spyOn(document.head, 'appendChild').mockImplementation((script: Node) => {
+    vi.spyOn(document.head, 'appendChild').mockImplementation((script: Node) => {
       if (script instanceof HTMLScriptElement && script.onerror) {
         setTimeout(() => script.onerror(new Event('error')), 0);
       }
@@ -148,10 +149,10 @@ describe('useGoogleMapsScript', () => {
     window.google = { maps: {} } as any;
     
     // Create script element spy
-    const appendChildSpy = jest.spyOn(document.head, 'appendChild');
+    const appendChildSpy = vi.spyOn(document.head, 'appendChild');
     
     // Mock successful API key fetch
-    (supabase.functions.invoke as jest.Mock).mockResolvedValue({
+    (supabase.functions.invoke as ReturnType<typeof vi.fn>).mockResolvedValue({
       data: { key: 'test-api-key' },
       error: null,
     });
@@ -175,7 +176,7 @@ describe('useGoogleMapsScript', () => {
 
   test('should handle no API key returned', async () => {
     // Mock API key fetch with no key
-    (supabase.functions.invoke as jest.Mock).mockResolvedValue({
+    (supabase.functions.invoke as ReturnType<typeof vi.fn>).mockResolvedValue({
       data: {},
       error: null,
     });
