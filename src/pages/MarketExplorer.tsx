@@ -12,6 +12,7 @@ import { Navbar } from "@/components/Navbar";
 import { geocodeAddress } from "@/utils/geocoding";
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const MarketExplorer = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -21,6 +22,7 @@ const MarketExplorer = () => {
   const [selectedMarket, setSelectedMarket] = useState<string>("default");
   const { campuses, fetchCampuses } = useCampuses();
   const mapInitialized = useRef(false);
+  const [mapError, setMapError] = useState<string | null>(null);
 
   // Fetch API key and campuses when component mounts
   useEffect(() => {
@@ -28,13 +30,21 @@ const MarketExplorer = () => {
       try {
         // Fetch Mapbox token
         const token = await getApiKey('mapbox');
-        console.log("Mapbox token fetched successfully");
+        console.log("Mapbox token fetched successfully:", token ? "Token exists" : "Token is empty");
+        
+        if (!token) {
+          setMapError("Mapbox token is empty or invalid");
+          setIsLoading(false);
+          return;
+        }
+        
         setMapboxToken(token);
         
         // Fetch campuses
         await fetchCampuses();
       } catch (error) {
         console.error("Error initializing data:", error);
+        setMapError("Failed to initialize data. Please check your connection and try again.");
         toast.error("Failed to initialize data", {
           description: "Please check your connection and try again"
         });
@@ -50,9 +60,13 @@ const MarketExplorer = () => {
     if (!mapboxToken || !mapContainer.current || mapInitialized.current) return;
     
     try {
-      console.log("Initializing Mapbox map with token");
+      console.log("Initializing Mapbox map with token", mapboxToken.substring(0, 10) + "...");
+      console.log("Map container exists:", !!mapContainer.current);
+      
+      // Set the access token for mapboxgl
       mapboxgl.accessToken = mapboxToken;
       
+      console.log("Creating new map instance");
       const newMap = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/light-v11',
@@ -77,6 +91,7 @@ const MarketExplorer = () => {
       newMap.on('load', () => {
         console.log("Map loaded successfully");
         setIsLoading(false);
+        setMapError(null);
         toast.success("Map loaded successfully", {
           description: "Market explorer is ready to use"
         });
@@ -90,12 +105,14 @@ const MarketExplorer = () => {
       // Handle map load error
       newMap.on('error', (e) => {
         console.error("Mapbox error:", e);
+        setMapError(`Map failed to load correctly: ${e.error ? e.error.message : "Unknown error"}`);
         toast.error("Map failed to load correctly", {
           description: e.error ? e.error.message : "Unknown error"
         });
       });
     } catch (error) {
       console.error("Error initializing map:", error);
+      setMapError(`Failed to load map: ${error instanceof Error ? error.message : "Unknown error"}`);
       toast.error("Failed to load map", {
         description: "Please check your connection and try again"
       });
@@ -105,6 +122,7 @@ const MarketExplorer = () => {
     // Cleanup map instance when component unmounts
     return () => {
       if (map.current) {
+        console.log("Cleaning up map instance");
         map.current.remove();
         map.current = null;
         mapInitialized.current = false;
@@ -272,13 +290,22 @@ const MarketExplorer = () => {
               isLoading={isLoading && campuses.length === 0}
             />
             
+            {mapError && (
+              <Alert className="mb-4 border-red-400 bg-red-50">
+                <AlertDescription className="text-red-800">
+                  {mapError}
+                </AlertDescription>
+              </Alert>
+            )}
+            
             {isLoading ? (
               <LoadingState message="Loading map..." className="h-[600px]" />
             ) : (
               <div className="relative rounded-md overflow-hidden shadow-md mt-4">
                 <div 
                   ref={mapContainer} 
-                  className="w-full h-[600px]"
+                  className="w-full h-[600px] bg-gray-100"
+                  data-testid="map-container"
                 />
                 <div className="absolute bottom-5 right-5 flex gap-2">
                   <Button 

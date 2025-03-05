@@ -5,148 +5,125 @@
 
 @layer base {
   :root {
-    --background: 210 17% 98%; /* seasalt */
-    --foreground: 210 11% 15%; /* eerie-black */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
-    --card-foreground: 210 11% 15%; /* eerie-black */
-
+    --card-foreground: 222.2 84% 4.9%;
+ 
     --popover: 0 0% 100%;
-    --popover-foreground: 210 11% 15%; /* eerie-black */
-
-    --primary: 210 7% 46%; /* slate-gray */
-    --primary-foreground: 210 17% 98%; /* seasalt */
-
-    --secondary: 210 14% 89%; /* platinum */
-    --secondary-foreground: 210 9% 31%; /* outer-space */
-
-    --muted: 210 14% 83%; /* french-gray */
-    --muted-foreground: 208 7% 46%; /* slate-gray */
-
-    --accent: 210 11% 71%; /* french-gray-2 */
-    --accent-foreground: 210 10% 23%; /* onyx */
-
+    --popover-foreground: 222.2 84% 4.9%;
+ 
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+ 
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+ 
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+ 
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+ 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 17% 98%; /* seasalt */
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 210 14% 89%; /* platinum */
-    --input: 210 14% 89%; /* platinum */
-    --ring: 208 7% 46%; /* slate-gray */
-
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+ 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --slate-gray: #6c757d;
+    --slate-gray-400: #495057;
   }
-
+ 
   .dark {
-    --background: 210 11% 15%; /* eerie-black */
-    --foreground: 210 17% 98%; /* seasalt */
-
-    --card: 210 10% 23%; /* onyx */
-    --card-foreground: 210 17% 98%; /* seasalt */
-
-    --popover: 210 10% 23%; /* onyx */
-    --popover-foreground: 210 17% 98%; /* seasalt */
-
-    --primary: 208 7% 46%; /* slate-gray */
-    --primary-foreground: 210 11% 15%; /* eerie-black */
-
-    --secondary: 210 9% 31%; /* outer-space */
-    --secondary-foreground: 210 17% 98%; /* seasalt */
-
-    --muted: 210 9% 31%; /* outer-space */
-    --muted-foreground: 210 11% 71%; /* french-gray-2 */
-
-    --accent: 208 7% 46%; /* slate-gray */
-    --accent-foreground: 210 11% 15%; /* eerie-black */
-
-    --destructive: 0 62.8% 60.6%;
-    --destructive-foreground: 210 17% 98%; /* seasalt */
-
-    --border: 210 9% 31%; /* outer-space */
-    --input: 210 9% 31%; /* outer-space */
-    --ring: 208 7% 46%; /* slate-gray */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+ 
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+ 
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+ 
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+ 
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+ 
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+ 
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+ 
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+ 
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
   }
 }
-
+ 
 @layer base {
   * {
     @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    @apply tracking-tight;
-  }
-
-  ::-webkit-scrollbar {
-    @apply w-2 h-2;
-  }
-
-  ::-webkit-scrollbar-track {
-    @apply bg-muted rounded-full;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    @apply bg-muted-foreground/40 rounded-full;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground/60;
   }
 }
 
-@layer utilities {
-  .glass-effect {
-    @apply backdrop-blur-md bg-white/60 dark:bg-black/40 border border-white/20 dark:border-white/10;
-  }
-  
-  .text-balance {
-    text-wrap: balance;
-  }
-}
-
-/* Loading animations */
+/* Loading state shimmer effect */
 .shimmer-bg {
-  background: linear-gradient(90deg, 
-    theme('colors.secondary.DEFAULT') 0%, 
-    theme('colors.muted.DEFAULT') 50%, 
-    theme('colors.secondary.DEFAULT') 100%
+  @apply relative overflow-hidden bg-gray-200;
+}
+
+.shimmer-bg::before {
+  @apply absolute inset-0;
+  content: '';
+  background: linear-gradient(
+    90deg, 
+    rgba(255, 255, 255, 0) 0%, 
+    rgba(255, 255, 255, 0.8) 50%, 
+    rgba(255, 255, 255, 0) 100%
   );
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite linear;
+  animation: shimmer 1.5s infinite;
 }
 
-/* Page transitions */
-.page-enter {
-  opacity: 0;
-  transform: translateY(10px);
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
-.page-enter-active {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 300ms, transform 300ms;
+/* Make sure the Mapbox map container has a defined height */
+.mapboxgl-map {
+  width: 100%;
+  height: 100%;
 }
 
-.page-exit {
-  opacity: 1;
-  transform: translateY(0);
+/* Make sure markers are visible */
+.mapboxgl-marker {
+  cursor: pointer;
+  z-index: 1;
 }
 
-.page-exit-active {
-  opacity: 0;
-  transform: translateY(-10px);
-  transition: opacity 300ms, transform 300ms;
+/* Make sure popups are styled nicely */
+.mapboxgl-popup {
+  max-width: 200px;
+}
+
+.mapboxgl-popup-content {
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 14px;
 }
