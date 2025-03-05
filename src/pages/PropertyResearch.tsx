@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { SearchForm } from '@/components/SearchForm';
@@ -114,7 +113,7 @@ const PropertyResearch: React.FC = () => {
                 <PermitList 
                   permits={permits} 
                   searchedAddress={permitAddress}
-                  isLoading={permitsStatus === SearchStatus.LOADING}
+                  isLoading={false}
                 />
               )}
             </TabsContent>
@@ -124,7 +123,7 @@ const PropertyResearch: React.FC = () => {
                 <SchoolsList 
                   schools={schools} 
                   searchedAddress={schoolsAddress}
-                  isLoading={schoolsStatus === SearchStatus.LOADING}
+                  isLoading={false}
                   radiusMiles={schoolsResponse?.radiusMiles || 5}
                 />
               )}
@@ -135,7 +134,7 @@ const PropertyResearch: React.FC = () => {
                 <ZoningList 
                   zoningData={zoningData} 
                   searchedAddress={zoningAddress}
-                  isLoading={zoningStatus === SearchStatus.LOADING}
+                  isLoading={false}
                 />
               )}
             </TabsContent>
