@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const API_KEYS = {
-  google_maps: Deno.env.get('GOOGLE_MAPS_API_KEY') || '',
+  google_maps: Deno.env.get('GOOGLE_MAPS_API_KEY') || Deno.env.get('GOOGLE_API_KEY') || '',
   zoneomics: Deno.env.get('ZONEOMICS_API_KEY') || '',
   census: Deno.env.get('CENSUS_API_KEY') || '',
   greatschools: Deno.env.get('GREATSCHOOLS_API_KEY') || '',
@@ -83,6 +83,12 @@ serve(async (req) => {
     }
     
     const apiKey = API_KEYS[keyName];
+    
+    // For debugging, log the available keys and their statuses
+    console.log("Available API keys:");
+    for (const [key, value] of Object.entries(API_KEYS)) {
+      console.log(`- ${key}: ${value ? 'Has value' : 'No value'}`);
+    }
     
     // Check if the key exists but has no value
     if (!apiKey) {

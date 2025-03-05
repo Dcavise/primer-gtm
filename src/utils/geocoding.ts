@@ -52,22 +52,24 @@ export async function geocodeAddress(address: string): Promise<GeocodingResult |
 async function geocodeWithGoogleMaps(address: string): Promise<GeocodingResult | null> {
   try {
     // Try to get the Google Maps API key securely from Supabase
-    let apiKey;
+    let apiKey = GOOGLE_MAPS_API_KEY; // Start with fallback as the default
+    
     try {
-      // First try POST request format
-      apiKey = await getApiKey('google_maps');
-      if (!apiKey) {
-        console.warn("Empty Google Maps API key received from edge function");
-        throw new Error("Empty API key");
+      // First try to get the API key from the edge function
+      const secureKey = await getApiKey('google_maps');
+      if (secureKey && secureKey.trim() !== '') {
+        console.log("Successfully retrieved Google Maps API key from edge function");
+        apiKey = secureKey;
+      } else {
+        console.warn("Empty Google Maps API key received from edge function, using fallback");
       }
     } catch (error) {
       console.warn("Failed to get Google Maps API key from edge function, using fallback:", error);
-      // Fall back to the deprecated but still functional API key as backup
-      apiKey = GOOGLE_MAPS_API_KEY;
-      
-      if (!apiKey) {
-        throw new Error("No Google Maps API key available");
-      }
+      // We're already using the fallback as default, so no need to do anything here
+    }
+    
+    if (!apiKey) {
+      throw new Error("No Google Maps API key available");
     }
     
     console.log("Geocoding address with Google Maps:", address);
@@ -107,7 +109,7 @@ async function geocodeWithMapbox(address: string): Promise<GeocodingResult | nul
     let token;
     try {
       token = await getApiKey('mapbox');
-      if (!token) {
+      if (!token || token.trim() === '') {
         throw new Error("No Mapbox token available");
       }
     } catch (error) {
