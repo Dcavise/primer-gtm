@@ -6,6 +6,7 @@ import { CampusSelector } from '@/components/salesforce/CampusSelector';
 import { StatsCardGrid } from '@/components/salesforce/StatsCardGrid';
 import { SyncErrorAlert } from '@/components/salesforce/SyncErrorAlert';
 import { MetricsDashboard } from '@/components/salesforce/MetricsDashboard';
+import { Navbar } from '@/components/Navbar';
 
 const SalesforceLeadsPage: React.FC = () => {
   const [selectedCampusId, setSelectedCampusId] = useState<string | null>(null);
@@ -35,7 +36,10 @@ const SalesforceLeadsPage: React.FC = () => {
     <div className="min-h-screen bg-background">
       <header className="bg-gradient-to-r from-blue-600 to-blue-500 text-white py-8 px-6">
         <div className="container mx-auto max-w-5xl">
-          <h1 className="text-2xl md:text-3xl font-semibold">Salesforce Analytics</h1>
+          <div className="flex items-center justify-between mb-3">
+            <h1 className="text-2xl md:text-3xl font-semibold">Salesforce Analytics</h1>
+            <Navbar />
+          </div>
           <p className="text-white/80 mt-2">
             View and analyze Salesforce data across all campuses
           </p>

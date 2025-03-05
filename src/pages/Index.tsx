@@ -14,6 +14,7 @@ import { Permit } from "@/types";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import { geocodeAddress } from "@/utils/geocoding";
+import { Navbar } from "@/components/Navbar";
 
 const Index = () => {
   // Permits data
@@ -98,13 +99,16 @@ const Index = () => {
         transition={{ duration: 0.6 }}
       >
         <div className="container mx-auto max-w-5xl">
-          <div className="flex items-center gap-3 mb-3">
-            <img 
-              src="/lovable-uploads/532db431-7977-460c-a6f0-28a7513e5091.png" 
-              alt="Primer Logo" 
-              className="h-10 w-auto bg-white p-1 rounded"
-            />
-            <h1 className="text-xl md:text-3xl font-semibold">Primer Property Explorer</h1>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <img 
+                src="/lovable-uploads/532db431-7977-460c-a6f0-28a7513e5091.png" 
+                alt="Primer Logo" 
+                className="h-10 w-auto bg-white p-1 rounded"
+              />
+              <h1 className="text-xl md:text-3xl font-semibold">Primer Property Explorer</h1>
+            </div>
+            <Navbar />
           </div>
           
           <Tabs 
