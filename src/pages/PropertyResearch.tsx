@@ -61,34 +61,44 @@ const PropertyResearch = () => {
     try {
       console.log("Starting consolidated property search with params:", params);
       
-      // Make sure we have coordinates
-      if (!params.coordinates) {
-        throw new Error("No coordinates found for the address");
+      // Start fetching zoning data immediately using just the address
+      // This doesn't require coordinates, so we can start it right away
+      const zoningPromise = fetchZoningData(address);
+      
+      // For permits and schools, we need coordinates
+      if (params.coordinates) {
+        const coordinates = params.coordinates;
+        console.log(`Using coordinates for search: (${coordinates.lat}, ${coordinates.lng})`);
+        
+        // Start these requests concurrently after we have coordinates
+        await Promise.all([
+          // Wait for zoning data (which we already started)
+          zoningPromise,
+          
+          // Fetch permits with a very small bounding box
+          fetchPermits({
+            bottom_left_lat: coordinates.lat - 0.0001,
+            bottom_left_lng: coordinates.lng - 0.0001,
+            top_right_lat: coordinates.lat + 0.0001,
+            top_right_lng: coordinates.lng + 0.0001,
+            exact_address: address
+          }, address),
+          
+          // Fetch schools data with coordinates
+          fetchSchoolsData({
+            lat: coordinates.lat,
+            lon: coordinates.lng
+          }, address)
+        ]);
+      } else {
+        // If no coordinates, at least try to get zoning data
+        console.log("No coordinates available, only fetching zoning data");
+        await zoningPromise;
+        
+        toast.warning("Limited property data available", {
+          description: "Only zoning data could be retrieved. Address coordinates could not be determined."
+        });
       }
-      
-      const coordinates = params.coordinates;
-      console.log(`Using coordinates for search: (${coordinates.lat}, ${coordinates.lng})`);
-      
-      // Start all API requests concurrently
-      await Promise.all([
-        // Fetch permits with a very small bounding box
-        fetchPermits({
-          bottom_left_lat: coordinates.lat - 0.0001,
-          bottom_left_lng: coordinates.lng - 0.0001,
-          top_right_lat: coordinates.lat + 0.0001,
-          top_right_lng: coordinates.lng + 0.0001,
-          exact_address: address
-        }, address),
-        
-        // Fetch zoning data with the address
-        fetchZoningData(address),
-        
-        // Fetch schools data with coordinates
-        fetchSchoolsData({
-          lat: coordinates.lat,
-          lon: coordinates.lng
-        }, address)
-      ]);
       
       toast.success("Property research complete", {
         description: "All available data has been retrieved for this location."

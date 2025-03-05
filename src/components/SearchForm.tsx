@@ -27,8 +27,17 @@ export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProp
     }
     
     try {
-      // For all search types, we use geocoding
       console.log(`Starting ${searchType} search for address: ${address.trim()}`);
+      
+      // For zoning searches, we can pass the address directly without geocoding
+      if (searchType === "zoning") {
+        console.log("Zoning search: using address directly without geocoding");
+        toast.info(`Searching for zoning data at ${address.trim()}`);
+        onSearch(address.trim(), address.trim());
+        return;
+      }
+      
+      // For other search types, we need to geocode first
       toast.info(`Searching for ${address.trim()}`, {
         description: "Looking up location coordinates..."
       });
@@ -47,7 +56,7 @@ export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProp
       
       // Different handling for different search types
       if (searchType === "property-research") {
-        // For property research, we pass the exact coordinates
+        // For property research, we pass the exact coordinates and address
         console.log(`Property research coordinates: (${coordinates.lat}, ${coordinates.lng})`);
         onSearch({
           coordinates,
@@ -61,8 +70,8 @@ export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProp
           lon: coordinates.lng
         }, geocodeResult.address);
       }
-      else if (searchType === "zoning" || searchType === "census") {
-        // For zoning and census
+      else if (searchType === "census") {
+        // For census (which could use just address like zoning)
         onSearch(geocodeResult.address, geocodeResult.address);
       }
       else if (searchType === "permits") {
