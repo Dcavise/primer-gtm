@@ -80,6 +80,11 @@ const MarketExplorer = () => {
         toast.success("Map loaded successfully", {
           description: "Market explorer is ready to use"
         });
+        
+        // If "All Campuses" is selected, create a demo map with sample data points
+        if (selectedMarket === "default") {
+          createDemoMap(newMap);
+        }
       });
 
       // Handle map load error
@@ -105,7 +110,7 @@ const MarketExplorer = () => {
         mapInitialized.current = false;
       }
     };
-  }, [mapboxToken]);
+  }, [mapboxToken, selectedMarket]);
 
   // Update map view when selected market changes
   useEffect(() => {
@@ -114,11 +119,22 @@ const MarketExplorer = () => {
     const updateMapView = async () => {
       console.log("Updating map view for selected market:", selectedMarket);
       
+      // Remove previous demo markers if they exist
+      if (map.current) {
+        const existingMarkers = document.querySelectorAll('.mapboxgl-marker');
+        existingMarkers.forEach(marker => marker.remove());
+      }
+      
       // Default coordinates
       let coordinates = marketCoordinates.default.center;
       let zoom = marketCoordinates.default.zoom;
       
-      if (selectedMarket !== "default") {
+      if (selectedMarket === "default") {
+        // If "All Campuses" is selected, show demo map
+        if (map.current && map.current.loaded()) {
+          createDemoMap(map.current);
+        }
+      } else {
         const selectedCampus = campuses.find(c => c.campus_id === selectedMarket);
         
         if (selectedCampus) {
@@ -177,6 +193,56 @@ const MarketExplorer = () => {
     
     updateMapView();
   }, [selectedMarket, campuses]);
+
+  // Create a demo map with sample data points for "All Campuses" view
+  const createDemoMap = (mapInstance: mapboxgl.Map) => {
+    console.log("Creating demo map for All Campuses view");
+    
+    // Use a subset of the market coordinates as sample data points
+    const demoLocations = [
+      { name: "San Francisco", coordinates: marketCoordinates.sf.center, color: "#1F77B4" },
+      { name: "New York City", coordinates: marketCoordinates.nyc.center, color: "#FF7F0E" },
+      { name: "Chicago", coordinates: marketCoordinates.chi.center, color: "#2CA02C" },
+      { name: "Los Angeles", coordinates: marketCoordinates.la.center, color: "#D62728" },
+      { name: "Boston", coordinates: marketCoordinates.bos.center, color: "#9467BD" },
+      { name: "Seattle", coordinates: marketCoordinates.sea.center, color: "#8C564B" },
+      { name: "Miami", coordinates: marketCoordinates.mia.center, color: "#E377C2" },
+      { name: "Austin", coordinates: marketCoordinates.aus.center, color: "#7F7F7F" },
+      { name: "Denver", coordinates: marketCoordinates.den.center, color: "#BCBD22" },
+      { name: "Atlanta", coordinates: marketCoordinates.atl.center, color: "#17BECF" }
+    ];
+    
+    // Add markers for each location
+    demoLocations.forEach(location => {
+      // Create a DOM element for the marker
+      const el = document.createElement('div');
+      el.className = 'mapboxgl-marker';
+      el.style.width = '20px';
+      el.style.height = '20px';
+      el.style.borderRadius = '50%';
+      el.style.backgroundColor = location.color;
+      el.style.border = '2px solid white';
+      el.style.boxShadow = '0 0 4px rgba(0,0,0,0.3)';
+      
+      // Add a popup with the location name
+      const popup = new mapboxgl.Popup({ offset: 25 })
+        .setText(location.name);
+      
+      // Add marker to map
+      new mapboxgl.Marker(el)
+        .setLngLat(location.coordinates)
+        .setPopup(popup)
+        .addTo(mapInstance);
+    });
+    
+    // Zoom out to see all of the United States
+    mapInstance.flyTo({
+      center: marketCoordinates.default.center,
+      zoom: marketCoordinates.default.zoom,
+      pitch: 30,
+      duration: 2000
+    });
+  };
 
   const handleMarketChange = (marketId: string) => {
     setSelectedMarket(marketId);
