@@ -18,10 +18,10 @@ import {
   FileText,
   Calendar,
   Briefcase,
-  Parking,
+  Car,
   Check,
   AlertCircle,
-  FlameIcon,
+  Flame,
   Wifi
 } from 'lucide-react';
 
@@ -37,7 +37,7 @@ const PropertyDetail: React.FC = () => {
       const { data, error } = await supabase
         .from('real_estate_pipeline')
         .select('*')
-        .eq('id', id)
+        .eq('id', parseInt(id))
         .single();
       
       if (error) {
