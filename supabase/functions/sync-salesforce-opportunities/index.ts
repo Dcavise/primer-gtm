@@ -172,16 +172,15 @@ async function syncOpportunitiesToSupabase(opportunities: SupabaseOpportunity[])
       onConflict: 'opportunity_id',
       ignoreDuplicates: false,
       returning: 'minimal'
-    })
-    .select();
+    });
   
   if (error) {
     console.error("Supabase upsert error:", error);
     throw new Error(`Failed to sync opportunities to Supabase: ${error.message}`);
   }
   
-  console.log(`Successfully synced ${data?.length || 0} opportunities`);
-  return data?.length || 0;
+  console.log(`Successfully synced ${opportunities.length} opportunities`);
+  return opportunities.length;
 }
 
 // Main sync function
@@ -222,20 +221,12 @@ async function syncSalesforceOpportunities(): Promise<{ success: boolean; synced
 
 // Handle requests
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
   
   try {
-    let options = {};
-    if (req.method === 'POST') {
-      try {
-        const body = await req.json();
-        options = body;
-      } catch (e) {
-      }
-    }
-    
     console.log("Starting Salesforce opportunities sync...");
     const result = await syncSalesforceOpportunities();
     console.log("Sync complete:", result);
