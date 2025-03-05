@@ -66,7 +66,7 @@ export function SalesforceLeadsPage() {
       
       if (oppsError) throw oppsError;
       
-      setOpportunities(oppsData || []);
+      setOpportunities(oppsData as SalesforceOpportunity[] || []);
       
       try {
         const { data: accountsData, error: accountsError } = await supabase
@@ -74,7 +74,7 @@ export function SalesforceLeadsPage() {
           .select('*');
         
         if (!accountsError && accountsData) {
-          setAccounts(accountsData);
+          setAccounts(accountsData as SalesforceAccount[]);
         }
       } catch (e) {
         console.log('salesforce_accounts table may not exist yet');
@@ -86,7 +86,7 @@ export function SalesforceLeadsPage() {
           .select('*');
         
         if (!contactsError && contactsData) {
-          setContacts(contactsData);
+          setContacts(contactsData as SalesforceContact[]);
         }
       } catch (e) {
         console.log('salesforce_contacts table may not exist yet');
