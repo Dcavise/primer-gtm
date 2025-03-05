@@ -5,7 +5,7 @@ export interface RealEstateProperty {
   site_name: string | null;
   address: string | null;
   market: string | null;
-  phase: string | null;
+  phase: PropertyPhase | null;
   phase_group: string | null;
   sf_available: string | null;
   zoning: string | null;
@@ -35,5 +35,4 @@ export type PropertyPhase =
   | '6. Construction'
   | '7. Set Up'
   | 'Hold'
-  | 'Deprioritize'
-  | string;
+  | 'Deprioritize';

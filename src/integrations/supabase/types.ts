@@ -226,7 +226,7 @@ export type Database = {
           market: string | null
           parking: string | null
           permitted_use: string | null
-          phase: string | null
+          phase: Database["public"]["Enums"]["property_phase"] | null
           phase_group: string | null
           sf_available: string | null
           site_name: string | null
@@ -252,7 +252,7 @@ export type Database = {
           market?: string | null
           parking?: string | null
           permitted_use?: string | null
-          phase?: string | null
+          phase?: Database["public"]["Enums"]["property_phase"] | null
           phase_group?: string | null
           sf_available?: string | null
           site_name?: string | null
@@ -278,7 +278,7 @@ export type Database = {
           market?: string | null
           parking?: string | null
           permitted_use?: string | null
-          phase?: string | null
+          phase?: Database["public"]["Enums"]["property_phase"] | null
           phase_group?: string | null
           sf_available?: string | null
           site_name?: string | null
@@ -419,7 +419,17 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      property_phase:
+        | "0. New Site"
+        | "1. Initial Diligence"
+        | "2. Survey"
+        | "3. Test Fit"
+        | "4. Plan Production"
+        | "5. Permitting"
+        | "6. Construction"
+        | "7. Set Up"
+        | "Hold"
+        | "Deprioritize"
     }
     CompositeTypes: {
       [_ in never]: never

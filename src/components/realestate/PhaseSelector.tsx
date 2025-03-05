@@ -15,9 +15,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { PropertyPhase } from '@/types/realEstate';
 
-// Define the valid phases based on the check constraint in the database
-export const VALID_PHASES = [
+// Define the valid phases based on the enum type in the database
+export const VALID_PHASES: PropertyPhase[] = [
   '0. New Site',
   '1. Initial Diligence',
   '2. Survey',
@@ -31,7 +32,7 @@ export const VALID_PHASES = [
 ];
 
 // Function to get the appropriate color class based on the phase
-export const getPhaseColorClass = (phase: string | null): string => {
+export const getPhaseColorClass = (phase: PropertyPhase | null | undefined): string => {
   if (!phase) return 'bg-gray-100 text-gray-800';
   
   switch(phase) {
@@ -61,8 +62,8 @@ export const getPhaseColorClass = (phase: string | null): string => {
 };
 
 interface PhaseSelectorProps {
-  value: string | null | undefined;
-  onValueChange: (value: string) => void;
+  value: PropertyPhase | null | undefined;
+  onValueChange: (value: PropertyPhase | '') => void;
   className?: string;
   disabled?: boolean;
 }
