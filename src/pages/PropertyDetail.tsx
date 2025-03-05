@@ -12,7 +12,6 @@ import { FileUpload } from '@/components/FileUpload';
 import { FileList } from '@/components/FileList';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import GoogleMap from '@/components/GoogleMap';
 import { 
   ArrowLeft, 
   MapPin, 
@@ -179,11 +178,10 @@ const PropertyDetail: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <GoogleMap 
-                    address={property.address} 
-                    height="300px" 
-                    zoom={16}
-                  />
+                  <div className="flex items-center p-4 bg-gray-50 dark:bg-gray-900 rounded-md border border-border">
+                    <MapPin className="h-5 w-5 mr-2 text-blue-500" />
+                    <p className="text-muted-foreground">{property.address}</p>
+                  </div>
                 </CardContent>
               </Card>
             )}
