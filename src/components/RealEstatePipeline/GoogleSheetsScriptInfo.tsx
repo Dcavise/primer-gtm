@@ -22,6 +22,7 @@ function syncToSupabase() {
   // Configuration
   const supabaseEndpoint = "https://pudncilureqpzxrxfupr.supabase.co/functions/v1/sheets-to-supabase";
   const apiKey = "YOUR_API_KEY_HERE"; // Replace with the API key set in Supabase
+  const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1ZG5jaWx1cmVxcHp4cnhmdXByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDExMjM1NTUsImV4cCI6MjA1NjY5OTU1NX0.0lZySUmlC3nQs-62Ka-0rE6d9on3KIAt6U16g4YYpxY";
   const clearExistingData = true;
   const spreadsheetId = "${SPREADSHEET_ID}"; // Use the specific spreadsheet ID
   
@@ -97,18 +98,34 @@ function syncToSupabase() {
       clearExisting: clearExistingData
     };
     
-    // Send data to Supabase
+    // Send data to Supabase with proper headers
     const options = {
       'method': 'post',
       'contentType': 'application/json',
-      'payload': JSON.stringify(payload)
+      'payload': JSON.stringify(payload),
+      'headers': {
+        'Authorization': 'Bearer ' + supabaseAnonKey,
+        'apikey': supabaseAnonKey,
+        'x-client-info': 'Google Apps Script'
+      },
+      'muteHttpExceptions': true // To get the full response for debugging
     };
     
-    Logger.log("Sending data to Supabase...");
+    Logger.log("Sending data to Supabase with authentication headers...");
     
     // Make the request
     const response = UrlFetchApp.fetch(supabaseEndpoint, options);
-    const result = JSON.parse(response.getContentText());
+    const responseCode = response.getResponseCode();
+    const responseText = response.getContentText();
+    
+    Logger.log("Response code: " + responseCode);
+    Logger.log("Response text: " + responseText);
+    
+    if (responseCode !== 200) {
+      throw new Error("API request failed with status: " + responseCode + ", message: " + responseText);
+    }
+    
+    const result = JSON.parse(responseText);
     
     // Log result
     Logger.log("Sync result: " + JSON.stringify(result));
