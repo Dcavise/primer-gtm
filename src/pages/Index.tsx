@@ -10,8 +10,11 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Navbar } from "@/components/Navbar";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
+  const { profile } = useAuth();
+  
   const features = [
     {
       title: "Property Research",
@@ -66,7 +69,7 @@ const Index = () => {
             transition={{ duration: 0.6 }}
           >
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
-              Make Better Real Estate Decisions
+              Welcome{profile?.full_name ? `, ${profile.full_name}` : ''}!
             </h2>
             <p className="text-lg md:text-xl text-white/90 mb-8 max-w-2xl">
               Comprehensive property data and analytics to power your real estate investments and decision-making.

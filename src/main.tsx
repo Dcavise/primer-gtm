@@ -11,35 +11,42 @@ import FindContactsPage from './pages/FindContacts.tsx'
 import RealEstatePipeline from './pages/RealEstatePipeline.tsx'
 import PropertyDetail from './pages/PropertyDetail.tsx'
 import NotFound from './pages/NotFound.tsx'
+import Auth from './pages/Auth.tsx'
+import { AuthProvider } from './contexts/AuthContext.tsx'
+import ProtectedRoute from './components/ProtectedRoute.tsx'
 
 const router = createBrowserRouter([
+  {
+    path: "/auth",
+    element: <Auth />
+  },
   {
     path: "/",
     element: <App />,
     children: [
       {
         index: true,
-        element: <Index />
+        element: <ProtectedRoute><Index /></ProtectedRoute>
       },
       {
         path: "property-research",
-        element: <PropertyResearch />
+        element: <ProtectedRoute><PropertyResearch /></ProtectedRoute>
       },
       {
         path: "salesforce-leads",
-        element: <SalesforceLeadsPage />
+        element: <ProtectedRoute><SalesforceLeadsPage /></ProtectedRoute>
       },
       {
         path: "find-contacts",
-        element: <FindContactsPage />
+        element: <ProtectedRoute><FindContactsPage /></ProtectedRoute>
       },
       {
         path: "real-estate-pipeline",
-        element: <RealEstatePipeline />
+        element: <ProtectedRoute><RealEstatePipeline /></ProtectedRoute>
       },
       {
         path: "real-estate-pipeline/property/:id",
-        element: <PropertyDetail />
+        element: <ProtectedRoute><PropertyDetail /></ProtectedRoute>
       }
     ],
     errorElement: <NotFound />
@@ -48,6 +55,13 @@ const router = createBrowserRouter([
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <RouterProvider 
+      router={router} 
+      fallbackElement={
+        <div className="flex items-center justify-center h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      }
+    />
   </React.StrictMode>,
 )
