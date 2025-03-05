@@ -167,6 +167,10 @@ function findCampusId(preferredCampus: string | null, campuses: Campus[]): strin
   // Convert to lowercase for case-insensitive matching
   const preferredCampusLower = preferredCampus.toLowerCase();
   
+  // Log the matching attempt for debugging
+  console.log(`Finding campus ID for "${preferredCampus}" (lowercase: "${preferredCampusLower}")`);
+  console.log('Available campuses:', campuses.map(c => ({ id: c.campus_id, name: c.campus_name })));
+  
   // Find a perfect match first
   let matchingCampus = campuses.find(campus => 
     campus.campus_name.toLowerCase() === preferredCampusLower
@@ -182,6 +186,8 @@ function findCampusId(preferredCampus: string | null, campuses: Campus[]): strin
       );
     });
   }
+  
+  console.log(`Match result: ${matchingCampus ? matchingCampus.campus_id : 'NO MATCH'}`);
   
   return matchingCampus ? matchingCampus.campus_id : null;
 }

@@ -175,9 +175,17 @@ function findCampusId(preferredCampus: string | null, campuses: Campus[]): strin
 function transformOpportunities(salesforceOpportunities: SalesforceOpportunity[], campuses: Campus[]): SupabaseOpportunity[] {
   console.log(`Transforming ${salesforceOpportunities.length} Salesforce opportunities...`);
   
+  // Log the campuses for debugging
+  console.log('Available campuses:', campuses.map(c => ({ id: c.campus_id, name: c.campus_name })));
+  
   return salesforceOpportunities.map(opportunity => {
     const preferredCampus = opportunity.Preferred_Campus__c;
     const campusId = findCampusId(preferredCampus, campuses);
+    
+    // Add more verbose logging for each opportunity
+    console.log(`Processing opportunity: ${opportunity.Id}`);
+    console.log(`  Preferred campus: "${preferredCampus}"`);
+    console.log(`  Matched campus ID: ${campusId || 'NO MATCH'}`);
     
     if (campusId) {
       console.log(`Matched opportunity ${opportunity.Id} (${preferredCampus}) with campus ID ${campusId}`);

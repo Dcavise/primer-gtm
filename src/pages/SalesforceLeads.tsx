@@ -32,6 +32,22 @@ export function SalesforceLeadsPage() {
   const [opportunitiesLastUpdated, setOpportunitiesLastUpdated] = useState<string | null>(null);
   const [showDetailedError, setShowDetailedError] = useState(false);
   const [showOpportunitiesDetailedError, setShowOpportunitiesDetailedError] = useState(false);
+  // Add debugging state
+  const [debugInfo, setDebugInfo] = useState<{
+    leadsQuery: string | null;
+    opportunitiesQuery: string | null;
+    fellowsQuery: string | null;
+    leadsCount: number;
+    opportunitiesCount: number;
+    fellowsCount: number;
+  }>({
+    leadsQuery: null,
+    opportunitiesQuery: null,
+    fellowsQuery: null,
+    leadsCount: 0,
+    opportunitiesCount: 0,
+    fellowsCount: 0
+  });
 
   const fetchCampuses = async () => {
     setCampusesLoading(true);
@@ -63,6 +79,12 @@ export function SalesforceLeadsPage() {
         query = query.eq('campus_id', campusId);
       }
       
+      // Store the query for debugging
+      setDebugInfo(prev => ({
+        ...prev,
+        leadsQuery: `Fetching leads with campus_id: ${campusId || 'all'}`
+      }));
+      
       const { data, error } = await query;
       
       if (error) throw error;
@@ -76,6 +98,10 @@ export function SalesforceLeadsPage() {
       }));
       
       setLeads(typedLeads);
+      setDebugInfo(prev => ({
+        ...prev,
+        leadsCount: typedLeads.length
+      }));
       
       if (data && data.length > 0) {
         const mostRecent = new Date(Math.max(...data.map(l => new Date(l.updated_at).getTime())));
@@ -102,6 +128,12 @@ export function SalesforceLeadsPage() {
         query = query.eq('campus_id', campusId);
       }
       
+      // Store the query for debugging
+      setDebugInfo(prev => ({
+        ...prev,
+        opportunitiesQuery: `Fetching opportunities with campus_id: ${campusId || 'all'}`
+      }));
+      
       const { data: oppsData, error: oppsError } = await query;
       
       if (oppsError) throw oppsError;
@@ -113,6 +145,10 @@ export function SalesforceLeadsPage() {
       })) : [];
       
       setOpportunities(typedOpportunities);
+      setDebugInfo(prev => ({
+        ...prev,
+        opportunitiesCount: typedOpportunities.length
+      }));
       
       if (oppsData && oppsData.length > 0) {
         const mostRecent = new Date(Math.max(...oppsData.map(o => new Date(o.updated_at).getTime())));
@@ -139,10 +175,20 @@ export function SalesforceLeadsPage() {
         query = query.eq('campus_id', campusId);
       }
       
+      // Store the query for debugging
+      setDebugInfo(prev => ({
+        ...prev,
+        fellowsQuery: `Fetching fellows with campus_id: ${campusId || 'all'}`
+      }));
+      
       const { data, error } = await query;
       
       if (error) throw error;
       setFellows(data);
+      setDebugInfo(prev => ({
+        ...prev,
+        fellowsCount: data.length
+      }));
     } catch (error) {
       console.error('Error fetching fellows:', error);
       toast.error('Error loading fellows data');
@@ -307,6 +353,53 @@ export function SalesforceLeadsPage() {
             </Button>
           )}
         </div>
+
+        {/* Debug Information */}
+        <Card className="mb-6 bg-gray-50">
+          <CardHeader>
+            <CardTitle>Debug Information</CardTitle>
+            <CardDescription>Query and result information to help diagnose filtering issues</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-medium mb-1">Leads:</h3>
+                <p className="text-sm text-muted-foreground">{debugInfo.leadsQuery}</p>
+                <p className="text-sm">Results: {debugInfo.leadsCount}</p>
+              </div>
+              <div>
+                <h3 className="font-medium mb-1">Opportunities:</h3>
+                <p className="text-sm text-muted-foreground">{debugInfo.opportunitiesQuery}</p>
+                <p className="text-sm">Results: {debugInfo.opportunitiesCount}</p>
+              </div>
+              <div>
+                <h3 className="font-medium mb-1">Fellows:</h3>
+                <p className="text-sm text-muted-foreground">{debugInfo.fellowsQuery}</p>
+                <p className="text-sm">Results: {debugInfo.fellowsCount}</p>
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={() => {
+              // Add a manual inspection function that logs the campus_id values directly from the database
+              const inspectCampusIds = async () => {
+                const { data: leadsData } = await supabase.from('salesforce_leads').select('lead_id, campus_id').eq('campus_id', selectedCampusId || '');
+                const { data: oppsData } = await supabase.from('salesforce_opportunities').select('opportunity_id, campus_id').eq('campus_id', selectedCampusId || '');
+                const { data: fellowsData } = await supabase.from('fellows').select('fellow_id, campus_id').eq('campus_id', selectedCampusId || '');
+                
+                console.log('Leads with campus_id:', leadsData);
+                console.log('Opportunities with campus_id:', oppsData);
+                console.log('Fellows with campus_id:', fellowsData);
+                
+                toast.info(`Inspection complete. Check console for details.`);
+              };
+              
+              inspectCampusIds();
+            }}>
+              Inspect Campus IDs
+            </Button>
+          </CardFooter>
+        </Card>
 
         <Tabs defaultValue="leads" className="w-full">
           <TabsList className="mb-6">
