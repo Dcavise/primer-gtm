@@ -8,6 +8,7 @@ import { LoadingState } from "@/components/LoadingState";
 import { MarketSelector } from "@/components/MarketSelector";
 import { marketCoordinates } from "@/utils/marketCoordinates";
 import { useCampuses } from "@/hooks/salesforce/useCampuses";
+import { Navbar } from "@/components/Navbar";
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -147,45 +148,53 @@ const MarketExplorer = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-7xl">
-      <Card className="shadow-lg border-0">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-3xl font-bold tracking-tight">Market Explorer</CardTitle>
-          <CardDescription>
+    <div className="min-h-screen bg-background">
+      <header className="bg-gradient-to-r from-slate-gray to-slate-gray-400 text-white py-8 px-6">
+        <div className="container mx-auto max-w-5xl">
+          <div className="flex items-center justify-between mb-3">
+            <h1 className="text-2xl md:text-3xl font-semibold">Market Explorer</h1>
+            <Navbar />
+          </div>
+          <p className="text-white/80 mt-2">
             Explore real estate markets across the country
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <MarketSelector
-            selectedMarketId={selectedMarket}
-            onSelectMarket={handleMarketChange}
-            campuses={campuses}
-            isLoading={isLoading && campuses.length === 0}
-          />
-          
-          {isLoading ? (
-            <LoadingState message="Loading map..." className="h-[600px]" />
-          ) : (
-            <div className="relative rounded-md overflow-hidden shadow-md">
-              <div 
-                ref={mapContainer} 
-                className="w-full h-[600px]"
-              />
-              <div className="absolute bottom-5 right-5 flex gap-2">
-                <Button 
-                  variant="secondary" 
-                  size="sm"
-                  onClick={() => {
-                    setSelectedMarket("default");
-                  }}
-                >
-                  Reset View
-                </Button>
+          </p>
+        </div>
+      </header>
+
+      <main className="container mx-auto p-4 max-w-5xl">
+        <Card className="shadow-lg border-0">
+          <CardContent className="pt-6">
+            <MarketSelector
+              selectedMarketId={selectedMarket}
+              onSelectMarket={handleMarketChange}
+              campuses={campuses}
+              isLoading={isLoading && campuses.length === 0}
+            />
+            
+            {isLoading ? (
+              <LoadingState message="Loading map..." className="h-[600px]" />
+            ) : (
+              <div className="relative rounded-md overflow-hidden shadow-md mt-4">
+                <div 
+                  ref={mapContainer} 
+                  className="w-full h-[600px]"
+                />
+                <div className="absolute bottom-5 right-5 flex gap-2">
+                  <Button 
+                    variant="secondary" 
+                    size="sm"
+                    onClick={() => {
+                      setSelectedMarket("default");
+                    }}
+                  >
+                    Reset View
+                  </Button>
+                </div>
               </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
+      </main>
     </div>
   );
 };
