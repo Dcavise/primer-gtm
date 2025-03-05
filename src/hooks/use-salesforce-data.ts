@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -67,31 +68,36 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
       console.log("Available campuses:", allCampuses);
       
       // Fetch fellows count with improved campus filtering and excluding specific employment statuses
-      // Improved filter logic to account for potential case sensitivity and partial matching issues
       let query = supabase
         .from('fellows')
-        .select('fellow_id, campus, campus_id', { count: 'exact' })
+        .select('*', { count: 'exact' })
         .not('fte_employment_status', 'in', '("Exiting","Declined FTE Offer")');
       
       if (selectedCampusId) {
-        // For Fort Myers campus (special case)
-        if (selectedCampusId === 'fort-myers') {
-          console.log("Handling Fort Myers campus specifically");
-          query = query.ilike('campus', '%fort%myers%');
-        } else {
-          // Get the campus name for the selected ID
-          const { data: campusData } = await supabase
-            .from('campuses')
-            .select('campus_name')
-            .eq('campus_id', selectedCampusId)
-            .single();
-            
-          if (campusData) {
-            console.log(`Filtering by campus name: ${campusData.campus_name} for ID: ${selectedCampusId}`);
-            
-            // Use OR condition to match either campus_id or campus name (which could be formatted differently)
-            query = query.or(`campus_id.eq.${selectedCampusId},campus.ilike.%${campusData.campus_name}%`);
+        // Get the campus name for the selected ID for improved matching
+        const { data: campusData } = await supabase
+          .from('campuses')
+          .select('campus_name')
+          .eq('campus_id', selectedCampusId)
+          .single();
+        
+        if (campusData) {
+          const campusName = campusData.campus_name;
+          console.log(`Filtering by campus name: ${campusName} for ID: ${selectedCampusId}`);
+          
+          // Special case for Fort Myers as it might be written differently
+          if (selectedCampusId === 'fort-myers') {
+            query = query.or(`campus.ilike.%fort%myers%,campus_id.eq.${selectedCampusId}`);
+          } else {
+            // Try multiple variations of the campus name to catch different formatting
+            query = query.or(
+              `campus.ilike.%${campusName}%,` + 
+              `campus.eq.${campusName},` +
+              `campus_id.eq.${selectedCampusId}`
+            );
           }
+          
+          console.log("Query filter:", `campus.ilike.%${campusName}% OR campus.eq.${campusName} OR campus_id.eq.${selectedCampusId}`);
         }
       }
       
@@ -100,7 +106,7 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
       if (fellowsError) throw fellowsError;
       
       // Log the actual fellows data for debugging
-      console.log(`Fellows data for ${selectedCampusId || 'all campuses'}:`, fellowsData);
+      console.log(`Fellows data for ${selectedCampusId || 'all campuses'}:`, fellowsData?.slice(0, 5), `...and ${(fellowsData?.length || 0) - 5} more`);
       console.log(`Fellows count for ${selectedCampusId || 'all campuses'}: ${fellowsCount}`);
       
       // Fetch leads count
