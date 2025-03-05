@@ -9,7 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      fellows: {
+        Row: {
+          campus: string | null
+          cohort: number | null
+          fellow_id: number | null
+          fellow_name: string
+          fte_employment_status: string | null
+          grade_band: string | null
+          id: number
+          updated_at: string | null
+        }
+        Insert: {
+          campus?: string | null
+          cohort?: number | null
+          fellow_id?: number | null
+          fellow_name: string
+          fte_employment_status?: string | null
+          grade_band?: string | null
+          id?: number
+          updated_at?: string | null
+        }
+        Update: {
+          campus?: string | null
+          cohort?: number | null
+          fellow_id?: number | null
+          fellow_name?: string
+          fte_employment_status?: string | null
+          grade_band?: string | null
+          id?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
