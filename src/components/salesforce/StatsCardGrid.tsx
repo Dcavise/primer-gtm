@@ -2,13 +2,15 @@
 import React, { useState } from 'react';
 import { StatsCard } from './StatsCard';
 import { EmploymentStatusDialog } from './EmploymentStatusDialog';
+import { LeadsChartDialog } from './LeadsChartDialog';
 import { Users, ArrowUpRight, Clock, CheckCircle } from 'lucide-react';
-import { SummaryStats, EmploymentStatusCount } from '@/hooks/salesforce/types';
+import { SummaryStats, EmploymentStatusCount, WeeklyLeadCount } from '@/hooks/salesforce/types';
 import { formatNumber } from '@/utils/format';
 
 interface StatsCardGridProps {
   stats: SummaryStats;
   employmentStatusCounts: EmploymentStatusCount[];
+  weeklyLeadCounts: WeeklyLeadCount[];
   selectedCampusId: string | null;
   selectedCampusName: string | null;
 }
@@ -16,10 +18,12 @@ interface StatsCardGridProps {
 export const StatsCardGrid: React.FC<StatsCardGridProps> = ({ 
   stats, 
   employmentStatusCounts,
+  weeklyLeadCounts,
   selectedCampusId,
   selectedCampusName
 }) => {
   const [showEmploymentStatus, setShowEmploymentStatus] = useState(false);
+  const [showLeadsChart, setShowLeadsChart] = useState(false);
 
   return (
     <>
@@ -36,6 +40,7 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = ({
           value={formatNumber(stats.leadsCount)}
           description={selectedCampusId ? 'Leads for this campus' : 'Total Leads'}
           icon={ArrowUpRight}
+          onClick={() => setShowLeadsChart(true)}
         />
         <StatsCard
           title="Active Opportunities"
@@ -55,6 +60,13 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = ({
         open={showEmploymentStatus}
         onOpenChange={setShowEmploymentStatus}
         data={employmentStatusCounts}
+        campusName={selectedCampusName}
+      />
+
+      <LeadsChartDialog
+        open={showLeadsChart}
+        onOpenChange={setShowLeadsChart}
+        data={weeklyLeadCounts}
         campusName={selectedCampusName}
       />
     </>

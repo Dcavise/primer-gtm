@@ -13,6 +13,11 @@ export interface EmploymentStatusCount {
   count: number;
 }
 
+export interface WeeklyLeadCount {
+  week: string;
+  count: number;
+}
+
 export interface Campus extends BaseCampus {
   campus_id: string;
   campus_name: string;

@@ -13,6 +13,7 @@ const SalesforceLeadsPage: React.FC = () => {
   const {
     stats,
     employmentStatusCounts,
+    weeklyLeadCounts,
     campuses,
     syncLoading,
     syncError,
@@ -45,6 +46,7 @@ const SalesforceLeadsPage: React.FC = () => {
       <StatsCardGrid 
         stats={stats}
         employmentStatusCounts={employmentStatusCounts}
+        weeklyLeadCounts={weeklyLeadCounts}
         selectedCampusId={selectedCampusId}
         selectedCampusName={selectedCampusName}
       />

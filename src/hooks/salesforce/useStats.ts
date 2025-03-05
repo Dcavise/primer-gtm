@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { SummaryStats, EmploymentStatusCount } from './types';
+import { SummaryStats, EmploymentStatusCount, WeeklyLeadCount } from './types';
 
 export const useStats = (selectedCampusId: string | null) => {
   const [stats, setStats] = useState<SummaryStats>({
@@ -12,6 +12,7 @@ export const useStats = (selectedCampusId: string | null) => {
     closedWonOpportunitiesCount: 0
   });
   const [employmentStatusCounts, setEmploymentStatusCounts] = useState<EmploymentStatusCount[]>([]);
+  const [weeklyLeadCounts, setWeeklyLeadCounts] = useState<WeeklyLeadCount[]>([]);
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -89,6 +90,86 @@ export const useStats = (selectedCampusId: string | null) => {
       const { count: leadsCount, error: leadsError } = await leadsQuery;
       
       if (leadsError) throw leadsError;
+
+      // Fetch weekly lead counts for the last 4 weeks
+      const today = new Date();
+      const fourWeeksAgo = new Date();
+      fourWeeksAgo.setDate(today.getDate() - 28); // 4 weeks = 28 days
+
+      let weeklyLeadsQuery = supabase.rpc('get_weekly_lead_counts', {
+        start_date: fourWeeksAgo.toISOString().split('T')[0],
+        end_date: today.toISOString().split('T')[0],
+        campus_filter: selectedCampusId
+      });
+
+      const { data: weeklyLeadData, error: weeklyLeadError } = await weeklyLeadsQuery;
+
+      if (weeklyLeadError) {
+        console.error('Error fetching weekly lead counts:', weeklyLeadError);
+        
+        // Fallback: Manually fetch and calculate weekly leads if the RPC fails
+        console.log('Falling back to manual weekly lead count calculation');
+        
+        let manualLeadsQuery = supabase
+          .from('salesforce_leads')
+          .select('lead_id, created_date')
+          .gte('created_date', fourWeeksAgo.toISOString().split('T')[0]);
+        
+        if (selectedCampusId) {
+          manualLeadsQuery = manualLeadsQuery.eq('campus_id', selectedCampusId);
+        }
+        
+        const { data: leadsData, error: manualLeadError } = await manualLeadsQuery;
+        
+        if (manualLeadError) throw manualLeadError;
+        
+        if (leadsData) {
+          // Group by week and count
+          const weeklyData: Record<string, number> = {};
+          
+          // Generate last 4 weeks
+          for (let i = 0; i < 4; i++) {
+            const weekDate = new Date();
+            weekDate.setDate(today.getDate() - (7 * i));
+            const weekStart = new Date(weekDate);
+            weekStart.setDate(weekDate.getDate() - weekDate.getDay()); // Start of week (Sunday)
+            const weekKey = weekStart.toISOString().split('T')[0];
+            weeklyData[weekKey] = 0;
+          }
+          
+          // Count leads per week
+          leadsData.forEach(lead => {
+            if (lead.created_date) {
+              const leadDate = new Date(lead.created_date);
+              const weekStart = new Date(leadDate);
+              weekStart.setDate(leadDate.getDate() - leadDate.getDay()); // Start of week (Sunday)
+              const weekKey = weekStart.toISOString().split('T')[0];
+              
+              if (weeklyData[weekKey] !== undefined) {
+                weeklyData[weekKey] += 1;
+              }
+            }
+          });
+          
+          // Convert to array format for the chart
+          const weeklyCountsArray = Object.entries(weeklyData).map(([week, count]) => ({
+            week,
+            count
+          }));
+          
+          // Sort by week
+          weeklyCountsArray.sort((a, b) => new Date(a.week).getTime() - new Date(b.week).getTime());
+          setWeeklyLeadCounts(weeklyCountsArray);
+        }
+      } else {
+        // Use the results from the RPC
+        const formattedWeeklyData = weeklyLeadData.map(item => ({
+          week: item.week,
+          count: Number(item.lead_count)
+        }));
+        
+        setWeeklyLeadCounts(formattedWeeklyData);
+      }
       
       // Fetch active opportunities count - using campus_id directly
       let activeOppsQuery = supabase
@@ -144,6 +225,7 @@ export const useStats = (selectedCampusId: string | null) => {
   return {
     stats,
     employmentStatusCounts,
+    weeklyLeadCounts,
     lastRefreshed,
     fetchStats
   };
