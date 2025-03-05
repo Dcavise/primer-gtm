@@ -145,22 +145,24 @@ async function fetchSalesforceOpportunities(token: string, instanceUrl: string, 
   return data.records;
 }
 
-// Find campus_id for a given preferred_campus value
+// Find campus_id for a given preferred_campus value - now normalized for consistency
 function findCampusId(preferredCampus: string | null, campuses: Campus[]): string | null {
   if (!preferredCampus) return null;
   
   // Convert to lowercase for case-insensitive matching
-  const preferredCampusLower = preferredCampus.toLowerCase();
+  const preferredCampusLower = preferredCampus.toLowerCase().trim();
   
-  // Find a perfect match first
+  console.log(`Finding campus ID for "${preferredCampus}" (lowercase: "${preferredCampusLower}")`);
+  
+  // First try to find a perfect match with campus name (case-insensitive)
   let matchingCampus = campuses.find(campus => 
-    campus.campus_name.toLowerCase() === preferredCampusLower
+    campus.campus_name.toLowerCase().trim() === preferredCampusLower
   );
   
-  // If no perfect match, try to find a partial match
+  // If no perfect match by name, try to find a partial match with campus name
   if (!matchingCampus) {
     matchingCampus = campuses.find(campus => {
-      const campusNameLower = campus.campus_name.toLowerCase();
+      const campusNameLower = campus.campus_name.toLowerCase().trim();
       return (
         campusNameLower.includes(preferredCampusLower) || 
         preferredCampusLower.includes(campusNameLower)
@@ -168,7 +170,25 @@ function findCampusId(preferredCampus: string | null, campuses: Campus[]): strin
     });
   }
   
-  return matchingCampus ? matchingCampus.campus_id : null;
+  // If still no match, try to match against campus_id directly (for cases where preferredCampus might be the ID)
+  if (!matchingCampus) {
+    // Convert preferredCampus to a format similar to campus_id (lowercase, dashed)
+    const normalizedPreferredCampus = preferredCampusLower.replace(/\s+/g, '-');
+    
+    matchingCampus = campuses.find(campus => {
+      const campusIdLower = campus.campus_id.toLowerCase();
+      return campusIdLower === normalizedPreferredCampus ||
+             campusIdLower === preferredCampusLower;
+    });
+  }
+  
+  if (matchingCampus) {
+    console.log(`Match found: "${preferredCampus}" → campus_id "${matchingCampus.campus_id}" (${matchingCampus.campus_name})`);
+    return matchingCampus.campus_id;
+  } else {
+    console.log(`No match found for "${preferredCampus}"`);
+    return null;
+  }
 }
 
 // Transform Salesforce opportunities to Supabase format
@@ -186,12 +206,6 @@ function transformOpportunities(salesforceOpportunities: SalesforceOpportunity[]
     console.log(`Processing opportunity: ${opportunity.Id}`);
     console.log(`  Preferred campus: "${preferredCampus}"`);
     console.log(`  Matched campus ID: ${campusId || 'NO MATCH'}`);
-    
-    if (campusId) {
-      console.log(`Matched opportunity ${opportunity.Id} (${preferredCampus}) with campus ID ${campusId}`);
-    } else if (preferredCampus) {
-      console.log(`No campus match found for opportunity ${opportunity.Id} (${preferredCampus})`);
-    }
     
     return {
       opportunity_id: opportunity.Id,
@@ -226,10 +240,62 @@ async function syncOpportunitiesToSupabase(opportunities: SupabaseOpportunity[])
   return data?.length || 0;
 }
 
+// Fix existing campus IDs in the opportunities table
+async function fixExistingOpportunities(campuses: Campus[]): Promise<number> {
+  console.log("Checking for opportunities with mismatched campus IDs...");
+  
+  // Get all opportunities that have a preferred_campus but no campus_id
+  const { data: opportunities, error: fetchError } = await supabase
+    .from('salesforce_opportunities')
+    .select('id, opportunity_id, preferred_campus, campus_id')
+    .not('preferred_campus', 'is', null);
+  
+  if (fetchError) {
+    console.error("Error fetching opportunities:", fetchError);
+    throw new Error(`Failed to fetch opportunities: ${fetchError.message}`);
+  }
+  
+  if (!opportunities || opportunities.length === 0) {
+    console.log("No opportunities with preferred_campus found");
+    return 0;
+  }
+  
+  console.log(`Found ${opportunities.length} opportunities with preferred_campus values`);
+  let updatedCount = 0;
+  
+  // Process each opportunity and update if needed
+  for (const opportunity of opportunities) {
+    if (!opportunity.preferred_campus) continue;
+    
+    // Find the correct campus_id using our enhanced matching function
+    const matchedCampusId = findCampusId(opportunity.preferred_campus, campuses);
+    
+    // If we found a match and it's different from the current value, update it
+    if (matchedCampusId && matchedCampusId !== opportunity.campus_id) {
+      console.log(`Updating opportunity ${opportunity.opportunity_id}: changing campus_id from "${opportunity.campus_id}" to "${matchedCampusId}"`);
+      
+      const { error: updateError } = await supabase
+        .from('salesforce_opportunities')
+        .update({ campus_id: matchedCampusId })
+        .eq('id', opportunity.id);
+      
+      if (updateError) {
+        console.error(`Error updating opportunity ${opportunity.id}:`, updateError);
+      } else {
+        updatedCount++;
+      }
+    }
+  }
+  
+  console.log(`Updated campus_id for ${updatedCount} opportunities`);
+  return updatedCount;
+}
+
 // Main sync function
 async function syncSalesforceOpportunities(): Promise<{ 
   success: boolean; 
   synced: number;
+  fixed?: number;
   error?: string 
 }> {
   try {
@@ -238,6 +304,9 @@ async function syncSalesforceOpportunities(): Promise<{
     if (campuses.length === 0) {
       return { success: true, synced: 0, error: "No campuses found. Import campuses first." };
     }
+    
+    // First, let's fix any existing opportunities with incorrect campus IDs
+    const fixedCount = await fixExistingOpportunities(campuses);
     
     const campusNames = campuses.map(campus => campus.campus_name);
     
@@ -250,14 +319,14 @@ async function syncSalesforceOpportunities(): Promise<{
     );
     
     if (salesforceOpportunities.length === 0) {
-      return { success: true, synced: 0 };
+      return { success: true, synced: 0, fixed: fixedCount };
     }
     
     const transformedOpportunities = transformOpportunities(salesforceOpportunities, campuses);
     
     const syncedCount = await syncOpportunitiesToSupabase(transformedOpportunities);
     
-    return { success: true, synced: syncedCount };
+    return { success: true, synced: syncedCount, fixed: fixedCount };
   } catch (error) {
     console.error("Error syncing Salesforce opportunities:", error);
     return { 

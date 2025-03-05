@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
@@ -165,7 +164,7 @@ function findCampusId(preferredCampus: string | null, campuses: Campus[]): strin
   if (!preferredCampus) return null;
   
   // Convert to lowercase for case-insensitive matching
-  const preferredCampusLower = preferredCampus.toLowerCase();
+  const preferredCampusLower = preferredCampus.toLowerCase().trim();
   
   // Log the matching attempt for debugging
   console.log(`Finding campus ID for "${preferredCampus}" (lowercase: "${preferredCampusLower}")`);
@@ -173,13 +172,13 @@ function findCampusId(preferredCampus: string | null, campuses: Campus[]): strin
   
   // Find a perfect match first
   let matchingCampus = campuses.find(campus => 
-    campus.campus_name.toLowerCase() === preferredCampusLower
+    campus.campus_name.toLowerCase().trim() === preferredCampusLower
   );
   
   // If no perfect match, try to find a partial match
   if (!matchingCampus) {
     matchingCampus = campuses.find(campus => {
-      const campusNameLower = campus.campus_name.toLowerCase();
+      const campusNameLower = campus.campus_name.toLowerCase().trim();
       return (
         campusNameLower.includes(preferredCampusLower) || 
         preferredCampusLower.includes(campusNameLower)
@@ -187,9 +186,25 @@ function findCampusId(preferredCampus: string | null, campuses: Campus[]): strin
     });
   }
   
-  console.log(`Match result: ${matchingCampus ? matchingCampus.campus_id : 'NO MATCH'}`);
+  // If still no match, try to match against campus_id directly
+  if (!matchingCampus) {
+    // Convert preferredCampus to a format similar to campus_id (lowercase, dashed)
+    const normalizedPreferredCampus = preferredCampusLower.replace(/\s+/g, '-');
+    
+    matchingCampus = campuses.find(campus => {
+      const campusIdLower = campus.campus_id.toLowerCase();
+      return campusIdLower === normalizedPreferredCampus ||
+             campusIdLower === preferredCampusLower;
+    });
+  }
   
-  return matchingCampus ? matchingCampus.campus_id : null;
+  if (matchingCampus) {
+    console.log(`Match found: "${preferredCampus}" → campus_id "${matchingCampus.campus_id}" (${matchingCampus.campus_name})`);
+    return matchingCampus.campus_id;
+  } else {
+    console.log(`NO MATCH for "${preferredCampus}"`);
+    return null;
+  }
 }
 
 // Transform Salesforce leads to Supabase format
@@ -311,6 +326,57 @@ async function clearIncorrectPreferredCampus(campuses: Campus[]): Promise<number
   
   console.log(`Cleaned ${cleanedCount} leads with likely company data`);
   return cleanedCount;
+}
+
+// Fix existing leads with incorrect campus IDs
+async function fixExistingLeads(campuses: Campus[]): Promise<number> {
+  console.log("Checking for leads with mismatched campus IDs...");
+  
+  // Get all leads that have a preferred_campus value
+  const { data: leads, error: leadsError } = await supabase
+    .from('salesforce_leads')
+    .select('id, lead_id, preferred_campus, campus_id')
+    .not('preferred_campus', 'is', null);
+  
+  if (leadsError) {
+    console.error("Error fetching leads:", leadsError);
+    throw new Error(`Failed to fetch leads: ${leadsError.message}`);
+  }
+  
+  if (!leads || leads.length === 0) {
+    console.log("No leads with preferred_campus values found");
+    return 0;
+  }
+  
+  console.log(`Found ${leads.length} leads with preferred_campus values`);
+  let updatedCount = 0;
+  
+  // Process each lead and update if needed
+  for (const lead of leads) {
+    if (!lead.preferred_campus) continue;
+    
+    // Find the correct campus_id using our enhanced matching function
+    const matchedCampusId = findCampusId(lead.preferred_campus, campuses);
+    
+    // If we found a match and it's different from the current value, update it
+    if (matchedCampusId && matchedCampusId !== lead.campus_id) {
+      console.log(`Updating lead ${lead.lead_id}: changing campus_id from "${lead.campus_id}" to "${matchedCampusId}"`);
+      
+      const { error: updateError } = await supabase
+        .from('salesforce_leads')
+        .update({ campus_id: matchedCampusId })
+        .eq('id', lead.id);
+      
+      if (updateError) {
+        console.error(`Error updating lead ${lead.id}:`, updateError);
+      } else {
+        updatedCount++;
+      }
+    }
+  }
+  
+  console.log(`Updated campus_id for ${updatedCount} leads`);
+  return updatedCount;
 }
 
 // Fetch and sync account data
@@ -498,12 +564,16 @@ async function syncSalesforceLeads(): Promise<{
   synced: number; 
   matched?: number; 
   cleaned?: number; 
+  fixed?: number;
   accounts?: number;
   contacts?: number;
   error?: string 
 }> {
   try {
     const campuses = await getAllCampuses();
+    
+    // Fix existing leads with incorrect campus IDs
+    const fixedCount = await fixExistingLeads(campuses);
     
     const authResponse = await getSalesforceToken();
     
@@ -543,6 +613,7 @@ async function syncSalesforceLeads(): Promise<{
       synced: syncedCount,
       matched: matchedCount,
       cleaned: cleanedCount,
+      fixed: fixedCount,
       accounts: accountsCount,
       contacts: contactsCount
     };
