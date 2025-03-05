@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { SearchStatus } from "@/types";
 import { toast } from "sonner";
@@ -26,9 +27,11 @@ export function useZoningData() {
   const [zoningData, setZoningData] = useState<ZoningData[]>([]);
   const [status, setStatus] = useState<SearchStatus>("idle");
   const [searchedAddress, setSearchedAddress] = useState<string>("");
+  const [isUsingFallbackData, setIsUsingFallbackData] = useState<boolean>(false);
 
   const fetchZoningData = async (address: string) => {
     setStatus("loading");
+    setIsUsingFallbackData(false);
     
     try {
       console.log("Fetching zoning data for address:", address);
@@ -42,6 +45,11 @@ export function useZoningData() {
       
       if (!zoneDetail || !zoneDetail.data) {
         throw new Error("No zoning data found for this location");
+      }
+      
+      // Check if we're using fallback data based on the message
+      if (zoneDetail.message && zoneDetail.message.includes("fallback")) {
+        setIsUsingFallbackData(true);
       }
       
       // Get the proper data structure from the response
@@ -72,9 +80,15 @@ export function useZoningData() {
       setSearchedAddress(address);
       setStatus("success");
       
-      toast.success("Zoning data retrieved", {
-        description: "Showing zoning information for the specified location."
-      });
+      if (isUsingFallbackData) {
+        toast.warning("Sample zoning data shown", {
+          description: "Using default zoning data as the service is currently unavailable."
+        });
+      } else {
+        toast.success("Zoning data retrieved", {
+          description: "Showing zoning information for the specified location."
+        });
+      }
     } catch (error) {
       console.error("Error in useZoningData:", error);
       setStatus("error");
@@ -89,12 +103,14 @@ export function useZoningData() {
     setZoningData([]);
     setStatus("idle");
     setSearchedAddress("");
+    setIsUsingFallbackData(false);
   };
 
   return {
     zoningData,
     status,
     searchedAddress,
+    isUsingFallbackData,
     fetchZoningData,
     reset
   };

@@ -26,7 +26,7 @@ const PropertyResearch = () => {
   } | null>(null);
 
   // Zoning data
-  const { zoningData, status: zoningStatus, searchedAddress: zoningAddress, fetchZoningData, reset: resetZoning } = useZoningData();
+  const { zoningData, status: zoningStatus, searchedAddress: zoningAddress, isUsingFallbackData, fetchZoningData, reset: resetZoning } = useZoningData();
   const isSearchingZoning = zoningStatus === "loading";
 
   // Schools data
@@ -183,6 +183,7 @@ const PropertyResearch = () => {
                 zoningData={zoningData}
                 isLoading={isSearchingZoning}
                 searchedAddress={zoningAddress}
+                isUsingFallbackData={isUsingFallbackData}
               />
             </section>
             

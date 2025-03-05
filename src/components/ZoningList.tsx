@@ -1,9 +1,10 @@
+
 import { ZoningData } from "@/hooks/use-zoning-data";
 import { LoadingState } from "./LoadingState";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
-import { CalendarIcon, HomeIcon, Building2Icon, WarehouseIcon, Link, CheckIcon, XIcon, AlertCircleIcon } from "lucide-react";
+import { CalendarIcon, HomeIcon, Building2Icon, WarehouseIcon, Link, CheckIcon, XIcon, AlertCircleIcon, InfoIcon } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -11,6 +12,7 @@ interface ZoningListProps {
   zoningData: ZoningData[];
   isLoading: boolean;
   searchedAddress: string;
+  isUsingFallbackData?: boolean;
 }
 
 const getZoneIcon = (zoneType: string) => {
@@ -27,7 +29,7 @@ const getZoneIcon = (zoneType: string) => {
   }
 };
 
-export const ZoningList = ({ zoningData, isLoading, searchedAddress }: ZoningListProps) => {
+export const ZoningList = ({ zoningData, isLoading, searchedAddress, isUsingFallbackData }: ZoningListProps) => {
   if (isLoading) {
     return <LoadingState className="mt-6" />;
   }
@@ -49,7 +51,23 @@ export const ZoningList = ({ zoningData, isLoading, searchedAddress }: ZoningLis
 
   return (
     <div>
-      {searchedAddress && zoningData.length > 0 && (
+      {isUsingFallbackData && (
+        <Alert className="mb-6 bg-amber-50 border-amber-200 dark:bg-amber-900/10 dark:border-amber-900/30">
+          <div className="flex items-start">
+            <InfoIcon className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+            <div className="ml-3">
+              <AlertTitle className="text-amber-800 dark:text-amber-300">
+                Sample Data
+              </AlertTitle>
+              <AlertDescription className="text-amber-700 dark:text-amber-400">
+                Showing sample zoning data because the zoning service is currently unavailable.
+              </AlertDescription>
+            </div>
+          </div>
+        </Alert>
+      )}
+      
+      {searchedAddress && zoningData.length > 0 && !isUsingFallbackData && (
         <Alert className="mb-6 bg-blue-50 border-blue-200 dark:bg-blue-900/10 dark:border-blue-900/30">
           <div className="flex items-start">
             <Building2Icon className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
