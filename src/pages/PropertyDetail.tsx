@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -53,7 +54,7 @@ const PropertyDetail: React.FC = () => {
   
   const [notesValue, setNotesValue] = useState('');
   const [propertyFormValues, setPropertyFormValues] = useState<Partial<RealEstateProperty>>({});
-  const [statusFormValues, setStatusFormValues] = useState<Partial<RealEateProperty>>({});
+  const [statusFormValues, setStatusFormValues] = useState<Partial<RealEstateProperty>>({});
   const [contactFormValues, setContactFormValues] = useState<Partial<RealEstateProperty>>({});
   const [leaseFormValues, setLeaseFormValues] = useState<Partial<RealEstateProperty>>({});
   
@@ -70,7 +71,14 @@ const PropertyDetail: React.FC = () => {
       
       console.log('Fetching property with id:', id);
       
-      const propertyId = isNaN(parseInt(id)) ? id : parseInt(id);
+      // Convert string ID to number for the database query
+      const propertyId = parseInt(id);
+      
+      // Check if propertyId is a valid number before proceeding
+      if (isNaN(propertyId)) {
+        console.error('Invalid property ID:', id);
+        throw new Error(`Invalid property ID: ${id}`);
+      }
       
       const { data, error } = await supabase
         .from('real_estate_pipeline')
