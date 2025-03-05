@@ -48,13 +48,6 @@ serve(async (req) => {
         } catch (textError) {
           console.error("Error reading request body as text:", textError);
         }
-        
-        if (!keyName) {
-          // If we still don't have a key name, check URL params
-          const url = new URL(req.url);
-          keyName = url.searchParams.get('key') || '';
-          console.log(`Extracted key from URL params: ${keyName}`);
-        }
       }
     } else if (req.method === 'GET') {
       // Extract key from URL parameters
