@@ -6,6 +6,13 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 import { AlertCircle, RefreshCw, Users, ArrowUpRight, CheckCircle, Clock } from 'lucide-react';
 
 interface SummaryStats {
@@ -217,28 +224,26 @@ const SalesforceLeadsPage: React.FC = () => {
       )}
 
       <div className="mb-6">
-        <div className="flex items-center gap-4 mb-4">
-          <Button 
-            variant={selectedCampusId === null ? "default" : "outline"}
-            onClick={() => {
-              setSelectedCampusId(null);
-              fetchStats();
-            }}
+        <div className="flex items-center gap-2">
+          <Select
+            value={selectedCampusId || "all"}
+            onValueChange={(value) => setSelectedCampusId(value === "all" ? null : value)}
           >
-            All Campuses
-          </Button>
-          {campuses.map(campus => (
-            <Button 
-              key={campus.campus_id}
-              variant={selectedCampusId === campus.campus_id ? "default" : "outline"}
-              onClick={() => {
-                setSelectedCampusId(campus.campus_id);
-                fetchStats();
-              }}
-            >
-              {campus.campus_name}
-            </Button>
-          ))}
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Select campus" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Campuses</SelectItem>
+              {campuses.map(campus => (
+                <SelectItem key={campus.campus_id} value={campus.campus_id}>
+                  {campus.campus_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-muted-foreground">
+            {selectedCampusId ? `Showing data for selected campus` : 'Showing data for all campuses'}
+          </span>
         </div>
       </div>
 
