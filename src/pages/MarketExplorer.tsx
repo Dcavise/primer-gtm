@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,10 +20,14 @@ const MarketExplorer = () => {
   const { campuses, fetchCampuses } = useCampuses();
 
   useEffect(() => {
+    // Fetch campuses when component mounts
     fetchCampuses();
   }, [fetchCampuses]);
 
   useEffect(() => {
+    // Log campuses for debugging
+    console.log("Available campuses:", campuses);
+    
     async function initializeMap() {
       try {
         setIsLoading(true);

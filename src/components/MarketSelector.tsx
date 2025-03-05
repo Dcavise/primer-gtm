@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
   Select,
   SelectContent,
@@ -23,13 +23,30 @@ export const MarketSelector: React.FC<MarketSelectorProps> = ({
   campuses,
   isLoading = false
 }) => {
-  // Filter out campuses that don't have matching coordinates in the marketCoordinates object
-  const availableCampuses = campuses.filter(campus => 
-    Object.keys(marketCoordinates).some(key => 
-      key.toLowerCase() === campus.campus_id.toLowerCase() || 
-      marketCoordinates[key].name.toLowerCase() === campus.campus_name.toLowerCase()
-    )
-  );
+  useEffect(() => {
+    // Log for debugging
+    console.log("All campuses:", campuses);
+    console.log("Market coordinates keys:", Object.keys(marketCoordinates));
+  }, [campuses]);
+
+  // Modified to be more permissive in matching campuses to market coordinates
+  const availableCampuses = campuses.filter(campus => {
+    // Check if the campus ID matches any key in marketCoordinates (case insensitive)
+    const matchById = Object.keys(marketCoordinates).some(key => 
+      key.toLowerCase() === campus.campus_id.toLowerCase()
+    );
+    
+    // Check if the campus name matches any name in marketCoordinates (case insensitive)
+    const matchByName = Object.values(marketCoordinates).some(coords => 
+      coords.name.toLowerCase().includes(campus.campus_name.toLowerCase()) ||
+      campus.campus_name.toLowerCase().includes(coords.name.toLowerCase())
+    );
+    
+    return matchById || matchByName;
+  });
+  
+  // Log the filtered campuses
+  console.log("Available campuses after filtering:", availableCampuses);
 
   return (
     <div className="mb-6">
@@ -44,11 +61,17 @@ export const MarketSelector: React.FC<MarketSelectorProps> = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="default">All Markets</SelectItem>
-            {availableCampuses.map((campus) => (
-              <SelectItem key={campus.campus_id} value={campus.campus_id}>
-                {campus.campus_name}
+            {availableCampuses.length > 0 ? (
+              availableCampuses.map((campus) => (
+                <SelectItem key={campus.campus_id} value={campus.campus_id}>
+                  {campus.campus_name}
+                </SelectItem>
+              ))
+            ) : (
+              <SelectItem value="no-markets" disabled>
+                No markets available
               </SelectItem>
-            ))}
+            )}
           </SelectContent>
         </Select>
         <span className="text-sm text-muted-foreground">
