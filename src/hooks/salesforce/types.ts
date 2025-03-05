@@ -8,6 +8,11 @@ export interface SummaryStats {
   closedWonOpportunitiesCount: number;
 }
 
+export interface EmploymentStatusCount {
+  status: string;
+  count: number;
+}
+
 export interface Campus extends BaseCampus {
   campus_id: string;
   campus_name: string;

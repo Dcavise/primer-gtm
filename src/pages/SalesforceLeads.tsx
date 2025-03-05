@@ -8,15 +8,22 @@ import { SyncErrorAlert } from '@/components/salesforce/SyncErrorAlert';
 
 const SalesforceLeadsPage: React.FC = () => {
   const [selectedCampusId, setSelectedCampusId] = useState<string | null>(null);
+  const [selectedCampusName, setSelectedCampusName] = useState<string | null>(null);
   
   const {
     stats,
+    employmentStatusCounts,
     campuses,
     syncLoading,
     syncError,
     lastRefreshed,
     syncSalesforceData
   } = useSalesforceData(selectedCampusId);
+
+  const handleSelectCampus = (campusId: string | null, campusName: string | null) => {
+    setSelectedCampusId(campusId);
+    setSelectedCampusName(campusName);
+  };
 
   return (
     <div className="container mx-auto p-4">
@@ -32,12 +39,14 @@ const SalesforceLeadsPage: React.FC = () => {
       <CampusSelector 
         campuses={campuses}
         selectedCampusId={selectedCampusId}
-        onSelectCampus={setSelectedCampusId}
+        onSelectCampus={handleSelectCampus}
       />
 
       <StatsCardGrid 
         stats={stats}
+        employmentStatusCounts={employmentStatusCounts}
         selectedCampusId={selectedCampusId}
+        selectedCampusName={selectedCampusName}
       />
     </div>
   );

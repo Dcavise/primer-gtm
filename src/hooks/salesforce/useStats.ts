@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { SummaryStats } from './types';
+import { SummaryStats, EmploymentStatusCount } from './types';
 
 export const useStats = (selectedCampusId: string | null) => {
   const [stats, setStats] = useState<SummaryStats>({
@@ -10,6 +11,7 @@ export const useStats = (selectedCampusId: string | null) => {
     activeOpportunitiesCount: 0,
     closedWonOpportunitiesCount: 0
   });
+  const [employmentStatusCounts, setEmploymentStatusCounts] = useState<EmploymentStatusCount[]>([]);
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -55,14 +57,24 @@ export const useStats = (selectedCampusId: string | null) => {
       if (fellowsData && fellowsData.length > 0) {
         console.log("Sample of fellows data:", fellowsData.slice(0, 5));
         
-        // Log employment status distribution for debugging
+        // Calculate employment status distribution
         const statusCounts = fellowsData.reduce((acc, fellow) => {
-          const status = fellow.fte_employment_status || 'NULL';
+          const status = fellow.fte_employment_status || 'Open';
           acc[status] = (acc[status] || 0) + 1;
           return acc;
         }, {} as Record<string, number>);
         
         console.log("Employment status distribution:", statusCounts);
+        
+        // Convert to array format for the chart
+        const statusCountsArray = Object.entries(statusCounts).map(([status, count]) => ({
+          status,
+          count
+        }));
+        
+        // Sort by count in descending order
+        statusCountsArray.sort((a, b) => b.count - a.count);
+        setEmploymentStatusCounts(statusCountsArray);
       }
       
       // Fetch leads count - now directly using campus_id which is the primary key
@@ -131,6 +143,7 @@ export const useStats = (selectedCampusId: string | null) => {
 
   return {
     stats,
+    employmentStatusCounts,
     lastRefreshed,
     fetchStats
   };

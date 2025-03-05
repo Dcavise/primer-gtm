@@ -7,12 +7,12 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { Campus } from '@/hooks/use-salesforce-data';
+import { Campus } from '@/hooks/salesforce/types';
 
 interface CampusSelectorProps {
   campuses: Campus[];
   selectedCampusId: string | null;
-  onSelectCampus: (campusId: string | null) => void;
+  onSelectCampus: (campusId: string | null, campusName: string | null) => void;
 }
 
 export const CampusSelector: React.FC<CampusSelectorProps> = ({ 
@@ -20,12 +20,21 @@ export const CampusSelector: React.FC<CampusSelectorProps> = ({
   selectedCampusId, 
   onSelectCampus 
 }) => {
+  const handleCampusChange = (value: string) => {
+    if (value === "all") {
+      onSelectCampus(null, null);
+    } else {
+      const selectedCampus = campuses.find(campus => campus.campus_id === value);
+      onSelectCampus(value, selectedCampus?.campus_name || null);
+    }
+  };
+
   return (
     <div className="mb-6">
       <div className="flex items-center gap-2">
         <Select
           value={selectedCampusId || "all"}
-          onValueChange={(value) => onSelectCampus(value === "all" ? null : value)}
+          onValueChange={handleCampusChange}
         >
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder="Select campus" />

@@ -9,6 +9,7 @@ interface StatsCardProps {
   description?: string;
   icon: LucideIcon;
   className?: string;
+  onClick?: () => void;
 }
 
 export const StatsCard: React.FC<StatsCardProps> = ({ 
@@ -16,10 +17,14 @@ export const StatsCard: React.FC<StatsCardProps> = ({
   value, 
   description, 
   icon: Icon,
-  className = ''
+  className = '',
+  onClick
 }) => {
   return (
-    <Card className={className}>
+    <Card 
+      className={`${className} ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`} 
+      onClick={onClick}
+    >
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}
