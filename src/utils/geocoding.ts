@@ -19,7 +19,9 @@ export const geocodeAddress = async (address: string): Promise<{
     const response = await fetch(`https://nwyyfupafwpjapozjqmz.supabase.co/functions/v1/geocode-address`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        // Add cache-control to prevent caching issues
+        'Cache-Control': 'no-cache'
       },
       body: JSON.stringify({ address })
     });

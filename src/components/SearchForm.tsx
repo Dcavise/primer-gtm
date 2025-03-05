@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -144,4 +143,4 @@ export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProp
       </form>
     </motion.div>
   );
-}
+};
