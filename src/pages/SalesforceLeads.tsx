@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +14,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { AlertCircle, RefreshCw, Users, ArrowUpRight, CheckCircle, Clock } from 'lucide-react';
+import { formatDate } from '@/utils/format';
 
 interface SummaryStats {
   fellowsCount: number;
@@ -49,10 +51,12 @@ const SalesforceLeadsPage: React.FC = () => {
     opportunities: 'idle',
     fellows: 'idle'
   });
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
 
   useEffect(() => {
     fetchCampuses();
     fetchStats();
+    setLastRefreshed(new Date());
   }, [selectedCampusId]);
 
   const fetchCampuses = async () => {
@@ -230,6 +234,7 @@ const SalesforceLeadsPage: React.FC = () => {
       
       fetchStats();
       fetchCampuses();
+      setLastRefreshed(new Date());
       
     } catch (error: any) {
       console.error('Error in sync process:', error);
@@ -245,18 +250,25 @@ const SalesforceLeadsPage: React.FC = () => {
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Salesforce Analytics</h1>
-        <Button 
-          onClick={syncSalesforceData} 
-          disabled={syncLoading}
-          className="flex items-center gap-2"
-        >
-          {syncLoading ? (
-            <RefreshCw className="h-4 w-4 animate-spin" />
-          ) : (
-            <RefreshCw className="h-4 w-4" />
+        <div className="flex flex-col items-end">
+          <Button 
+            onClick={syncSalesforceData} 
+            disabled={syncLoading}
+            className="flex items-center gap-2"
+          >
+            {syncLoading ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            {syncLoading ? 'Refreshing...' : 'Refresh Data'}
+          </Button>
+          {lastRefreshed && (
+            <span className="text-xs text-muted-foreground mt-1">
+              Last refreshed: {lastRefreshed.toLocaleString()}
+            </span>
           )}
-          {syncLoading ? 'Syncing...' : 'Sync Salesforce Data'}
-        </Button>
+        </div>
       </div>
 
       {syncError && (
