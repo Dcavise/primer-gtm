@@ -127,7 +127,6 @@ export type Database = {
       }
       salesforce_opportunities: {
         Row: {
-          account_id: string | null
           close_date: string | null
           created_at: string
           id: string
@@ -138,7 +137,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          account_id?: string | null
           close_date?: string | null
           created_at?: string
           id?: string
@@ -149,7 +147,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          account_id?: string | null
           close_date?: string | null
           created_at?: string
           id?: string

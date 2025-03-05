@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { RefreshCw, AlertCircle, Info, ArrowDown, ArrowUp, DollarSign } from "lucide-react";
+import { RefreshCw, AlertCircle, Info } from "lucide-react";
 import { LoadingState } from "@/components/LoadingState";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -173,12 +173,6 @@ export function SalesforceLeadsPage() {
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString();
-  };
-
-  const getAccountName = (accountId: string | null) => {
-    if (!accountId) return '-';
-    const account = accounts.find(a => a.account_id === accountId);
-    return account ? account.account_name : accountId;
   };
 
   return (
@@ -402,7 +396,6 @@ export function SalesforceLeadsPage() {
                         <TableHeader>
                           <TableRow>
                             <TableHead>Opportunity Name</TableHead>
-                            <TableHead>Account</TableHead>
                             <TableHead>Stage</TableHead>
                             <TableHead>Close Date</TableHead>
                             <TableHead>Preferred Campus</TableHead>
@@ -412,7 +405,7 @@ export function SalesforceLeadsPage() {
                         <TableBody>
                           {opportunities.length === 0 ? (
                             <TableRow>
-                              <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
+                              <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
                                 No opportunities data available
                               </TableCell>
                             </TableRow>
@@ -422,7 +415,6 @@ export function SalesforceLeadsPage() {
                                 <TableCell className="font-medium">
                                   {opportunity.opportunity_name || 'Unnamed'}
                                 </TableCell>
-                                <TableCell>{getAccountName(opportunity.account_id)}</TableCell>
                                 <TableCell>
                                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                     {opportunity.stage || 'Unknown'}

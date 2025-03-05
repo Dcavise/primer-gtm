@@ -1,3 +1,4 @@
+
 export interface Coordinates {
   lat: number;
   lng: number;
@@ -113,12 +114,11 @@ export interface SalesforceLead {
   updated_at: string;
 }
 
-// Updated SalesforceOpportunity interface to include preferred_campus
+// Updated SalesforceOpportunity interface without account_id
 export interface SalesforceOpportunity {
   id: string;
   opportunity_id: string;
   opportunity_name: string | null;
-  account_id: string | null;
   stage: string | null;
   close_date: string | null;
   created_at: string;

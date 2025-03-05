@@ -40,7 +40,6 @@ interface SalesforceQueryResponse {
 interface SalesforceOpportunity {
   Id: string;
   Name: string | null;
-  AccountId: string | null;
   StageName: string | null;
   CloseDate: string | null;
   Preferred_Campus__c: string | null;
@@ -50,7 +49,6 @@ interface SalesforceOpportunity {
 interface SupabaseOpportunity {
   opportunity_id: string;
   opportunity_name: string | null;
-  account_id: string | null;
   stage: string | null;
   close_date: string | null;
   preferred_campus: string | null;
@@ -118,7 +116,7 @@ async function fetchSalesforceOpportunities(token: string, instanceUrl: string, 
   const campusNamesList = campusNames.map(name => `'${name}'`).join(', ');
   
   const query = `
-    SELECT Id, Name, AccountId, StageName, CloseDate, Preferred_Campus__c
+    SELECT Id, Name, StageName, CloseDate, Preferred_Campus__c
     FROM Opportunity
     WHERE Preferred_Campus__c IN (${campusNamesList})
     ORDER BY CloseDate DESC
@@ -156,7 +154,6 @@ function transformOpportunities(salesforceOpportunities: SalesforceOpportunity[]
     return {
       opportunity_id: opportunity.Id,
       opportunity_name: opportunity.Name,
-      account_id: opportunity.AccountId,
       stage: opportunity.StageName,
       close_date: opportunity.CloseDate,
       preferred_campus: opportunity.Preferred_Campus__c,
