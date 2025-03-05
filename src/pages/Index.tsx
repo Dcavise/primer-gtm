@@ -2,7 +2,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Navbar } from '@/components/Navbar';
-import { Building2, BarChart3, Search, LogIn } from 'lucide-react';
+import { Building2, BarChart3, Search, LogIn, Home } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function Index() {
@@ -33,7 +33,7 @@ export default function Index() {
             )}
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Link to="/real-estate-pipeline">
               <div className="bg-card hover:bg-card/80 border rounded-lg p-6 transition-colors">
                 <div className="flex items-center mb-4">
@@ -41,6 +41,16 @@ export default function Index() {
                   <h3 className="text-xl font-semibold">Real Estate Pipeline</h3>
                 </div>
                 <p className="text-muted-foreground">Track and manage real estate properties in the development pipeline.</p>
+              </div>
+            </Link>
+            
+            <Link to="/property_research">
+              <div className="bg-card hover:bg-card/80 border rounded-lg p-6 transition-colors">
+                <div className="flex items-center mb-4">
+                  <Home className="h-6 w-6 mr-2 text-primary" />
+                  <h3 className="text-xl font-semibold">Property Research</h3>
+                </div>
+                <p className="text-muted-foreground">Research property data including schools, zoning, and permits.</p>
               </div>
             </Link>
             
