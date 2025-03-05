@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { WeeklyLeadCount } from '@/hooks/salesforce/types';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Label } from 'recharts';
 import { format, parseISO } from 'date-fns';
 
 interface LeadsChartDialogProps {
@@ -21,6 +21,16 @@ interface LeadsChartDialogProps {
   weeklyLeadCounts: WeeklyLeadCount[];
   selectedCampusName: string | null;
 }
+
+// Custom label component for data points
+const CustomizedLabel = (props: any) => {
+  const { x, y, value } = props;
+  return (
+    <text x={x} y={y - 10} fill="#4f46e5" textAnchor="middle" dominantBaseline="middle">
+      {value}
+    </text>
+  );
+};
 
 export const LeadsChartDialog: React.FC<LeadsChartDialogProps> = ({
   open,
@@ -96,6 +106,7 @@ export const LeadsChartDialog: React.FC<LeadsChartDialogProps> = ({
                   stroke="#4f46e5" 
                   strokeWidth={2} 
                   activeDot={{ r: 8 }} 
+                  label={<CustomizedLabel />}
                 />
               </LineChart>
             </ResponsiveContainer>
