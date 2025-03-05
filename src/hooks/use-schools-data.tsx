@@ -7,12 +7,12 @@ import { supabase } from "@/integrations/supabase/client";
 
 export function useSchoolsData() {
   const [schools, setSchools] = useState<School[]>([]);
-  const [status, setStatus] = useState<SearchStatus>("idle");
+  const [status, setStatus] = useState<SearchStatus>(SearchStatus.IDLE);
   const [searchedAddress, setSearchedAddress] = useState<string>("");
   const [searchResponse, setSearchResponse] = useState<SchoolsResponse | null>(null);
 
   const fetchSchoolsData = async (params: { top_right_lat: number, top_right_lng: number }, address: string) => {
-    setStatus("loading");
+    setStatus(SearchStatus.LOADING);
     console.log(`Fetching schools data for address: ${address}, coordinates: (${params.top_right_lat}, ${params.top_right_lng})`);
     
     try {
@@ -27,7 +27,7 @@ export function useSchoolsData() {
       
       if (error) {
         console.error("Error calling nearby-schools function:", error);
-        setStatus("error");
+        setStatus(SearchStatus.ERROR);
         setSchools([]);
         setSearchResponse(null);
         toast.error("Error retrieving schools data", {
@@ -38,7 +38,7 @@ export function useSchoolsData() {
       
       if (!response || !response.schools) {
         console.error("No schools data returned for address:", address);
-        setStatus("error");
+        setStatus(SearchStatus.ERROR);
         setSchools([]);
         setSearchResponse(null);
         toast.error("Schools data not available", {
@@ -50,7 +50,7 @@ export function useSchoolsData() {
       console.log(`Received ${response.schools.length} schools for ${address}`);
       setSchools(response.schools);
       setSearchResponse(response as SchoolsResponse);
-      setStatus("success");
+      setStatus(SearchStatus.SUCCESS);
       setSearchedAddress(response.searchedAddress || address);
       
       if (response.schools.length === 0) {
@@ -64,7 +64,7 @@ export function useSchoolsData() {
       }
     } catch (error) {
       console.error("Error in useSchoolsData:", error);
-      setStatus("error");
+      setStatus(SearchStatus.ERROR);
       setSchools([]);
       setSearchResponse(null);
       toast.error("Error retrieving schools data", {
@@ -75,7 +75,7 @@ export function useSchoolsData() {
 
   const reset = () => {
     setSchools([]);
-    setStatus("idle");
+    setStatus(SearchStatus.IDLE);
     setSearchedAddress("");
     setSearchResponse(null);
   };

@@ -6,11 +6,11 @@ import { toast } from "sonner";
 
 export function usePermits() {
   const [permits, setPermits] = useState<Permit[]>([]);
-  const [status, setStatus] = useState<SearchStatus>("idle");
+  const [status, setStatus] = useState<SearchStatus>(SearchStatus.IDLE);
   const [searchedAddress, setSearchedAddress] = useState<string>("");
 
   const fetchPermits = async (params: PermitSearchParams, address: string) => {
-    setStatus("loading");
+    setStatus(SearchStatus.LOADING);
     console.log(`Fetching permits for address: ${address}`);
     
     try {
@@ -30,7 +30,7 @@ export function usePermits() {
       
       setPermits(processedPermits);
       setSearchedAddress(address);
-      setStatus("success");
+      setStatus(SearchStatus.SUCCESS);
       
       if (processedPermits.length === 0) {
         toast.info("No permits found for this address.", {
@@ -43,7 +43,7 @@ export function usePermits() {
       }
     } catch (error) {
       console.error("Error in usePermits:", error);
-      setStatus("error");
+      setStatus(SearchStatus.ERROR);
       setPermits([]);
       toast.error("Error retrieving permit data", {
         description: "There was a problem connecting to the permit database. Please try again later."
@@ -53,7 +53,7 @@ export function usePermits() {
 
   const reset = () => {
     setPermits([]);
-    setStatus("idle");
+    setStatus(SearchStatus.IDLE);
     setSearchedAddress("");
   };
 
