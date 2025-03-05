@@ -31,8 +31,8 @@ const PropertyContactInfo: React.FC<PropertyContactInfoProps> = ({
   // Individual field edit states
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
-  // Use more specific type for field values
-  const [fieldValues, setFieldValues] = useState<Record<string, string | null>>({});
+  // Update type definition to allow mixed types
+  const [fieldValues, setFieldValues] = useState<Record<string, string | null | number>>({});
 
   // Initialize field values when property changes
   React.useEffect(() => {

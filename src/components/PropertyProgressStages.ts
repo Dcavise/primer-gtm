@@ -4,40 +4,34 @@ import { Stage } from '@/components/StageProgressBar';
 export const getProgressStages = (): Stage[] => {
   return [
     {
-      id: 'diligence',
-      title: 'Diligence',
-      description: 'Initial research and survey',
-      status: 'complete',
+      name: 'Diligence',
+      isCompleted: true,
+      isCurrent: false
     },
     {
-      id: 'test-fit',
-      title: 'Test Fit',
-      description: 'Space planning and design',
-      status: 'active',
+      name: 'Test Fit',
+      isCompleted: false,
+      isCurrent: true
     },
     {
-      id: 'plan-production',
-      title: 'Plan Production',
-      description: 'Creating detailed documents',
-      status: 'pending',
+      name: 'Plan Production',
+      isCompleted: false,
+      isCurrent: false
     },
     {
-      id: 'permitting',
-      title: 'Permitting',
-      description: 'Obtaining necessary approvals',
-      status: 'pending',
+      name: 'Permitting',
+      isCompleted: false,
+      isCurrent: false
     },
     {
-      id: 'construction',
-      title: 'Construction',
-      description: 'Building and developing',
-      status: 'pending',
+      name: 'Construction',
+      isCompleted: false,
+      isCurrent: false
     },
     {
-      id: 'setup',
-      title: 'Set Up',
-      description: 'Final preparations',
-      status: 'pending',
+      name: 'Set Up',
+      isCompleted: false,
+      isCurrent: false
     },
   ];
 };

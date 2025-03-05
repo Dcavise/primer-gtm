@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Edit, Save, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -35,8 +36,8 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
   // Individual field edit states
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
-  // Update type to include PropertyPhase
-  const [fieldValues, setFieldValues] = useState<Record<string, string | null | PropertyPhase>>({});
+  // Update type to include PropertyPhase and specify mixed types
+  const [fieldValues, setFieldValues] = useState<Record<string, string | null | PropertyPhase | number>>({});
 
   // Initialize field values when property changes
   React.useEffect(() => {
