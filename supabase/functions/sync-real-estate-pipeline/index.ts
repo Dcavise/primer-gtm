@@ -176,6 +176,7 @@ async function fetchGoogleSheetData(credentialsStr: string) {
     const result = await fetchWithGoogleAuth(url, credentials);
     
     console.log("Sheet API response:", JSON.stringify(result).substring(0, 200) + "...");
+    console.log("Full Sheet API response:", JSON.stringify(result));
     
     if (!result.values || result.values.length === 0) {
       console.warn("No data found in the real estate pipeline sheet");
@@ -199,7 +200,7 @@ async function fetchGoogleSheetData(credentialsStr: string) {
       
       // Log a sample of the first few rows
       if (index < 2) {
-        console.log(`Sample row ${index + 1}:`, JSON.stringify(rowData).substring(0, 200) + "...");
+        console.log(`Sample row ${index + 1}:`, JSON.stringify(rowData));
       }
       
       return rowData;
@@ -214,6 +215,7 @@ async function fetchGoogleSheetData(credentialsStr: string) {
 
 // Map Google Sheets column names to Supabase column names
 function mapColumnNames(sheetData: Record<string, any>): Record<string, any> {
+  // Updated map with lowercase/underscored DB column names that match our Supabase schema
   const columnMap: Record<string, string> = {
     'Property Name': 'site_name_type',
     'Status': 'status',
@@ -249,26 +251,71 @@ function mapColumnNames(sheetData: Record<string, any>): Record<string, any> {
   };
 
   console.log("Starting column mapping");
-  console.log("Input sheet data:", Object.keys(sheetData).join(", "));
+  console.log("Input sheet data keys:", Object.keys(sheetData).join(", "));
   
   const mappedData: Record<string, any> = {};
   
+  // Add debug logs to understand exact column names
+  console.log("Available sheet column names:", Object.keys(sheetData).map(key => `"${key}"`).join(", "));
+  console.log("Exact keys and values in sheet data:", Object.entries(sheetData).map(([k, v]) => `"${k}": "${v}"`).join(", "));
+  
   // Map each field from the sheet to its corresponding database column
   Object.entries(sheetData).forEach(([key, value]) => {
-    const dbColumn = columnMap[key] || key.toLowerCase().replace(/\s+/g, '_');
-    console.log(`Mapping column: "${key}" => "${dbColumn}"`);
-    
-    // Handle boolean values
-    if (value === 'TRUE' || value === 'YES' || value === 'Y') {
-      mappedData[dbColumn] = true;
-    } else if (value === 'FALSE' || value === 'NO' || value === 'N') {
-      mappedData[dbColumn] = false;
-    } else {
-      // Handle numeric values
-      if (dbColumn === 'lat' || dbColumn === 'lon') {
-        mappedData[dbColumn] = value ? parseFloat(value) : null;
+    // First check if there's an exact match
+    if (columnMap[key]) {
+      const dbColumn = columnMap[key];
+      console.log(`Mapping exact match column: "${key}" => "${dbColumn}"`);
+      
+      // Handle boolean values
+      if (value === 'TRUE' || value === 'YES' || value === 'Y') {
+        mappedData[dbColumn] = true;
+      } else if (value === 'FALSE' || value === 'NO' || value === 'N') {
+        mappedData[dbColumn] = false;
       } else {
-        mappedData[dbColumn] = value;
+        // Handle numeric values
+        if (dbColumn === 'lat' || dbColumn === 'lon') {
+          mappedData[dbColumn] = value ? parseFloat(value) : null;
+        } else {
+          mappedData[dbColumn] = value;
+        }
+      }
+    } else {
+      // Try a case-insensitive match if no exact match
+      const matchingKey = Object.keys(columnMap).find(
+        mapKey => mapKey.toLowerCase() === key.toLowerCase()
+      );
+      
+      if (matchingKey) {
+        const dbColumn = columnMap[matchingKey];
+        console.log(`Mapping case-insensitive column: "${key}" => "${dbColumn}"`);
+        
+        // Handle boolean values
+        if (value === 'TRUE' || value === 'YES' || value === 'Y') {
+          mappedData[dbColumn] = true;
+        } else if (value === 'FALSE' || value === 'NO' || value === 'N') {
+          mappedData[dbColumn] = false;
+        } else {
+          // Handle numeric values
+          if (dbColumn === 'lat' || dbColumn === 'lon') {
+            mappedData[dbColumn] = value ? parseFloat(value) : null;
+          } else {
+            mappedData[dbColumn] = value;
+          }
+        }
+      } else {
+        // If no mapping found, convert the key to snake_case and use it
+        const snakeCaseKey = key.toLowerCase().replace(/\s+/g, '_');
+        console.log(`Using snake_case for unmapped column: "${key}" => "${snakeCaseKey}"`);
+        
+        // Handle boolean values
+        if (value === 'TRUE' || value === 'YES' || value === 'Y') {
+          mappedData[snakeCaseKey] = true;
+        } else if (value === 'FALSE' || value === 'NO' || value === 'N') {
+          mappedData[snakeCaseKey] = false;
+        } else {
+          // For any other values, just use them as is
+          mappedData[snakeCaseKey] = value;
+        }
       }
     }
   });
@@ -276,7 +323,9 @@ function mapColumnNames(sheetData: Record<string, any>): Record<string, any> {
   // Add last_updated timestamp
   mappedData['last_updated'] = new Date().toISOString();
   
-  console.log("Output mapped data:", Object.keys(mappedData).join(", "));
+  console.log("Output mapped data keys:", Object.keys(mappedData).join(", "));
+  console.log("Sample of mapped data:", JSON.stringify(mappedData).substring(0, 300));
+  
   return mappedData;
 }
 
@@ -290,18 +339,24 @@ async function upsertRealEstateData(supabase: any, realEstateData: Record<string
       const mapped = mapColumnNames(row);
       // Log a sample of the first few processed rows
       if (index < 2) {
-        console.log(`Sample processed row ${index + 1}:`, JSON.stringify(mapped).substring(0, 200) + "...");
+        console.log(`Sample processed row ${index + 1}:`, JSON.stringify(mapped));
       }
       return mapped;
     });
     
     // Filter out invalid records (must have address or site name)
-    const validData = processedData.filter(property => 
-      property.address || property.site_name_type);
+    const validData = processedData.filter(property => {
+      const isValid = property.address || property.site_name_type;
+      if (!isValid) {
+        console.log("Filtering out invalid row without address or site_name_type:", JSON.stringify(property));
+      }
+      return isValid;
+    });
     
     console.log(`Found ${validData.length} valid real estate records out of ${processedData.length} total`);
 
     if (validData.length === 0) {
+      console.warn("No valid records found to insert!");
       return { inserted: 0, updated: 0 };
     }
 
@@ -319,6 +374,9 @@ async function upsertRealEstateData(supabase: any, realEstateData: Record<string
         console.error("Error checking table structure:", tableError);
       } else {
         console.log("Table structure verified successfully");
+        if (tableInfo && tableInfo.length > 0) {
+          console.log("Available table columns:", Object.keys(tableInfo[0]).join(", "));
+        }
       }
     } catch (tableCheckError) {
       console.error("Error during table check:", tableCheckError);
