@@ -76,7 +76,7 @@ export function SalesforceLeadsPage() {
         throw new Error(response.data.error || 'Sync operation failed');
       }
       
-      toast.success(`Successfully synced ${response.data.synced || 0} leads`);
+      toast.success(`Successfully synced ${response.data.synced || 0} leads and matched ${response.data.matched || 0} with campuses`);
       
       // Refresh the data
       await fetchLeads();
@@ -186,7 +186,7 @@ export function SalesforceLeadsPage() {
                           <TableHead>Stage</TableHead>
                           <TableHead>Lead Source</TableHead>
                           <TableHead>Preferred Campus</TableHead>
-                          <TableHead>Assigned Campus</TableHead>
+                          <TableHead>Matched Campus</TableHead>
                           <TableHead>Converted</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -206,14 +206,14 @@ export function SalesforceLeadsPage() {
                               <TableCell>{formatDate(lead.created_date)}</TableCell>
                               <TableCell>{lead.stage || '-'}</TableCell>
                               <TableCell>{lead.lead_source || '-'}</TableCell>
+                              <TableCell>{lead.preferred_campus || '-'}</TableCell>
                               <TableCell>
-                                {lead.preferred_campus ? (
-                                  <span className="font-medium text-blue-600">{lead.preferred_campus}</span>
+                                {lead.campus_id ? (
+                                  <span className="font-medium text-blue-600">{lead.campus_id}</span>
                                 ) : (
-                                  '-'
+                                  <span className="text-muted-foreground">Not matched</span>
                                 )}
                               </TableCell>
-                              <TableCell>{lead.campus_id || '-'}</TableCell>
                               <TableCell>
                                 {lead.converted ? (
                                   <div className="flex items-center">
