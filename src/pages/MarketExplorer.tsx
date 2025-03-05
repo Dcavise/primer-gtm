@@ -17,11 +17,14 @@ import { useQuery } from '@tanstack/react-query';
 const MarketExplorer = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const markers = useRef<mapboxgl.Marker[]>([]);
+  const markersRef = useRef<mapboxgl.Marker[]>([]);
   const [selectedMarket, setSelectedMarket] = useState<string>("default");
   const { campuses } = useCampuses();
   const [mapInitialized, setMapInitialized] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
+  
+  // Track whether we've already created the map to prevent double initialization
+  const mapCreatedRef = useRef(false);
   
   // Initialize Mapbox token once
   const { isLoading: isTokenLoading, error: tokenError } = useQuery({
@@ -37,8 +40,8 @@ const MarketExplorer = () => {
 
   // Clear all markers from the map
   const clearMarkers = useCallback(() => {
-    markers.current.forEach(marker => marker.remove());
-    markers.current = [];
+    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current = [];
   }, []);
   
   // Create demo markers for the US overview
@@ -75,7 +78,7 @@ const MarketExplorer = () => {
             .setPopup(popup)
             .addTo(mapInstance);
             
-          markers.current.push(marker);
+          markersRef.current.push(marker);
         } catch (err) {
           console.error(`Error adding marker for ${location.name}:`, err);
         }
@@ -96,7 +99,11 @@ const MarketExplorer = () => {
   
   // Initialize map once Mapbox token is ready
   useEffect(() => {
-    if (isTokenLoading || mapInitialized || !mapContainer.current || map.current) return;
+    // Prevent initialization if already in progress or completed, or if token is still loading
+    if (isTokenLoading || mapCreatedRef.current || !mapContainer.current || map.current) return;
+    
+    // Set flag to prevent duplicate initialization
+    mapCreatedRef.current = true;
     
     try {
       console.log("Initializing Mapbox map...");
@@ -153,24 +160,28 @@ const MarketExplorer = () => {
         setMapError(`Map failed to load correctly: ${errorMessage}`);
         toast.error(`Map failed to load correctly: ${errorMessage}`);
       });
-      
-      // Return cleanup function
-      return () => {
-        clearMarkers();
-        if (map.current) {
-          console.log("Cleaning up map instance");
-          map.current.remove();
-          map.current = null;
-          setMapInitialized(false);
-        }
-      };
     } catch (error) {
       console.error("Error initializing map:", error);
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       setMapError(`Failed to load map: ${errorMessage}`);
       toast.error(`Failed to load map: ${errorMessage}`);
+      // Reset the flag so we can try again
+      mapCreatedRef.current = false;
     }
-  }, [isTokenLoading, selectedMarket, createDemoMap, mapInitialized, clearMarkers]);
+    
+    // Return cleanup function
+    return () => {
+      if (map.current) {
+        console.log("Cleaning up map instance");
+        clearMarkers();
+        map.current.remove();
+        map.current = null;
+        setMapInitialized(false);
+        // Reset the flag when unmounting
+        mapCreatedRef.current = false;
+      }
+    };
+  }, [isTokenLoading, clearMarkers, createDemoMap]); // Remove selectedMarket from dependencies
 
   // Update map when selected market changes
   useEffect(() => {
@@ -263,7 +274,7 @@ const MarketExplorer = () => {
               .addTo(map.current);
               
             // Store the marker reference
-            markers.current.push(marker);
+            markersRef.current.push(marker);
               
             // Fly to the coordinates with smooth animation
             map.current.flyTo({
