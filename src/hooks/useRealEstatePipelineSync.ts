@@ -9,6 +9,7 @@ type SyncStats = {
   syncedRecords: number | null;
   status: 'idle' | 'syncing' | 'success' | 'error';
   error: string | null;
+  debugInfo?: string | null;
 };
 
 // Adding real estate property type for pipeline analytics
@@ -19,7 +20,8 @@ export const useRealEstatePipelineSync = () => {
     lastSynced: null,
     syncedRecords: null,
     status: 'idle',
-    error: null
+    error: null,
+    debugInfo: null
   });
   const [isSyncing, setIsSyncing] = useState(false);
   const [properties, setProperties] = useState<RealEstateProperty[]>([]);
@@ -54,6 +56,8 @@ export const useRealEstatePipelineSync = () => {
   // Fetch the last sync status from Supabase
   const fetchLastSyncStatus = async () => {
     try {
+      console.log("Fetching last sync status...");
+      
       // Query the most recently updated record to get the last_updated timestamp
       const { data, error } = await supabase
         .from('real_estate_pipeline')
@@ -66,6 +70,8 @@ export const useRealEstatePipelineSync = () => {
         return;
       }
 
+      console.log("Last sync data:", data);
+
       if (data && data.length > 0) {
         // Get count of records
         const { count, error: countError } = await supabase
@@ -77,10 +83,18 @@ export const useRealEstatePipelineSync = () => {
           return;
         }
 
+        console.log(`Found ${count} records in real_estate_pipeline table`);
+
         setSyncStats(prev => ({
           ...prev,
           lastSynced: data[0].last_updated,
           syncedRecords: count || 0
+        }));
+      } else {
+        console.log("No records found in real_estate_pipeline table");
+        setSyncStats(prev => ({
+          ...prev,
+          syncedRecords: 0
         }));
       }
     } catch (err) {
@@ -91,6 +105,8 @@ export const useRealEstatePipelineSync = () => {
   // Fetch real estate properties for analytics
   const fetchProperties = async () => {
     try {
+      console.log("Fetching properties...");
+      
       const { data, error } = await supabase
         .from('real_estate_pipeline')
         .select('*');
@@ -98,6 +114,12 @@ export const useRealEstatePipelineSync = () => {
       if (error) {
         console.error("Error fetching properties:", error);
         return;
+      }
+      
+      console.log(`Fetched ${data?.length || 0} properties`);
+      
+      if (data && data.length > 0) {
+        console.log("Sample property data:", data[0]);
       }
       
       setProperties(data || []);
@@ -120,7 +142,12 @@ export const useRealEstatePipelineSync = () => {
   };
 
   const syncRealEstateData = async () => {
-    setSyncStats(prev => ({ ...prev, status: 'syncing', error: null }));
+    setSyncStats(prev => ({ 
+      ...prev, 
+      status: 'syncing', 
+      error: null, 
+      debugInfo: null 
+    }));
     
     try {
       toast.info("Starting Real Estate Pipeline sync...");
@@ -128,12 +155,15 @@ export const useRealEstatePipelineSync = () => {
       
       const { data, error } = await supabase.functions.invoke('sync-real-estate-pipeline');
       
+      console.log("Edge function response:", data);
+      
       if (error) {
         console.error("Function error:", error);
         setSyncStats(prev => ({ 
           ...prev, 
           status: 'error',
-          error: error.message || 'An error occurred during sync'
+          error: error.message || 'An error occurred during sync',
+          debugInfo: JSON.stringify(error)
         }));
         toast.error(`Sync failed: ${error.message}`);
         return;
@@ -145,7 +175,8 @@ export const useRealEstatePipelineSync = () => {
         setSyncStats(prev => ({ 
           ...prev, 
           status: 'error',
-          error: errorMessage
+          error: errorMessage,
+          debugInfo: JSON.stringify(data)
         }));
         toast.error(`Sync failed: ${errorMessage}`);
         return;
@@ -156,7 +187,8 @@ export const useRealEstatePipelineSync = () => {
         lastSynced: new Date().toISOString(),
         syncedRecords: data.result?.inserted || 0,
         status: 'success',
-        error: null
+        error: null,
+        debugInfo: JSON.stringify(data.result)
       });
       toast.success(`Successfully synced ${data.result?.inserted || 0} real estate records`);
       
@@ -168,7 +200,8 @@ export const useRealEstatePipelineSync = () => {
       setSyncStats(prev => ({ 
         ...prev, 
         status: 'error',
-        error: err.message || 'An unexpected error occurred'
+        error: err.message || 'An unexpected error occurred',
+        debugInfo: JSON.stringify(err)
       }));
       toast.error(`Sync error: ${err.message || 'Unknown error'}`);
     }
@@ -178,6 +211,7 @@ export const useRealEstatePipelineSync = () => {
     syncStatus: syncStats.status,
     syncStats,
     syncError: syncStats.error,
+    syncDebugInfo: syncStats.debugInfo,
     lastSyncTime: syncStats.lastSynced,
     pipelineAnalytics: properties,
     isSyncing,

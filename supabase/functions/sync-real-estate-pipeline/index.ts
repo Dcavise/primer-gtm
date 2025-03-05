@@ -83,6 +83,7 @@ async function fetchWithGoogleAuth(url: string, credentials: any) {
     const jwt = `${signatureInput}.${base64Signature}`;
     
     // Exchange JWT for access token
+    console.log("Requesting access token from Google OAuth");
     const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: {
@@ -93,12 +94,15 @@ async function fetchWithGoogleAuth(url: string, credentials: any) {
     
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
+      console.error(`Failed to get access token: ${tokenResponse.status} - ${errorText}`);
       throw new Error(`Failed to get access token: ${tokenResponse.status} - ${errorText}`);
     }
     
     const tokenData = await tokenResponse.json();
+    console.log("Successfully obtained access token");
     
     // Use the access token to fetch the sheet data
+    console.log(`Fetching sheet data from: ${url}`);
     const response = await fetch(url, {
       headers: {
         "Authorization": `Bearer ${tokenData.access_token}`
@@ -107,9 +111,11 @@ async function fetchWithGoogleAuth(url: string, credentials: any) {
     
     if (!response.ok) {
       const errorText = await response.text();
+      console.error(`Sheets API failed: ${response.status} - ${errorText}`);
       throw new Error(`Sheets API failed: ${response.status} - ${errorText}`);
     }
     
+    console.log("Successfully retrieved sheet data from Google");
     return await response.json();
   } catch (error) {
     console.error("Error in fetchWithGoogleAuth:", error);
@@ -123,10 +129,18 @@ async function fetchGoogleSheetData(credentialsStr: string) {
     console.log("Starting Google Sheets data fetch for real estate pipeline");
     
     // Parse credentials
-    const credentials = typeof credentialsStr === 'string' ? JSON.parse(credentialsStr) : credentialsStr;
+    let credentials;
+    try {
+      credentials = typeof credentialsStr === 'string' ? JSON.parse(credentialsStr) : credentialsStr;
+      console.log("Successfully parsed credentials");
+    } catch (parseError) {
+      console.error("Error parsing credentials:", parseError);
+      throw new Error(`Failed to parse credentials: ${parseError.message}`);
+    }
     
     if (!credentials.client_email || !credentials.private_key) {
       const missingField = !credentials.client_email ? "client_email" : "private_key";
+      console.error(`Missing required credential field: ${missingField}`);
       throw new Error(`Missing required credential field: ${missingField}`);
     }
     
@@ -139,6 +153,8 @@ async function fetchGoogleSheetData(credentialsStr: string) {
     // Make authenticated request
     const result = await fetchWithGoogleAuth(url, credentials);
     
+    console.log("Sheet API response:", JSON.stringify(result).substring(0, 200) + "...");
+    
     if (!result.values || result.values.length === 0) {
       console.warn("No data found in the real estate pipeline sheet");
       return [];
@@ -146,17 +162,23 @@ async function fetchGoogleSheetData(credentialsStr: string) {
     
     console.log(`Successfully fetched ${result.values.length} rows of data from real estate pipeline`);
     
-    // First row should be headers
+    // Get headers from first row
     const headers = result.values[0];
+    console.log("Headers from sheet:", headers);
     
     // Process remaining rows into objects
-    const rows = result.values.slice(1).map((row: any[]) => {
+    const rows = result.values.slice(1).map((row: any[], index: number) => {
       const rowData: Record<string, any> = {};
       
       // Map each cell to its corresponding header
-      headers.forEach((header: string, index: number) => {
-        rowData[header] = row[index] !== undefined ? row[index] : null;
+      headers.forEach((header: string, idx: number) => {
+        rowData[header] = row[idx] !== undefined ? row[idx] : null;
       });
+      
+      // Log a sample of the first few rows
+      if (index < 2) {
+        console.log(`Sample row ${index + 1}:`, JSON.stringify(rowData).substring(0, 200) + "...");
+      }
       
       return rowData;
     });
@@ -204,6 +226,7 @@ function mapColumnNames(sheetData: Record<string, any>): Record<string, any> {
     'Longitude': 'lon'
   };
 
+  console.log("Starting column mapping");
   const mappedData: Record<string, any> = {};
   
   // Map each field from the sheet to its corresponding database column
@@ -237,20 +260,47 @@ async function upsertRealEstateData(supabase: any, realEstateData: Record<string
     console.log(`Processing ${realEstateData.length} rows of real estate pipeline data`);
     
     // Map Google Sheets columns to database schema
-    const processedData = realEstateData.map(row => mapColumnNames(row));
+    const processedData = realEstateData.map((row, index) => {
+      const mapped = mapColumnNames(row);
+      // Log a sample of the first few processed rows
+      if (index < 2) {
+        console.log(`Sample processed row ${index + 1}:`, JSON.stringify(mapped).substring(0, 200) + "...");
+      }
+      return mapped;
+    });
     
     // Filter out invalid records (must have address or site name)
     const validData = processedData.filter(property => 
       property.address || property.site_name_type);
     
-    console.log(`Found ${validData.length} valid real estate records`);
+    console.log(`Found ${validData.length} valid real estate records out of ${processedData.length} total`);
 
     if (validData.length === 0) {
       return { inserted: 0, updated: 0 };
     }
 
+    // Log sample of first record that will be inserted
+    console.log("Sample record for insertion:", JSON.stringify(validData[0]));
+    
+    // Check if the necessary columns exist in the database
+    try {
+      const { data: tableInfo, error: tableError } = await supabase
+        .from('real_estate_pipeline')
+        .select('*')
+        .limit(1);
+        
+      if (tableError) {
+        console.error("Error checking table structure:", tableError);
+      } else {
+        console.log("Table structure verified successfully");
+      }
+    } catch (tableCheckError) {
+      console.error("Error during table check:", tableCheckError);
+    }
+
     // Upsert to Supabase
-    const { error } = await supabase
+    console.log("Upserting data to real_estate_pipeline table...");
+    const { data, error } = await supabase
       .from('real_estate_pipeline')
       .upsert(validData, { 
         onConflict: 'address, site_name_type',
@@ -258,10 +308,11 @@ async function upsertRealEstateData(supabase: any, realEstateData: Record<string
       });
 
     if (error) {
-      console.error("Supabase error:", error);
+      console.error("Supabase upsert error:", error);
       throw error;
     }
 
+    console.log(`Successfully upserted ${validData.length} records`);
     return { 
       inserted: validData.length, 
       updated: 0 
@@ -287,29 +338,37 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
     
     if (!supabaseUrl || !supabaseKey) {
+      console.error('Supabase credentials not found');
       throw new Error('Supabase credentials not found');
     }
     
     const supabase = createClient(supabaseUrl, supabaseKey);
+    console.log("Supabase client initialized");
 
     // Get Google credentials
     const credentialsStr = Deno.env.get('GOOGLESHEETS_SERVICE_ACCOUNT_CREDENTIALS');
     if (!credentialsStr) {
+      console.error('Google credentials not found');
       throw new Error('Google credentials not found');
     }
+    console.log("Google credentials retrieved from environment");
     
     // Fetch and process data
     console.log("Fetching Google Sheet data for real estate pipeline...");
     const sheetData = await fetchGoogleSheetData(credentialsStr);
     
     if (!Array.isArray(sheetData) || sheetData.length === 0) {
+      console.error('No data found in real estate pipeline Google Sheet');
       throw new Error('No data found in real estate pipeline Google Sheet');
     }
+    
+    console.log(`Retrieved ${sheetData.length} rows from Google Sheet`);
 
     console.log("Upserting data to Supabase real_estate_pipeline table...");
     const result = await upsertRealEstateData(supabase, sheetData);
 
     // Return success response
+    console.log("Sync completed successfully with result:", result);
     return new Response(
       JSON.stringify({
         success: true,

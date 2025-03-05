@@ -14,6 +14,7 @@ export default function RealEstatePipelinePage() {
     syncStats,
     pipelineAnalytics,
     syncError,
+    syncDebugInfo,
     startSync,
     stopSync,
     isSyncing,
@@ -50,12 +51,20 @@ export default function RealEstatePipelinePage() {
         <SyncStatusDisplay
           syncStatus={syncStatus}
           lastSyncTime={lastSyncTime}
+          syncDebugInfo={syncDebugInfo}
           openSyncModal={openSyncModal}
         />
 
         <SyncStatsInfo syncStats={syncStats} />
 
-        <PipelineAnalytics pipelineAnalytics={pipelineAnalytics} />
+        {pipelineAnalytics.length > 0 ? (
+          <PipelineAnalytics pipelineAnalytics={pipelineAnalytics} />
+        ) : (
+          <div className="bg-white rounded-lg shadow p-6 text-center">
+            <p className="text-lg text-gray-600">No real estate data available yet.</p>
+            <p className="text-sm text-gray-500 mt-2">Click "Sync Data" to import data from Google Sheets.</p>
+          </div>
+        )}
 
         <RealEstatePipelineSync
           isOpen={isSyncModalOpen}

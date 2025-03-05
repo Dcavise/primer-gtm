@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { Loader2, CheckCircle, AlertTriangle, Clock, RefreshCw } from 'lucide-react';
+import React, { useState } from 'react';
+import { Loader2, CheckCircle, AlertTriangle, Clock, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
@@ -8,14 +8,18 @@ type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
 interface SyncStatusDisplayProps {
   syncStatus: SyncStatus;
   lastSyncTime: string | null;
+  syncDebugInfo?: string | null;
   openSyncModal: () => void;
 }
 
 export const SyncStatusDisplay: React.FC<SyncStatusDisplayProps> = ({ 
   syncStatus, 
   lastSyncTime,
+  syncDebugInfo,
   openSyncModal
 }) => {
+  const [showDebug, setShowDebug] = useState(false);
+
   const getSyncStatusDisplay = () => {
     switch (syncStatus) {
       case 'syncing':
@@ -45,20 +49,51 @@ export const SyncStatusDisplay: React.FC<SyncStatusDisplayProps> = ({
   };
 
   return (
-    <div className="flex justify-between items-center p-4 bg-white rounded-lg shadow mb-6">
-      <div className="flex items-center gap-2">
-        {getSyncStatusIcon()}
-        <span className="font-medium">{getSyncStatusDisplay()}</span>
-        {lastSyncTime && (
-          <span className="text-sm text-muted-foreground ml-2">
-            Last updated: {new Date(lastSyncTime).toLocaleString()}
-          </span>
-        )}
+    <div className="flex flex-col bg-white rounded-lg shadow mb-6">
+      <div className="flex justify-between items-center p-4">
+        <div className="flex items-center gap-2">
+          {getSyncStatusIcon()}
+          <span className="font-medium">{getSyncStatusDisplay()}</span>
+          {lastSyncTime && (
+            <span className="text-sm text-muted-foreground ml-2">
+              Last updated: {new Date(lastSyncTime).toLocaleString()}
+            </span>
+          )}
+        </div>
+        <div className="flex gap-2">
+          {syncDebugInfo && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowDebug(!showDebug)}
+            >
+              {showDebug ? (
+                <>
+                  <ChevronUp className="h-4 w-4 mr-1" />
+                  Hide Debug
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4 mr-1" />
+                  Show Debug
+                </>
+              )}
+            </Button>
+          )}
+          <Button onClick={openSyncModal} size="sm">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Sync Data
+          </Button>
+        </div>
       </div>
-      <Button onClick={openSyncModal} size="sm" className="ml-auto">
-        <RefreshCw className="mr-2 h-4 w-4" />
-        Sync Data
-      </Button>
+      
+      {showDebug && syncDebugInfo && (
+        <div className="px-4 pb-4 pt-0">
+          <div className="bg-gray-100 p-3 rounded-md overflow-x-auto">
+            <pre className="text-xs">{syncDebugInfo}</pre>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
