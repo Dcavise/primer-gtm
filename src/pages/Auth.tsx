@@ -25,7 +25,7 @@ const Auth: React.FC = () => {
   const [signupFullName, setSignupFullName] = useState('');
 
   // Get the return URL from location state or default to home
-  const from = location.state?.from?.pathname || '/real-estate-pipeline';
+  const from = location.state?.from?.pathname || '/';
 
   useEffect(() => {
     if (user && !loading) {
@@ -86,7 +86,7 @@ const Auth: React.FC = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Real Estate Pipeline</CardTitle>
+          <CardTitle className="text-2xl font-bold">Primer Dashboard</CardTitle>
           <CardDescription>Sign in to your account or create a new one</CardDescription>
         </CardHeader>
         <CardContent>

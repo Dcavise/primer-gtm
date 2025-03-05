@@ -110,7 +110,7 @@ const PropertyResearch: React.FC = () => {
             </TabsList>
             
             <TabsContent value="permits">
-              {permitsStatus !== SearchStatus.LOADING && permitAddress && (
+              {permitsStatus === SearchStatus.SUCCESS && permitAddress && (
                 <PermitList 
                   permits={permits} 
                   searchedAddress={permitAddress}
@@ -120,17 +120,18 @@ const PropertyResearch: React.FC = () => {
             </TabsContent>
             
             <TabsContent value="schools">
-              {schoolsStatus !== SearchStatus.LOADING && schoolsAddress && (
+              {schoolsStatus === SearchStatus.SUCCESS && schoolsAddress && (
                 <SchoolsList 
                   schools={schools} 
                   searchedAddress={schoolsAddress}
                   isLoading={schoolsStatus === SearchStatus.LOADING}
+                  radiusMiles={schoolsResponse?.radiusMiles || 5}
                 />
               )}
             </TabsContent>
             
             <TabsContent value="zoning">
-              {zoningStatus !== SearchStatus.LOADING && zoningAddress && (
+              {zoningStatus === SearchStatus.SUCCESS && zoningAddress && (
                 <ZoningList 
                   zoningData={zoningData} 
                   searchedAddress={zoningAddress}
