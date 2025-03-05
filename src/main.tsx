@@ -17,13 +17,13 @@ import ProtectedRoute from './components/ProtectedRoute.tsx'
 
 const router = createBrowserRouter([
   {
-    path: "/auth",
-    element: <Auth />
-  },
-  {
     path: "/",
     element: <App />,
     children: [
+      {
+        path: "auth",
+        element: <Auth />
+      },
       {
         index: true,
         element: <ProtectedRoute><Index /></ProtectedRoute>
