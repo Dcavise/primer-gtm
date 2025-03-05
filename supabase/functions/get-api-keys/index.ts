@@ -14,7 +14,6 @@ const API_KEYS = {
   greatschools: Deno.env.get('GREATSCHOOLS_API_KEY') || '',
   openai: Deno.env.get('OPENAI_API_KEY') || '',
   mapbox: Deno.env.get('MAPBOX_TOKEN') || '',
-  maps_platform_api: Deno.env.get('MAPS_PLATFORM_API_KEY') || '',
 };
 
 serve(async (req) => {

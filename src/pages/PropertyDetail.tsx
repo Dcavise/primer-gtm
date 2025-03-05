@@ -29,8 +29,7 @@ import {
   FolderOpen,
   Save,
   Edit,
-  X,
-  Map
+  X
 } from 'lucide-react';
 
 const PropertyDetail: React.FC = () => {
@@ -169,26 +168,16 @@ const PropertyDetail: React.FC = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
-            {property.address && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-xl flex items-center">
-                    <Map className="h-5 w-5 mr-2 text-blue-500" />
-                    Property Location
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center p-4 bg-gray-50 dark:bg-gray-900 rounded-md border border-border">
-                    <MapPin className="h-5 w-5 mr-2 text-blue-500" />
-                    <p className="text-muted-foreground">{property.address}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            
             <Card>
               <CardHeader>
-                <CardTitle className="text-xl">Property Information</CardTitle>
+                <CardTitle className="text-xl flex items-center justify-between">
+                  Property Information
+                  {property.market && (
+                    <Badge variant="outline" className="ml-2">
+                      {property.market}
+                    </Badge>
+                  )}
+                </CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {property.phase && (
