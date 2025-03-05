@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -32,7 +31,6 @@ export function SalesforceLeadsPage() {
   const [opportunitiesLastUpdated, setOpportunitiesLastUpdated] = useState<string | null>(null);
   const [showDetailedError, setShowDetailedError] = useState(false);
   const [showOpportunitiesDetailedError, setShowOpportunitiesDetailedError] = useState(false);
-  // Add debugging state
   const [debugInfo, setDebugInfo] = useState<{
     leadsQuery: string | null;
     opportunitiesQuery: string | null;
@@ -79,7 +77,6 @@ export function SalesforceLeadsPage() {
         query = query.eq('campus_id', campusId);
       }
       
-      // Store the query for debugging
       setDebugInfo(prev => ({
         ...prev,
         leadsQuery: `Fetching leads with campus_id: ${campusId || 'all'}`
@@ -92,8 +89,6 @@ export function SalesforceLeadsPage() {
       const typedLeads: SalesforceLead[] = data.map(lead => ({
         ...lead,
         is_converted: lead.converted,
-        converted_account_id: lead.converted_account_id || null,
-        converted_contact_id: lead.converted_contact_id || null,
         converted_opportunity_id: lead.converted_opportunity_id || null
       }));
       
@@ -123,12 +118,10 @@ export function SalesforceLeadsPage() {
         .select('*')
         .order('updated_at', { ascending: false });
       
-      // Filter by campus_id if provided
       if (campusId) {
         query = query.eq('campus_id', campusId);
       }
       
-      // Store the query for debugging
       setDebugInfo(prev => ({
         ...prev,
         opportunitiesQuery: `Fetching opportunities with campus_id: ${campusId || 'all'}`
@@ -170,12 +163,10 @@ export function SalesforceLeadsPage() {
         .select('*')
         .order('fellow_name', { ascending: true });
       
-      // Filter by campus_id if provided
       if (campusId) {
         query = query.eq('campus_id', campusId);
       }
       
-      // Store the query for debugging
       setDebugInfo(prev => ({
         ...prev,
         fellowsQuery: `Fetching fellows with campus_id: ${campusId || 'all'}`
@@ -235,7 +226,6 @@ export function SalesforceLeadsPage() {
       
       toast.success(`Successfully synced ${response.data.synced || 0} leads, matched ${response.data.matched || 0} with campuses, and synced ${syncedAccounts} accounts and ${syncedContacts} contacts`);
       
-      // Reload all data after sync
       fetchLeads(selectedCampusId || undefined);
       fetchCampuses();
     } catch (error: any) {
@@ -269,7 +259,6 @@ export function SalesforceLeadsPage() {
       
       toast.success(`Successfully synced ${response.data.synced || 0} opportunities`);
       
-      // Reload data after sync
       fetchOpportunities(selectedCampusId || undefined);
     } catch (error: any) {
       console.error('Error syncing Salesforce opportunities:', error);
@@ -321,7 +310,6 @@ export function SalesforceLeadsPage() {
       </header>
 
       <main className="container mx-auto px-4 md:px-8 py-8 max-w-5xl">
-        {/* Campus Filter */}
         <div className="mb-6 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
           <div className="w-full sm:w-72">
             <Select
@@ -354,7 +342,6 @@ export function SalesforceLeadsPage() {
           )}
         </div>
 
-        {/* Debug Information */}
         <Card className="mb-6 bg-gray-50">
           <CardHeader>
             <CardTitle>Debug Information</CardTitle>
@@ -381,7 +368,6 @@ export function SalesforceLeadsPage() {
           </CardContent>
           <CardFooter>
             <Button onClick={() => {
-              // Add a manual inspection function that logs the campus_id values directly from the database
               const inspectCampusIds = async () => {
                 const { data: leadsData } = await supabase.from('salesforce_leads').select('lead_id, campus_id').eq('campus_id', selectedCampusId || '');
                 const { data: oppsData } = await supabase.from('salesforce_opportunities').select('opportunity_id, campus_id').eq('campus_id', selectedCampusId || '');

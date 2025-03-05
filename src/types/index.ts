@@ -94,7 +94,7 @@ export interface Fellow {
   updated_at: string | null;
 }
 
-// Updated SalesforceLead interface with all required properties
+// Updated SalesforceLead interface without converted_account_id and converted_contact_id
 export interface SalesforceLead {
   id: string;
   lead_id: string;
@@ -108,8 +108,6 @@ export interface SalesforceLead {
   lead_source: string | null;
   preferred_campus: string | null;
   campus_id: string | null;
-  converted_account_id: string | null;
-  converted_contact_id: string | null;
   converted_opportunity_id: string | null;
   updated_at: string;
 }
