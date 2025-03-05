@@ -128,10 +128,6 @@ export const PhaseSelector: React.FC<PhaseSelectorProps> = ({
                   onValueChange(phase);
                   setOpen(false);
                 }}
-                className={cn(
-                  "cursor-pointer",
-                  value === phase ? "bg-accent text-accent-foreground" : ""
-                )}
               >
                 <div className="flex items-center w-full">
                   <Check

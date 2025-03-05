@@ -50,6 +50,7 @@ export async function getApiKey(keyName: string): Promise<string> {
     return data.key;
   } catch (error) {
     console.error(`Failed to retrieve ${keyName} API key:`, error);
-    throw error;
+    // Return a placeholder so the app doesn't crash completely
+    return "";
   }
 }

@@ -15,6 +15,11 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
   const navigate = useNavigate();
   
   const handleClick = () => {
+    if (!property.id) {
+      console.error('Property is missing ID');
+      return;
+    }
+    
     console.log('Navigating to property detail page with ID:', property.id);
     navigate(`/real-estate-pipeline/property/${property.id}`);
   };

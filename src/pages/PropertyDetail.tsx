@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -412,7 +411,7 @@ const PropertyDetail: React.FC = () => {
     if (isEditingPropertyInfo) {
       return (
         <PhaseSelector
-          value={propertyFormValues.phase}
+          value={propertyFormValues.phase || null}
           onValueChange={handlePhaseChange}
         />
       );
