@@ -52,7 +52,7 @@ const PropertyDetail: React.FC = () => {
   
   const [notesValue, setNotesValue] = useState('');
   const [propertyFormValues, setPropertyFormValues] = useState<Partial<RealEstateProperty>>({});
-  const [statusFormValues, setStatusFormValues] = useState<Partial<RealEateProperty>>({});
+  const [statusFormValues, setStatusFormValues] = useState<Partial<RealEstateProperty>>({});
   const [contactFormValues, setContactFormValues] = useState<Partial<RealEstateProperty>>({});
   const [leaseFormValues, setLeaseFormValues] = useState<Partial<RealEstateProperty>>({});
   
