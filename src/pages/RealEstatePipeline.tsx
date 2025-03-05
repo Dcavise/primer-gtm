@@ -6,6 +6,7 @@ import { PropertyDetailDialog } from '@/components/realestate/PropertyDetailDial
 import { RealEstateProperty, PropertyPhase } from '@/types/realEstate';
 import { LoadingState } from '@/components/LoadingState';
 import { Navbar } from '@/components/Navbar';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 // Define the phases in the specific order shown in the image
 const PHASES: PropertyPhase[] = [
@@ -48,6 +49,9 @@ const RealEstatePipeline: React.FC = () => {
   const { data: properties, isLoading, error } = useRealEstatePipeline();
   const [selectedProperty, setSelectedProperty] = useState<RealEstateProperty | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  
+  // Default open state for accordion - all groups initially expanded
+  const [defaultAccordionValue, setDefaultAccordionValue] = useState<string[]>(PHASE_GROUPS);
 
   // Group properties by phase_group and then by phase
   const groupedProperties = useMemo(() => {
@@ -124,6 +128,18 @@ const RealEstatePipeline: React.FC = () => {
     );
   }
 
+  // Count total properties in each group for display
+  const getGroupPropertyCount = (group: string) => {
+    let count = 0;
+    const phases = groupedProperties[group] || {};
+    
+    Object.keys(phases).forEach(phase => {
+      count += phases[phase]?.length || 0;
+    });
+    
+    return count;
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-gradient-to-r from-blue-600 to-blue-500 text-white py-8 px-6">
@@ -139,30 +155,43 @@ const RealEstatePipeline: React.FC = () => {
       </header>
 
       <main className="container mx-auto py-6">
-        {/* Phase Groups */}
-        {PHASE_GROUPS.map((phaseGroup) => {
-          // Get all phases for this group
-          const phasesByGroup = PHASES.filter(phase => PHASE_TO_GROUP[phase] === phaseGroup);
-          
-          // Only display groups that have defined phases
-          if (phasesByGroup.length === 0) return null;
-          
-          return (
-            <div key={phaseGroup} className="mb-8">
-              <h2 className="text-xl font-semibold mb-4 pb-2 border-b">{phaseGroup}</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-                {phasesByGroup.map(phase => (
-                  <PipelineColumn
-                    key={phase}
-                    title={phase}
-                    properties={groupedProperties[phaseGroup]?.[phase] || []}
-                    onPropertyClick={handlePropertyClick}
-                  />
-                ))}
-              </div>
-            </div>
-          );
-        })}
+        {/* Collapsible Phase Groups using Accordion */}
+        <Accordion type="multiple" defaultValue={defaultAccordionValue} className="space-y-4">
+          {PHASE_GROUPS.map((phaseGroup) => {
+            // Get all phases for this group
+            const phasesByGroup = PHASES.filter(phase => PHASE_TO_GROUP[phase] === phaseGroup);
+            
+            // Only display groups that have defined phases
+            if (phasesByGroup.length === 0) return null;
+            
+            const propertyCount = getGroupPropertyCount(phaseGroup);
+            
+            return (
+              <AccordionItem key={phaseGroup} value={phaseGroup} className="border rounded-lg overflow-hidden">
+                <AccordionTrigger className="px-4 py-2 bg-secondary/10 hover:bg-secondary/20">
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-xl font-semibold">{phaseGroup}</span>
+                    <span className="text-sm text-muted-foreground mr-3">
+                      {propertyCount} {propertyCount === 1 ? 'property' : 'properties'}
+                    </span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 py-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                    {phasesByGroup.map(phase => (
+                      <PipelineColumn
+                        key={phase}
+                        title={phase}
+                        properties={groupedProperties[phaseGroup]?.[phase] || []}
+                        onPropertyClick={handlePropertyClick}
+                      />
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            );
+          })}
+        </Accordion>
 
         {/* Property Detail Dialog */}
         <PropertyDetailDialog 
