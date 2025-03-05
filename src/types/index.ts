@@ -5,12 +5,11 @@ export interface Coordinates {
 }
 
 export interface PermitSearchParams {
-  top_right_lat?: number;
-  top_right_lng?: number;
-  bottom_left_lat?: number;
-  bottom_left_lng?: number;
+  top_right_lat: number;
+  top_right_lng: number;
+  bottom_left_lat: number;
+  bottom_left_lng: number;
   exact_address?: string;
-  address?: string;
 }
 
 export interface PermitLocation {
@@ -72,12 +71,7 @@ export interface AddressSearchResult {
   coordinates: Coordinates;
 }
 
-export enum SearchStatus {
-  IDLE = 'idle',
-  LOADING = 'loading',
-  SUCCESS = 'success',
-  ERROR = 'error'
-}
+export type SearchStatus = 'idle' | 'loading' | 'success' | 'error';
 
 export interface Campus {
   id: string;
@@ -100,6 +94,7 @@ export interface Fellow {
   updated_at: string | null;
 }
 
+// Updated SalesforceLead interface without converted_account_id and converted_contact_id
 export interface SalesforceLead {
   id: string;
   lead_id: string;
@@ -117,6 +112,7 @@ export interface SalesforceLead {
   updated_at: string;
 }
 
+// Updated SalesforceOpportunity interface with campus_id field
 export interface SalesforceOpportunity {
   id: string;
   opportunity_id: string;
@@ -129,6 +125,7 @@ export interface SalesforceOpportunity {
   campus_id: string | null;
 }
 
+// Updated SalesforceAccount to match actual structure
 export interface SalesforceAccount {
   id: string;
   account_id: string;

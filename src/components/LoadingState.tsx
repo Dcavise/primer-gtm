@@ -1,26 +1,35 @@
 
-import React from 'react';
 import { cn } from "@/lib/utils";
 
-export interface LoadingStateProps {
+interface LoadingStateProps {
+  className?: string;
   message?: string;
   showSpinner?: boolean;
-  className?: string;
 }
 
-export const LoadingState: React.FC<LoadingStateProps> = ({ 
-  message = 'Loading...', 
-  showSpinner = false,
-  className
-}) => {
+export const LoadingState = ({ className, message = "Loading...", showSpinner = false }: LoadingStateProps) => {
   return (
-    <div className={cn("flex flex-col items-center justify-center p-4", className)}>
+    <div className={cn("w-full flex flex-col gap-4", className)}>
       {showSpinner ? (
-        <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary mb-2"></div>
+        <div className="flex items-center space-x-2">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+          <span>{message}</span>
+        </div>
       ) : (
-        <div className="h-6 w-24 bg-slate-200 animate-pulse rounded mb-2"></div>
+        <div className="shimmer-bg h-8 w-3/4 rounded-md">
+          {message && <div className="sr-only">{message}</div>}
+        </div>
       )}
-      <p className="text-sm text-muted-foreground">{message}</p>
+      
+      {!showSpinner && (
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex flex-col gap-2">
+              <div className="shimmer-bg h-24 rounded-lg w-full"></div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
-};
+}

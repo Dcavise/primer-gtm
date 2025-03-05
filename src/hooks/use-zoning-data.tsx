@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SearchStatus } from "@/types";
 import { toast } from "sonner";
@@ -25,11 +24,11 @@ export interface ZoningData {
 
 export function useZoningData() {
   const [zoningData, setZoningData] = useState<ZoningData[]>([]);
-  const [status, setStatus] = useState<SearchStatus>(SearchStatus.IDLE);
+  const [status, setStatus] = useState<SearchStatus>("idle");
   const [searchedAddress, setSearchedAddress] = useState<string>("");
 
   const fetchZoningData = async (address: string) => {
-    setStatus(SearchStatus.LOADING);
+    setStatus("loading");
     
     try {
       console.log("Fetching zoning data for address:", address);
@@ -71,14 +70,14 @@ export function useZoningData() {
       
       setZoningData(formattedData);
       setSearchedAddress(address);
-      setStatus(SearchStatus.SUCCESS);
+      setStatus("success");
       
       toast.success("Zoning data retrieved", {
         description: "Showing zoning information for the specified location."
       });
     } catch (error) {
       console.error("Error in useZoningData:", error);
-      setStatus(SearchStatus.ERROR);
+      setStatus("error");
       setZoningData([]);
       toast.error("Error retrieving zoning data", {
         description: "There was a problem connecting to the zoning database. Please try again later."
@@ -88,7 +87,7 @@ export function useZoningData() {
 
   const reset = () => {
     setZoningData([]);
-    setStatus(SearchStatus.IDLE);
+    setStatus("idle");
     setSearchedAddress("");
   };
 

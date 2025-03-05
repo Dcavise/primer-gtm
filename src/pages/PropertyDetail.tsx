@@ -11,8 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import { FileUpload } from '@/components/FileUpload';
 import { FileList } from '@/components/FileList';
 import { Textarea } from '@/components/ui/textarea';
-import { PropertyComments } from '@/components/PropertyComments';
-import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { 
   ArrowLeft, 
@@ -31,14 +29,12 @@ import {
   FolderOpen,
   Save,
   Edit,
-  X,
-  LogIn
+  X
 } from 'lucide-react';
 
 const PropertyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [fileRefreshKey, setFileRefreshKey] = useState(0);
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [notesValue, setNotesValue] = useState('');
@@ -118,10 +114,6 @@ const PropertyDetail: React.FC = () => {
     }
   };
 
-  const handleLogin = () => {
-    navigate('/auth');
-  };
-
   if (isLoading) {
     return <LoadingState message="Loading property details..." />;
   }
@@ -158,15 +150,7 @@ const PropertyDetail: React.FC = () => {
             <h1 className="text-2xl md:text-3xl font-semibold truncate">
               {property.site_name || 'Unnamed Property'}
             </h1>
-            <div className="flex items-center gap-4">
-              {!user && (
-                <Button variant="secondary" size="sm" onClick={handleLogin}>
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Sign In
-                </Button>
-              )}
-              <Navbar />
-            </div>
+            <Navbar />
           </div>
           {property.address && (
             <div className="flex items-center text-white/80">
@@ -342,8 +326,6 @@ const PropertyDetail: React.FC = () => {
                 )}
               </CardContent>
             </Card>
-
-            <PropertyComments propertyId={property.id} />
           </div>
 
           <div className="space-y-6">
