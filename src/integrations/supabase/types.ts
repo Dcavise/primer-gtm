@@ -339,6 +339,17 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_weekly_lead_counts: {
+        Args: {
+          start_date: string
+          end_date: string
+          campus_filter?: string
+        }
+        Returns: {
+          week: string
+          lead_count: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

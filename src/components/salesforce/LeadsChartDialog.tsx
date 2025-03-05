@@ -1,72 +1,84 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose
+} from '@/components/ui/dialog';
+import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { WeeklyLeadCount } from '@/hooks/salesforce/types';
-import { formatDate } from '@/utils/format';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { format, parseISO } from 'date-fns';
 
 interface LeadsChartDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  data: WeeklyLeadCount[];
-  campusName: string | null;
+  weeklyLeadCounts: WeeklyLeadCount[];
+  selectedCampusName: string | null;
 }
 
 export const LeadsChartDialog: React.FC<LeadsChartDialogProps> = ({
   open,
   onOpenChange,
-  data,
-  campusName
+  weeklyLeadCounts,
+  selectedCampusName
 }) => {
-  // Format dates for better display
-  const formattedData = data.map(item => ({
+  // Format the data for the chart
+  const chartData = weeklyLeadCounts.map(item => ({
     ...item,
-    formattedWeek: formatDate(item.week)
+    formattedWeek: format(parseISO(item.week), 'MMM d')
   }));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Weekly Lead Generation</DialogTitle>
+          <DialogTitle className="flex justify-between items-center">
+            <span>Weekly Lead Generation {selectedCampusName ? `for ${selectedCampusName}` : '(All Campuses)'}</span>
+            <DialogClose asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0" aria-label="Close">
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogClose>
+          </DialogTitle>
         </DialogHeader>
-        <div className="text-sm text-muted-foreground mb-4">
-          {campusName ? `Data for ${campusName}` : 'Data for all campuses'}
-        </div>
-        
-        <div className="h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={formattedData}
-              margin={{ top: 5, right: 30, left: 20, bottom: 25 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="formattedWeek" 
-                angle={-45}
-                textAnchor="end"
-                height={60}
-              />
-              <YAxis />
-              <Tooltip 
-                formatter={(value) => [`${value} leads`, 'Count']}
-                labelFormatter={(value) => `Week of ${value}`}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="count" 
-                stroke="#8884d8" 
-                activeDot={{ r: 8 }} 
-                name="Leads"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-        
-        <div className="mt-4">
-          <p className="text-sm text-muted-foreground">
-            This chart shows the number of new leads generated each week for the past 4 weeks.
-          </p>
+
+        <div className="h-[300px] mt-4">
+          {weeklyLeadCounts.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="formattedWeek" 
+                  tickMargin={10}
+                />
+                <YAxis 
+                  allowDecimals={false}
+                  tickMargin={10}
+                />
+                <Tooltip 
+                  formatter={(value) => [`${value} leads`, 'Count']}
+                  labelFormatter={(label) => `Week of ${label}`}
+                />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="count" 
+                  name="New Leads" 
+                  stroke="#4f46e5" 
+                  strokeWidth={2} 
+                  activeDot={{ r: 8 }} 
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-full flex items-center justify-center text-gray-500">
+              No lead data available for this period
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

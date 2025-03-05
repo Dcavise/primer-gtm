@@ -96,13 +96,15 @@ export const useStats = (selectedCampusId: string | null) => {
       const fourWeeksAgo = new Date();
       fourWeeksAgo.setDate(today.getDate() - 28); // 4 weeks = 28 days
 
-      let weeklyLeadsQuery = supabase.rpc('get_weekly_lead_counts', {
-        start_date: fourWeeksAgo.toISOString().split('T')[0],
-        end_date: today.toISOString().split('T')[0],
-        campus_filter: selectedCampusId
-      });
-
-      const { data: weeklyLeadData, error: weeklyLeadError } = await weeklyLeadsQuery;
+      // Call the custom SQL function to get weekly lead counts
+      const { data: weeklyLeadData, error: weeklyLeadError } = await supabase.rpc(
+        'get_weekly_lead_counts',  // Fixed: Use the correctly named function
+        {
+          start_date: fourWeeksAgo.toISOString().split('T')[0],
+          end_date: today.toISOString().split('T')[0],
+          campus_filter: selectedCampusId
+        }
+      );
 
       if (weeklyLeadError) {
         console.error('Error fetching weekly lead counts:', weeklyLeadError);
@@ -162,13 +164,18 @@ export const useStats = (selectedCampusId: string | null) => {
           setWeeklyLeadCounts(weeklyCountsArray);
         }
       } else {
-        // Use the results from the RPC
-        const formattedWeeklyData = weeklyLeadData.map(item => ({
-          week: item.week,
-          count: Number(item.lead_count)
-        }));
-        
-        setWeeklyLeadCounts(formattedWeeklyData);
+        // Use the results from the RPC - fix to handle possibly null data
+        if (weeklyLeadData) {
+          const formattedWeeklyData = weeklyLeadData.map(item => ({
+            week: item.week,
+            count: Number(item.lead_count)
+          }));
+          
+          setWeeklyLeadCounts(formattedWeeklyData);
+        } else {
+          // If no data is returned, set empty array
+          setWeeklyLeadCounts([]);
+        }
       }
       
       // Fetch active opportunities count - using campus_id directly
