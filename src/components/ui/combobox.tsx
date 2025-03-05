@@ -1,6 +1,6 @@
 
 import * as React from "react";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -48,35 +48,57 @@ export function ComboBox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn("w-full justify-between", className)}
+          className={cn("w-full justify-between border-input", className)}
         >
           {value
             ? options.find((option) => option.value === value)?.label
             : placeholder}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <span className="ml-2 h-4 w-4 shrink-0 opacity-50">▼</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="p-0">
+      <PopoverContent className="p-0 w-full min-w-[200px]" align="start">
         <Command>
           <CommandInput placeholder={placeholder} />
           <CommandEmpty>{emptyMessage}</CommandEmpty>
           <CommandGroup>
+            <CommandItem
+              key="none"
+              value="none"
+              onSelect={() => {
+                onValueChange("");
+                setOpen(false);
+              }}
+            >
+              <Check
+                className={cn(
+                  "mr-2 h-4 w-4",
+                  !value ? "opacity-100" : "opacity-0"
+                )}
+              />
+              --None--
+            </CommandItem>
             {options.map((option) => (
               <CommandItem
                 key={option.value}
                 value={option.value}
-                onSelect={(currentValue) => {
-                  onValueChange(currentValue === value ? "" : option.value);
+                onSelect={() => {
+                  onValueChange(option.value);
                   setOpen(false);
                 }}
+                className={cn(
+                  "cursor-pointer",
+                  value === option.value ? "bg-accent text-accent-foreground" : ""
+                )}
               >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    value === option.value ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                {option.label}
+                <div className="flex items-center w-full">
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === option.value ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  <span>{option.label}</span>
+                </div>
               </CommandItem>
             ))}
           </CommandGroup>

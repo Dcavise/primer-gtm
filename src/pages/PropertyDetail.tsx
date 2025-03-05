@@ -16,6 +16,7 @@ import MapEmbed from '@/components/MapEmbed';
 import { Input } from '@/components/ui/input';
 import StageProgressBar, { Stage } from '@/components/StageProgressBar';
 import CommentsSection from '@/components/CommentsSection';
+import PhaseSelector, { VALID_PHASES } from '@/components/realestate/PhaseSelector';
 import { 
   ArrowLeft, 
   MapPin, 
@@ -156,6 +157,10 @@ const PropertyDetail: React.FC = () => {
   const handlePropertyInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setPropertyFormValues(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handlePhaseChange = (value: string) => {
+    setPropertyFormValues(prev => ({ ...prev, phase: value }));
   };
 
   const handleStatusInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -514,11 +519,9 @@ const PropertyDetail: React.FC = () => {
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Phase</p>
                   {isEditingPropertyInfo ? (
-                    <Input 
-                      name="phase" 
-                      value={propertyFormValues.phase} 
-                      onChange={handlePropertyInputChange}
-                      placeholder="Enter phase"
+                    <PhaseSelector
+                      value={propertyFormValues.phase}
+                      onValueChange={handlePhaseChange}
                     />
                   ) : (
                     <p className="font-medium">{property.phase || 'Not specified'}</p>

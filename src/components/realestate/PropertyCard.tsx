@@ -5,36 +5,7 @@ import { CalendarDays, Home, MapPin } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { RealEstateProperty } from '@/types/realEstate';
-
-// Function to get the appropriate color class based on the phase
-const getPhaseColorClass = (phase: string | null): string => {
-  if (!phase) return 'bg-gray-100 text-gray-800';
-  
-  switch(phase) {
-    case '0. New Site':
-      return 'bg-gray-200 text-gray-800';
-    case '1. Initial Diligence':
-      return 'bg-[#1F77B4] text-white';
-    case '2. Survey':
-      return 'bg-[#FF7F0E] text-white';
-    case '3. Test Fit':
-      return 'bg-[#9467BD] text-white';
-    case '4. Plan Production':
-      return 'bg-[#2CA02C] text-white';
-    case '5. Permitting':
-      return 'bg-[#1F77B4] text-white';
-    case '6. Construction':
-      return 'bg-[#495057] text-white';
-    case '7. Set Up':
-      return 'bg-[#2CA02C] text-white';
-    case 'Hold':
-      return 'bg-amber-800 text-white';
-    case 'Deprioritize':
-      return 'bg-gray-700 text-white';
-    default:
-      return 'bg-secondary text-secondary-foreground';
-  }
-};
+import { getPhaseColorClass } from './PhaseSelector';
 
 interface PropertyCardProps {
   property: RealEstateProperty;
