@@ -1,4 +1,3 @@
-
 export interface Coordinates {
   lat: number;
   lng: number;
@@ -125,7 +124,6 @@ export interface SalesforceOpportunity {
   created_at: string;
   updated_at: string;
   preferred_campus: string | null;
-  lead_id?: string;
 }
 
 // Updated SalesforceAccount to match actual structure

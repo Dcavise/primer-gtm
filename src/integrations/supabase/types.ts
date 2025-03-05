@@ -131,7 +131,6 @@ export type Database = {
           close_date: string | null
           created_at: string
           id: string
-          lead_id: string
           opportunity_id: string
           opportunity_name: string | null
           preferred_campus: string | null
@@ -143,7 +142,6 @@ export type Database = {
           close_date?: string | null
           created_at?: string
           id?: string
-          lead_id: string
           opportunity_id: string
           opportunity_name?: string | null
           preferred_campus?: string | null
@@ -155,22 +153,13 @@ export type Database = {
           close_date?: string | null
           created_at?: string
           id?: string
-          lead_id?: string
           opportunity_id?: string
           opportunity_name?: string | null
           preferred_campus?: string | null
           stage?: string | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_lead"
-            columns: ["lead_id"]
-            isOneToOne: false
-            referencedRelation: "salesforce_leads"
-            referencedColumns: ["lead_id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
