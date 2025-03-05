@@ -23,16 +23,18 @@ const MarketExplorer = () => {
   const { campuses, fetchCampuses } = useCampuses();
   const mapInitialized = useRef(false);
   const [mapError, setMapError] = useState<string | null>(null);
-  const tokenFetchedRef = useRef(false);
+  const tokenFetchInProgress = useRef(false);
   
   // Fetch API key only once when component mounts
   useEffect(() => {
+    // Stop multiple simultaneous fetch attempts
+    if (tokenFetchInProgress.current || mapboxToken) return;
+    
     const fetchToken = async () => {
-      if (tokenFetchedRef.current) return;
+      tokenFetchInProgress.current = true;
       
       try {
-        console.log("Fetching Mapbox token (first time)");
-        tokenFetchedRef.current = true;
+        console.log("Fetching Mapbox token (ONCE ONLY)");
         const token = await getApiKey('mapbox');
         
         if (!token) {
@@ -47,38 +49,61 @@ const MarketExplorer = () => {
         console.error("Error fetching Mapbox token:", error);
         setMapError("Failed to fetch Mapbox token. Please check your connection and try again.");
         setIsLoading(false);
+      } finally {
+        // Even if there's an error, we've completed the fetch attempt
+        tokenFetchInProgress.current = false;
       }
     };
 
     fetchToken();
-  }, []);
+    
+    // Cleanup function
+    return () => {
+      // If component unmounts during fetch, mark as not in progress
+      tokenFetchInProgress.current = false;
+    };
+  }, []); // Empty dependency array ensures this runs once on mount
   
   // Fetch campuses in a separate effect
   useEffect(() => {
+    let isMounted = true;
+    
     const loadCampuses = async () => {
       try {
         await fetchCampuses();
-        console.log("Campuses loaded successfully");
+        if (isMounted) {
+          console.log("Campuses loaded successfully");
+        }
       } catch (error) {
-        console.error("Error fetching campuses:", error);
-        toast.error("Failed to fetch campus data", {
-          description: "Please check your connection and try again"
-        });
+        if (isMounted) {
+          console.error("Error fetching campuses:", error);
+          toast.error("Failed to fetch campus data", {
+            description: "Please check your connection and try again"
+          });
+        }
       }
     };
     
     loadCampuses();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [fetchCampuses]);
 
-  // Initialize map once we have the token
+  // Initialize map once we have the token - with strict checks to prevent multiple initializations
   useEffect(() => {
-    if (!mapboxToken || !mapContainer.current || mapInitialized.current) return;
+    // Only proceed if we have a token, container ref, and map is not already initialized
+    if (!mapboxToken || !mapContainer.current || mapInitialized.current || map.current) return;
     
     try {
-      console.log("Initializing Mapbox map...");
+      console.log("Initializing Mapbox map (ONCE ONLY)...");
       
       // Set the access token for mapboxgl
       mapboxgl.accessToken = mapboxToken;
+      
+      // Mark as initialized before creating map to prevent race conditions
+      mapInitialized.current = true;
       
       // Create map instance
       const newMap = new mapboxgl.Map({
@@ -98,9 +123,8 @@ const MarketExplorer = () => {
         'top-right'
       );
 
-      // Set map reference and mark as initialized
+      // Set map reference
       map.current = newMap;
-      mapInitialized.current = true;
 
       // Wait for map to load before updating state
       newMap.on('load', () => {
@@ -112,7 +136,7 @@ const MarketExplorer = () => {
         });
         
         // If "All Campuses" is selected, create a demo map with sample data points
-        if (selectedMarket === "default") {
+        if (selectedMarket === "default" && newMap) {
           createDemoMap(newMap);
         }
       });
@@ -127,6 +151,8 @@ const MarketExplorer = () => {
       console.error("Error initializing map:", error);
       setMapError(`Failed to load map: ${error instanceof Error ? error.message : "Unknown error"}`);
       setIsLoading(false);
+      // Reset the initialization flag if there was an error
+      mapInitialized.current = false;
     }
 
     // Cleanup map instance when component unmounts
@@ -138,10 +164,12 @@ const MarketExplorer = () => {
         mapInitialized.current = false;
       }
     };
-  }, [mapboxToken, selectedMarket]);
+  }, [mapboxToken, selectedMarket, createDemoMap]);
 
   // Memoize createDemoMap to prevent unnecessary re-creation
   const createDemoMap = useCallback((mapInstance: mapboxgl.Map) => {
+    if (!mapInstance) return;
+    
     console.log("Creating demo map for All Campuses view");
     
     // Clear existing markers
@@ -194,7 +222,7 @@ const MarketExplorer = () => {
     });
   }, []);
 
-  // Update map view when selected market changes
+  // Update map view when selected market changes - without reinitializing the map
   useEffect(() => {
     if (!map.current || !mapInitialized.current) return;
     
@@ -211,9 +239,7 @@ const MarketExplorer = () => {
       
       if (selectedMarket === "default") {
         // If "All Campuses" is selected, show demo map
-        if (map.current && map.current.loaded()) {
-          createDemoMap(map.current);
-        }
+        createDemoMap(map.current);
       } else {
         const selectedCampus = campuses.find(c => c.campus_id === selectedMarket);
         
@@ -259,7 +285,7 @@ const MarketExplorer = () => {
         }
       }
       
-      // Animate to the new location
+      // Animate to the new location if map exists
       if (map.current) {
         console.log("Flying to coordinates:", coordinates, "with zoom:", zoom);
         map.current.flyTo({
