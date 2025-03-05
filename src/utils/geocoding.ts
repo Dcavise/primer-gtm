@@ -1,5 +1,4 @@
-
-import { getApiKey, GOOGLE_MAPS_API_KEY } from "@/services/api-config";
+import { getApiKey } from "@/services/api-config";
 import { toast } from "sonner";
 import mapboxgl from "mapbox-gl";
 
@@ -20,87 +19,20 @@ export async function geocodeAddress(address: string): Promise<GeocodingResult |
   }
   
   try {
-    // Primarily use Google Maps for geocoding
-    const googleResult = await geocodeWithGoogleMaps(address);
-    if (googleResult) {
-      return googleResult;
+    // Use Mapbox for geocoding
+    const result = await geocodeWithMapbox(address);
+    
+    if (!result) {
+      throw new Error("Geocoding failed");
     }
     
-    // Only fall back to Mapbox if Google Maps fails
-    console.warn("Google Maps geocoding failed, trying Mapbox as fallback");
-    try {
-      const mapboxResult = await geocodeWithMapbox(address);
-      if (mapboxResult) {
-        return mapboxResult;
-      }
-    } catch (error) {
-      console.error("Mapbox fallback also failed:", error);
-    }
-    
-    // If we get here, both services failed
-    throw new Error("All geocoding services failed");
-    
+    return result;
   } catch (error) {
     console.error("Geocoding error:", error);
     toast.error("Could not find this address", {
       description: "Please check the address and try again"
     });
     return null;
-  }
-}
-
-async function geocodeWithGoogleMaps(address: string): Promise<GeocodingResult | null> {
-  try {
-    // Try to get the Google Maps API key securely from Supabase
-    let apiKey = GOOGLE_MAPS_API_KEY; // Start with fallback as the default
-    
-    try {
-      // First try to get the API key from the edge function
-      const secureKey = await getApiKey('google_maps');
-      if (secureKey && secureKey.trim() !== '') {
-        console.log("Successfully retrieved Google Maps API key from edge function");
-        apiKey = secureKey;
-      } else {
-        console.warn("Empty Google Maps API key received from edge function, using fallback");
-      }
-    } catch (error) {
-      console.warn("Failed to get Google Maps API key from edge function, using fallback:", error);
-      // We're already using the fallback as default, so no need to do anything here
-    }
-    
-    if (!apiKey) {
-      throw new Error("No Google Maps API key available");
-    }
-    
-    console.log("Geocoding address with Google Maps:", address);
-    const encodedAddress = encodeURIComponent(address);
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${apiKey}`;
-
-    const response = await fetch(url);
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Google Maps API returned status ${response.status}: ${errorText}`);
-    }
-    
-    const data = await response.json();
-
-    if (data.status === "OK" && data.results && data.results.length > 0) {
-      const result = data.results[0];
-      const formattedAddress = result.formatted_address;
-      const coordinates: Coordinates = {
-        lat: result.geometry.location.lat,
-        lng: result.geometry.location.lng,
-      };
-
-      console.log("Successfully geocoded with Google Maps:", formattedAddress, coordinates);
-      return { address: formattedAddress, coordinates };
-    } else {
-      console.error("Google Maps geocoding failed:", data.status, data);
-      return null;
-    }
-  } catch (error) {
-    console.error("Google Maps geocoding error:", error);
-    return null; // Return null instead of throwing to allow fallback
   }
 }
 
@@ -114,7 +46,6 @@ async function geocodeWithMapbox(address: string): Promise<GeocodingResult | nul
       }
     } catch (error) {
       console.error("Error fetching Mapbox token:", error);
-      // No fallback for Mapbox token
       throw error;
     }
     

@@ -58,9 +58,3 @@ export async function getApiKey(keyType: 'zoneomics' | 'census' | 'google_maps' 
 
 // Google Sheets Service Account Email
 export const GOOGLE_SHEETS_SERVICE_ACCOUNT_EMAIL = "primer-sheets-sync@primer-sheets-379223.iam.gserviceaccount.com";
-
-// Default placeholder values (will be replaced with actual values from Supabase)
-// These are used to maintain backward compatibility during the transition and as fallbacks
-export const API_KEY = "9287beef057a695d64806257059567fbee26524d"; // Will be deprecated
-export const CENSUS_API_KEY = "9cc42f8030aeecf163f664dde9ad2167f9a41a5b"; // Will be deprecated
-export const GOOGLE_MAPS_API_KEY = "AIzaSyCPAIVrJFBNaO9gMtvHwKfzUwqS1WUkz3c"; // Will be deprecated
