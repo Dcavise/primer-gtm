@@ -6,19 +6,28 @@ import App from './App.tsx'
 import './index.css'
 import Fellows from './pages/Fellows.tsx'
 import Campuses from './pages/Campuses.tsx'
+import Index from './pages/Index.tsx'
+import NotFound from './pages/NotFound.tsx'
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
-  },
-  {
-    path: "/fellows",
-    element: <Fellows />,
-  },
-  {
-    path: "/campuses",
-    element: <Campuses />,
+    children: [
+      {
+        index: true,
+        element: <Index />
+      },
+      {
+        path: "fellows",
+        element: <Fellows />
+      },
+      {
+        path: "campuses",
+        element: <Campuses />
+      }
+    ],
+    errorElement: <NotFound />
   }
 ]);
 
