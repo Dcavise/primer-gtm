@@ -1,16 +1,15 @@
+
 import { useState, useEffect } from "react";
 import { SearchForm } from "@/components/SearchForm";
 import { PermitList } from "@/components/PermitList";
 import { ZoningList } from "@/components/ZoningList";
 import { SchoolsList } from "@/components/SchoolsList";
-import { PropertySummary } from "@/components/PropertySummary";
 import { usePermits } from "@/hooks/use-permits";
 import { useZoningData } from "@/hooks/use-zoning-data";
 import { useSchoolsData } from "@/hooks/use-schools-data";
-import { usePropertySummary } from "@/hooks/use-property-summary";
 import { motion } from "framer-motion";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { FileTextIcon, MapIcon, School, SearchIcon, ClipboardIcon } from "lucide-react";
+import { FileTextIcon, MapIcon, School, SearchIcon } from "lucide-react";
 import { Permit } from "@/types";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
@@ -33,80 +32,21 @@ const Index = () => {
   const { schools, status: schoolsStatus, searchedAddress: schoolsAddress, fetchSchoolsData, reset: resetSchools } = useSchoolsData();
   const isSearchingSchools = schoolsStatus === "loading";
 
-  // Property summary data
-  const { summary, status: summaryStatus, searchedAddress: summaryAddress, generateSummary, reset: resetSummary } = usePropertySummary();
-  const isGeneratingSummary = summaryStatus === "loading";
-
   // Geocoded coordinates
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
 
   // Consolidated state
   const [userAddress, setUserAddress] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [activeSection, setActiveSection] = useState<"summary" | "permits" | "zoning" | "schools" | "property-research">("summary");
+  const [activeSection, setActiveSection] = useState<"permits" | "zoning" | "schools">("permits");
   
   // Determine if any data is loading
-  const isAnyDataLoading = isSearchingPermits || isSearchingZoning || isSearchingSchools || isGeneratingSummary;
+  const isAnyDataLoading = isSearchingPermits || isSearchingZoning || isSearchingSchools;
   
   // Determine the current displayed address (prioritize the active section's address)
   const displayedAddress = activeSection === "permits" ? permitAddress : 
                           activeSection === "zoning" ? zoningAddress :
-                          activeSection === "schools" ? schoolsAddress : 
-                          summaryAddress || userAddress;
-
-  // Keep track of API call completion
-  const [apiCallsStatus, setApiCallsStatus] = useState({
-    permits: false,
-    zoning: false,
-    schools: false
-  });
-
-  // Check if all API calls are complete and data is ready for summary generation
-  useEffect(() => {
-    const allComplete = apiCallsStatus.permits && 
-                        apiCallsStatus.zoning && 
-                        apiCallsStatus.schools;
-
-    // Generate summary only when all data is fetched AND we have an address
-    if (allComplete && userAddress && !summary && summaryStatus !== "loading") {
-      console.log("All API calls complete, generating summary for:", userAddress);
-      console.log("Using current zoning data:", zoningData);
-      generateSummary(userAddress, permits, zoningData, null, schools);
-    }
-  }, [apiCallsStatus, userAddress, permits, zoningData, schools, summary, summaryStatus, generateSummary]);
-
-  // Reset API call status when starting a new search
-  useEffect(() => {
-    if (isSearching) {
-      setApiCallsStatus({
-        permits: false,
-        zoning: false,
-        schools: false
-      });
-      
-      // Reset the summary when starting a new search
-      resetSummary();
-    }
-  }, [isSearching, resetSummary]);
-
-  // Update API call status when individual data fetches complete
-  useEffect(() => {
-    if (permitStatus === "success" || permitStatus === "error") {
-      setApiCallsStatus(prev => ({ ...prev, permits: true }));
-    }
-  }, [permitStatus]);
-
-  useEffect(() => {
-    if (zoningStatus === "success" || zoningStatus === "error") {
-      setApiCallsStatus(prev => ({ ...prev, zoning: true }));
-    }
-  }, [zoningStatus]);
-
-  useEffect(() => {
-    if (schoolsStatus === "success" || schoolsStatus === "error") {
-      setApiCallsStatus(prev => ({ ...prev, schools: true }));
-    }
-  }, [schoolsStatus]);
+                          schoolsAddress || userAddress;
 
   const handleSearchAllData = async (params: any, address: string) => {
     // First, reset everything
@@ -115,7 +55,6 @@ const Index = () => {
     resetPermits();
     resetZoning();
     resetSchools();
-    resetSummary();
     setCoordinates(null);
     
     // Then start the new search
@@ -140,11 +79,8 @@ const Index = () => {
         fetchSchoolsData(params, address)
       ]);
       
-      // Set active section to summary first
-      setActiveSection("summary");
-      
-      // Summary generation is now handled by the useEffect above
-      // after all API calls complete
+      // Set active section to permits first
+      setActiveSection("permits");
       
       toast.success("Property research complete", {
         description: "All available data has been retrieved for this location."
@@ -156,14 +92,6 @@ const Index = () => {
       });
     } finally {
       setIsSearching(false);
-    }
-  };
-
-  // Function to manually generate summary if not done automatically
-  const handleGenerateSummary = () => {
-    if (displayedAddress) {
-      resetSummary();
-      generateSummary(displayedAddress, permits, zoningData, null, schools);
     }
   };
 
@@ -247,16 +175,12 @@ const Index = () => {
         
         {displayedAddress && (
           <Tabs 
-            defaultValue="summary" 
+            defaultValue="permits" 
             value={activeSection} 
             onValueChange={(value) => setActiveSection(value as any)}
             className="mt-6"
           >
             <TabsList className="bg-background border-b w-full justify-start overflow-x-auto">
-              <TabsTrigger value="summary" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                <ClipboardIcon className="h-4 w-4 mr-2" />
-                Summary
-              </TabsTrigger>
               <TabsTrigger value="permits" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
                 <FileTextIcon className="h-4 w-4 mr-2" />
                 Permits
@@ -270,17 +194,6 @@ const Index = () => {
                 Schools
               </TabsTrigger>
             </TabsList>
-            
-            <TabsContent value="summary" className="py-6 animate-in fade-in-50">
-              <PropertySummary
-                summary={summary}
-                isLoading={isGeneratingSummary}
-                searchedAddress={displayedAddress}
-                onGenerateSummary={handleGenerateSummary}
-                schools={schools}
-                coordinates={coordinates}
-              />
-            </TabsContent>
             
             <TabsContent value="permits" className="py-6 animate-in fade-in-50">
               <PermitList 
