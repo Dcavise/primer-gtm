@@ -7,34 +7,47 @@ export interface Coordinates {
   lng: number;
 }
 
-// Function to geocode an address using a simple mocked implementation
+// Function to geocode an address using Google Maps API
 export const geocodeAddress = async (address: string): Promise<{ 
   address: string;
   coordinates: Coordinates;
 } | null> => {
   try {
-    // Since we've removed Mapbox implementation, we'll use a simple mock
-    // In a real implementation, this would call a geocoding service
+    console.log(`Geocoding address: ${address}`);
     
-    // Create a deterministic coordinate based on the address string
-    // This is just for demo purposes - in reality you would use a real geocoding service
-    const mockLat = 40 + (address.length % 10) * 0.1;
-    const mockLng = -74 + (address.charCodeAt(0) % 10) * 0.1;
+    // Make API request to our supabase function that wraps Google Maps API
+    const response = await fetch(`https://nwyyfupafwpjapozjqmz.supabase.co/functions/v1/geocode-address`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ address })
+    });
     
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Geocoding API error: ${response.status} - ${errorText}`);
+    }
+    
+    const result = await response.json();
+    
+    if (!result || !result.coordinates) {
+      throw new Error("No results found for this address");
+    }
+    
+    console.log(`Successfully geocoded address to: ${result.formattedAddress} (${result.coordinates.lat}, ${result.coordinates.lng})`);
     
     return {
-      address: address,
+      address: result.formattedAddress || address,
       coordinates: {
-        lat: mockLat,
-        lng: mockLng
+        lat: result.coordinates.lat,
+        lng: result.coordinates.lng
       }
     };
   } catch (error) {
     console.error("Error geocoding address:", error);
     toast.error("Geocoding failed", {
-      description: "Could not find coordinates for the provided address."
+      description: "Could not find coordinates for the provided address. Please verify the address and try again."
     });
     return null;
   }

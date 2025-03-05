@@ -82,8 +82,8 @@ const PropertyResearch = () => {
           }, geocodingResult.address),
           fetchZoningData(geocodingResult.address),
           fetchSchoolsData({
-            lat: geocodingResult.coordinates.lat,  // Fix coordinate names
-            lon: geocodingResult.coordinates.lng  // Fix coordinate names
+            lat: geocodingResult.coordinates.lat,
+            lon: geocodingResult.coordinates.lng
           }, geocodingResult.address)
         ]);
         
