@@ -22,50 +22,88 @@ const PHASES: PropertyPhase[] = [
   'Deprioritize'
 ];
 
+// Define the phase groups and their display order
+const PHASE_GROUPS = [
+  'Diligence',
+  'Pre Construction',
+  'Construction',
+  'Set Up',
+  'Other'
+];
+
 const RealEstatePipeline: React.FC = () => {
   const { data: properties, isLoading, error } = useRealEstatePipeline();
   const [selectedProperty, setSelectedProperty] = useState<RealEstateProperty | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // Group properties by phase
+  // Group properties by phase_group and then by phase
   const groupedProperties = useMemo(() => {
     if (!properties) return {};
 
-    // First get all unique phases from actual data
-    const uniquePhases = new Set<string>();
-    properties.forEach(property => {
-      if (property.phase) {
-        uniquePhases.add(property.phase);
-      }
-    });
-
-    // Create initial structure with standard phases
-    const grouped: Record<string, RealEstateProperty[]> = {};
+    // Create a structure to hold properties grouped by phase_group and then by phase
+    const grouped: Record<string, Record<string, RealEstateProperty[]>> = {};
     
-    // Add standard phases first in order
-    PHASES.forEach(phase => {
-      grouped[phase] = [];
+    // Initialize phase groups
+    PHASE_GROUPS.forEach(group => {
+      grouped[group] = {};
     });
-
-    // Then add any custom phases found in the data that aren't in our predefined list
-    Array.from(uniquePhases).forEach(phase => {
-      if (!grouped[phase]) {
-        grouped[phase] = [];
+    
+    // Add any custom phase groups found in the data that aren't in our predefined list
+    properties.forEach(property => {
+      const phaseGroup = property.phase_group || 'Unspecified';
+      if (!grouped[phaseGroup]) {
+        grouped[phaseGroup] = {};
       }
     });
-
+    
+    // Initialize phases within each group
+    PHASES.forEach(phase => {
+      // Find which group this phase belongs to
+      let group = 'Unspecified';
+      if (['0. New Site', '1. Initial Diligence', '2. Survey', '3. Test Fit'].includes(phase)) {
+        group = 'Diligence';
+      } else if (['4. Plan Production', '5. Permitting'].includes(phase)) {
+        group = 'Pre Construction';
+      } else if (phase === '6. Construction') {
+        group = 'Construction';
+      } else if (phase === '7. Set Up') {
+        group = 'Set Up';
+      } else if (['Hold', 'Deprioritize'].includes(phase)) {
+        group = 'Other';
+      }
+      
+      if (grouped[group]) {
+        grouped[group][phase] = [];
+      }
+    });
+    
     // Add an "Unspecified" category for properties without a phase
-    grouped["Unspecified"] = [];
-
+    Object.keys(grouped).forEach(group => {
+      grouped[group]["Unspecified"] = [];
+    });
+    
     // Now populate the groups
     properties.forEach(property => {
-      if (property.phase) {
-        grouped[property.phase].push(property);
+      const phaseGroup = property.phase_group || 'Unspecified';
+      const phase = property.phase || 'Unspecified';
+      
+      // If this phase group exists in our structure
+      if (grouped[phaseGroup]) {
+        // If this phase doesn't exist in this group yet, create it
+        if (!grouped[phaseGroup][phase]) {
+          grouped[phaseGroup][phase] = [];
+        }
+        
+        // Add the property to its phase within its group
+        grouped[phaseGroup][phase].push(property);
       } else {
-        grouped["Unspecified"].push(property);
+        // If we encounter a phase group we haven't accounted for
+        grouped['Unspecified'] = grouped['Unspecified'] || {};
+        grouped['Unspecified'][phase] = grouped['Unspecified'][phase] || [];
+        grouped['Unspecified'][phase].push(property);
       }
     });
-
+    
     return grouped;
   }, [properties]);
 
@@ -102,32 +140,61 @@ const RealEstatePipeline: React.FC = () => {
       </header>
 
       <main className="container mx-auto py-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-          {Object.entries(groupedProperties)
-            .sort(([phaseA], [phaseB]) => {
-              // Sort columns according to the predefined order
-              const indexA = PHASES.indexOf(phaseA as PropertyPhase);
-              const indexB = PHASES.indexOf(phaseB as PropertyPhase);
-              
-              // Place predefined phases first in order, then unknown phases, then "Unspecified" last
-              if (indexA === -1 && indexB === -1) {
-                // Both are custom phases, sort alphabetically
-                return phaseA === "Unspecified" ? 1 : phaseB === "Unspecified" ? -1 : phaseA.localeCompare(phaseB);
+        {/* Phase Groups */}
+        {PHASE_GROUPS.map((phaseGroup) => (
+          groupedProperties[phaseGroup] && Object.keys(groupedProperties[phaseGroup]).length > 0 && (
+            <div key={phaseGroup} className="mb-8">
+              <h2 className="text-xl font-semibold mb-4 pb-2 border-b">{phaseGroup}</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                {Object.entries(groupedProperties[phaseGroup])
+                  .sort(([phaseA], [phaseB]) => {
+                    // Sort columns according to the predefined order
+                    const indexA = PHASES.indexOf(phaseA as PropertyPhase);
+                    const indexB = PHASES.indexOf(phaseB as PropertyPhase);
+                    
+                    // Place predefined phases first in order, then unknown phases, then "Unspecified" last
+                    if (indexA === -1 && indexB === -1) {
+                      // Both are custom phases, sort alphabetically
+                      return phaseA === "Unspecified" ? 1 : phaseB === "Unspecified" ? -1 : phaseA.localeCompare(phaseB);
+                    }
+                    if (indexA === -1) return 1; // phaseA is custom, place after predefined
+                    if (indexB === -1) return -1; // phaseB is custom, place after predefined
+                    return indexA - indexB; // Both are predefined, sort by index
+                  })
+                  .filter(([_, phaseProperties]) => phaseProperties.length > 0) // Only show phases with properties
+                  .map(([phase, phaseProperties]) => (
+                    <PipelineColumn
+                      key={phase}
+                      title={phase}
+                      properties={phaseProperties}
+                      onPropertyClick={handlePropertyClick}
+                    />
+                  ))
+                }
+              </div>
+            </div>
+          )
+        ))}
+
+        {/* Handle any properties with unspecified phase group */}
+        {groupedProperties['Unspecified'] && Object.values(groupedProperties['Unspecified']).flat().length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4 pb-2 border-b">Unspecified</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+              {Object.entries(groupedProperties['Unspecified'])
+                .filter(([_, phaseProperties]) => phaseProperties.length > 0)
+                .map(([phase, phaseProperties]) => (
+                  <PipelineColumn
+                    key={phase}
+                    title={phase}
+                    properties={phaseProperties}
+                    onPropertyClick={handlePropertyClick}
+                  />
+                ))
               }
-              if (indexA === -1) return 1; // phaseA is custom, place after predefined
-              if (indexB === -1) return -1; // phaseB is custom, place after predefined
-              return indexA - indexB; // Both are predefined, sort by index
-            })
-            .map(([phase, phaseProperties]) => (
-              <PipelineColumn
-                key={phase}
-                title={phase}
-                properties={phaseProperties}
-                onPropertyClick={handlePropertyClick}
-              />
-            ))
-          }
-        </div>
+            </div>
+          </div>
+        )}
 
         <PropertyDetailDialog 
           property={selectedProperty}

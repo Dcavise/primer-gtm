@@ -98,6 +98,7 @@ export type Database = {
           parking: string | null
           permitted_use: string | null
           phase: string | null
+          phase_group: string | null
           sf_available: string | null
           site_name: string | null
           status_notes: string | null
@@ -122,6 +123,7 @@ export type Database = {
           parking?: string | null
           permitted_use?: string | null
           phase?: string | null
+          phase_group?: string | null
           sf_available?: string | null
           site_name?: string | null
           status_notes?: string | null
@@ -146,6 +148,7 @@ export type Database = {
           parking?: string | null
           permitted_use?: string | null
           phase?: string | null
+          phase_group?: string | null
           sf_available?: string | null
           site_name?: string | null
           status_notes?: string | null

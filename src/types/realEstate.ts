@@ -6,6 +6,7 @@ export interface RealEstateProperty {
   address: string | null;
   market: string | null;
   phase: string | null;
+  phase_group: string | null;
   sf_available: string | null;
   zoning: string | null;
   permitted_use: string | null;
