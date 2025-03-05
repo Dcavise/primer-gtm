@@ -22,26 +22,66 @@ serve(async (req) => {
   }
 
   try {
-    const { key } = await req.json();
-    
-    if (!key || !API_KEYS[key]) {
+    // Parse the request body to get the key parameter
+    let requestData;
+    try {
+      requestData = await req.json();
+    } catch (error) {
+      console.error("Error parsing request body:", error);
       return new Response(
         JSON.stringify({ 
-          error: 'Invalid key requested',
+          error: 'Invalid JSON in request body',
+          details: error.message
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const { key } = requestData;
+    
+    // Log the request for debugging
+    console.log(`API key requested: ${key}`);
+    console.log(`Available keys: ${Object.keys(API_KEYS).join(', ')}`);
+    
+    if (!key) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'No key specified in request',
           validKeys: Object.keys(API_KEYS)
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
+    if (!Object.prototype.hasOwnProperty.call(API_KEYS, key)) {
+      return new Response(
+        JSON.stringify({ 
+          error: `Invalid key requested: ${key}`,
+          validKeys: Object.keys(API_KEYS)
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const apiKey = API_KEYS[key];
+    
+    // Check if the key exists but has no value
+    if (!apiKey) {
+      console.warn(`Warning: Requested key '${key}' exists but has no value in environment variables`);
+    }
+    
     // Successfully return the API key
     return new Response(
-      JSON.stringify({ key: API_KEYS[key] }),
+      JSON.stringify({ key: apiKey }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
+    console.error("Unexpected error in edge function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: 'Internal server error',
+        details: error.message 
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

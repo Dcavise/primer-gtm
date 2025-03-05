@@ -29,10 +29,9 @@ export async function geocodeAddress(address: string): Promise<GeocodingResult |
     // Only fall back to Mapbox if Google Maps fails
     console.warn("Google Maps geocoding failed, trying Mapbox as fallback");
     try {
-      const mapboxToken = await getApiKey('mapbox');
-      if (mapboxToken) {
-        console.log("Using Mapbox as fallback for geocoding");
-        return await geocodeWithMapbox(address, mapboxToken);
+      const mapboxResult = await geocodeWithMapbox(address);
+      if (mapboxResult) {
+        return mapboxResult;
       }
     } catch (error) {
       console.error("Mapbox fallback also failed:", error);
@@ -56,14 +55,18 @@ async function geocodeWithGoogleMaps(address: string): Promise<GeocodingResult |
     let apiKey;
     try {
       apiKey = await getApiKey('google_maps');
+      if (!apiKey) {
+        console.warn("Empty Google Maps API key received from edge function");
+        throw new Error("Empty API key");
+      }
     } catch (error) {
       console.warn("Failed to get Google Maps API key from edge function, using fallback:", error);
       // Fall back to the deprecated but still functional API key as backup
       apiKey = GOOGLE_MAPS_API_KEY;
-    }
-    
-    if (!apiKey) {
-      throw new Error("No Google Maps API key available");
+      
+      if (!apiKey) {
+        throw new Error("No Google Maps API key available");
+      }
     }
     
     console.log("Geocoding address with Google Maps:", address);
@@ -71,6 +74,11 @@ async function geocodeWithGoogleMaps(address: string): Promise<GeocodingResult |
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${apiKey}`;
 
     const response = await fetch(url);
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Google Maps API returned status ${response.status}: ${errorText}`);
+    }
+    
     const data = await response.json();
 
     if (data.status === "OK" && data.results && data.results.length > 0) {
@@ -93,13 +101,23 @@ async function geocodeWithGoogleMaps(address: string): Promise<GeocodingResult |
   }
 }
 
-async function geocodeWithMapbox(address: string, token: string): Promise<GeocodingResult | null> {
+async function geocodeWithMapbox(address: string): Promise<GeocodingResult | null> {
   try {
+    const token = await getApiKey('mapbox');
+    if (!token) {
+      throw new Error("No Mapbox token available");
+    }
+    
     console.log("Geocoding address with Mapbox:", address);
     const encodedAddress = encodeURIComponent(address);
     const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${token}`;
 
     const response = await fetch(url);
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Mapbox API returned status ${response.status}: ${errorText}`);
+    }
+    
     const data = await response.json();
 
     if (data.features && data.features.length > 0) {
