@@ -19,9 +19,9 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onClick })
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium flex items-start justify-between">
           <span className="truncate">{property.site_name || 'Unnamed Property'}</span>
-          {property.phase && (
+          {property.market && (
             <Badge className="ml-2 shrink-0" variant="outline">
-              {property.phase}
+              {property.market}
             </Badge>
           )}
         </CardTitle>
@@ -34,10 +34,10 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onClick })
           </div>
         )}
         
-        {property.market && (
+        {property.phase && (
           <div className="flex items-start">
             <Building className="h-4 w-4 mr-2 mt-0.5 shrink-0 text-muted-foreground" />
-            <span className="text-muted-foreground">{property.market}</span>
+            <span className="text-muted-foreground">Phase: {property.phase}</span>
           </div>
         )}
         
