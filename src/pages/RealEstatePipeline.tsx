@@ -5,7 +5,6 @@ import { PipelineColumn } from '@/components/realestate/PipelineColumn';
 import { PropertyDetailDialog } from '@/components/realestate/PropertyDetailDialog';
 import { RealEstateProperty, PropertyPhase } from '@/types/realEstate';
 import { LoadingState } from '@/components/LoadingState';
-import { Building } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 
 // Define the phases in the specific order shown in the image
@@ -30,6 +29,20 @@ const PHASE_GROUPS = [
   'Set Up',
   'Other'
 ];
+
+// Define the mapping of phases to phase groups
+const PHASE_TO_GROUP: Record<PropertyPhase, string> = {
+  '0. New Site': 'Diligence',
+  '1. Initial Diligence': 'Diligence',
+  '2. Survey': 'Diligence',
+  '3. Test Fit': 'Diligence',
+  '4. Plan Production': 'Pre Construction',
+  '5. Permitting': 'Pre Construction',
+  '6. Construction': 'Construction',
+  '7. Set Up': 'Set Up',
+  'Hold': 'Other',
+  'Deprioritize': 'Other'
+};
 
 const RealEstatePipeline: React.FC = () => {
   const { data: properties, isLoading, error } = useRealEstatePipeline();
@@ -58,19 +71,8 @@ const RealEstatePipeline: React.FC = () => {
     
     // Initialize phases within each group
     PHASES.forEach(phase => {
-      // Find which group this phase belongs to
-      let group = 'Unspecified';
-      if (['0. New Site', '1. Initial Diligence', '2. Survey', '3. Test Fit'].includes(phase)) {
-        group = 'Diligence';
-      } else if (['4. Plan Production', '5. Permitting'].includes(phase)) {
-        group = 'Pre Construction';
-      } else if (phase === '6. Construction') {
-        group = 'Construction';
-      } else if (phase === '7. Set Up') {
-        group = 'Set Up';
-      } else if (['Hold', 'Deprioritize'].includes(phase)) {
-        group = 'Other';
-      }
+      // Find which group this phase belongs to based on our mapping
+      const group = PHASE_TO_GROUP[phase] || 'Unspecified';
       
       if (grouped[group]) {
         grouped[group][phase] = [];
@@ -84,7 +86,14 @@ const RealEstatePipeline: React.FC = () => {
     
     // Now populate the groups
     properties.forEach(property => {
-      const phaseGroup = property.phase_group || 'Unspecified';
+      // Use the property's phase_group if available, otherwise determine it from the phase
+      let phaseGroup = property.phase_group;
+      if (!phaseGroup && property.phase) {
+        phaseGroup = PHASE_TO_GROUP[property.phase as PropertyPhase] || 'Unspecified';
+      } else if (!phaseGroup) {
+        phaseGroup = 'Unspecified';
+      }
+      
       const phase = property.phase || 'Unspecified';
       
       // If this phase group exists in our structure
