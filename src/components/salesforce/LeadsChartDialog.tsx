@@ -26,11 +26,13 @@ export const LeadsChartDialog: React.FC<LeadsChartDialogProps> = ({
   weeklyLeadCounts,
   selectedCampusName
 }) => {
-  // Format the data for the chart
-  const chartData = weeklyLeadCounts.map(item => ({
-    ...item,
-    formattedWeek: format(parseISO(item.week), 'MMM d')
-  }));
+  // Format the data for the chart, safely handle undefined or empty data
+  const chartData = weeklyLeadCounts && weeklyLeadCounts.length > 0 
+    ? weeklyLeadCounts.map(item => ({
+        ...item,
+        formattedWeek: format(parseISO(item.week), 'MMM d')
+      }))
+    : [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -47,7 +49,7 @@ export const LeadsChartDialog: React.FC<LeadsChartDialogProps> = ({
         </DialogHeader>
 
         <div className="h-[300px] mt-4">
-          {weeklyLeadCounts.length > 0 ? (
+          {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />

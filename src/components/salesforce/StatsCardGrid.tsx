@@ -66,8 +66,8 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = ({
       <LeadsChartDialog
         open={showLeadsChart}
         onOpenChange={setShowLeadsChart}
-        data={weeklyLeadCounts}
-        campusName={selectedCampusName}
+        weeklyLeadCounts={weeklyLeadCounts}
+        selectedCampusName={selectedCampusName}
       />
     </>
   );
