@@ -1,6 +1,10 @@
 
-// Re-export all API services from a central file
-export * from './api-config';
-export * from './permits-api';
-export * from './zoning-api';
-export * from './census-api';
+import axios from 'axios';
+import { API_BASE_URL } from './api-config';
+
+// Set up a default axios instance with the base URL
+const api = axios.create({
+  baseURL: API_BASE_URL,
+});
+
+export default api;

@@ -38,15 +38,15 @@ const Index = () => {
   // Consolidated state
   const [userAddress, setUserAddress] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [activeSection, setActiveSection] = useState<"permits" | "zoning" | "schools">("permits");
+  const [activeSection, setActiveSection] = useState<"zoning" | "schools" | "permits">("zoning");
   
   // Determine if any data is loading
   const isAnyDataLoading = isSearchingPermits || isSearchingZoning || isSearchingSchools;
   
   // Determine the current displayed address (prioritize the active section's address)
-  const displayedAddress = activeSection === "permits" ? permitAddress : 
-                          activeSection === "zoning" ? zoningAddress :
-                          schoolsAddress || userAddress;
+  const displayedAddress = activeSection === "zoning" ? zoningAddress : 
+                          activeSection === "schools" ? schoolsAddress :
+                          permitAddress || userAddress;
 
   const handleSearchAllData = async (params: any, address: string) => {
     // First, reset everything
@@ -79,8 +79,8 @@ const Index = () => {
         fetchSchoolsData(params, address)
       ]);
       
-      // Set active section to permits first
-      setActiveSection("permits");
+      // Set active section to zoning first (updated)
+      setActiveSection("zoning");
       
       toast.success("Property research complete", {
         description: "All available data has been retrieved for this location."
@@ -175,16 +175,12 @@ const Index = () => {
         
         {displayedAddress && (
           <Tabs 
-            defaultValue="permits" 
+            defaultValue="zoning" 
             value={activeSection} 
             onValueChange={(value) => setActiveSection(value as any)}
             className="mt-6"
           >
             <TabsList className="bg-background border-b w-full justify-start overflow-x-auto">
-              <TabsTrigger value="permits" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                <FileTextIcon className="h-4 w-4 mr-2" />
-                Permits
-              </TabsTrigger>
               <TabsTrigger value="zoning" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
                 <MapIcon className="h-4 w-4 mr-2" />
                 Zoning
@@ -193,15 +189,11 @@ const Index = () => {
                 <School className="h-4 w-4 mr-2" />
                 Schools
               </TabsTrigger>
+              <TabsTrigger value="permits" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                <FileTextIcon className="h-4 w-4 mr-2" />
+                Permits
+              </TabsTrigger>
             </TabsList>
-            
-            <TabsContent value="permits" className="py-6 animate-in fade-in-50">
-              <PermitList 
-                permits={testResults ? testResults.permits : permits} 
-                isLoading={isSearchingPermits && !testResults} 
-                searchedAddress={permitAddress || (testResults ? testResults.address : "")}
-              />
-            </TabsContent>
             
             <TabsContent value="zoning" className="py-6 animate-in fade-in-50">
               <ZoningList
@@ -216,6 +208,14 @@ const Index = () => {
                 schools={schools}
                 isLoading={isSearchingSchools}
                 searchedAddress={schoolsAddress}
+              />
+            </TabsContent>
+            
+            <TabsContent value="permits" className="py-6 animate-in fade-in-50">
+              <PermitList 
+                permits={testResults ? testResults.permits : permits} 
+                isLoading={isSearchingPermits && !testResults} 
+                searchedAddress={permitAddress || (testResults ? testResults.address : "")}
               />
             </TabsContent>
           </Tabs>
