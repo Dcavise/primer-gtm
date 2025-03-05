@@ -1,3 +1,4 @@
+
 import { getApiKey } from "@/services/api-config";
 import { toast } from "sonner";
 import mapboxgl from "mapbox-gl";
@@ -31,7 +32,7 @@ export interface GeocodingOptions {
 }
 
 /**
- * Geocode an address string into coordinates
+ * Geocode an address string into coordinates using Mapbox
  */
 export async function geocodeAddress(
   address: string, 

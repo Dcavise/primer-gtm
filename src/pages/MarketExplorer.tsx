@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -172,6 +173,7 @@ const MarketExplorer = () => {
       console.log("Updating map view for selected market:", selectedMarket);
       
       try {
+        // Clear existing markers
         const existingMarkers = document.querySelectorAll('.mapboxgl-marker');
         existingMarkers.forEach(marker => marker.remove());
         
@@ -182,93 +184,93 @@ const MarketExplorer = () => {
           if (map.current) {
             createDemoMap(map.current);
           }
-        } else {
-          const selectedCampus = campuses.find(c => c.campus_id === selectedMarket);
-          
-          if (selectedCampus) {
-            console.log("Selected campus:", selectedCampus.campus_name);
-            
-            const campusNameLower = selectedCampus.campus_name.toLowerCase();
-            let found = false;
-            
-            for (const [key, value] of Object.entries(marketCoordinates)) {
-              if (value.name.toLowerCase() === campusNameLower) {
-                coordinates = value.center;
-                zoom = value.zoom;
-                found = true;
-                console.log("Found campus in marketCoordinates:", value.name);
-                break;
-              }
-            }
-            
-            if (!found) {
-              try {
-                const addressToGeocode = `${selectedCampus.campus_name}${selectedCampus.State ? `, ${selectedCampus.State.trim()}` : ''}`;
-                console.log("Geocoding address:", addressToGeocode);
-                
-                const result = await geocodeAddress(addressToGeocode, {
-                  types: ['place', 'locality', 'neighborhood'],
-                  limit: 1,
-                  autocomplete: false,
-                  country: 'us'
-                });
-                
-                if (result) {
-                  coordinates = [result.coordinates.lng, result.coordinates.lat];
-                  zoom = 11;
-                  console.log("Geocoding result:", result);
-                  
-                  if (map.current) {
-                    const el = document.createElement('div');
-                    el.className = 'mapboxgl-marker';
-                    el.style.width = '20px';
-                    el.style.height = '20px';
-                    el.style.borderRadius = '50%';
-                    el.style.backgroundColor = '#1F77B4';
-                    el.style.border = '2px solid white';
-                    el.style.boxShadow = '0 0 4px rgba(0,0,0,0.3)';
-                    
-                    new mapboxgl.Marker(el)
-                      .setLngLat(coordinates as [number, number])
-                      .setPopup(new mapboxgl.Popup().setText(selectedCampus.campus_name))
-                      .addTo(map.current);
-                  }
-                } else {
-                  console.log("Geocoding failed, using default view");
-                  toast.warning(`Couldn't find exact location for ${selectedCampus.campus_name}`, {
-                    description: "Using approximate view"
-                  });
-                }
-              } catch (error) {
-                console.error("Error geocoding address:", error);
-              }
-            } else if (map.current) {
-              const el = document.createElement('div');
-              el.className = 'mapboxgl-marker';
-              el.style.width = '20px';
-              el.style.height = '20px';
-              el.style.borderRadius = '50%';
-              el.style.backgroundColor = '#1F77B4';
-              el.style.border = '2px solid white';
-              el.style.boxShadow = '0 0 4px rgba(0,0,0,0.3)';
-              
-              new mapboxgl.Marker(el)
-                .setLngLat(coordinates as [number, number])
-                .setPopup(new mapboxgl.Popup().setText(selectedCampus.campus_name))
-                .addTo(map.current);
-            }
+          return;
+        }
+        
+        const selectedCampus = campuses.find(c => c.campus_id === selectedMarket);
+        
+        if (!selectedCampus) {
+          console.warn("Selected campus not found:", selectedMarket);
+          return;
+        }
+        
+        console.log("Selected campus:", selectedCampus.campus_name);
+        
+        // First check if we have pre-defined coordinates for this market
+        const campusNameLower = selectedCampus.campus_name.toLowerCase();
+        let found = false;
+        
+        // Check for predefined coordinates in our marketCoordinates map
+        for (const [key, value] of Object.entries(marketCoordinates)) {
+          if (value.name.toLowerCase() === campusNameLower) {
+            coordinates = value.center;
+            zoom = value.zoom;
+            found = true;
+            console.log("Found campus in marketCoordinates:", value.name);
+            break;
           }
         }
         
+        // If not found in predefined coordinates, geocode it
+        if (!found) {
+          const addressToGeocode = `${selectedCampus.campus_name}${selectedCampus.State ? `, ${selectedCampus.State.trim()}` : ''}`;
+          console.log("Geocoding address:", addressToGeocode);
+          
+          try {
+            const result = await geocodeAddress(addressToGeocode, {
+              types: ['place', 'locality', 'neighborhood'],
+              limit: 1,
+              autocomplete: false,
+              country: 'us'
+            });
+            
+            if (result) {
+              coordinates = [result.coordinates.lng, result.coordinates.lat];
+              zoom = 11;
+              console.log("Geocoding result:", result);
+            } else {
+              console.log("Geocoding failed, using default view");
+              toast.warning(`Couldn't find exact location for ${selectedCampus.campus_name}`, {
+                description: "Using approximate view"
+              });
+            }
+          } catch (error) {
+            console.error("Error geocoding address:", error);
+            toast.error("Error finding location", {
+              description: "Using default view instead"
+            });
+          }
+        }
+        
+        // Add marker for the selected campus
         if (map.current) {
-          console.log("Flying to coordinates:", coordinates, "with zoom:", zoom);
-          map.current.flyTo({
-            center: coordinates,
-            zoom: zoom,
-            pitch: 30,
-            duration: 2000,
-            essential: true
-          });
+          try {
+            const el = document.createElement('div');
+            el.className = 'mapboxgl-marker';
+            el.style.width = '20px';
+            el.style.height = '20px';
+            el.style.borderRadius = '50%';
+            el.style.backgroundColor = '#1F77B4';
+            el.style.border = '2px solid white';
+            el.style.boxShadow = '0 0 4px rgba(0,0,0,0.3)';
+            
+            new mapboxgl.Marker(el)
+              .setLngLat(coordinates as [number, number])
+              .setPopup(new mapboxgl.Popup().setText(selectedCampus.campus_name))
+              .addTo(map.current);
+              
+            // Fly to the coordinates
+            console.log("Flying to coordinates:", coordinates, "with zoom:", zoom);
+            map.current.flyTo({
+              center: coordinates,
+              zoom: zoom,
+              pitch: 30,
+              duration: 2000,
+              essential: true
+            });
+          } catch (error) {
+            console.error("Error adding marker or flying to location:", error);
+          }
         }
       } catch (error) {
         console.error("Error updating map view:", error);
@@ -282,6 +284,7 @@ const MarketExplorer = () => {
   }, [selectedMarket, campuses, createDemoMap]);
 
   const handleMarketChange = (marketId: string) => {
+    console.log("Market changed to:", marketId);
     setSelectedMarket(marketId);
   };
 
