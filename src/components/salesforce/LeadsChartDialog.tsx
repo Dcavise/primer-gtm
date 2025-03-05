@@ -9,6 +9,8 @@ import {
 } from '@/components/ui/dialog';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { WeeklyLeadCount } from '@/hooks/salesforce/types';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { format, parseISO } from 'date-fns';
@@ -34,8 +36,25 @@ export const LeadsChartDialog: React.FC<LeadsChartDialogProps> = ({
       }))
     : [];
 
+  // Calculate week-over-week growth percentages
+  const chartDataWithGrowth = chartData.map((item, index) => {
+    if (index === 0) {
+      return { ...item, growthPercent: null };
+    }
+    
+    const currentCount = item.count;
+    const previousCount = chartData[index - 1].count;
+    
+    let growthPercent = null;
+    if (previousCount > 0) {
+      growthPercent = ((currentCount - previousCount) / previousCount) * 100;
+    }
+    
+    return { ...item, growthPercent };
+  });
+
   console.log("Weekly lead counts data:", weeklyLeadCounts);
-  console.log("Formatted chart data:", chartData);
+  console.log("Formatted chart data with growth:", chartDataWithGrowth);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -87,14 +106,26 @@ export const LeadsChartDialog: React.FC<LeadsChartDialogProps> = ({
           )}
         </div>
         
-        {chartData.length > 0 && (
+        {chartDataWithGrowth.length > 0 && (
           <div className="mt-4 p-4 bg-gray-50 rounded-md">
             <h3 className="text-sm font-medium mb-2">Weekly Lead Counts</h3>
             <div className="grid grid-cols-4 gap-4">
-              {chartData.map((item, index) => (
+              {chartDataWithGrowth.map((item, index) => (
                 <div key={index} className="bg-white p-2 rounded border">
                   <div className="text-xs text-gray-500">Week of {item.formattedWeek}</div>
                   <div className="text-lg font-semibold">{item.count} leads</div>
+                  
+                  {/* Growth percentage badge */}
+                  {index > 0 && item.growthPercent !== null && (
+                    <div className="mt-1">
+                      <Badge 
+                        variant={item.growthPercent >= 0 ? "default" : "destructive"}
+                        className={item.growthPercent >= 0 ? "bg-green-100 text-green-800 hover:bg-green-200" : "bg-red-100 text-red-800 hover:bg-red-200"}
+                      >
+                        {item.growthPercent >= 0 ? "+" : ""}{item.growthPercent.toFixed(1)}% WoW
+                      </Badge>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
