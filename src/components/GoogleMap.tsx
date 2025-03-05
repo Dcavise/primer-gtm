@@ -6,6 +6,9 @@ import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { geocodeAddress } from '@/utils/maps';
 
+// Ensure TypeScript knows about the Google Maps-related globals
+// Types already declared in maps.ts with the global declaration
+
 interface GoogleMapProps {
   address: string;
   height?: string;
@@ -96,7 +99,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
     
     // Function to handle script loading
     const loadGoogleMapsScript = () => {
-      // Check if the script is already loaded
+      // Check if the script is already loaded - now TypeScript knows window.google exists
       if (window.google && window.google.maps) {
         setScriptLoaded(true);
         return;
@@ -115,7 +118,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
       script.async = true;
       script.defer = true;
       
-      // Create a global callback function for the script
+      // Create a global callback function for the script - now TypeScript knows window.initMap exists
       window.initMap = () => {
         setScriptLoaded(true);
       };
@@ -135,9 +138,8 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
     
     // Cleanup function
     return () => {
-      // Remove the global callback
+      // Remove the global callback - now TypeScript knows window.initMap exists
       if (window.initMap) {
-        // @ts-ignore
         window.initMap = undefined;
       }
     };

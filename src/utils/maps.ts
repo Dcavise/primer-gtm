@@ -31,6 +31,14 @@ export interface GeocodingResult {
   types?: string[];
 }
 
+// Add a type declaration for the window object to include Google Maps properties
+declare global {
+  interface Window {
+    google?: any;
+    initMap?: () => void;
+  }
+}
+
 /**
  * Geocodes an address using Google Maps API via Supabase edge function
  * @param address The address to geocode
