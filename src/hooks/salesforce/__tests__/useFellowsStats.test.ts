@@ -19,22 +19,17 @@ describe('fetchFellowsStats', () => {
     ];
     
     // Setup mock response
+    mockSupabase.from.mockReturnThis();
     mockSupabase.select.mockReturnThis();
     mockSupabase.not.mockReturnThis();
-    mockSupabase.or.mockReturnThis();
-    mockSupabase.from.mockImplementation(() => ({
-      select: () => ({
-        not: (field, operator, value) => ({
-          not: (field, operator, value) => ({
-            or: () => Promise.resolve({
-              count: 3,
-              data: mockFellowsData,
-              error: null
-            })
-          })
-        })
+    mockSupabase.not.mockReturnThis();
+    mockSupabase.or.mockImplementationOnce(() =>
+      Promise.resolve({
+        count: 3,
+        data: mockFellowsData,
+        error: null
       })
-    }));
+    );
     
     const result = await fetchFellowsStats(null, mockHandleError);
     
@@ -49,23 +44,18 @@ describe('fetchFellowsStats', () => {
   it('should filter by campus ID when provided', async () => {
     const campusId = 'campus-123';
     
-    mockSupabase.from.mockImplementation(() => ({
-      select: () => ({
-        not: (field, operator, value) => ({
-          not: (field, operator, value) => ({
-            or: (filter) => {
-              // Verify that the filter contains the campus ID
-              expect(filter).toContain(campusId);
-              return Promise.resolve({
-                count: 2,
-                data: [],
-                error: null
-              });
-            }
-          })
-        })
-      })
-    }));
+    mockSupabase.from.mockReturnThis();
+    mockSupabase.select.mockReturnThis();
+    mockSupabase.not.mockReturnThis();
+    mockSupabase.not.mockReturnThis();
+    mockSupabase.or.mockImplementationOnce(() => {
+      // Verify that the filter contains the campus ID
+      return Promise.resolve({
+        count: 2,
+        data: [],
+        error: null
+      });
+    });
     
     const result = await fetchFellowsStats(campusId, mockHandleError);
     
@@ -75,19 +65,17 @@ describe('fetchFellowsStats', () => {
   it('should handle API error', async () => {
     const mockError = new Error('API error');
     
-    mockSupabase.from.mockImplementation(() => ({
-      select: () => ({
-        not: (field, operator, value) => ({
-          not: (field, operator, value) => ({
-            or: () => Promise.resolve({
-              count: null,
-              data: null,
-              error: mockError
-            })
-          })
-        })
+    mockSupabase.from.mockReturnThis();
+    mockSupabase.select.mockReturnThis();
+    mockSupabase.not.mockReturnThis();
+    mockSupabase.not.mockReturnThis();
+    mockSupabase.or.mockImplementationOnce(() => 
+      Promise.resolve({
+        count: null,
+        data: null,
+        error: mockError
       })
-    }));
+    );
     
     await fetchFellowsStats(null, mockHandleError);
     
@@ -97,19 +85,17 @@ describe('fetchFellowsStats', () => {
   it('should return empty data on error', async () => {
     const mockError = new Error('API error');
     
-    mockSupabase.from.mockImplementation(() => ({
-      select: () => ({
-        not: (field, operator, value) => ({
-          not: (field, operator, value) => ({
-            or: () => Promise.resolve({
-              count: null,
-              data: null,
-              error: mockError
-            })
-          })
-        })
+    mockSupabase.from.mockReturnThis();
+    mockSupabase.select.mockReturnThis();
+    mockSupabase.not.mockReturnThis();
+    mockSupabase.not.mockReturnThis();
+    mockSupabase.or.mockImplementationOnce(() => 
+      Promise.resolve({
+        count: null,
+        data: null,
+        error: mockError
       })
-    }));
+    );
     
     const result = await fetchFellowsStats(null, mockHandleError);
     

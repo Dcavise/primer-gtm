@@ -18,7 +18,20 @@ export const mockSupabase = {
   }
 };
 
+// Create a mock for toast notifications
+export const mockToast = {
+  info: vi.fn(),
+  success: vi.fn(),
+  error: vi.fn(),
+  warning: vi.fn()
+};
+
 // Mock the Supabase client
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: mockSupabase
+}));
+
+// Mock the toast library
+vi.mock('sonner', () => ({
+  toast: mockToast
 }));

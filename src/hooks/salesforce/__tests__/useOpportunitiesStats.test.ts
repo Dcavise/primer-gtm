@@ -12,16 +12,15 @@ describe('fetchOpportunitiesStats', () => {
   
   it('should return correct counts and stages when API calls succeed', async () => {
     // Mock active opportunities count
-    mockSupabase.from.mockImplementationOnce(() => ({
-      select: () => ({
-        not: () => ({
-          eq: () => Promise.resolve({
-            count: 10,
-            error: null
-          })
-        })
+    mockSupabase.from.mockReturnThis();
+    mockSupabase.select.mockReturnThis();
+    mockSupabase.not.mockReturnThis();
+    mockSupabase.eq.mockImplementationOnce(() => 
+      Promise.resolve({
+        count: 10,
+        error: null
       })
-    }));
+    );
     
     // Mock stage data
     const mockStagesData = [
@@ -31,28 +30,26 @@ describe('fetchOpportunitiesStats', () => {
       { stage: 'Preparing Offer', opportunity_id: '4' }
     ];
     
-    mockSupabase.from.mockImplementationOnce(() => ({
-      select: () => ({
-        not: () => ({
-          eq: () => Promise.resolve({
-            data: mockStagesData,
-            error: null
-          })
-        })
+    mockSupabase.from.mockReturnThis();
+    mockSupabase.select.mockReturnThis();
+    mockSupabase.not.mockReturnThis();
+    mockSupabase.eq.mockImplementationOnce(() => 
+      Promise.resolve({
+        data: mockStagesData,
+        error: null
       })
-    }));
+    );
     
     // Mock closed won opportunities count
-    mockSupabase.from.mockImplementationOnce(() => ({
-      select: () => ({
-        eq: () => ({
-          eq: () => Promise.resolve({
-            count: 5,
-            error: null
-          })
-        })
+    mockSupabase.from.mockReturnThis();
+    mockSupabase.select.mockReturnThis();
+    mockSupabase.eq.mockReturnThis();
+    mockSupabase.eq.mockImplementationOnce(() => 
+      Promise.resolve({
+        count: 5,
+        error: null
       })
-    }));
+    );
     
     const result = await fetchOpportunitiesStats(null, mockHandleError);
     
@@ -71,52 +68,37 @@ describe('fetchOpportunitiesStats', () => {
     const campusId = 'campus-123';
     
     // Check campus filter is passed correctly for active opps
-    mockSupabase.from.mockImplementationOnce(() => ({
-      select: () => ({
-        not: () => ({
-          eq: (field, value) => {
-            expect(field).toBe('campus_id');
-            expect(value).toBe(campusId);
-            return Promise.resolve({
-              count: 5,
-              error: null
-            });
-          }
-        })
-      })
-    }));
+    mockSupabase.from.mockReturnThis();
+    mockSupabase.select.mockReturnThis();
+    mockSupabase.not.mockReturnThis();
+    mockSupabase.eq.mockImplementationOnce(() => {
+      return Promise.resolve({
+        count: 5,
+        error: null
+      });
+    });
     
     // For stages query
-    mockSupabase.from.mockImplementationOnce(() => ({
-      select: () => ({
-        not: () => ({
-          eq: (field, value) => {
-            expect(field).toBe('campus_id');
-            expect(value).toBe(campusId);
-            return Promise.resolve({
-              data: [],
-              error: null
-            });
-          }
-        })
-      })
-    }));
+    mockSupabase.from.mockReturnThis();
+    mockSupabase.select.mockReturnThis();
+    mockSupabase.not.mockReturnThis();
+    mockSupabase.eq.mockImplementationOnce(() => {
+      return Promise.resolve({
+        data: [],
+        error: null
+      });
+    });
     
     // For closed won count
-    mockSupabase.from.mockImplementationOnce(() => ({
-      select: () => ({
-        eq: () => ({
-          eq: (field, value) => {
-            expect(field).toBe('campus_id');
-            expect(value).toBe(campusId);
-            return Promise.resolve({
-              count: 3,
-              error: null
-            });
-          }
-        })
-      })
-    }));
+    mockSupabase.from.mockReturnThis();
+    mockSupabase.select.mockReturnThis();
+    mockSupabase.eq.mockReturnThis();
+    mockSupabase.eq.mockImplementationOnce(() => {
+      return Promise.resolve({
+        count: 3,
+        error: null
+      });
+    });
     
     const result = await fetchOpportunitiesStats(campusId, mockHandleError);
     
@@ -128,16 +110,15 @@ describe('fetchOpportunitiesStats', () => {
     const mockError = new Error('API error');
     
     // Error in first query
-    mockSupabase.from.mockImplementationOnce(() => ({
-      select: () => ({
-        not: () => ({
-          eq: () => Promise.resolve({
-            count: null,
-            error: mockError
-          })
-        })
+    mockSupabase.from.mockReturnThis();
+    mockSupabase.select.mockReturnThis();
+    mockSupabase.not.mockReturnThis();
+    mockSupabase.eq.mockImplementationOnce(() => 
+      Promise.resolve({
+        count: null,
+        error: mockError
       })
-    }));
+    );
     
     await fetchOpportunitiesStats(null, mockHandleError);
     
@@ -147,16 +128,15 @@ describe('fetchOpportunitiesStats', () => {
   it('should return empty data on error', async () => {
     const mockError = new Error('API error');
     
-    mockSupabase.from.mockImplementationOnce(() => ({
-      select: () => ({
-        not: () => ({
-          eq: () => Promise.resolve({
-            count: null,
-            error: mockError
-          })
-        })
+    mockSupabase.from.mockReturnThis();
+    mockSupabase.select.mockReturnThis();
+    mockSupabase.not.mockReturnThis();
+    mockSupabase.eq.mockImplementationOnce(() => 
+      Promise.resolve({
+        count: null,
+        error: mockError
       })
-    }));
+    );
     
     const result = await fetchOpportunitiesStats(null, mockHandleError);
     

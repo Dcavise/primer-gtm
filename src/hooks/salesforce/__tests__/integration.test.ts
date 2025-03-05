@@ -1,3 +1,4 @@
+
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useStats } from '../useStats';
@@ -8,36 +9,35 @@ describe('useStats integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     
-    // Setup mock responses for all Supabase calls
-    
+    // Setup mock implementation for all Supabase calls that returns proper mock data
+    // We need to create the implementations that return the correct data
+
     // 1. Fellows count
-    mockSupabase.from.mockImplementationOnce(() => ({
-      select: () => ({
-        not: () => ({
-          not: () => ({
-            or: () => Promise.resolve({
-              count: 15,
-              data: [
-                { fte_employment_status: 'Active', fellow_id: 1 },
-                { fte_employment_status: 'Active', fellow_id: 2 },
-                { fte_employment_status: 'Open', fellow_id: 3 }
-              ],
-              error: null
-            })
-          })
-        })
+    mockSupabase.from.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.select.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.not.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.not.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.or.mockImplementationOnce(() => 
+      Promise.resolve({
+        count: 15,
+        data: [
+          { fte_employment_status: 'Active', fellow_id: 1 },
+          { fte_employment_status: 'Active', fellow_id: 2 },
+          { fte_employment_status: 'Open', fellow_id: 3 }
+        ],
+        error: null
       })
-    }));
+    );
     
     // 2. Leads count
-    mockSupabase.from.mockImplementationOnce(() => ({
-      select: () => ({
-        eq: () => Promise.resolve({
-          count: 25,
-          error: null
-        })
+    mockSupabase.from.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.select.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.eq.mockImplementationOnce(() => 
+      Promise.resolve({
+        count: 25,
+        error: null
       })
-    }));
+    );
     
     // 3. Weekly lead counts
     mockSupabase.rpc.mockImplementationOnce(() => 
@@ -53,44 +53,41 @@ describe('useStats integration', () => {
     );
     
     // 4. Active opportunities count
-    mockSupabase.from.mockImplementationOnce(() => ({
-      select: () => ({
-        not: () => ({
-          eq: () => Promise.resolve({
-            count: 10,
-            error: null
-          })
-        })
+    mockSupabase.from.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.select.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.not.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.eq.mockImplementationOnce(() => 
+      Promise.resolve({
+        count: 10,
+        error: null
       })
-    }));
+    );
     
     // 5. Opportunity stages
-    mockSupabase.from.mockImplementationOnce(() => ({
-      select: () => ({
-        not: () => ({
-          eq: () => Promise.resolve({
-            data: [
-              { stage: 'Family Interview', opportunity_id: '1' },
-              { stage: 'Family Interview', opportunity_id: '2' },
-              { stage: 'Awaiting Documents', opportunity_id: '3' }
-            ],
-            error: null
-          })
-        })
+    mockSupabase.from.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.select.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.not.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.eq.mockImplementationOnce(() => 
+      Promise.resolve({
+        data: [
+          { stage: 'Family Interview', opportunity_id: '1' },
+          { stage: 'Family Interview', opportunity_id: '2' },
+          { stage: 'Awaiting Documents', opportunity_id: '3' }
+        ],
+        error: null
       })
-    }));
+    );
     
     // 6. Closed won opportunities count
-    mockSupabase.from.mockImplementationOnce(() => ({
-      select: () => ({
-        eq: () => ({
-          eq: () => Promise.resolve({
-            count: 8,
-            error: null
-          })
-        })
+    mockSupabase.from.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.select.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.eq.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.eq.mockImplementationOnce(() => 
+      Promise.resolve({
+        count: 8,
+        error: null
       })
-    }));
+    );
   });
   
   it('should integrate all hooks and return combined data', async () => {
@@ -133,30 +130,31 @@ describe('useStats integration', () => {
     // Reset mocks for the second round of fetches
     vi.clearAllMocks();
     
-    // Setup mock responses for second fetch
-    mockSupabase.from.mockImplementationOnce(() => ({
-      select: () => ({
-        not: () => ({
-          not: () => ({
-            or: () => Promise.resolve({
-              count: 20, // Updated count
-              data: [],
-              error: null
-            })
-          })
-        })
+    // Setup mock implementation for second fetch
+    // 1. Fellows count - updated data
+    mockSupabase.from.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.select.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.not.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.not.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.or.mockImplementationOnce(() => 
+      Promise.resolve({
+        count: 20, // Updated count
+        data: [],
+        error: null
       })
-    }));
+    );
     
-    mockSupabase.from.mockImplementationOnce(() => ({
-      select: () => ({
-        eq: () => Promise.resolve({
-          count: 30,
-          error: null
-        })
+    // 2. Leads count - updated
+    mockSupabase.from.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.select.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.eq.mockImplementationOnce(() => 
+      Promise.resolve({
+        count: 30,
+        error: null
       })
-    }));
+    );
     
+    // 3. Weekly lead counts - updated
     mockSupabase.rpc.mockImplementationOnce(() => 
       Promise.resolve({
         data: [
@@ -169,42 +167,42 @@ describe('useStats integration', () => {
       })
     );
     
-    mockSupabase.from.mockImplementationOnce(() => ({
-      select: () => ({
-        not: () => ({
-          eq: () => Promise.resolve({
-            count: 12,
-            error: null
-          })
-        })
+    // 4. Active opportunities count - updated
+    mockSupabase.from.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.select.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.not.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.eq.mockImplementationOnce(() => 
+      Promise.resolve({
+        count: 12,
+        error: null
       })
-    }));
+    );
     
-    mockSupabase.from.mockImplementationOnce(() => ({
-      select: () => ({
-        not: () => ({
-          eq: () => Promise.resolve({
-            data: [
-              { stage: 'Family Interview', opportunity_id: '4' },
-              { stage: 'Family Interview', opportunity_id: '5' },
-              { stage: 'Awaiting Documents', opportunity_id: '6' }
-            ],
-            error: null
-          })
-        })
+    // 5. Opportunity stages - updated
+    mockSupabase.from.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.select.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.not.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.eq.mockImplementationOnce(() => 
+      Promise.resolve({
+        data: [
+          { stage: 'Family Interview', opportunity_id: '4' },
+          { stage: 'Family Interview', opportunity_id: '5' },
+          { stage: 'Awaiting Documents', opportunity_id: '6' }
+        ],
+        error: null
       })
-    }));
+    );
     
-    mockSupabase.from.mockImplementationOnce(() => ({
-      select: () => ({
-        eq: () => ({
-          eq: () => Promise.resolve({
-            count: 10,
-            error: null
-          })
-        })
+    // 6. Closed won opportunities count - updated
+    mockSupabase.from.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.select.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.eq.mockImplementationOnce(() => mockSupabase);
+    mockSupabase.eq.mockImplementationOnce(() => 
+      Promise.resolve({
+        count: 10,
+        error: null
       })
-    }));
+    );
     
     // Call fetchStats manually
     act(() => {
