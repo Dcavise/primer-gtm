@@ -46,6 +46,8 @@ interface SalesforceLead {
   Status: string;
   LeadSource: string | null;
   Company?: string | null;
+  Preferred_Campus__c?: string | null;
+  ConvertedOpportunityId?: string | null;
   [key: string]: any;
 }
 
@@ -60,6 +62,7 @@ interface SupabaseLead {
   lead_source: string | null;
   preferred_campus: string | null;
   campus_id: string | null;
+  converted_opportunity_id: string | null;
 }
 
 interface Campus {
@@ -122,7 +125,7 @@ async function fetchSalesforceLeads(token: string, instanceUrl: string): Promise
   
   const query = `
     SELECT Id, FirstName, LastName, CreatedDate, ConvertedDate, IsConverted, 
-           Status, LeadSource, Company, Preferred_Campus__c
+           Status, LeadSource, Company, Preferred_Campus__c, ConvertedOpportunityId
     FROM Lead
     WHERE Id != null
     ORDER BY CreatedDate DESC
@@ -175,7 +178,8 @@ function transformLeads(salesforceLeads: SalesforceLead[], campusNames: string[]
       stage: stage,
       lead_source: lead.LeadSource,
       preferred_campus: preferredCampus,
-      campus_id: null // This will be linked later in a separate function
+      campus_id: null, // This will be linked later in a separate function
+      converted_opportunity_id: lead.ConvertedOpportunityId || null
     };
   });
 }

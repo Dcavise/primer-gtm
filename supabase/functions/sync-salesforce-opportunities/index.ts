@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
@@ -43,6 +44,11 @@ interface SalesforceOpportunity {
   [key: string]: any;
 }
 
+interface SupabaseLead {
+  lead_id: string;
+  converted_opportunity_id: string | null;
+}
+
 interface SupabaseOpportunity {
   opportunity_id: string;
   lead_id: string;
@@ -79,7 +85,26 @@ async function getSalesforceToken(): Promise<SalesforceAuthResponse> {
   return await response.json();
 }
 
-// Get all lead IDs from our database
+// Get leads with ConvertedOpportunityId from our database
+async function getLeadsWithOpportunityIds(): Promise<SupabaseLead[]> {
+  console.log("Fetching leads with converted opportunity IDs from database...");
+  
+  const { data, error } = await supabase
+    .from('salesforce_leads')
+    .select('lead_id, converted_opportunity_id')
+    .not('converted_opportunity_id', 'is', null);
+  
+  if (error) {
+    console.error("Error fetching leads with opportunity IDs:", error);
+    throw new Error(`Failed to fetch leads with opportunity IDs: ${error.message}`);
+  }
+  
+  console.log(`Found ${data.length} leads with opportunity IDs`);
+  
+  return data as SupabaseLead[];
+}
+
+// Get all lead IDs from our database as a fallback
 async function getExistingLeadIds(): Promise<string[]> {
   console.log("Fetching existing lead IDs from database...");
   
@@ -98,9 +123,51 @@ async function getExistingLeadIds(): Promise<string[]> {
   return leadIds;
 }
 
-// Query Salesforce for opportunities connected to our leads
-async function fetchSalesforceOpportunities(token: string, instanceUrl: string, leadIds: string[]): Promise<SalesforceOpportunity[]> {
-  console.log("Fetching Salesforce opportunities linked to our leads...");
+// Fetch specific opportunities by ID
+async function fetchOpportunitiesByIds(token: string, instanceUrl: string, opportunityIds: string[]): Promise<SalesforceOpportunity[]> {
+  console.log("Fetching Salesforce opportunities by IDs...");
+  
+  if (opportunityIds.length === 0) {
+    console.log("No opportunity IDs to query");
+    return [];
+  }
+  
+  // Prepare a comma-separated list of opportunity IDs enclosed in single quotes
+  const idList = opportunityIds.map(id => `'${id}'`).join(', ');
+  
+  const query = `
+    SELECT Id, StageName, Lead_ID__c
+    FROM Opportunity
+    WHERE Id IN (${idList})
+    LIMIT 1000
+  `;
+  
+  console.log("SOQL Query:", query);
+  
+  const encodedQuery = encodeURIComponent(query);
+  const queryUrl = `${instanceUrl}/services/data/v58.0/query?q=${encodedQuery}`;
+  
+  const response = await fetch(queryUrl, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Salesforce query error:", errorText);
+    throw new Error(`Failed to fetch Salesforce opportunities: ${response.status} ${errorText}`);
+  }
+
+  const data: SalesforceQueryResponse = await response.json();
+  console.log(`Retrieved ${data.records.length} opportunities from Salesforce by IDs`);
+  return data.records as SalesforceOpportunity[];
+}
+
+// Fallback: Query Salesforce for opportunities connected to our leads
+async function fetchOpportunitiesByLeadIds(token: string, instanceUrl: string, leadIds: string[]): Promise<SalesforceOpportunity[]> {
+  console.log("Fetching Salesforce opportunities linked to our leads (fallback)...");
   
   if (leadIds.length === 0) {
     console.log("No lead IDs to query opportunities for");
@@ -137,24 +204,39 @@ async function fetchSalesforceOpportunities(token: string, instanceUrl: string, 
   }
 
   const data: SalesforceQueryResponse = await response.json();
-  console.log(`Retrieved ${data.records.length} opportunities from Salesforce`);
+  console.log(`Retrieved ${data.records.length} opportunities from Salesforce by lead IDs`);
   return data.records as SalesforceOpportunity[];
 }
 
-// Transform Salesforce opportunities to Supabase format
-function transformOpportunities(salesforceOpportunities: SalesforceOpportunity[]): SupabaseOpportunity[] {
-  console.log(`Transforming ${salesforceOpportunities.length} Salesforce opportunities...`);
+// Map opportunities to leads using converted opportunity IDs
+function mapOpportunitiesToLeads(opportunities: SalesforceOpportunity[], leadsWithOpportunityIds: SupabaseLead[]): SupabaseOpportunity[] {
+  console.log(`Mapping ${opportunities.length} opportunities to leads...`);
   
-  // Only keep opportunities that have a Lead ID
-  const validOpportunities = salesforceOpportunities.filter(opp => opp.Lead_ID__c);
+  // Create a map of opportunity ID to lead ID for quick lookup
+  const opportunityToLeadMap = new Map<string, string>();
   
-  return validOpportunities.map(opp => {
-    return {
-      opportunity_id: opp.Id,
-      lead_id: opp.Lead_ID__c as string,
-      stage: opp.StageName || null
-    };
+  leadsWithOpportunityIds.forEach(lead => {
+    if (lead.converted_opportunity_id) {
+      opportunityToLeadMap.set(lead.converted_opportunity_id, lead.lead_id);
+    }
   });
+  
+  // Map the opportunities to leads
+  const mappedOpportunities = opportunities
+    .filter(opp => opportunityToLeadMap.has(opp.Id) || opp.Lead_ID__c)
+    .map(opp => {
+      const leadId = opportunityToLeadMap.get(opp.Id) || opp.Lead_ID__c!;
+      
+      return {
+        opportunity_id: opp.Id,
+        lead_id: leadId,
+        stage: opp.StageName || null
+      };
+    })
+    .filter(opp => opp.lead_id); // Ensure we have a valid lead_id
+  
+  console.log(`Mapped ${mappedOpportunities.length} opportunities to leads`);
+  return mappedOpportunities;
 }
 
 // Upsert opportunities to Supabase
@@ -166,7 +248,7 @@ async function syncOpportunitiesToSupabase(opportunities: SupabaseOpportunity[])
     return 0;
   }
   
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('salesforce_opportunities')
     .upsert(opportunities, { 
       onConflict: 'opportunity_id',
@@ -186,24 +268,50 @@ async function syncOpportunitiesToSupabase(opportunities: SupabaseOpportunity[])
 // Main sync function
 async function syncSalesforceOpportunities(): Promise<{ success: boolean; synced: number; error?: string }> {
   try {
-    // Get existing lead IDs from our database
-    const leadIds = await getExistingLeadIds();
-    
     // Get Salesforce access token
     const authResponse = await getSalesforceToken();
+    const token = authResponse.access_token;
+    const instanceUrl = authResponse.instance_url;
     
-    // Fetch opportunities for our leads
-    const salesforceOpportunities = await fetchSalesforceOpportunities(
-      authResponse.access_token, 
-      authResponse.instance_url,
-      leadIds
-    );
+    // Get leads with converted opportunity IDs
+    const leadsWithOpportunityIds = await getLeadsWithOpportunityIds();
     
-    // Transform opportunities
-    const transformedOpportunities = transformOpportunities(salesforceOpportunities);
+    // Extract opportunity IDs
+    const opportunityIds = leadsWithOpportunityIds
+      .filter(lead => lead.converted_opportunity_id)
+      .map(lead => lead.converted_opportunity_id as string);
+    
+    console.log(`Found ${opportunityIds.length} opportunity IDs to fetch`);
+    
+    // Fetch opportunities by IDs
+    let salesforceOpportunities: SalesforceOpportunity[] = [];
+    if (opportunityIds.length > 0) {
+      salesforceOpportunities = await fetchOpportunitiesByIds(token, instanceUrl, opportunityIds);
+    }
+    
+    // If we didn't get many opportunities, try the fallback method
+    if (salesforceOpportunities.length < opportunityIds.length / 2) {
+      console.log("Retrieved fewer opportunities than expected, trying fallback method...");
+      
+      // Get all lead IDs as fallback
+      const leadIds = await getExistingLeadIds();
+      
+      // Fetch opportunities by lead IDs (fallback)
+      const fallbackOpportunities = await fetchOpportunitiesByLeadIds(token, instanceUrl, leadIds);
+      
+      // Combine the results, avoiding duplicates
+      const existingIds = new Set(salesforceOpportunities.map(opp => opp.Id));
+      const uniqueFallbackOpps = fallbackOpportunities.filter(opp => !existingIds.has(opp.Id));
+      
+      salesforceOpportunities = [...salesforceOpportunities, ...uniqueFallbackOpps];
+      console.log(`Combined total: ${salesforceOpportunities.length} opportunities`);
+    }
+    
+    // Map opportunities to leads
+    const mappedOpportunities = mapOpportunitiesToLeads(salesforceOpportunities, leadsWithOpportunityIds);
     
     // Sync opportunities to Supabase
-    const syncedCount = await syncOpportunitiesToSupabase(transformedOpportunities);
+    const syncedCount = await syncOpportunitiesToSupabase(mappedOpportunities);
     
     return { 
       success: true, 
