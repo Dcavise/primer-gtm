@@ -9,42 +9,73 @@ vi.mock('@/services/api-config', () => ({
   getApiKey: vi.fn(),
 }));
 
-// Mock mapboxgl
-vi.mock('mapbox-gl', () => ({
-  default: {
-    accessToken: null,
-    workerUrl: null,
-    Map: class {
-      constructor(options) {
-        this.options = options;
-        this.testMode = options.testMode;
-        setTimeout(() => {
-          if (this.onload) this.onload();
-        }, 0);
+// Define custom types for our mocked classes
+type MockMapOptions = {
+  container: HTMLElement | string;
+  zoom?: number;
+  center?: [number, number];
+  testMode?: boolean;
+  style?: any;
+  fadeDuration?: number;
+};
+
+// Create a custom mock type that extends the actual Map type
+interface MockMap extends mapboxgl.Map {
+  options: MockMapOptions;
+  testMode?: boolean;
+  onload?: () => void;
+}
+
+// Custom Map constructor type
+interface MockMapConstructor {
+  new (options: MockMapOptions): MockMap;
+}
+
+// Create mock for mapboxgl
+vi.mock('mapbox-gl', () => {
+  // Create a mock Map class
+  const MockMapClass = class {
+    options: MockMapOptions;
+    testMode?: boolean;
+    onload?: () => void;
+
+    constructor(options: MockMapOptions) {
+      this.options = options;
+      this.testMode = options.testMode;
+      setTimeout(() => {
+        if (this.onload) this.onload();
+      }, 0);
+    }
+    addControl() { return this; }
+    flyTo() { return this; }
+    on(event: string, callback: () => void) {
+      if (event === 'load') {
+        this.onload = callback;
       }
-      addControl() { return this; }
-      flyTo() { return this; }
-      on(event, callback) {
-        if (event === 'load') {
-          this.onload = callback;
-        }
-        return this;
-      }
-      remove() { }
-    },
-    NavigationControl: class { },
-    AttributionControl: class { },
-    Marker: class {
-      setLngLat() { return this; }
-      setPopup() { return this; }
-      addTo() { return this; }
-      remove() { }
-    },
-    Popup: class {
-      setText() { return this; }
-    },
-  }
-}));
+      return this;
+    }
+    remove() { }
+  };
+
+  return {
+    default: {
+      accessToken: null,
+      workerUrl: null,
+      Map: MockMapClass as unknown as MockMapConstructor,
+      NavigationControl: class { },
+      AttributionControl: class { },
+      Marker: class {
+        setLngLat() { return this; }
+        setPopup() { return this; }
+        addTo() { return this; }
+        remove() { }
+      },
+      Popup: class {
+        setText() { return this; }
+      },
+    }
+  };
+});
 
 // Mock fetch for geocoding
 global.fetch = vi.fn();
@@ -126,6 +157,7 @@ describe('Mapbox Integration', () => {
   describe('Map Testing', () => {
     it('should initialize a map in test mode', () => {
       const container = document.createElement('div');
+      // Cast the map to our custom MockMap type for TypeScript
       const map = new mapboxgl.Map({
         container,
         zoom: 1,
@@ -137,7 +169,7 @@ describe('Mapbox Integration', () => {
           sources: {},
           layers: []
         }
-      });
+      }) as unknown as MockMap;
       
       expect(map.testMode).toBe(true);
     });
