@@ -41,7 +41,7 @@ export type ContactsSearchParams = {
   limit?: number;
   department?: string;
   seniority?: string;
-  type?: "personal" | "generic";
+  type?: "personal" | "generic" | "any";
 };
 
 export async function searchContactsByDomain(params: ContactsSearchParams): Promise<HunterDomainResponse | null> {
