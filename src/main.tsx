@@ -4,11 +4,12 @@ import ReactDOM from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import App from './App.tsx'
 import './index.css'
+import Index from './pages/Index.tsx'
+import PropertyResearch from './pages/PropertyResearch.tsx'
 import SalesforceLeadsPage from './pages/SalesforceLeads.tsx'
 import FindContactsPage from './pages/FindContacts.tsx'
 import RealEstatePipeline from './pages/RealEstatePipeline.tsx'
 import PropertyDetail from './pages/PropertyDetail.tsx'
-import Index from './pages/Index.tsx'
 import NotFound from './pages/NotFound.tsx'
 
 const router = createBrowserRouter([
@@ -19,6 +20,10 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <Index />
+      },
+      {
+        path: "property-research",
+        element: <PropertyResearch />
       },
       {
         path: "salesforce-leads",
