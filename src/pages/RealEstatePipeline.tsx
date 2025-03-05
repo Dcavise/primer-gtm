@@ -7,15 +7,18 @@ import { RealEstateProperty, PropertyPhase } from '@/types/realEstate';
 import { LoadingState } from '@/components/LoadingState';
 import { Building } from 'lucide-react';
 
-// Define the common phases in order
+// Define the phases in the specific order shown in the image
 const PHASES: PropertyPhase[] = [
-  'Prospecting', 
-  'Discovery', 
-  'Qualification', 
-  'Proposal', 
-  'Negotiation', 
-  'Contract', 
-  'Closed'
+  '0. New Site',
+  '1. Initial Diligence',
+  '2. Survey',
+  '3. Test Fit',
+  '4. Plan Production',
+  '5. Permitting',
+  '6. Construction',
+  '7. Set Up',
+  'Hold',
+  'Deprioritize'
 ];
 
 const RealEstatePipeline: React.FC = () => {
@@ -43,7 +46,7 @@ const RealEstatePipeline: React.FC = () => {
       grouped[phase] = [];
     });
 
-    // Then add any custom phases found in the data
+    // Then add any custom phases found in the data that aren't in our predefined list
     Array.from(uniquePhases).forEach(phase => {
       if (!grouped[phase]) {
         grouped[phase] = [];
@@ -91,14 +94,30 @@ const RealEstatePipeline: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-        {Object.entries(groupedProperties).map(([phase, phaseProperties]) => (
-          <PipelineColumn
-            key={phase}
-            title={phase}
-            properties={phaseProperties}
-            onPropertyClick={handlePropertyClick}
-          />
-        ))}
+        {Object.entries(groupedProperties)
+          .sort(([phaseA], [phaseB]) => {
+            // Sort columns according to the predefined order
+            const indexA = PHASES.indexOf(phaseA as PropertyPhase);
+            const indexB = PHASES.indexOf(phaseB as PropertyPhase);
+            
+            // Place predefined phases first in order, then unknown phases, then "Unspecified" last
+            if (indexA === -1 && indexB === -1) {
+              // Both are custom phases, sort alphabetically
+              return phaseA === "Unspecified" ? 1 : phaseB === "Unspecified" ? -1 : phaseA.localeCompare(phaseB);
+            }
+            if (indexA === -1) return 1; // phaseA is custom, place after predefined
+            if (indexB === -1) return -1; // phaseB is custom, place after predefined
+            return indexA - indexB; // Both are predefined, sort by index
+          })
+          .map(([phase, phaseProperties]) => (
+            <PipelineColumn
+              key={phase}
+              title={phase}
+              properties={phaseProperties}
+              onPropertyClick={handlePropertyClick}
+            />
+          ))
+        }
       </div>
 
       <PropertyDetailDialog 

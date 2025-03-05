@@ -24,4 +24,15 @@ export interface RealEstateProperty {
   fiber: string | null;
 }
 
-export type PropertyPhase = 'Prospecting' | 'Discovery' | 'Qualification' | 'Proposal' | 'Negotiation' | 'Contract' | 'Closed' | string;
+export type PropertyPhase = 
+  | '0. New Site'
+  | '1. Initial Diligence'
+  | '2. Survey'
+  | '3. Test Fit'
+  | '4. Plan Production'
+  | '5. Permitting'
+  | '6. Construction'
+  | '7. Set Up'
+  | 'Hold'
+  | 'Deprioritize'
+  | string;
