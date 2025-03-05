@@ -56,13 +56,16 @@ export function FellowsDataSync() {
     setSyncError(null);
     
     try {
+      console.log("Invoking sync-fellows-data function");
       const response = await supabase.functions.invoke('sync-fellows-data');
       
       if (response.error) {
+        console.error("Edge function error:", response.error);
         throw new Error(response.error.message || 'Unknown error occurred');
       }
       
       if (!response.data.success) {
+        console.error("Sync operation failed:", response.data);
         throw new Error(response.data.error || 'Sync operation failed');
       }
       
