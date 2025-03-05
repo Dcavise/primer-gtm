@@ -3,7 +3,6 @@ import { SearchForm } from "@/components/SearchForm";
 import { PermitList } from "@/components/PermitList";
 import { ZoningList } from "@/components/ZoningList";
 import { SchoolsList } from "@/components/SchoolsList";
-import { PropertyDataVisualizer } from "@/components/PropertyDataVisualizer";
 import { usePermits } from "@/hooks/use-permits";
 import { useZoningData } from "@/hooks/use-zoning-data";
 import { useSchoolsData } from "@/hooks/use-schools-data";
@@ -172,16 +171,6 @@ const PropertyResearch = () => {
           >
             <h2 className="text-lg md:text-xl font-medium mb-1">Results for</h2>
             <p className="text-muted-foreground">{displayedAddress}</p>
-            
-            {!isAnyDataLoading && (
-              <div className="mt-6 mb-8">
-                <PropertyDataVisualizer 
-                  permitCount={permits.length} 
-                  hasZoning={!!zoningData}
-                  schoolsCount={schools.length}
-                />
-              </div>
-            )}
           </motion.div>
         )}
         
