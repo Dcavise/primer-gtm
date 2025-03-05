@@ -1,3 +1,4 @@
+
 import { toast } from "sonner";
 import { SUPABASE_URL } from "@/services/api-config";
 import { supabase } from "@/integrations/supabase/client";
