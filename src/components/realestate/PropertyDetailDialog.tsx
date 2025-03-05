@@ -163,7 +163,7 @@ export const PropertyDetailDialog: React.FC<PropertyDetailDialogProps> = ({
             <div className="col-span-3">
               <PhaseSelector
                 value={formValues.phase || undefined}
-                onChange={handlePhaseChange}
+                onValueChange={handlePhaseChange}
               />
             </div>
           </div>
