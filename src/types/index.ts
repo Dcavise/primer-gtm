@@ -1,4 +1,3 @@
-
 export interface Coordinates {
   lat: number;
   lng: number;
@@ -114,7 +113,11 @@ export interface CensusData {
 export interface CensusResponse {
   data: CensusData;
   tractsIncluded: number;
+  blockGroupsIncluded?: number;
   radiusMiles: number;
+  searchedAddress?: string;
+  isMockData?: boolean;
+  error?: string;
 }
 
 export * from './schools';
