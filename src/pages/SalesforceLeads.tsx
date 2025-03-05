@@ -185,14 +185,15 @@ export function SalesforceLeadsPage() {
                           <TableHead>Created</TableHead>
                           <TableHead>Stage</TableHead>
                           <TableHead>Lead Source</TableHead>
-                          <TableHead>Campus</TableHead>
+                          <TableHead>Preferred Campus</TableHead>
+                          <TableHead>Assigned Campus</TableHead>
                           <TableHead>Converted</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {leads.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
+                            <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
                               No leads data available
                             </TableCell>
                           </TableRow>
@@ -205,7 +206,14 @@ export function SalesforceLeadsPage() {
                               <TableCell>{formatDate(lead.created_date)}</TableCell>
                               <TableCell>{lead.stage || '-'}</TableCell>
                               <TableCell>{lead.lead_source || '-'}</TableCell>
-                              <TableCell>{lead.preferred_campus || '-'}</TableCell>
+                              <TableCell>
+                                {lead.preferred_campus ? (
+                                  <span className="font-medium text-blue-600">{lead.preferred_campus}</span>
+                                ) : (
+                                  '-'
+                                )}
+                              </TableCell>
+                              <TableCell>{lead.campus_id || '-'}</TableCell>
                               <TableCell>
                                 {lead.converted ? (
                                   <div className="flex items-center">
