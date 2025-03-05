@@ -33,7 +33,23 @@ const fallbackPermitData = {
         }
       },
       latitude: "40.7128",
-      longitude: "-74.0060"
+      longitude: "-74.0060",
+      // Adding missing required fields with default values
+      department_id: "",
+      zoning_classification_pre: "",
+      zoning_classification_post: "",
+      document_link: "",
+      contact_website: "",
+      parcel_number: "",
+      block: "",
+      lot: "",
+      owner: "",
+      authority: "",
+      owner_address: "",
+      owner_phone: "",
+      comments: "",
+      remarks: "",
+      suburb: ""
     },
     {
       id: "permit-2",
@@ -62,7 +78,23 @@ const fallbackPermitData = {
         }
       },
       latitude: "40.7128",
-      longitude: "-74.0060"
+      longitude: "-74.0060",
+      // Adding missing required fields with default values
+      department_id: "",
+      zoning_classification_pre: "",
+      zoning_classification_post: "",
+      document_link: "",
+      contact_website: "",
+      parcel_number: "",
+      block: "",
+      lot: "",
+      owner: "",
+      authority: "",
+      owner_address: "",
+      owner_phone: "",
+      comments: "",
+      remarks: "",
+      suburb: ""
     }
   ],
   total: 2
@@ -102,10 +134,54 @@ export async function searchPermits(params: PermitSearchParams): Promise<PermitR
       const data = await response.json();
       console.log(`API returned ${data.data?.length || 0} permits`);
       
+      // Process the API data to ensure all required fields are present
+      const processedPermits = (data.data || []).map((permit: any) => {
+        return {
+          id: permit.id || `permit-${Math.random().toString(36).substring(7)}`,
+          record_id: permit.record_id || "",
+          applicant: permit.applicant || "",
+          project_type: permit.project_type || "",
+          address: permit.address || "",
+          postcode: permit.postcode || "",
+          city: permit.city || "",
+          state: permit.state || "",
+          project_brief: permit.project_brief || "",
+          project_name: permit.project_name || "",
+          status: permit.status || "",
+          date: permit.date || permit.created_date || permit.last_updated_date || new Date().toISOString(),
+          created_date: permit.created_date || new Date().toISOString(),
+          last_updated_date: permit.last_updated_date || new Date().toISOString(),
+          applicant_contact: permit.applicant_contact || "",
+          record_link: permit.record_link || "",
+          contact_phone_number: permit.contact_phone_number || "",
+          contact_email: permit.contact_email || "",
+          source: permit.source || "Zoneomics API",
+          pin: permit.pin || { location: { lat: permit.latitude || "0", lon: permit.longitude || "0" } },
+          latitude: permit.latitude || "0",
+          longitude: permit.longitude || "0",
+          // Adding all required fields with default values if not present
+          department_id: permit.department_id || "",
+          zoning_classification_pre: permit.zoning_classification_pre || "",
+          zoning_classification_post: permit.zoning_classification_post || "",
+          document_link: permit.document_link || "",
+          contact_website: permit.contact_website || "",
+          parcel_number: permit.parcel_number || "",
+          block: permit.block || "",
+          lot: permit.lot || "",
+          owner: permit.owner || "",
+          authority: permit.authority || "",
+          owner_address: permit.owner_address || "",
+          owner_phone: permit.owner_phone || "",
+          comments: permit.comments || "",
+          remarks: permit.remarks || "",
+          suburb: permit.suburb || ""
+        };
+      });
+      
       // Filter for exact address matches if exact_address is provided
-      if (params.exact_address && data.data && data.data.length > 0) {
+      if (params.exact_address && processedPermits.length > 0) {
         const exactAddress = params.exact_address.toLowerCase().trim();
-        const exactMatches = data.data.filter((permit: any) => {
+        const exactMatches = processedPermits.filter((permit: any) => {
           if (!permit.address) return false;
           
           return permit.address.toLowerCase().trim() === exactAddress;
@@ -120,8 +196,8 @@ export async function searchPermits(params: PermitSearchParams): Promise<PermitR
       }
       
       return {
-        permits: data.data || [],
-        total: data.data?.length || 0
+        permits: processedPermits,
+        total: processedPermits.length
       };
     } catch (fetchError) {
       console.warn("Fetch operation failed, using fallback permit data:", fetchError);
