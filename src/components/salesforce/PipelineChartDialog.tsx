@@ -25,8 +25,8 @@ export const PipelineChartDialog: React.FC<PipelineChartDialogProps> = ({
   opportunityStageCounts,
   selectedCampusName
 }) => {
-  // Color palette for the bars
-  const colors = ['#4f46e5', '#6366f1', '#818cf8', '#a5b4fc'];
+  // Enhanced color palette for the bars - using vibrant but complementary colors
+  const colors = ['#8B5CF6', '#EC4899', '#F97316', '#10B981'];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
