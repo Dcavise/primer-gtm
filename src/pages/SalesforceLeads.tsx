@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,6 +26,12 @@ interface Campus {
   campus_name: string;
 }
 
+interface SyncStatus {
+  leads: 'idle' | 'loading' | 'success' | 'error';
+  opportunities: 'idle' | 'loading' | 'success' | 'error';
+  fellows: 'idle' | 'loading' | 'success' | 'error';
+}
+
 const SalesforceLeadsPage: React.FC = () => {
   const [stats, setStats] = useState<SummaryStats>({
     fellowsCount: 0,
@@ -39,6 +44,11 @@ const SalesforceLeadsPage: React.FC = () => {
   const [syncLoading, setSyncLoading] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [showDetailedError, setShowDetailedError] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>({
+    leads: 'idle',
+    opportunities: 'idle',
+    fellows: 'idle'
+  });
 
   useEffect(() => {
     fetchCampuses();
@@ -139,63 +149,93 @@ const SalesforceLeadsPage: React.FC = () => {
     }
   };
 
-  const syncSalesforceLeads = async () => {
+  const syncSalesforceData = async () => {
     setSyncLoading(true);
     setSyncError(null);
     setShowDetailedError(false);
     
+    setSyncStatus({
+      leads: 'loading',
+      opportunities: 'loading',
+      fellows: 'loading'
+    });
+    
+    toast.info("Starting complete Salesforce data sync...");
+    console.log("Starting complete data sync process");
+    
     try {
       console.log("Invoking sync-salesforce-leads function");
-      toast.info("Starting Salesforce data sync...");
+      const leadsResponse = await supabase.functions.invoke('sync-salesforce-leads');
       
-      const response = await supabase.functions.invoke('sync-salesforce-leads');
+      console.log("Leads sync response:", leadsResponse);
       
-      console.log("Edge function response:", response);
-      
-      if (response.error) {
-        console.error("Edge function error:", response.error);
-        throw new Error(response.error.message || 'Unknown error occurred during sync');
+      if (leadsResponse.error) {
+        console.error("Leads sync error:", leadsResponse.error);
+        setSyncStatus(prev => ({ ...prev, leads: 'error' }));
+        toast.error(`Error syncing leads: ${leadsResponse.error.message || 'Unknown error'}`);
+      } else if (!leadsResponse.data || !leadsResponse.data.success) {
+        console.error("Leads sync failed:", leadsResponse.data);
+        setSyncStatus(prev => ({ ...prev, leads: 'error' }));
+        toast.error(`Leads sync failed: ${leadsResponse.data?.error || 'Unknown error'}`);
+      } else {
+        setSyncStatus(prev => ({ ...prev, leads: 'success' }));
+        toast.success(`Synced ${leadsResponse.data.synced || 0} leads`);
       }
       
-      if (!response.data) {
-        console.error("No data returned from edge function");
-        throw new Error('No data returned from sync operation');
+      console.log("Invoking sync-salesforce-opportunities function");
+      const oppsResponse = await supabase.functions.invoke('sync-salesforce-opportunities');
+      
+      console.log("Opportunities sync response:", oppsResponse);
+      
+      if (oppsResponse.error) {
+        console.error("Opportunities sync error:", oppsResponse.error);
+        setSyncStatus(prev => ({ ...prev, opportunities: 'error' }));
+        toast.error(`Error syncing opportunities: ${oppsResponse.error.message || 'Unknown error'}`);
+      } else if (!oppsResponse.data || !oppsResponse.data.success) {
+        console.error("Opportunities sync failed:", oppsResponse.data);
+        setSyncStatus(prev => ({ ...prev, opportunities: 'error' }));
+        toast.error(`Opportunities sync failed: ${oppsResponse.data?.error || 'Unknown error'}`);
+      } else {
+        setSyncStatus(prev => ({ ...prev, opportunities: 'success' }));
+        toast.success(`Synced ${oppsResponse.data.synced || 0} opportunities`);
       }
       
-      if (!response.data.success) {
-        console.error("Sync operation failed:", response.data);
-        throw new Error(response.data.error || 'Sync operation failed');
+      console.log("Invoking sync-fellows-data function");
+      const fellowsResponse = await supabase.functions.invoke('sync-fellows-data');
+      
+      console.log("Fellows sync response:", fellowsResponse);
+      
+      if (fellowsResponse.error) {
+        console.error("Fellows sync error:", fellowsResponse.error);
+        setSyncStatus(prev => ({ ...prev, fellows: 'error' }));
+        toast.error(`Error syncing fellows: ${fellowsResponse.error.message || 'Unknown error'}`);
+      } else if (!fellowsResponse.data || !fellowsResponse.data.success) {
+        console.error("Fellows sync failed:", fellowsResponse.data);
+        setSyncStatus(prev => ({ ...prev, fellows: 'error' }));
+        toast.error(`Fellows sync failed: ${fellowsResponse.data?.error || 'Unknown error'}`);
+      } else {
+        setSyncStatus(prev => ({ ...prev, fellows: 'success' }));
+        toast.success(`Synced ${fellowsResponse.data.result?.inserted || 0} fellows`);
       }
       
-      let successMessage = `Successfully synced ${response.data.synced || 0} leads, matched ${response.data.matched || 0} with campuses`;
+      const hasErrors = Object.values(syncStatus).some(status => status === 'error');
       
-      if (response.data.fixed && response.data.fixed > 0) {
-        successMessage += `, fixed ${response.data.fixed} lead campus ID mappings`;
+      if (hasErrors) {
+        console.warn("Some sync operations failed");
+        toast.warning("Some data sync operations completed with errors. Check console for details.");
+      } else {
+        console.log("All sync operations completed successfully");
+        toast.success("All data synchronized successfully!");
       }
       
-      if (response.data.fixedOpportunities && response.data.fixedOpportunities > 0) {
-        successMessage += `, fixed ${response.data.fixedOpportunities} opportunity campus ID mappings`;
-      }
-      
-      if (response.data.fixedFellows && response.data.fixedFellows > 0) {
-        successMessage += `, fixed ${response.data.fixedFellows} fellow campus ID mappings`;
-      }
-      
-      if (response.data.cleaned && response.data.cleaned > 0) {
-        successMessage += `, cleaned ${response.data.cleaned} invalid campus references`;
-      }
-      
-      console.log("Sync completed successfully:", response.data);
-      toast.success(successMessage);
-      
-      // Refresh the stats after sync
       fetchStats();
       fetchCampuses();
+      
     } catch (error: any) {
-      console.error('Error syncing Salesforce leads:', error);
+      console.error('Error in sync process:', error);
       const errorMessage = error.message || 'Unknown error occurred';
       setSyncError(errorMessage);
-      toast.error(`Error syncing leads data: ${errorMessage}`);
+      toast.error(`Error in sync process: ${errorMessage}`);
     } finally {
       setSyncLoading(false);
     }
@@ -206,7 +246,7 @@ const SalesforceLeadsPage: React.FC = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Salesforce Analytics</h1>
         <Button 
-          onClick={syncSalesforceLeads} 
+          onClick={syncSalesforceData} 
           disabled={syncLoading}
           className="flex items-center gap-2"
         >
@@ -267,7 +307,6 @@ const SalesforceLeadsPage: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Fellows Card */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -285,7 +324,6 @@ const SalesforceLeadsPage: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Leads Card */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -303,7 +341,6 @@ const SalesforceLeadsPage: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Active Opportunities Card */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -321,7 +358,6 @@ const SalesforceLeadsPage: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Closed Won Opportunities Card */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
