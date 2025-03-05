@@ -30,17 +30,42 @@ const GoogleMapRenderer: React.FC<GoogleMapRendererProps> = ({
   const mapRef = useRef<HTMLDivElement>(null);
   const [mapRenderAttempts, setMapRenderAttempts] = useState(0);
   const [renderError, setRenderError] = useState<string | null>(null);
+  const [mapRendered, setMapRendered] = useState(false);
   
   // Create the map once the script is loaded and we have coordinates
   useEffect(() => {
-    if (!isLoaded || !coordinates || !mapRef.current) return;
+    if (!coordinates || !mapRef.current) return;
     
     // Clear any previous errors
     setRenderError(null);
     
+    // If Google Maps API isn't available but we have coordinates, show static map as fallback
+    if (!isLoaded && !isLoading && mapRenderAttempts > 2) {
+      console.log("Falling back to static map");
+      if (mapRef.current) {
+        const staticMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${coordinates.lat},${coordinates.lng}&zoom=${zoom}&size=600x400&markers=color:red%7C${coordinates.lat},${coordinates.lng}`;
+        const img = document.createElement('img');
+        img.src = staticMapUrl;
+        img.alt = `Map of ${address}`;
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'cover';
+        img.style.borderRadius = '0.375rem';
+        
+        // Clear the container first
+        mapRef.current.innerHTML = '';
+        mapRef.current.appendChild(img);
+        setMapRendered(true);
+        return;
+      }
+    }
+    
     const tryRenderMap = () => {
       try {
         console.log("Attempting to render map, attempt:", mapRenderAttempts);
+        
+        // Skip if we've already rendered successfully
+        if (mapRendered) return true;
         
         // Clear the container first
         if (mapRef.current) {
@@ -65,10 +90,11 @@ const GoogleMapRenderer: React.FC<GoogleMapRendererProps> = ({
             title: address
           });
           
+          setMapRendered(true);
           return true;
         } 
         // Fallback to using Google Maps Platform elements if available
-        else if (customElements.get('gmp-map')) {
+        else if (window.customElements && customElements.get('gmp-map')) {
           console.log("Rendering with Google Maps Platform web components");
           
           // Create map element
@@ -88,6 +114,7 @@ const GoogleMapRenderer: React.FC<GoogleMapRendererProps> = ({
           mapElement.appendChild(markerElement);
           mapRef.current.appendChild(mapElement);
           
+          setMapRendered(true);
           return true;
         } else {
           console.log("Neither Google Maps API nor web components are available yet");
@@ -107,16 +134,33 @@ const GoogleMapRenderer: React.FC<GoogleMapRendererProps> = ({
     if (!success && mapRenderAttempts < 5) {
       const timer = setTimeout(() => {
         setMapRenderAttempts(prev => prev + 1);
-      }, 500);
+      }, 1000); // Increased timeout for better chances
       
       return () => clearTimeout(timer);
     }
     
     // If we've tried too many times, set an error
-    if (!success && mapRenderAttempts >= 5) {
-      setRenderError("Unable to render map after multiple attempts. Please refresh the page.");
+    if (!success && mapRenderAttempts >= 5 && !mapRendered) {
+      // Try to show a static map as last resort
+      if (mapRef.current) {
+        const staticMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${coordinates.lat},${coordinates.lng}&zoom=${zoom}&size=600x400&markers=color:red%7C${coordinates.lat},${coordinates.lng}`;
+        const img = document.createElement('img');
+        img.src = staticMapUrl;
+        img.alt = `Map of ${address}`;
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'cover';
+        img.style.borderRadius = '0.375rem';
+        
+        // Clear the container first
+        mapRef.current.innerHTML = '';
+        mapRef.current.appendChild(img);
+        setMapRendered(true);
+      } else {
+        setRenderError("Unable to render map after multiple attempts. Please refresh the page.");
+      }
     }
-  }, [isLoaded, coordinates, zoom, mapId, address, mapRenderAttempts]);
+  }, [isLoaded, coordinates, zoom, mapId, address, mapRenderAttempts, isLoading, mapRendered]);
   
   if (error || renderError) {
     return (
@@ -128,7 +172,7 @@ const GoogleMapRenderer: React.FC<GoogleMapRendererProps> = ({
     );
   }
   
-  if (isLoading || !coordinates) {
+  if (isLoading && !coordinates) {
     return <Skeleton className="w-full" style={{ height, width }} />;
   }
   

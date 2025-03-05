@@ -96,7 +96,7 @@ export function useGoogleMapsScript(options: GoogleMapsScriptOptions = {}) {
       // Create a new script element
       const script = document.createElement('script');
       script.id = 'google-maps-script';
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap&libraries=${libraries.join(',')}&v=beta`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=${libraries.join(',')}&callback=initMap&v=beta`;
       script.async = true;
       script.defer = true;
       
@@ -110,8 +110,23 @@ export function useGoogleMapsScript(options: GoogleMapsScriptOptions = {}) {
       // Handle errors
       script.onerror = (e) => {
         console.error('Failed to load Google Maps JavaScript API', e);
+        // Fall back to using a static map if available
         setError('Failed to load map');
         setIsLoading(false);
+
+        // Try loading a simpler version without beta and with fewer libraries
+        const fallbackScript = document.createElement('script');
+        fallbackScript.id = 'google-maps-script-fallback';
+        fallbackScript.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap`;
+        fallbackScript.async = true;
+        fallbackScript.defer = true;
+        
+        fallbackScript.onerror = () => {
+          console.error('Fallback script also failed to load');
+          setError('Failed to load map (all attempts)');
+        };
+        
+        document.head.appendChild(fallbackScript);
       };
       
       // Add the script to the document

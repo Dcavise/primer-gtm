@@ -1,14 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-/**
- * Interface for geographic coordinates
- */
-export interface Coordinates {
-  lat: number;
-  lng: number;
-}
+import { Coordinates } from "@/types";
 
 /**
  * Interface for address components returned by Google Maps API
