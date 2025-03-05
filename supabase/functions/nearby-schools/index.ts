@@ -1,9 +1,9 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 // Calculate distance between two sets of coordinates using Haversine formula
@@ -33,8 +33,11 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 }
 
 serve(async (req) => {
+  console.log(`Request received for nearby-schools function: ${req.method} ${req.url}`);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log("Handling CORS preflight request");
     return new Response(null, { headers: corsHeaders });
   }
 
@@ -44,13 +47,31 @@ serve(async (req) => {
     if (!API_KEY) {
       console.error('GREATSCHOOLS_API_KEY not found in environment variables');
       return new Response(
-        JSON.stringify({ error: 'API key not configured' }),
+        JSON.stringify({ 
+          error: 'API key not configured',
+          message: 'The GreatSchools API key is missing. Please add it to your Supabase secrets.'
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     // Get request parameters
-    const { lat, lon, address, radius = 5 } = await req.json();
+    let requestParams;
+    try {
+      requestParams = await req.json();
+      console.log("Request parameters:", JSON.stringify(requestParams));
+    } catch (parseError) {
+      console.error("Error parsing request JSON:", parseError);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid JSON in request body',
+          details: parseError.message
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const { lat, lon, address, radius = 5 } = requestParams;
     console.log(`Searching for schools near: ${address} (${lat}, ${lon}), radius: ${radius}mi`);
 
     if (!lat || !lon || !address) {

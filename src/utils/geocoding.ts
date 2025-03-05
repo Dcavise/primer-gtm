@@ -28,12 +28,15 @@ export const geocodeAddress = async (address: string): Promise<{
     
     if (!response.ok) {
       const errorText = await response.text();
+      console.error(`Geocoding API error: Status ${response.status}, Response: ${errorText}`);
       throw new Error(`Geocoding API error: ${response.status} - ${errorText}`);
     }
     
     const result = await response.json();
+    console.log("Geocoding API response:", result);
     
     if (!result || !result.coordinates) {
+      console.error("Invalid geocoding result structure:", result);
       throw new Error("No results found for this address");
     }
     

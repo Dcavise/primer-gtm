@@ -4,6 +4,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 };
 
 const API_KEYS = {
@@ -17,6 +18,7 @@ const API_KEYS = {
 
 serve(async (req) => {
   console.log(`Request method: ${req.method}`);
+  console.log(`Request URL: ${req.url}`);
   
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
