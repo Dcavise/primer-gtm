@@ -54,6 +54,7 @@ async function geocodeWithGoogleMaps(address: string): Promise<GeocodingResult |
     // Try to get the Google Maps API key securely from Supabase
     let apiKey;
     try {
+      // First try POST request format
       apiKey = await getApiKey('google_maps');
       if (!apiKey) {
         console.warn("Empty Google Maps API key received from edge function");
@@ -103,9 +104,16 @@ async function geocodeWithGoogleMaps(address: string): Promise<GeocodingResult |
 
 async function geocodeWithMapbox(address: string): Promise<GeocodingResult | null> {
   try {
-    const token = await getApiKey('mapbox');
-    if (!token) {
-      throw new Error("No Mapbox token available");
+    let token;
+    try {
+      token = await getApiKey('mapbox');
+      if (!token) {
+        throw new Error("No Mapbox token available");
+      }
+    } catch (error) {
+      console.error("Error fetching Mapbox token:", error);
+      // No fallback for Mapbox token
+      throw error;
     }
     
     console.log("Geocoding address with Mapbox:", address);
