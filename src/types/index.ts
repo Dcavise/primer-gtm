@@ -1,4 +1,3 @@
-
 export interface Coordinates {
   lat: number;
   lng: number;
@@ -92,6 +91,15 @@ export interface Fellow {
   grade_band: string | null;
   fte_employment_status: string | null;
   updated_at: string | null;
+}
+
+export interface SalesforceOpportunity {
+  id: string;
+  opportunity_id: string;
+  lead_id: string;
+  stage: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export * from './schools';

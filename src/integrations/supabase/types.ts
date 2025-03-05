@@ -122,6 +122,41 @@ export type Database = {
         }
         Relationships: []
       }
+      salesforce_opportunities: {
+        Row: {
+          created_at: string
+          id: string
+          lead_id: string
+          opportunity_id: string
+          stage: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lead_id: string
+          opportunity_id: string
+          stage?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lead_id?: string
+          opportunity_id?: string
+          stage?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_lead"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "salesforce_leads"
+            referencedColumns: ["lead_id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
