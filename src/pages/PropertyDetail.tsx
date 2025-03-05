@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -33,7 +32,8 @@ import {
   Save,
   Edit,
   X,
-  Map
+  Map,
+  FileContract
 } from 'lucide-react';
 
 const PropertyDetail: React.FC = () => {
@@ -41,23 +41,23 @@ const PropertyDetail: React.FC = () => {
   const navigate = useNavigate();
   const [fileRefreshKey, setFileRefreshKey] = useState(0);
   
-  // Edit states for different sections
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [isEditingPropertyInfo, setIsEditingPropertyInfo] = useState(false);
   const [isEditingStatusInfo, setIsEditingStatusInfo] = useState(false);
   const [isEditingContactInfo, setIsEditingContactInfo] = useState(false);
+  const [isEditingLeaseInfo, setIsEditingLeaseInfo] = useState(false);
   
-  // Form values
   const [notesValue, setNotesValue] = useState('');
   const [propertyFormValues, setPropertyFormValues] = useState<Partial<RealEstateProperty>>({});
   const [statusFormValues, setStatusFormValues] = useState<Partial<RealEstateProperty>>({});
   const [contactFormValues, setContactFormValues] = useState<Partial<RealEstateProperty>>({});
+  const [leaseFormValues, setLeaseFormValues] = useState<Partial<RealEstateProperty>>({});
   
-  // Saving states
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [isSavingPropertyInfo, setIsSavingPropertyInfo] = useState(false);
   const [isSavingStatusInfo, setIsSavingStatusInfo] = useState(false);
   const [isSavingContactInfo, setIsSavingContactInfo] = useState(false);
+  const [isSavingLeaseInfo, setIsSavingLeaseInfo] = useState(false);
   
   const { data: property, isLoading, error, refetch } = useQuery({
     queryKey: ['property', id],
@@ -81,7 +81,6 @@ const PropertyDetail: React.FC = () => {
 
   React.useEffect(() => {
     if (property) {
-      // Initialize all form values when property data is loaded
       if (property.status_notes) {
         setNotesValue(property.status_notes);
       }
@@ -101,14 +100,17 @@ const PropertyDetail: React.FC = () => {
         ahj_building_records: property.ahj_building_records || '',
         survey_status: property.survey_status || '',
         test_fit_status: property.test_fit_status || '',
-        loi_status: property.loi_status || '',
-        lease_status: property.lease_status || '',
       });
       
       setContactFormValues({
         ll_poc: property.ll_poc || '',
         ll_phone: property.ll_phone || '',
         ll_email: property.ll_email || '',
+      });
+      
+      setLeaseFormValues({
+        loi_status: property.loi_status || '',
+        lease_status: property.lease_status || '',
       });
     }
   }, [property]);
@@ -121,7 +123,6 @@ const PropertyDetail: React.FC = () => {
     setFileRefreshKey(prev => prev + 1);
   };
 
-  // Handle form input changes
   const handlePropertyInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setPropertyFormValues(prev => ({ ...prev, [name]: value }));
@@ -137,7 +138,11 @@ const PropertyDetail: React.FC = () => {
     setContactFormValues(prev => ({ ...prev, [name]: value }));
   };
 
-  // Notes section
+  const handleLeaseInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setLeaseFormValues(prev => ({ ...prev, [name]: value }));
+  };
+
   const handleEditNotes = () => {
     setIsEditingNotes(true);
   };
@@ -178,7 +183,6 @@ const PropertyDetail: React.FC = () => {
     }
   };
 
-  // Property info section
   const handleEditPropertyInfo = () => {
     setIsEditingPropertyInfo(true);
   };
@@ -225,7 +229,6 @@ const PropertyDetail: React.FC = () => {
     }
   };
 
-  // Status info section
   const handleEditStatusInfo = () => {
     setIsEditingStatusInfo(true);
   };
@@ -237,8 +240,6 @@ const PropertyDetail: React.FC = () => {
         ahj_building_records: property.ahj_building_records || '',
         survey_status: property.survey_status || '',
         test_fit_status: property.test_fit_status || '',
-        loi_status: property.loi_status || '',
-        lease_status: property.lease_status || '',
       });
     }
     setIsEditingStatusInfo(false);
@@ -271,7 +272,6 @@ const PropertyDetail: React.FC = () => {
     }
   };
 
-  // Contact info section
   const handleEditContactInfo = () => {
     setIsEditingContactInfo(true);
   };
@@ -311,6 +311,47 @@ const PropertyDetail: React.FC = () => {
       toast.error('Failed to save contact information');
     } finally {
       setIsSavingContactInfo(false);
+    }
+  };
+
+  const handleEditLeaseInfo = () => {
+    setIsEditingLeaseInfo(true);
+  };
+
+  const handleCancelEditLeaseInfo = () => {
+    if (property) {
+      setLeaseFormValues({
+        loi_status: property.loi_status || '',
+        lease_status: property.lease_status || '',
+      });
+    }
+    setIsEditingLeaseInfo(false);
+  };
+
+  const handleSaveLeaseInfo = async () => {
+    if (!id) return;
+    
+    setIsSavingLeaseInfo(true);
+    try {
+      const { error } = await supabase
+        .from('real_estate_pipeline')
+        .update(leaseFormValues)
+        .eq('id', parseInt(id));
+      
+      if (error) {
+        console.error('Error saving lease info:', error);
+        toast.error('Failed to save lease information');
+        return;
+      }
+      
+      setIsEditingLeaseInfo(false);
+      toast.success('Lease information saved successfully');
+      refetch();
+    } catch (error) {
+      console.error('Error saving lease info:', error);
+      toast.error('Failed to save lease information');
+    } finally {
+      setIsSavingLeaseInfo(false);
     }
   };
 
@@ -368,7 +409,6 @@ const PropertyDetail: React.FC = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
-            {/* Map Section */}
             {property.address && (
               <Card>
                 <CardHeader>
@@ -626,32 +666,6 @@ const PropertyDetail: React.FC = () => {
                     <p className="font-medium">{property.test_fit_status || 'Not specified'}</p>
                   )}
                 </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">LOI Status</p>
-                  {isEditingStatusInfo ? (
-                    <Input 
-                      name="loi_status" 
-                      value={statusFormValues.loi_status} 
-                      onChange={handleStatusInputChange}
-                      placeholder="Enter LOI status"
-                    />
-                  ) : (
-                    <p className="font-medium">{property.loi_status || 'Not specified'}</p>
-                  )}
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Lease Status</p>
-                  {isEditingStatusInfo ? (
-                    <Input 
-                      name="lease_status" 
-                      value={statusFormValues.lease_status} 
-                      onChange={handleStatusInputChange}
-                      placeholder="Enter lease status"
-                    />
-                  ) : (
-                    <p className="font-medium">{property.lease_status || 'Not specified'}</p>
-                  )}
-                </div>
               </CardContent>
             </Card>
 
@@ -854,6 +868,86 @@ const PropertyDetail: React.FC = () => {
                     propertyId={property.id} 
                     onFileDeleted={handleFileUploadComplete}
                   />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl flex items-center justify-between">
+                  <div className="flex items-center">
+                    <FileContract className="h-5 w-5 mr-2" />
+                    Lease Information
+                  </div>
+                  <div className="space-x-2">
+                    {isEditingLeaseInfo ? (
+                      <>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={handleCancelEditLeaseInfo}
+                          disabled={isSavingLeaseInfo}
+                        >
+                          <X className="h-4 w-4 mr-1" /> Cancel
+                        </Button>
+                        <Button 
+                          variant="default" 
+                          size="sm" 
+                          onClick={handleSaveLeaseInfo}
+                          disabled={isSavingLeaseInfo}
+                        >
+                          {isSavingLeaseInfo ? (
+                            <span className="flex items-center">
+                              <LoadingState message="Saving..." showSpinner={true} />
+                            </span>
+                          ) : (
+                            <>
+                              <Save className="h-4 w-4 mr-1" /> Save
+                            </>
+                          )}
+                        </Button>
+                      </>
+                    ) : (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleEditLeaseInfo}
+                      >
+                        <Edit className="h-4 w-4 mr-1" /> Edit
+                      </Button>
+                    )}
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">LOI Status</p>
+                    {isEditingLeaseInfo ? (
+                      <Input 
+                        name="loi_status" 
+                        value={leaseFormValues.loi_status} 
+                        onChange={handleLeaseInputChange}
+                        placeholder="Enter LOI status"
+                      />
+                    ) : (
+                      <p className="font-medium">{property.loi_status || 'Not specified'}</p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">Lease Status</p>
+                    {isEditingLeaseInfo ? (
+                      <Input 
+                        name="lease_status" 
+                        value={leaseFormValues.lease_status} 
+                        onChange={handleLeaseInputChange}
+                        placeholder="Enter lease status"
+                      />
+                    ) : (
+                      <p className="font-medium">{property.lease_status || 'Not specified'}</p>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
