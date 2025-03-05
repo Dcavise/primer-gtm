@@ -92,7 +92,7 @@ serve(async (req) => {
           blockGroupsIncluded: blockGroupsInRadius.length,
           radiusMiles,
           searchedAddress: geocoded.formattedAddress || address,
-          isMockData: false
+          isMockData: false // Explicitly set to false when we have real data
         };
       } else {
         // Fallback to mock data

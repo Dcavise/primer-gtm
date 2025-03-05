@@ -1,4 +1,3 @@
-
 import { CensusData, CensusResponse } from "@/types";
 import { LoadingState } from "@/components/LoadingState";
 import { CensusHeader } from "./census/CensusHeader";
@@ -59,11 +58,17 @@ export const CensusList = ({
       distance: bg.distance ? `${bg.distance.toFixed(2)} miles` : 'unknown'
     })) : [];
 
+  // Determine if we're using mock data - check explicitly from the response if provided, 
+  // otherwise fall back to the prop or derive from data availability
+  const isUsingMockData = censusResponse?.isMockData === true || 
+                         (isMockData === true) || 
+                         (!blockGroupsInfo.length && !tractsInfo.length);
+
   return (
     <div className="py-6 space-y-6">
       <CensusHeader searchedAddress={searchedAddress} />
       
-      {isMockData && (
+      {isUsingMockData && (
         <Alert className="bg-amber-50 border-amber-200">
           <InfoIcon className="h-4 w-4 text-amber-500" />
           <AlertTitle>Using Demo Data</AlertTitle>
@@ -73,7 +78,7 @@ export const CensusList = ({
         </Alert>
       )}
       
-      {searchedAddress && censusData.totalPopulation && censusData.totalPopulation < 100 && !isMockData && (
+      {searchedAddress && censusData.totalPopulation && censusData.totalPopulation < 100 && !isUsingMockData && (
         <Alert className="bg-blue-50 border-blue-200">
           <InfoIcon className="h-4 w-4 text-blue-500" />
           <AlertTitle>Using Approximate Data</AlertTitle>

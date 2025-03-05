@@ -57,10 +57,12 @@ export function useCensusData() {
       setCensusResponse({
         data: response.data,
         tractsIncluded: response.tractsIncluded,
-        radiusMiles: response.radiusMiles
+        blockGroupsIncluded: response.blockGroupsIncluded,
+        radiusMiles: response.radiusMiles,
+        isMockData: response.isMockData
       });
       setStatus("success");
-      setIsMockData(response.isMockData);
+      setIsMockData(response.isMockData === true);
       setSearchedAddress(response.searchedAddress || address);
       
       // Show different toast based on whether it's mock data and tracts found
@@ -69,6 +71,10 @@ export function useCensusData() {
           description: response.error 
             ? `${response.error}. Showing sample data for demonstration.`
             : "No census tracts found within 2 miles. Showing sample data for demonstration."
+        });
+      } else if (response.blockGroupsIncluded > 0) {
+        toast.success("Census data retrieved", {
+          description: `Showing demographic data from ${response.blockGroupsIncluded} census block groups within ${response.radiusMiles} miles.`
         });
       } else if (response.tractsIncluded === 0) {
         toast.warning("Limited census data", {
@@ -102,7 +108,8 @@ export function useCensusData() {
       setCensusResponse({
         data: mockData,
         tractsIncluded: 5,
-        radiusMiles: 2
+        radiusMiles: 2,
+        isMockData: true
       });
       setStatus("success");
       setIsMockData(true);

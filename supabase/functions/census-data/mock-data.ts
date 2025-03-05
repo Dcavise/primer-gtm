@@ -40,6 +40,36 @@ export function getMockCensusData(): CensusData {
         { name: "Student-Teacher Ratio", value: "16:1" },
       ],
     },
-    rawData: {},
+    rawData: {
+      // Add mock block groups data for consistency
+      blockGroupsInRadius: [
+        {
+          NAME: "Block Group 1, Census Tract 1, Sample County, Sample State",
+          B01003_001E: "2500",
+          B19013_001E: "65000",
+          B25077_001E: "240000",
+          B23025_005E: "120",
+          B23025_003E: "1800",
+          state: "00",
+          county: "000",
+          tract: "000100",
+          blockGroup: "1",
+          distance: 2.5
+        },
+        {
+          NAME: "Block Group 2, Census Tract 1, Sample County, Sample State",
+          B01003_001E: "2000",
+          B19013_001E: "58000",
+          B25077_001E: "220000",
+          B23025_005E: "100",
+          B23025_003E: "1500",
+          state: "00",
+          county: "000",
+          tract: "000100",
+          blockGroup: "2",
+          distance: 3.2
+        }
+      ]
+    },
   };
 }
