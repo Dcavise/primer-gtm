@@ -82,7 +82,6 @@ export type Database = {
           campus_id: string | null
           converted: boolean | null
           converted_date: string | null
-          converted_opportunity_id: string | null
           created_date: string | null
           first_name: string | null
           id: string
@@ -97,7 +96,6 @@ export type Database = {
           campus_id?: string | null
           converted?: boolean | null
           converted_date?: string | null
-          converted_opportunity_id?: string | null
           created_date?: string | null
           first_name?: string | null
           id?: string
@@ -112,7 +110,6 @@ export type Database = {
           campus_id?: string | null
           converted?: boolean | null
           converted_date?: string | null
-          converted_opportunity_id?: string | null
           created_date?: string | null
           first_name?: string | null
           id?: string
