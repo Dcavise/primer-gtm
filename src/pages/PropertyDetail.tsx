@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -12,6 +13,7 @@ import { FileUpload } from '@/components/FileUpload';
 import { FileList } from '@/components/FileList';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import MapEmbed from '@/components/MapEmbed';
 import { 
   ArrowLeft, 
   MapPin, 
@@ -29,7 +31,8 @@ import {
   FolderOpen,
   Save,
   Edit,
-  X
+  X,
+  Map
 } from 'lucide-react';
 
 const PropertyDetail: React.FC = () => {
@@ -168,6 +171,21 @@ const PropertyDetail: React.FC = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
+            {/* Map Section */}
+            {property.address && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-xl flex items-center">
+                    <Map className="h-5 w-5 mr-2" />
+                    Location
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <MapEmbed address={property.address} />
+                </CardContent>
+              </Card>
+            )}
+
             <Card>
               <CardHeader>
                 <CardTitle className="text-xl flex items-center justify-between">
