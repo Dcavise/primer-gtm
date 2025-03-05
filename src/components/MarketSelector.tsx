@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { 
   Select,
   SelectContent,
@@ -7,8 +7,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { Campus } from '@/hooks/use-salesforce-data';
-import { marketCoordinates } from '@/utils/marketCoordinates';
+import { Campus } from '@/hooks/salesforce/types';
 
 interface MarketSelectorProps {
   selectedMarketId: string;
@@ -23,30 +22,10 @@ export const MarketSelector: React.FC<MarketSelectorProps> = ({
   campuses,
   isLoading = false
 }) => {
-  useEffect(() => {
-    // Log for debugging
-    console.log("All campuses:", campuses);
-    console.log("Market coordinates keys:", Object.keys(marketCoordinates));
-  }, [campuses]);
-
-  // Modified to be more permissive in matching campuses to market coordinates
-  const availableCampuses = campuses.filter(campus => {
-    // Check if the campus ID matches any key in marketCoordinates (case insensitive)
-    const matchById = Object.keys(marketCoordinates).some(key => 
-      key.toLowerCase() === campus.campus_id.toLowerCase()
-    );
-    
-    // Check if the campus name matches any name in marketCoordinates (case insensitive)
-    const matchByName = Object.values(marketCoordinates).some(coords => 
-      coords.name.toLowerCase().includes(campus.campus_name.toLowerCase()) ||
-      campus.campus_name.toLowerCase().includes(coords.name.toLowerCase())
-    );
-    
-    return matchById || matchByName;
-  });
-  
-  // Log the filtered campuses
-  console.log("Available campuses after filtering:", availableCampuses);
+  // Sort campuses alphabetically by name
+  const sortedCampuses = [...campuses].sort((a, b) => 
+    a.campus_name.localeCompare(b.campus_name)
+  );
 
   return (
     <div className="mb-6">
@@ -56,28 +35,28 @@ export const MarketSelector: React.FC<MarketSelectorProps> = ({
           onValueChange={onSelectMarket}
           disabled={isLoading}
         >
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder={isLoading ? "Loading campuses..." : "Select market"} />
+          <SelectTrigger className="w-[250px]">
+            <SelectValue placeholder={isLoading ? "Loading campuses..." : "Select campus"} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="default">All Markets</SelectItem>
-            {availableCampuses.length > 0 ? (
-              availableCampuses.map((campus) => (
+            <SelectItem value="default">All Campuses</SelectItem>
+            {sortedCampuses.length > 0 ? (
+              sortedCampuses.map((campus) => (
                 <SelectItem key={campus.campus_id} value={campus.campus_id}>
-                  {campus.campus_name}
+                  {campus.campus_name}{campus.State ? `, ${campus.State.trim()}` : ''}
                 </SelectItem>
               ))
             ) : (
               <SelectItem value="no-markets" disabled>
-                No markets available
+                No campuses available
               </SelectItem>
             )}
           </SelectContent>
         </Select>
         <span className="text-sm text-muted-foreground">
           {selectedMarketId !== 'default' 
-            ? `Viewing ${campuses.find(c => c.campus_id === selectedMarketId)?.campus_name || 'selected market'}` 
-            : 'Viewing all markets'}
+            ? `Viewing ${campuses.find(c => c.campus_id === selectedMarketId)?.campus_name || 'selected campus'}` 
+            : 'Viewing all campuses'}
         </span>
       </div>
     </div>

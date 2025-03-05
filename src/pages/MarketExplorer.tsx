@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { MarketSelector } from "@/components/MarketSelector";
 import { marketCoordinates } from "@/utils/marketCoordinates";
 import { useCampuses } from "@/hooks/salesforce/useCampuses";
 import { Navbar } from "@/components/Navbar";
+import { geocodeAddress } from "@/utils/geocoding";
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -24,6 +26,7 @@ const MarketExplorer = () => {
     fetchCampuses();
   }, [fetchCampuses]);
 
+  // Initialize Mapbox and create the map
   useEffect(() => {
     async function initializeMapbox() {
       try {
@@ -83,39 +86,68 @@ const MarketExplorer = () => {
     };
   }, [mapboxToken]);
 
+  // Handle market selection and update map view
   useEffect(() => {
-    if (!map.current || !mapboxToken) return;
-
-    let coords = marketCoordinates.default;
-    
-    // Find the coordinates for the selected market
-    if (selectedMarket !== "default") {
-      // Try to find direct match in marketCoordinates
-      if (marketCoordinates[selectedMarket]) {
-        coords = marketCoordinates[selectedMarket];
-      } else {
-        // Otherwise, look for campus with this ID and try to match by name
+    async function updateMapView() {
+      if (!map.current || !mapboxToken) return;
+      
+      // Default coordinates in case we can't find a match
+      let coordinates = marketCoordinates.default.center;
+      let zoom = marketCoordinates.default.zoom;
+      
+      if (selectedMarket !== "default") {
         const selectedCampus = campuses.find(c => c.campus_id === selectedMarket);
+        
         if (selectedCampus) {
-          // Try to find coordinates by campus name
-          const matchingMarketKey = Object.keys(marketCoordinates).find(key => 
-            marketCoordinates[key].name.toLowerCase() === selectedCampus.campus_name.toLowerCase()
-          );
+          // First try to find in marketCoordinates
+          const campusNameLower = selectedCampus.campus_name.toLowerCase();
+          let found = false;
           
-          if (matchingMarketKey) {
-            coords = marketCoordinates[matchingMarketKey];
+          for (const [key, value] of Object.entries(marketCoordinates)) {
+            if (value.name.toLowerCase() === campusNameLower) {
+              coordinates = value.center;
+              zoom = value.zoom;
+              found = true;
+              break;
+            }
+          }
+          
+          // If not found in marketCoordinates, use geocoding
+          if (!found) {
+            try {
+              // Format the address as "Campus Name, State"
+              const addressToGeocode = `${selectedCampus.campus_name}, ${selectedCampus.State?.trim() || ''}`;
+              console.log("Geocoding address:", addressToGeocode);
+              
+              const result = await geocodeAddress(addressToGeocode);
+              if (result) {
+                // Convert to mapbox format [lng, lat]
+                coordinates = [result.coordinates.lng, result.coordinates.lat];
+                zoom = 11; // Standard city zoom level
+                console.log("Geocoding result:", result);
+              } else {
+                console.log("Geocoding failed, using default view");
+                toast.warning(`Couldn't find exact location for ${selectedCampus.campus_name}`, {
+                  description: "Using approximate view"
+                });
+              }
+            } catch (error) {
+              console.error("Error geocoding address:", error);
+            }
           }
         }
       }
+      
+      // Animate to the new location
+      map.current.flyTo({
+        center: coordinates,
+        zoom: zoom,
+        pitch: 30,
+        duration: 2000
+      });
     }
     
-    // Animate to the new location
-    map.current.flyTo({
-      center: coords.center,
-      zoom: coords.zoom,
-      pitch: 30,
-      duration: 2000
-    });
+    updateMapView();
   }, [selectedMarket, campuses, mapboxToken]);
 
   const handleMarketChange = (marketId: string) => {

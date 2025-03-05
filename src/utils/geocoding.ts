@@ -1,3 +1,4 @@
+
 import { getApiKey, GOOGLE_MAPS_API_KEY } from "@/services/api-config";
 import { toast } from "sonner";
 import mapboxgl from "mapbox-gl";
@@ -13,6 +14,11 @@ export interface GeocodingResult {
 }
 
 export async function geocodeAddress(address: string): Promise<GeocodingResult | null> {
+  if (!address || address.trim() === '') {
+    console.warn("Empty address provided to geocodeAddress");
+    return null;
+  }
+  
   try {
     // Primarily use Google Maps for geocoding
     const googleResult = await geocodeWithGoogleMaps(address);

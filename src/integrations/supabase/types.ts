@@ -15,6 +15,7 @@ export type Database = {
           campus_name: string
           created_at: string
           id: string
+          State: string | null
           updated_at: string
         }
         Insert: {
@@ -22,6 +23,7 @@ export type Database = {
           campus_name: string
           created_at?: string
           id?: string
+          State?: string | null
           updated_at?: string
         }
         Update: {
@@ -29,6 +31,7 @@ export type Database = {
           campus_name?: string
           created_at?: string
           id?: string
+          State?: string | null
           updated_at?: string
         }
         Relationships: []
