@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -30,7 +29,6 @@ export function SalesforceLeadsPage() {
   const fetchLeads = async () => {
     setLoading(true);
     try {
-      // Modified to only fetch leads that have a campus_id (matched campus)
       const { data, error } = await supabase
         .from('salesforce_leads')
         .select('*')
@@ -39,9 +37,13 @@ export function SalesforceLeadsPage() {
       
       if (error) throw error;
       
-      setLeads(data || []);
+      const typedLeads: SalesforceLead[] = data.map(lead => ({
+        ...lead,
+        is_converted: lead.converted
+      }));
       
-      // Get the most recent updated_at timestamp
+      setLeads(typedLeads);
+      
       if (data && data.length > 0) {
         const mostRecent = new Date(Math.max(...data.map(l => new Date(l.updated_at).getTime())));
         setLastUpdated(mostRecent.toLocaleString());
@@ -66,24 +68,30 @@ export function SalesforceLeadsPage() {
       
       setOpportunities(oppsData || []);
       
-      // Get accounts and contacts for additional context
-      const { data: accountsData, error: accountsError } = await supabase
-        .from('salesforce_accounts')
-        .select('*');
+      try {
+        const { data: accountsData, error: accountsError } = await supabase
+          .from('salesforce_accounts')
+          .select('*');
+        
+        if (!accountsError && accountsData) {
+          setAccounts(accountsData);
+        }
+      } catch (e) {
+        console.log('salesforce_accounts table may not exist yet');
+      }
       
-      if (accountsError) throw accountsError;
+      try {
+        const { data: contactsData, error: contactsError } = await supabase
+          .from('salesforce_contacts')
+          .select('*');
+        
+        if (!contactsError && contactsData) {
+          setContacts(contactsData);
+        }
+      } catch (e) {
+        console.log('salesforce_contacts table may not exist yet');
+      }
       
-      setAccounts(accountsData || []);
-      
-      const { data: contactsData, error: contactsError } = await supabase
-        .from('salesforce_contacts')
-        .select('*');
-      
-      if (contactsError) throw contactsError;
-      
-      setContacts(contactsData || []);
-      
-      // Get the most recent updated_at timestamp
       if (oppsData && oppsData.length > 0) {
         const mostRecent = new Date(Math.max(...oppsData.map(o => new Date(o.updated_at).getTime())));
         setOpportunitiesLastUpdated(mostRecent.toLocaleString());
@@ -120,9 +128,8 @@ export function SalesforceLeadsPage() {
       
       toast.success(`Successfully synced ${response.data.synced || 0} leads, matched ${response.data.matched || 0} with campuses, and synced ${syncedAccounts} accounts and ${syncedContacts} contacts`);
       
-      // Refresh the data
       await fetchLeads();
-      await fetchOpportunities(); // Also refresh opportunities as they might have been updated
+      await fetchOpportunities();
     } catch (error: any) {
       console.error('Error syncing Salesforce leads:', error);
       const errorMessage = error.message || 'Unknown error occurred';
@@ -154,7 +161,6 @@ export function SalesforceLeadsPage() {
       
       toast.success(`Successfully synced ${response.data.synced || 0} opportunities`);
       
-      // Refresh the data
       await fetchOpportunities();
     } catch (error: any) {
       console.error('Error syncing Salesforce opportunities:', error);
@@ -179,13 +185,11 @@ export function SalesforceLeadsPage() {
     setShowOpportunitiesDetailedError(!showOpportunitiesDetailedError);
   };
 
-  // Format date string for display
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString();
   };
 
-  // Format currency
   const formatCurrency = (amount: number | null) => {
     if (amount === null || amount === undefined) return '-';
     return new Intl.NumberFormat('en-US', {
@@ -196,7 +200,6 @@ export function SalesforceLeadsPage() {
     }).format(amount);
   };
 
-  // Get account name from ID
   const getAccountName = (accountId: string | null) => {
     if (!accountId) return '-';
     const account = accounts.find(a => a.account_id === accountId);
@@ -305,7 +308,6 @@ export function SalesforceLeadsPage() {
                             </TableRow>
                           ) : (
                             leads.map((lead) => {
-                              // Find opportunity details if this lead has a converted opportunity
                               const opportunity = opportunities.find(
                                 o => o.opportunity_id === lead.converted_opportunity_id
                               );

@@ -21,6 +21,9 @@ const SALESFORCE_SECURITY_TOKEN = Deno.env.get('SALESFORCE_SECURITY_TOKEN') || '
 // Initialize the Supabase client
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Define batch size for ID processing to avoid URI Too Long errors
+const BATCH_SIZE = 100;
+
 interface SalesforceAuthResponse {
   access_token: string;
   instance_url: string;
@@ -134,8 +137,22 @@ async function getConvertedOpportunityIds(): Promise<Record<string, string>> {
   return opportunityToLeadMap;
 }
 
-// Query Salesforce for opportunities from Lead_ID__c field AND ConvertedOpportunityId
-async function fetchSalesforceOpportunities(token: string, instanceUrl: string, leadIds: string[], convertedOpportunityIds: string[]): Promise<SalesforceOpportunity[]> {
+// Split array into chunks of specified size
+function chunkArray<T>(array: T[], chunkSize: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += chunkSize) {
+    chunks.push(array.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
+
+// Query Salesforce for opportunities using batched requests
+async function fetchSalesforceOpportunities(
+  token: string, 
+  instanceUrl: string, 
+  leadIds: string[], 
+  convertedOpportunityIds: string[]
+): Promise<SalesforceOpportunity[]> {
   console.log("Fetching Salesforce opportunities linked to our leads...");
   
   if (leadIds.length === 0 && convertedOpportunityIds.length === 0) {
@@ -143,36 +160,58 @@ async function fetchSalesforceOpportunities(token: string, instanceUrl: string, 
     return [];
   }
   
-  let query = `
-    SELECT Id, StageName, Lead_ID__c, Name, AccountId, CloseDate, Actualized_Tuition__c
-    FROM Opportunity
-    WHERE 
-  `;
+  let allOpportunities: SalesforceOpportunity[] = [];
   
-  // Add conditions for Lead_ID__c field if we have lead IDs
+  // Process lead IDs in batches
   if (leadIds.length > 0) {
-    // Prepare a comma-separated list of lead IDs enclosed in single quotes
-    const leadIdList = leadIds.map(id => `'${id}'`).join(', ');
-    query += `Lead_ID__c IN (${leadIdList})`;
-  }
-  
-  // Add conditions for opportunity IDs from converted leads
-  if (convertedOpportunityIds.length > 0) {
-    if (leadIds.length > 0) {
-      query += ` OR `;
+    const leadIdBatches = chunkArray(leadIds, BATCH_SIZE);
+    console.log(`Processing ${leadIds.length} lead IDs in ${leadIdBatches.length} batches`);
+    
+    for (let i = 0; i < leadIdBatches.length; i++) {
+      const batch = leadIdBatches[i];
+      console.log(`Processing lead ID batch ${i+1}/${leadIdBatches.length} with ${batch.length} IDs`);
+      
+      const leadIdList = batch.map(id => `'${id}'`).join(', ');
+      const query = `
+        SELECT Id, StageName, Lead_ID__c, Name, AccountId, CloseDate, Actualized_Tuition__c
+        FROM Opportunity
+        WHERE Lead_ID__c IN (${leadIdList})
+        ORDER BY CreatedDate DESC
+      `;
+      
+      const batchOpportunities = await querySalesforce(token, instanceUrl, query);
+      allOpportunities = [...allOpportunities, ...batchOpportunities];
     }
-    // Prepare a comma-separated list of opportunity IDs enclosed in single quotes
-    const opportunityIdList = convertedOpportunityIds.map(id => `'${id}'`).join(', ');
-    query += `Id IN (${opportunityIdList})`;
   }
   
-  query += `
-    ORDER BY CreatedDate DESC
-    LIMIT 1000
-  `;
+  // Process converted opportunity IDs in batches
+  if (convertedOpportunityIds.length > 0) {
+    const oppIdBatches = chunkArray(convertedOpportunityIds, BATCH_SIZE);
+    console.log(`Processing ${convertedOpportunityIds.length} opportunity IDs in ${oppIdBatches.length} batches`);
+    
+    for (let i = 0; i < oppIdBatches.length; i++) {
+      const batch = oppIdBatches[i];
+      console.log(`Processing opportunity ID batch ${i+1}/${oppIdBatches.length} with ${batch.length} IDs`);
+      
+      const oppIdList = batch.map(id => `'${id}'`).join(', ');
+      const query = `
+        SELECT Id, StageName, Lead_ID__c, Name, AccountId, CloseDate, Actualized_Tuition__c
+        FROM Opportunity
+        WHERE Id IN (${oppIdList})
+        ORDER BY CreatedDate DESC
+      `;
+      
+      const batchOpportunities = await querySalesforce(token, instanceUrl, query);
+      allOpportunities = [...allOpportunities, ...batchOpportunities];
+    }
+  }
   
-  console.log("SOQL Query:", query);
-  
+  console.log(`Retrieved a total of ${allOpportunities.length} opportunities from Salesforce`);
+  return allOpportunities;
+}
+
+// Execute a SOQL query against Salesforce
+async function querySalesforce(token: string, instanceUrl: string, query: string): Promise<SalesforceOpportunity[]> {
   const encodedQuery = encodeURIComponent(query);
   const queryUrl = `${instanceUrl}/services/data/v58.0/query?q=${encodedQuery}`;
   
@@ -186,11 +225,10 @@ async function fetchSalesforceOpportunities(token: string, instanceUrl: string, 
   if (!response.ok) {
     const errorText = await response.text();
     console.error("Salesforce query error:", errorText);
-    throw new Error(`Failed to fetch Salesforce opportunities: ${response.status} ${errorText}`);
+    throw new Error(`Failed to fetch Salesforce data: ${response.status} ${errorText}`);
   }
 
   const data: SalesforceQueryResponse = await response.json();
-  console.log(`Retrieved ${data.records.length} opportunities from Salesforce`);
   return data.records as SalesforceOpportunity[];
 }
 
@@ -230,22 +268,32 @@ async function syncOpportunitiesToSupabase(opportunities: SupabaseOpportunity[])
     return 0;
   }
   
-  const { data, error } = await supabase
-    .from('salesforce_opportunities')
-    .upsert(opportunities, { 
-      onConflict: 'opportunity_id',
-      ignoreDuplicates: false,
-      returning: 'minimal'
-    })
-    .select();
+  // Process in batches to avoid request size limits
+  const UPSERT_BATCH_SIZE = 500;
+  const batches = chunkArray(opportunities, UPSERT_BATCH_SIZE);
+  let totalSynced = 0;
   
-  if (error) {
-    console.error("Supabase upsert error:", error);
-    throw new Error(`Failed to sync opportunities to Supabase: ${error.message}`);
+  for (let i = 0; i < batches.length; i++) {
+    const batch = batches[i];
+    console.log(`Processing upsert batch ${i+1}/${batches.length} with ${batch.length} records`);
+    
+    const { data, error } = await supabase
+      .from('salesforce_opportunities')
+      .upsert(batch, { 
+        onConflict: 'opportunity_id',
+        ignoreDuplicates: false
+      });
+    
+    if (error) {
+      console.error("Supabase upsert error:", error);
+      throw new Error(`Failed to sync opportunities to Supabase: ${error.message}`);
+    }
+    
+    totalSynced += batch.length;
   }
   
-  console.log(`Successfully synced ${data?.length || 0} opportunities`);
-  return data?.length || 0;
+  console.log(`Successfully synced ${totalSynced} opportunities`);
+  return totalSynced;
 }
 
 // Main sync function
