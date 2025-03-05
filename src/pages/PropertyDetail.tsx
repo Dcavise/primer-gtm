@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import MapEmbed from '@/components/MapEmbed';
 import { Input } from '@/components/ui/input';
 import StageProgressBar, { Stage } from '@/components/StageProgressBar';
+import CommentsSection from '@/components/CommentsSection';
 import { 
   ArrowLeft, 
   MapPin, 
@@ -34,7 +35,8 @@ import {
   Edit,
   X,
   Map,
-  FileCheck
+  FileCheck,
+  MessageSquare
 } from 'lucide-react';
 
 const PropertyDetail: React.FC = () => {
@@ -50,7 +52,7 @@ const PropertyDetail: React.FC = () => {
   
   const [notesValue, setNotesValue] = useState('');
   const [propertyFormValues, setPropertyFormValues] = useState<Partial<RealEstateProperty>>({});
-  const [statusFormValues, setStatusFormValues] = useState<Partial<RealEstateProperty>>({});
+  const [statusFormValues, setStatusFormValues] = useState<Partial<RealEateProperty>>({});
   const [contactFormValues, setContactFormValues] = useState<Partial<RealEstateProperty>>({});
   const [leaseFormValues, setLeaseFormValues] = useState<Partial<RealEstateProperty>>({});
   
@@ -758,6 +760,18 @@ const PropertyDetail: React.FC = () => {
                 ) : (
                   <p className="whitespace-pre-line">{property.status_notes || 'No notes added yet.'}</p>
                 )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl flex items-center">
+                  <MessageSquare className="h-5 w-5 mr-2" />
+                  Discussion
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CommentsSection propertyId={property.id} />
               </CardContent>
             </Card>
           </div>
