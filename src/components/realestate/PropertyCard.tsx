@@ -15,6 +15,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
   const navigate = useNavigate();
   
   const handleClick = () => {
+    console.log('Navigating to property detail page with ID:', property.id);
     navigate(`/real-estate-pipeline/property/${property.id}`);
   };
   

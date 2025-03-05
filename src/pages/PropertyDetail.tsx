@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -68,17 +69,25 @@ const PropertyDetail: React.FC = () => {
     queryFn: async (): Promise<RealEstateProperty | null> => {
       if (!id) return null;
       
+      console.log('Fetching property with id:', id);
+      
       const { data, error } = await supabase
         .from('real_estate_pipeline')
         .select('*')
-        .eq('id', parseInt(id))
-        .single();
+        .eq('id', id)
+        .maybeSingle();
       
       if (error) {
         console.error('Error fetching property details:', error);
-        throw new Error('Failed to fetch property details');
+        throw new Error(`Failed to fetch property details: ${error.message}`);
       }
       
+      if (!data) {
+        console.error('Property not found with id:', id);
+        return null;
+      }
+      
+      console.log('Found property:', data);
       return data;
     }
   });
