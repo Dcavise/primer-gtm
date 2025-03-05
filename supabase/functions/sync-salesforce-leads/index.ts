@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
@@ -63,6 +62,30 @@ interface SupabaseLead {
   campus_id: string | null;
 }
 
+interface Campus {
+  campus_id: string;
+  campus_name: string;
+}
+
+// Get all campus names from the campuses table
+async function getCampusNames(): Promise<string[]> {
+  console.log("Fetching campus names from database...");
+  
+  const { data, error } = await supabase
+    .from('campuses')
+    .select('campus_name');
+  
+  if (error) {
+    console.error("Error fetching campus names:", error);
+    throw new Error(`Failed to fetch campus names: ${error.message}`);
+  }
+  
+  const campusNames = data.map(campus => campus.campus_name);
+  console.log(`Found ${campusNames.length} campuses:`, campusNames);
+  
+  return campusNames;
+}
+
 // Get Salesforce OAuth token
 async function getSalesforceToken(): Promise<SalesforceAuthResponse> {
   console.log("Getting Salesforce OAuth token...");
@@ -93,17 +116,31 @@ async function getSalesforceToken(): Promise<SalesforceAuthResponse> {
   return await response.json();
 }
 
-// Query Salesforce for leads
-async function fetchSalesforceLeads(token: string, instanceUrl: string): Promise<SalesforceLead[]> {
-  console.log("Fetching Salesforce leads...");
+// Query Salesforce for leads that match campus names
+async function fetchSalesforceLeads(token: string, instanceUrl: string, campusNames: string[]): Promise<SalesforceLead[]> {
+  console.log(`Fetching Salesforce leads matching campuses: ${campusNames.join(', ')}...`);
+  
+  let companyCondition = '';
+  if (campusNames.length > 0) {
+    const likeConditions = campusNames.map(name => `Company LIKE '%${name}%'`);
+    companyCondition = `AND (${likeConditions.join(' OR ')})`;
+  }
+  
+  if (campusNames.length === 0) {
+    console.log("No campus names found, fetching all leads");
+    companyCondition = '';
+  }
   
   const query = `
     SELECT Id, FirstName, LastName, CreatedDate, ConvertedDate, IsConverted, 
            Status, LeadSource, Company
     FROM Lead
+    WHERE Id != null ${companyCondition}
     ORDER BY CreatedDate DESC
     LIMIT 100
   `;
+  
+  console.log("SOQL Query:", query);
   
   const encodedQuery = encodeURIComponent(query);
   const queryUrl = `${instanceUrl}/services/data/v58.0/query?q=${encodedQuery}`;
@@ -122,34 +159,32 @@ async function fetchSalesforceLeads(token: string, instanceUrl: string): Promise
   }
 
   const data: SalesforceQueryResponse = await response.json();
+  console.log(`Retrieved ${data.records.length} leads from Salesforce`);
   return data.records;
 }
 
 // Transform Salesforce leads to Supabase format
-function transformLeads(salesforceLeads: SalesforceLead[]): SupabaseLead[] {
+function transformLeads(salesforceLeads: SalesforceLead[], campusNames: string[]): SupabaseLead[] {
   console.log(`Transforming ${salesforceLeads.length} Salesforce leads...`);
   
   return salesforceLeads.map(lead => {
-    // Parse dates from Salesforce format
     const createdDate = lead.CreatedDate ? new Date(lead.CreatedDate).toISOString().split('T')[0] : null;
     const convertedDate = lead.ConvertedDate ? new Date(lead.ConvertedDate).toISOString().split('T')[0] : null;
     
-    // Map lead status to stage
     const stage = lead.Status || null;
     
-    // For demonstration, we'll extract campus info from the Company field
-    // In a real implementation, you might have dedicated fields or a mapping logic
     let preferredCampus = null;
     let campusId = null;
     
     if (lead.Company) {
-      // Simple example: If company contains "SF" or "San Francisco", map to San Francisco campus
       const companyLower = lead.Company.toLowerCase();
-      if (companyLower.includes('sf') || companyLower.includes('san francisco')) {
-        preferredCampus = 'San Francisco';
-        // You would look up the actual campus_id from your campuses table
+      const matchingCampus = campusNames.find(campus => 
+        companyLower.includes(campus.toLowerCase())
+      );
+      
+      if (matchingCampus) {
+        preferredCampus = matchingCampus;
       }
-      // Add more campus mappings as needed
     }
     
     return {
@@ -192,7 +227,6 @@ async function syncLeadsToSupabase(leads: SupabaseLead[]): Promise<number> {
 async function matchLeadsWithCampuses(): Promise<number> {
   console.log("Matching leads with campuses...");
   
-  // Get all campuses
   const { data: campuses, error: campusError } = await supabase
     .from('campuses')
     .select('*');
@@ -207,7 +241,6 @@ async function matchLeadsWithCampuses(): Promise<number> {
     return 0;
   }
   
-  // Get leads without campus_id but with preferred_campus
   const { data: leads, error: leadsError } = await supabase
     .from('salesforce_leads')
     .select('*')
@@ -226,17 +259,14 @@ async function matchLeadsWithCampuses(): Promise<number> {
   
   let matchedCount = 0;
   
-  // For each lead, try to find a matching campus
   for (const lead of leads) {
     if (!lead.preferred_campus) continue;
     
-    // Find the best matching campus
     const matchingCampus = campuses.find(campus => 
       campus.campus_name.toLowerCase() === lead.preferred_campus?.toLowerCase()
     );
     
     if (matchingCampus) {
-      // Update the lead with the campus_id
       const { error: updateError } = await supabase
         .from('salesforce_leads')
         .update({ campus_id: matchingCampus.campus_id })
@@ -257,22 +287,20 @@ async function matchLeadsWithCampuses(): Promise<number> {
 // Main sync function
 async function syncSalesforceLeads(): Promise<{ success: boolean; synced: number; matched?: number; error?: string }> {
   try {
-    // Get Salesforce auth token
+    const campusNames = await getCampusNames();
+    
     const authResponse = await getSalesforceToken();
     
-    // Fetch leads from Salesforce
     const salesforceLeads = await fetchSalesforceLeads(
       authResponse.access_token, 
-      authResponse.instance_url
+      authResponse.instance_url,
+      campusNames
     );
     
-    // Transform leads to Supabase format
-    const transformedLeads = transformLeads(salesforceLeads);
+    const transformedLeads = transformLeads(salesforceLeads, campusNames);
     
-    // Sync leads to Supabase
     const syncedCount = await syncLeadsToSupabase(transformedLeads);
     
-    // Match leads with campuses
     const matchedCount = await matchLeadsWithCampuses();
     
     return { 
@@ -292,20 +320,17 @@ async function syncSalesforceLeads(): Promise<{ success: boolean; synced: number
 
 // Handle requests
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
   
   try {
-    // For manual triggering with parameters
     let options = {};
     if (req.method === 'POST') {
       try {
         const body = await req.json();
         options = body;
       } catch (e) {
-        // If JSON parsing fails, use empty options
       }
     }
     
