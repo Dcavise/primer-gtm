@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
@@ -181,15 +180,17 @@ function transformLeads(salesforceLeads: SalesforceLead[], campusNames: string[]
   });
 }
 
-// Upsert leads to Supabase
+// Upsert leads to Supabase - Make sure we update all fields for existing records
 async function syncLeadsToSupabase(leads: SupabaseLead[]): Promise<number> {
   console.log(`Syncing ${leads.length} leads to Supabase...`);
   
+  // Make sure to set updateColumns to include all columns we want to update on existing records
   const { data, error } = await supabase
     .from('salesforce_leads')
     .upsert(leads, { 
       onConflict: 'lead_id',
-      ignoreDuplicates: false
+      ignoreDuplicates: false,
+      returning: 'minimal'
     })
     .select();
   
@@ -279,8 +280,80 @@ async function matchLeadsWithCampuses(): Promise<number> {
   return matchedCount;
 }
 
+// Clear preferred_campus values for leads that have wrong data (company name)
+async function clearIncorrectPreferredCampus(): Promise<number> {
+  console.log("Checking for leads with Company data in preferred_campus field...");
+  
+  // Get all campuses
+  const { data: campuses, error: campusError } = await supabase
+    .from('campuses')
+    .select('campus_name');
+  
+  if (campusError) {
+    console.error("Error fetching campuses:", campusError);
+    throw new Error(`Failed to fetch campuses: ${campusError.message}`);
+  }
+  
+  if (!campuses || campuses.length === 0) {
+    console.log("No campuses found, skipping cleaning");
+    return 0;
+  }
+  
+  // Get all leads that have a preferred_campus value
+  const { data: leads, error: leadsError } = await supabase
+    .from('salesforce_leads')
+    .select('*')
+    .not('preferred_campus', 'is', null);
+  
+  if (leadsError) {
+    console.error("Error fetching leads:", leadsError);
+    throw new Error(`Failed to fetch leads: ${leadsError.message}`);
+  }
+  
+  if (!leads || leads.length === 0) {
+    console.log("No leads with preferred_campus values found");
+    return 0;
+  }
+  
+  let cleanedCount = 0;
+  const campusNames = campuses.map(c => c.campus_name.toLowerCase());
+  
+  // For each lead with a preferred_campus value, check if it doesn't match any known campus name pattern
+  for (const lead of leads) {
+    if (!lead.preferred_campus) continue;
+    
+    const preferredCampusLower = lead.preferred_campus.toLowerCase();
+    
+    // Check if this preferred_campus value could be a campus name
+    const mightBeCampus = campusNames.some(campusName => 
+      preferredCampusLower.includes(campusName) || 
+      campusName.includes(preferredCampusLower)
+    );
+    
+    // If no similarity to any campus name and it's likely from the old Company field,
+    // clear the preferred_campus field
+    if (!mightBeCampus) {
+      console.log(`Clearing likely company data from lead ${lead.id} (${lead.preferred_campus})`);
+      
+      const { error: updateError } = await supabase
+        .from('salesforce_leads')
+        .update({ preferred_campus: null })
+        .eq('id', lead.id);
+      
+      if (updateError) {
+        console.error(`Error updating lead ${lead.id}:`, updateError);
+      } else {
+        cleanedCount++;
+      }
+    }
+  }
+  
+  console.log(`Cleaned ${cleanedCount} leads with likely company data`);
+  return cleanedCount;
+}
+
 // Main sync function
-async function syncSalesforceLeads(): Promise<{ success: boolean; synced: number; matched?: number; error?: string }> {
+async function syncSalesforceLeads(): Promise<{ success: boolean; synced: number; matched?: number; cleaned?: number; error?: string }> {
   try {
     const campusNames = await getCampusNames();
     
@@ -295,12 +368,16 @@ async function syncSalesforceLeads(): Promise<{ success: boolean; synced: number
     
     const syncedCount = await syncLeadsToSupabase(transformedLeads);
     
+    // Clean up incorrect preferred_campus values
+    const cleanedCount = await clearIncorrectPreferredCampus();
+    
     const matchedCount = await matchLeadsWithCampuses();
     
     return { 
       success: true, 
       synced: syncedCount,
-      matched: matchedCount
+      matched: matchedCount,
+      cleaned: cleanedCount
     };
   } catch (error) {
     console.error("Error syncing Salesforce leads:", error);
