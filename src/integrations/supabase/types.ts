@@ -80,6 +80,81 @@ export type Database = {
           },
         ]
       }
+      real_estate_pipeline: {
+        Row: {
+          address: string | null
+          ahj_building_records: string | null
+          ahj_zoning_confirmation: string | null
+          created_at: string
+          fiber: string | null
+          fire_sprinklers: string | null
+          id: number
+          lease_status: string | null
+          ll_email: string | null
+          ll_phone: string | null
+          ll_poc: string | null
+          loi_status: string | null
+          market: string | null
+          parking: string | null
+          permitted_use: string | null
+          phase: string | null
+          sf_available: string | null
+          site_name: string | null
+          status_notes: string | null
+          survey_status: string | null
+          test_fit_status: string | null
+          zoning: string | null
+        }
+        Insert: {
+          address?: string | null
+          ahj_building_records?: string | null
+          ahj_zoning_confirmation?: string | null
+          created_at?: string
+          fiber?: string | null
+          fire_sprinklers?: string | null
+          id?: number
+          lease_status?: string | null
+          ll_email?: string | null
+          ll_phone?: string | null
+          ll_poc?: string | null
+          loi_status?: string | null
+          market?: string | null
+          parking?: string | null
+          permitted_use?: string | null
+          phase?: string | null
+          sf_available?: string | null
+          site_name?: string | null
+          status_notes?: string | null
+          survey_status?: string | null
+          test_fit_status?: string | null
+          zoning?: string | null
+        }
+        Update: {
+          address?: string | null
+          ahj_building_records?: string | null
+          ahj_zoning_confirmation?: string | null
+          created_at?: string
+          fiber?: string | null
+          fire_sprinklers?: string | null
+          id?: number
+          lease_status?: string | null
+          ll_email?: string | null
+          ll_phone?: string | null
+          ll_poc?: string | null
+          loi_status?: string | null
+          market?: string | null
+          parking?: string | null
+          permitted_use?: string | null
+          phase?: string | null
+          sf_available?: string | null
+          site_name?: string | null
+          status_notes?: string | null
+          survey_status?: string | null
+          test_fit_status?: string | null
+          zoning?: string | null
+        }
+        Relationships: []
+      }
       salesforce_leads: {
         Row: {
           campus_id: string | null

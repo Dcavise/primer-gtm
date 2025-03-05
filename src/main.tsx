@@ -6,6 +6,7 @@ import App from './App.tsx'
 import './index.css'
 import SalesforceLeadsPage from './pages/SalesforceLeads.tsx'
 import FindContactsPage from './pages/FindContacts.tsx'
+import RealEstatePipeline from './pages/RealEstatePipeline.tsx'
 import Index from './pages/Index.tsx'
 import NotFound from './pages/NotFound.tsx'
 
@@ -25,6 +26,10 @@ const router = createBrowserRouter([
       {
         path: "find-contacts",
         element: <FindContactsPage />
+      },
+      {
+        path: "real-estate-pipeline",
+        element: <RealEstatePipeline />
       }
     ],
     errorElement: <NotFound />

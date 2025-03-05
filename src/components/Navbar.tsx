@@ -8,12 +8,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, LayoutDashboard, FileText, Home, UserRound } from "lucide-react";
+import { ChevronDown, LayoutDashboard, FileText, Home, UserRound, Building } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const routes = [
   { path: "/", name: "Property Explorer", icon: <Home className="mr-2 h-4 w-4" /> },
   { path: "/salesforce-leads", name: "Salesforce Analytics", icon: <LayoutDashboard className="mr-2 h-4 w-4" /> },
+  { path: "/real-estate-pipeline", name: "Real Estate Pipeline", icon: <Building className="mr-2 h-4 w-4" /> },
   { path: "/find-contacts", name: "Find Contacts", icon: <UserRound className="mr-2 h-4 w-4" /> },
 ];
 
