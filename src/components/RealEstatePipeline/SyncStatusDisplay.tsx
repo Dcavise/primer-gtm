@@ -11,7 +11,8 @@ import {
   ChevronDown,
   ChevronUp,
   ExternalLink,
-  Database
+  Database,
+  FileCode
 } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -64,7 +65,7 @@ export const SyncStatusDisplay: React.FC<SyncStatusDisplayProps> = ({
     <Card className="mb-6">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span>Real Estate Pipeline Sync Status</span>
+          <span>Direct API Sync Status</span>
           <div className="flex items-center space-x-2">
             <Button 
               variant="outline" 
@@ -145,6 +146,19 @@ export const SyncStatusDisplay: React.FC<SyncStatusDisplayProps> = ({
                   <li>Inserts all records at once</li>
                 </ol>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 p-3 bg-amber-50 rounded-md">
+          <div className="flex items-start">
+            <FileCode className="h-4 w-4 text-amber-600 mr-2 mt-0.5" />
+            <div className="text-sm text-amber-800">
+              <p className="font-medium">Try Alternative Method</p>
+              <p className="text-xs">
+                If this direct API sync is not working correctly, try the Google Sheets Script method.
+                Switch to the "Google Sheets Script" tab above to see setup instructions.
+              </p>
             </div>
           </div>
         </div>

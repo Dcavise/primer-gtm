@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle 
 } from '@/components/ui/dialog';
-import { Loader2, RefreshCw, Info, Database } from 'lucide-react';
+import { Loader2, RefreshCw, Info, Database, ExternalLink } from 'lucide-react';
 
 // Google API constants (must match the ones in the edge function)
 const SPREADSHEET_ID = "1sNaNYFCYEEPmh8t_uISJ9av2HatheCdce3ssRkgOFYU";
@@ -82,6 +82,20 @@ export const RealEstatePipelineSync: React.FC<RealEstatePipelineSyncProps> = ({
               <li>Converts data types (booleans, numbers)</li>
               <li>Inserts all records in a single operation</li>
             </ol>
+          </div>
+          
+          <div className="text-xs p-3 bg-amber-50 rounded-md text-amber-700 mb-4">
+            <div className="flex items-center mb-1">
+              <Info className="h-4 w-4 mr-1" />
+              <span className="font-semibold">Alternative Method Available:</span>
+            </div>
+            <p className="mb-2">
+              If this sync method doesn't work correctly with your data, try the Google Sheets Script method 
+              instead. It runs directly in Google Sheets and has better control over data mapping.
+            </p>
+            <p>
+              Switch to the "Google Sheets Script" tab when you return to the main page.
+            </p>
           </div>
           
           {isSyncing && (

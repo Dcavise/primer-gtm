@@ -7,6 +7,8 @@ import { SyncStatsInfo } from "@/components/RealEstatePipeline/SyncStatsInfo";
 import { PipelineAnalytics } from "@/components/RealEstatePipeline/PipelineAnalytics";
 import { SyncErrorAlert } from "@/components/RealEstatePipeline/SyncErrorAlert";
 import { Navbar } from "@/components/Navbar";
+import { GoogleSheetsScriptInfo } from "@/components/RealEstatePipeline/GoogleSheetsScriptInfo";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function RealEstatePipelinePage() {
   const {
@@ -48,12 +50,25 @@ export default function RealEstatePipelinePage() {
       <main className="container mx-auto p-4">
         {syncError && <SyncErrorAlert error={syncError} />}
 
-        <SyncStatusDisplay
-          syncStatus={syncStatus}
-          lastSyncTime={lastSyncTime}
-          syncDebugInfo={syncDebugInfo}
-          openSyncModal={openSyncModal}
-        />
+        <Tabs defaultValue="direct-sync" className="w-full mb-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="direct-sync">Direct API Sync</TabsTrigger>
+            <TabsTrigger value="sheets-script">Google Sheets Script</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="direct-sync">
+            <SyncStatusDisplay
+              syncStatus={syncStatus}
+              lastSyncTime={lastSyncTime}
+              syncDebugInfo={syncDebugInfo}
+              openSyncModal={openSyncModal}
+            />
+          </TabsContent>
+          
+          <TabsContent value="sheets-script">
+            <GoogleSheetsScriptInfo />
+          </TabsContent>
+        </Tabs>
 
         <SyncStatsInfo syncStats={syncStats} />
 
