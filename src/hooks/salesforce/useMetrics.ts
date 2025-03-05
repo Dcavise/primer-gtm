@@ -1,5 +1,13 @@
+
 import { useState, useEffect } from 'react';
-import { LeadsMetricsData, OpportunityMetricsData, AttendanceMetricsData } from './types';
+import { 
+  LeadsMetricsData, 
+  OpportunityMetricsData, 
+  AttendanceMetricsData, 
+  MetricData, 
+  TimeSeriesData, 
+  TimeSeriesPoint
+} from './types';
 
 export const useMetrics = (selectedCampusId: string | null) => {
   const [leadsMetrics, setLeadsMetrics] = useState<LeadsMetricsData>({
