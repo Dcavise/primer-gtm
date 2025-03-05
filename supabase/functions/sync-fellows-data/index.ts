@@ -17,6 +17,24 @@ async function getAccessToken(credentials) {
   try {
     console.log("Getting access token with service account");
     
+    // Parse credentials if they're a string
+    if (typeof credentials === 'string') {
+      try {
+        credentials = JSON.parse(credentials);
+        console.log("Successfully parsed service account credentials JSON");
+      } catch (error) {
+        console.error("Failed to parse credentials as JSON:", error);
+        throw new Error("Invalid service account credentials format");
+      }
+    }
+    
+    // Verify required credential fields
+    if (!credentials.client_email || !credentials.private_key) {
+      console.error("Missing required credential fields:", 
+        !credentials.client_email ? "client_email" : "private_key");
+      throw new Error("Missing required credential fields");
+    }
+    
     // Create JWT payload
     const now = Math.floor(Date.now() / 1000);
     const jwtPayload = {
@@ -27,8 +45,12 @@ async function getAccessToken(credentials) {
       iat: now
     };
 
-    // Log credential info for debugging
     console.log(`Using client email: ${credentials.client_email}`);
+    
+    // Normalize the private key - ensure it has proper newlines
+    const normalizedKey = credentials.private_key
+      .replace(/\\n/g, '\n')
+      .replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\n/g, '');
     
     // Sign the JWT
     const encoder = new TextEncoder();
@@ -43,9 +65,7 @@ async function getAccessToken(credentials) {
     const privateKey = await crypto.subtle.importKey(
       "pkcs8",
       new Uint8Array(
-        atob(credentials.private_key
-          .replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\n/g, '')
-          .trim())
+        atob(normalizedKey.trim())
           .split('')
           .map(c => c.charCodeAt(0))
       ),
@@ -78,7 +98,7 @@ async function getAccessToken(credentials) {
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
       console.error(`Token request failed: ${tokenResponse.status} - ${errorText}`);
-      throw new Error(`Failed to get access token: ${tokenResponse.status}`);
+      throw new Error(`Failed to get access token: ${tokenResponse.status} - ${errorText}`);
     }
     
     const tokenData = await tokenResponse.json();
@@ -95,46 +115,27 @@ async function fetchGoogleSheetData(credentialsStr) {
   try {
     console.log("Starting Google Sheets data fetch");
     
-    // Determine credential type (API key or service account)
-    let isApiKey = false;
-    let credentials;
-    
-    try {
-      // Try parsing as JSON first (service account)
-      credentials = JSON.parse(credentialsStr);
-      console.log("Using service account authentication");
-    } catch (error) {
-      // If parsing fails, treat as API key
-      isApiKey = true;
-      credentials = { api_key: credentialsStr.trim() };
-      console.log("Using API key authentication");
-    }
-
-    // Build request URL and options
+    // Build request URL
     let url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_RANGE}`;
     const options = { 
       method: "GET", 
       headers: {} 
     };
     
-    // Add authentication based on credential type
-    if (isApiKey) {
-      // Append API key to URL
-      url += `?key=${credentials.api_key}`;
-      console.log("Added API key to request");
-    } else {
-      // Use service account - get access token and add to headers
-      console.log("Getting access token for service account");
-      const accessToken = await getAccessToken(credentials);
-      options.headers = { 
-        "Authorization": `Bearer ${accessToken}` 
-      };
-      console.log("Added access token to request headers");
-    }
+    // Get access token and add to headers
+    console.log("Getting access token for service account");
+    const accessToken = await getAccessToken(credentialsStr);
+    options.headers = { 
+      "Authorization": `Bearer ${accessToken}` 
+    };
+    console.log("Added access token to request headers");
 
     // Make the request to Google Sheets API
-    console.log(`Requesting data from: ${url.substring(0, 60)}...`);
+    console.log(`Requesting data from: ${url}`);
     const response = await fetch(url, options);
+    
+    // Log detailed response info for debugging
+    console.log(`API response status: ${response.status}`);
     
     // Handle API response
     if (!response.ok) {
@@ -236,6 +237,7 @@ serve(async (req) => {
 
     // Log credential info for debugging
     console.log(`Credential string length: ${credentialsStr.length}`);
+    console.log(`Credential string starts with: ${credentialsStr.substring(0, 20)}...`);
     
     // Fetch and process data
     console.log("Fetching Google Sheet data...");
