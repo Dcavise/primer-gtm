@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Upload, FileX } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -14,15 +15,22 @@ interface FileUploadProps {
 export const FileUpload: React.FC<FileUploadProps> = ({ propertyId, onUploadComplete }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [displayName, setDisplayName] = useState('');
+  const [description, setDescription] = useState('');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      setFile(selectedFile);
+      // Default the display name to the file name (without the extension)
+      setDisplayName(selectedFile.name.split('.').slice(0, -1).join('.'));
     }
   };
 
   const handleClearFile = () => {
     setFile(null);
+    setDisplayName('');
+    setDescription('');
   };
 
   const handleUpload = async () => {
@@ -36,9 +44,20 @@ export const FileUpload: React.FC<FileUploadProps> = ({ propertyId, onUploadComp
       const fileName = `${Date.now()}_${file.name}`;
       const filePath = `property_${propertyId}/${fileName}`;
       
+      // Create metadata with display name and description
+      const metadata = {
+        propertyId: propertyId,
+        originalName: file.name,
+        displayName: displayName || file.name.split('.').slice(0, -1).join('.'),
+        description: description || '',
+        uploadedAt: new Date().toISOString(),
+      };
+      
       const { error } = await supabase.storage
         .from('property_documents')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          metadata
+        });
       
       if (error) {
         throw error;
@@ -46,6 +65,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({ propertyId, onUploadComp
       
       toast.success('File uploaded successfully');
       setFile(null);
+      setDisplayName('');
+      setDescription('');
       onUploadComplete();
     } catch (error) {
       console.error('Error uploading file:', error);
@@ -79,12 +100,39 @@ export const FileUpload: React.FC<FileUploadProps> = ({ propertyId, onUploadComp
       </div>
       
       {file && (
-        <div className="flex justify-between items-center p-2 bg-muted/50 rounded border">
-          <span className="text-sm truncate max-w-[250px]">{file.name}</span>
+        <div className="space-y-3 p-3 bg-muted/50 rounded border">
+          <div className="text-sm truncate max-w-full">
+            Selected file: <span className="font-medium">{file.name}</span>
+          </div>
+          
+          <div className="space-y-2">
+            <div className="space-y-1">
+              <Label htmlFor="display-name">Display Name (optional)</Label>
+              <Input 
+                id="display-name"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Enter a name for this file"
+                disabled={isUploading}
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <Label htmlFor="description">Description (optional)</Label>
+              <Input 
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Add notes about this document"
+                disabled={isUploading}
+              />
+            </div>
+          </div>
+          
           <Button 
             onClick={handleUpload} 
             disabled={isUploading}
-            size="sm"
+            className="w-full"
           >
             <Upload className="h-4 w-4 mr-2" />
             {isUploading ? 'Uploading...' : 'Upload'}

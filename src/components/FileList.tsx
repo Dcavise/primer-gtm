@@ -3,19 +3,18 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { FileText, Image, FileIcon, Download, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
+import { FileText, Image, FileIcon, Download, Trash2, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
+// Fix type definition to match what Supabase returns
 interface FileObject {
   name: string;
   id: string;
   created_at: string;
   updated_at: string;
   last_accessed_at: string;
-  metadata: {
-    size: number;
-    mimetype: string;
-  };
+  metadata: Record<string, any>; // This matches Supabase's type
 }
 
 interface FileListProps {
@@ -26,6 +25,8 @@ interface FileListProps {
 export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted }) => {
   const [files, setFiles] = useState<FileObject[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [fileDetailsOpen, setFileDetailsOpen] = useState<boolean>(false);
+  const [selectedFile, setSelectedFile] = useState<FileObject | null>(null);
 
   const fetchFiles = async () => {
     setIsLoading(true);
@@ -98,6 +99,11 @@ export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted })
     }
   };
 
+  const handleViewDetails = (file: FileObject) => {
+    setSelectedFile(file);
+    setFileDetailsOpen(true);
+  };
+
   // Get file icon based on file type
   const getFileIcon = (fileName: string) => {
     const extension = fileName.split('.').pop()?.toLowerCase();
@@ -112,9 +118,14 @@ export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted })
   };
 
   // Format file name for display
-  const formatFileName = (fileName: string) => {
-    // Remove timestamp prefix if present (e.g., 1631234567_filename.pdf)
-    return fileName.replace(/^\d+_/, '');
+  const getDisplayName = (file: FileObject) => {
+    // Check if we have custom metadata with a display name
+    if (file.metadata && file.metadata.displayName) {
+      return file.metadata.displayName;
+    }
+    
+    // Fall back to the original filename without timestamp prefix
+    return file.name.replace(/^\d+_/, '').split('.').slice(0, -1).join('.');
   };
 
   useEffect(() => {
@@ -139,11 +150,19 @@ export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted })
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 truncate">
                     {getFileIcon(file.name)}
-                    <span className="text-sm truncate" title={formatFileName(file.name)}>
-                      {formatFileName(file.name)}
+                    <span className="text-sm truncate" title={getDisplayName(file)}>
+                      {getDisplayName(file)}
                     </span>
                   </div>
                   <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleViewDetails(file)}
+                      aria-label="View file details"
+                    >
+                      <Info className="h-4 w-4" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -162,11 +181,76 @@ export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted })
                     </Button>
                   </div>
                 </div>
+                
+                {file.metadata && file.metadata.description && (
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    {file.metadata.description}
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      {/* File Details Dialog */}
+      <Dialog open={fileDetailsOpen} onOpenChange={setFileDetailsOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>File Details</DialogTitle>
+            <DialogDescription>
+              View information about this file
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedFile && (
+            <div className="space-y-4">
+              <div>
+                <div className="text-sm text-muted-foreground mb-1">File Name</div>
+                <div className="font-medium break-all">{selectedFile.name.replace(/^\d+_/, '')}</div>
+              </div>
+              
+              {selectedFile.metadata && selectedFile.metadata.displayName && (
+                <div>
+                  <div className="text-sm text-muted-foreground mb-1">Display Name</div>
+                  <div className="font-medium break-all">{selectedFile.metadata.displayName}</div>
+                </div>
+              )}
+              
+              {selectedFile.metadata && selectedFile.metadata.description && (
+                <div>
+                  <div className="text-sm text-muted-foreground mb-1">Description</div>
+                  <div className="break-all">{selectedFile.metadata.description}</div>
+                </div>
+              )}
+              
+              <div>
+                <div className="text-sm text-muted-foreground mb-1">Uploaded</div>
+                <div>
+                  {selectedFile.metadata && selectedFile.metadata.uploadedAt 
+                    ? new Date(selectedFile.metadata.uploadedAt).toLocaleString() 
+                    : new Date(selectedFile.created_at).toLocaleString()}
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-2 pt-2">
+                <DialogClose asChild>
+                  <Button variant="outline">Close</Button>
+                </DialogClose>
+                <Button 
+                  onClick={() => {
+                    handleDownload(selectedFile.name);
+                    setFileDetailsOpen(false);
+                  }}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
