@@ -20,78 +20,101 @@ const MarketExplorer = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedMarket, setSelectedMarket] = useState<string>("default");
   const { campuses, fetchCampuses } = useCampuses();
+  const mapInitialized = useRef(false);
 
+  // Fetch API key and campuses when component mounts
   useEffect(() => {
-    // Fetch campuses when component mounts
-    fetchCampuses();
-  }, [fetchCampuses]);
-
-  // Initialize Mapbox and create the map
-  useEffect(() => {
-    async function initializeMapbox() {
+    const initializeData = async () => {
       try {
-        if (!mapboxToken) {
-          const token = await getApiKey('mapbox');
-          setMapboxToken(token);
-          return; // The next useEffect will handle map creation
-        }
-
-        if (!mapContainer.current || map.current) return;
-
-        // Initialize the map
-        mapboxgl.accessToken = mapboxToken;
-        const newMap = new mapboxgl.Map({
-          container: mapContainer.current,
-          style: 'mapbox://styles/mapbox/light-v11',
-          center: marketCoordinates.default.center, // Default center
-          zoom: marketCoordinates.default.zoom,
-          pitch: 30,
-        });
-
-        // Add navigation controls
-        newMap.addControl(
-          new mapboxgl.NavigationControl({
-            visualizePitch: true,
-          }),
-          'top-right'
-        );
-
-        // Set the map reference
-        map.current = newMap;
-
-        // Wait for map to load before setting isLoading to false
-        newMap.on('load', () => {
-          setIsLoading(false);
-          toast.success("Map loaded successfully", {
-            description: "Market explorer is ready to use"
-          });
-        });
+        // Fetch Mapbox token
+        const token = await getApiKey('mapbox');
+        console.log("Mapbox token fetched successfully");
+        setMapboxToken(token);
+        
+        // Fetch campuses
+        await fetchCampuses();
       } catch (error) {
-        console.error("Error initializing map:", error);
-        toast.error("Failed to load map", {
+        console.error("Error initializing data:", error);
+        toast.error("Failed to initialize data", {
           description: "Please check your connection and try again"
         });
         setIsLoading(false);
       }
-    }
+    };
 
-    initializeMapbox();
+    initializeData();
+  }, [fetchCampuses]);
+
+  // Initialize map once we have the token
+  useEffect(() => {
+    if (!mapboxToken || !mapContainer.current || mapInitialized.current) return;
+    
+    try {
+      console.log("Initializing Mapbox map with token");
+      mapboxgl.accessToken = mapboxToken;
+      
+      const newMap = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/light-v11',
+        center: marketCoordinates.default.center,
+        zoom: marketCoordinates.default.zoom,
+        pitch: 30,
+      });
+
+      // Add navigation controls
+      newMap.addControl(
+        new mapboxgl.NavigationControl({
+          visualizePitch: true,
+        }),
+        'top-right'
+      );
+
+      // Set map reference and mark as initialized
+      map.current = newMap;
+      mapInitialized.current = true;
+
+      // Wait for map to load before updating state
+      newMap.on('load', () => {
+        console.log("Map loaded successfully");
+        setIsLoading(false);
+        toast.success("Map loaded successfully", {
+          description: "Market explorer is ready to use"
+        });
+      });
+
+      // Handle map load error
+      newMap.on('error', (e) => {
+        console.error("Mapbox error:", e);
+        toast.error("Map failed to load correctly", {
+          description: e.error ? e.error.message : "Unknown error"
+        });
+      });
+    } catch (error) {
+      console.error("Error initializing map:", error);
+      toast.error("Failed to load map", {
+        description: "Please check your connection and try again"
+      });
+      setIsLoading(false);
+    }
 
     // Cleanup map instance when component unmounts
     return () => {
       if (map.current) {
         map.current.remove();
         map.current = null;
+        mapInitialized.current = false;
       }
     };
   }, [mapboxToken]);
 
-  // Handle market selection and update map view
+  // Update map view when selected market changes
   useEffect(() => {
-    async function updateMapView() {
-      if (!map.current || !mapboxToken) return;
+    if (!map.current || !mapInitialized.current) return;
+    
+    const updateMapView = async () => {
+      console.log("Updating map view for selected market:", selectedMarket);
       
-      // Default coordinates in case we can't find a match
+      // Default coordinates
       let coordinates = marketCoordinates.default.center;
       let zoom = marketCoordinates.default.zoom;
       
@@ -99,6 +122,7 @@ const MarketExplorer = () => {
         const selectedCampus = campuses.find(c => c.campus_id === selectedMarket);
         
         if (selectedCampus) {
+          console.log("Selected campus:", selectedCampus);
           // First try to find in marketCoordinates
           const campusNameLower = selectedCampus.campus_name.toLowerCase();
           let found = false;
@@ -108,6 +132,7 @@ const MarketExplorer = () => {
               coordinates = value.center;
               zoom = value.zoom;
               found = true;
+              console.log("Found campus in marketCoordinates:", value.name);
               break;
             }
           }
@@ -139,16 +164,19 @@ const MarketExplorer = () => {
       }
       
       // Animate to the new location
-      map.current.flyTo({
-        center: coordinates,
-        zoom: zoom,
-        pitch: 30,
-        duration: 2000
-      });
-    }
+      if (map.current) {
+        console.log("Flying to coordinates:", coordinates, "with zoom:", zoom);
+        map.current.flyTo({
+          center: coordinates,
+          zoom: zoom,
+          pitch: 30,
+          duration: 2000
+        });
+      }
+    };
     
     updateMapView();
-  }, [selectedMarket, campuses, mapboxToken]);
+  }, [selectedMarket, campuses]);
 
   const handleMarketChange = (marketId: string) => {
     setSelectedMarket(marketId);
