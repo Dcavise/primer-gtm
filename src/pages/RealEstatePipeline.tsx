@@ -1,12 +1,14 @@
 
 import React, { useState, useMemo } from 'react';
 import { useRealEstatePipeline } from '@/hooks/useRealEstatePipeline';
+import { useCampuses } from '@/hooks/useCampuses';
 import { PipelineColumn } from '@/components/realestate/PipelineColumn';
 import { PropertyDetailDialog } from '@/components/realestate/PropertyDetailDialog';
 import { RealEstateProperty, PropertyPhase } from '@/types/realEstate';
 import { LoadingState } from '@/components/LoadingState';
 import { Navbar } from '@/components/Navbar';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { CampusSelector } from '@/components/salesforce/CampusSelector';
 
 // Define the phases in the specific order shown in the image
 const PHASES: PropertyPhase[] = [
@@ -46,7 +48,10 @@ const PHASE_TO_GROUP: Record<PropertyPhase, string> = {
 };
 
 const RealEstatePipeline: React.FC = () => {
-  const { data: properties, isLoading, error } = useRealEstatePipeline();
+  const [selectedCampusId, setSelectedCampusId] = useState<string | null>(null);
+  const [selectedCampusName, setSelectedCampusName] = useState<string | null>(null);
+  const { data: properties, isLoading, error } = useRealEstatePipeline({ campusId: selectedCampusId });
+  const { data: campuses, isLoading: isLoadingCampuses } = useCampuses();
   const [selectedProperty, setSelectedProperty] = useState<RealEstateProperty | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   
@@ -115,7 +120,12 @@ const RealEstatePipeline: React.FC = () => {
     setDialogOpen(true);
   };
 
-  if (isLoading) {
+  const handleCampusSelect = (campusId: string | null, campusName: string | null) => {
+    setSelectedCampusId(campusId);
+    setSelectedCampusName(campusName);
+  };
+
+  if (isLoading || isLoadingCampuses) {
     return <LoadingState message="Loading pipeline data..." />;
   }
 
@@ -140,6 +150,11 @@ const RealEstatePipeline: React.FC = () => {
     return count;
   };
 
+  // Count total properties for all groups
+  const getTotalPropertyCount = () => {
+    return PHASE_GROUPS.reduce((total, group) => total + getGroupPropertyCount(group), 0);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-gradient-to-r from-blue-600 to-blue-500 text-white py-8 px-6">
@@ -155,6 +170,23 @@ const RealEstatePipeline: React.FC = () => {
       </header>
 
       <main className="container mx-auto py-6">
+        {/* Campus Selector */}
+        {campuses && campuses.length > 0 && (
+          <div className="mb-6">
+            <CampusSelector 
+              campuses={campuses}
+              selectedCampusId={selectedCampusId}
+              onSelectCampus={handleCampusSelect}
+            />
+            
+            <div className="mt-2 text-sm text-muted-foreground">
+              {selectedCampusName 
+                ? `Showing ${getTotalPropertyCount()} properties for ${selectedCampusName}` 
+                : `Showing all ${getTotalPropertyCount()} properties across all campuses`}
+            </div>
+          </div>
+        )}
+
         {/* Collapsible Phase Groups using Accordion */}
         <Accordion type="multiple" defaultValue={defaultAccordionValue} className="space-y-4">
           {PHASE_GROUPS.map((phaseGroup) => {
@@ -165,6 +197,9 @@ const RealEstatePipeline: React.FC = () => {
             if (phasesByGroup.length === 0) return null;
             
             const propertyCount = getGroupPropertyCount(phaseGroup);
+            
+            // Skip empty groups unless we're showing all campuses
+            if (propertyCount === 0 && selectedCampusId) return null;
             
             return (
               <AccordionItem key={phaseGroup} value={phaseGroup} className="border rounded-lg overflow-hidden">

@@ -85,6 +85,7 @@ export type Database = {
           address: string | null
           ahj_building_records: string | null
           ahj_zoning_confirmation: string | null
+          campus_id: string | null
           created_at: string
           fiber: string | null
           fire_sprinklers: string | null
@@ -110,6 +111,7 @@ export type Database = {
           address?: string | null
           ahj_building_records?: string | null
           ahj_zoning_confirmation?: string | null
+          campus_id?: string | null
           created_at?: string
           fiber?: string | null
           fire_sprinklers?: string | null
@@ -135,6 +137,7 @@ export type Database = {
           address?: string | null
           ahj_building_records?: string | null
           ahj_zoning_confirmation?: string | null
+          campus_id?: string | null
           created_at?: string
           fiber?: string | null
           fire_sprinklers?: string | null
@@ -156,7 +159,15 @@ export type Database = {
           test_fit_status?: string | null
           zoning?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_real_estate_pipeline_campus"
+            columns: ["campus_id"]
+            isOneToOne: false
+            referencedRelation: "campuses"
+            referencedColumns: ["campus_id"]
+          },
+        ]
       }
       salesforce_leads: {
         Row: {
