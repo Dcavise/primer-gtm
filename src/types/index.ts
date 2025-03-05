@@ -121,7 +121,6 @@ export interface SalesforceOpportunity {
   stage: string | null;
   account_id: string | null;
   opportunity_name: string | null;
-  actualized_tuition: number | null;
   close_date: string | null;
   created_at: string;
   updated_at: string;

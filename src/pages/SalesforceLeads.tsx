@@ -39,7 +39,9 @@ export function SalesforceLeadsPage() {
       
       const typedLeads: SalesforceLead[] = data.map(lead => ({
         ...lead,
-        is_converted: lead.converted
+        is_converted: lead.converted,
+        converted_account_id: null, // Add required properties that might not be in DB yet
+        converted_contact_id: null
       }));
       
       setLeads(typedLeads);
@@ -68,24 +70,28 @@ export function SalesforceLeadsPage() {
       
       setOpportunities(oppsData as SalesforceOpportunity[] || []);
       
+      // Try to fetch accounts table if it exists
       try {
-        const { data: accountsData, error: accountsError } = await supabase
+        // For now, we'll handle the case where these tables don't exist yet
+        // without showing error messages, as they're expected to be created later
+        const { data: accountsData } = await supabase
           .from('salesforce_accounts')
           .select('*');
         
-        if (!accountsError && accountsData) {
+        if (accountsData) {
           setAccounts(accountsData as SalesforceAccount[]);
         }
       } catch (e) {
         console.log('salesforce_accounts table may not exist yet');
       }
       
+      // Try to fetch contacts table if it exists
       try {
-        const { data: contactsData, error: contactsError } = await supabase
+        const { data: contactsData } = await supabase
           .from('salesforce_contacts')
           .select('*');
         
-        if (!contactsError && contactsData) {
+        if (contactsData) {
           setContacts(contactsData as SalesforceContact[]);
         }
       } catch (e) {
@@ -442,7 +448,7 @@ export function SalesforceLeadsPage() {
                               <ol className="list-decimal pl-5 space-y-1 mt-2">
                                 <li>Ensure Salesforce API credentials are correct</li>
                                 <li>Check that your Salesforce user has API access enabled</li>
-                                <li>Verify that the Lead_ID__c field exists on Opportunity objects</li>
+                                <li>Verify that your Salesforce configuration is properly set up</li>
                                 <li>Review Edge Function logs for more detailed error information</li>
                               </ol>
                             </div>
@@ -460,7 +466,6 @@ export function SalesforceLeadsPage() {
                             <TableHead>Account</TableHead>
                             <TableHead>Stage</TableHead>
                             <TableHead>Close Date</TableHead>
-                            <TableHead>Actualized Tuition</TableHead>
                             <TableHead>Lead ID</TableHead>
                             <TableHead>Updated</TableHead>
                           </TableRow>
@@ -468,7 +473,7 @@ export function SalesforceLeadsPage() {
                         <TableBody>
                           {opportunities.length === 0 ? (
                             <TableRow>
-                              <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
+                              <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
                                 No opportunities data available
                               </TableCell>
                             </TableRow>
@@ -485,16 +490,6 @@ export function SalesforceLeadsPage() {
                                   </span>
                                 </TableCell>
                                 <TableCell>{formatDate(opportunity.close_date)}</TableCell>
-                                <TableCell>
-                                  {opportunity.actualized_tuition ? (
-                                    <span className="flex items-center text-green-600 font-medium">
-                                      <DollarSign className="h-3 w-3 mr-1" />
-                                      {formatCurrency(opportunity.actualized_tuition)}
-                                    </span>
-                                  ) : (
-                                    '-'
-                                  )}
-                                </TableCell>
                                 <TableCell className="font-mono text-xs">{opportunity.lead_id}</TableCell>
                                 <TableCell>{formatDate(opportunity.updated_at)}</TableCell>
                               </TableRow>

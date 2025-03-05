@@ -43,8 +43,7 @@ interface SalesforceOpportunity {
   StageName: string;
   CloseDate: string;
   AccountId: string;
-  Lead_ID__c: string;
-  Actualized_Tuition__c?: number;
+  // Removed Lead_ID__c since it doesn't exist
   [key: string]: any;
 }
 
@@ -55,7 +54,6 @@ interface SupabaseOpportunity {
   close_date: string | null;
   account_id: string | null;
   lead_id: string;
-  actualized_tuition: number | null;
 }
 
 // Get Salesforce OAuth token
@@ -88,11 +86,11 @@ async function getSalesforceToken(): Promise<SalesforceAuthResponse> {
   return await response.json();
 }
 
-// Batch processing for lead IDs to avoid URI too long errors
-async function fetchSalesforceOpportunitiesByLeadIds(token: string, instanceUrl: string, leadIds: string[]): Promise<SalesforceOpportunity[]> {
-  // Process in batches of 100 to avoid URI too long errors
+// Retrieve opportunities created from leads
+async function fetchOpportunitiesFromLeads(token: string, instanceUrl: string, leadIds: string[]): Promise<SalesforceOpportunity[]> {
   console.log(`Fetching opportunities for ${leadIds.length} lead IDs in batches...`);
   
+  // Process in batches of 100 to avoid URI too long errors
   const batchSize = 100;
   const batches = [];
   
@@ -108,40 +106,103 @@ async function fetchSalesforceOpportunitiesByLeadIds(token: string, instanceUrl:
     const batch = batches[i];
     console.log(`Processing batch ${i+1}/${batches.length} with ${batch.length} lead IDs`);
     
-    // Prepare a comma-separated list of lead IDs enclosed in single quotes
+    // Get converted leads first to identify their associated opportunities
     const leadIdList = batch.map(id => `'${id}'`).join(', ');
     
-    const query = `
-      SELECT Id, Name, StageName, CloseDate, AccountId, Lead_ID__c, Actualized_Tuition__c
-      FROM Opportunity
-      WHERE Lead_ID__c IN (${leadIdList})
+    const leadQuery = `
+      SELECT Id, ConvertedOpportunityId
+      FROM Lead
+      WHERE Id IN (${leadIdList})
+      AND ConvertedOpportunityId != null
       LIMIT 2000
     `;
     
-    console.log(`SOQL Query for batch ${i+1}:`, query.substring(0, 100) + "...");
-    
-    const encodedQuery = encodeURIComponent(query);
-    const queryUrl = `${instanceUrl}/services/data/v58.0/query?q=${encodedQuery}`;
+    console.log(`SOQL Query for leads batch ${i+1}:`, leadQuery.substring(0, 100) + "...");
     
     try {
-      const response = await fetch(queryUrl, {
+      const encodedLeadQuery = encodeURIComponent(leadQuery);
+      const leadQueryUrl = `${instanceUrl}/services/data/v58.0/query?q=${encodedLeadQuery}`;
+      
+      const leadResponse = await fetch(leadQueryUrl, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
   
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Salesforce query error for batch ${i+1}:`, errorText);
-        console.error(`Failed URL length: ${queryUrl.length}`);
-        throw new Error(`Failed to fetch Salesforce opportunities: ${response.status} ${errorText}`);
+      if (!leadResponse.ok) {
+        const errorText = await leadResponse.text();
+        console.error(`Salesforce lead query error for batch ${i+1}:`, errorText);
+        throw new Error(`Failed to fetch Salesforce leads: ${leadResponse.status} ${errorText}`);
       }
   
-      const data: SalesforceQueryResponse = await response.json();
-      console.log(`Retrieved ${data.records.length} opportunities from batch ${i+1}`);
+      const leadData = await leadResponse.json();
       
-      allOpportunities = [...allOpportunities, ...data.records];
+      if (leadData.records.length === 0) {
+        console.log(`No converted leads found in batch ${i+1}`);
+        continue;
+      }
+      
+      console.log(`Found ${leadData.records.length} converted leads with opportunities`);
+      
+      // Get opportunity IDs from converted leads
+      const opportunityIds = leadData.records
+        .filter(lead => lead.ConvertedOpportunityId)
+        .map(lead => `'${lead.ConvertedOpportunityId}'`);
+      
+      if (opportunityIds.length === 0) {
+        console.log(`No opportunity IDs found in batch ${i+1}`);
+        continue;
+      }
+      
+      const opportunityIdList = opportunityIds.join(', ');
+      
+      // Now get the opportunities
+      const opportunityQuery = `
+        SELECT Id, Name, StageName, CloseDate, AccountId
+        FROM Opportunity
+        WHERE Id IN (${opportunityIdList})
+        LIMIT 2000
+      `;
+      
+      console.log(`SOQL Query for opportunities batch ${i+1}:`, opportunityQuery.substring(0, 100) + "...");
+      
+      const encodedOpportunityQuery = encodeURIComponent(opportunityQuery);
+      const opportunityQueryUrl = `${instanceUrl}/services/data/v58.0/query?q=${encodedOpportunityQuery}`;
+      
+      const opportunityResponse = await fetch(opportunityQueryUrl, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+  
+      if (!opportunityResponse.ok) {
+        const errorText = await opportunityResponse.text();
+        console.error(`Salesforce opportunity query error for batch ${i+1}:`, errorText);
+        throw new Error(`Failed to fetch Salesforce opportunities: ${opportunityResponse.status} ${errorText}`);
+      }
+  
+      const opportunityData = await opportunityResponse.json();
+      console.log(`Retrieved ${opportunityData.records.length} opportunities from batch ${i+1}`);
+      
+      // Map lead IDs to opportunity IDs
+      const leadToOpportunityMap = new Map();
+      leadData.records.forEach(lead => {
+        if (lead.ConvertedOpportunityId) {
+          leadToOpportunityMap.set(lead.ConvertedOpportunityId, lead.Id);
+        }
+      });
+      
+      // Add lead ID to each opportunity
+      const opportunitiesWithLeads = opportunityData.records.map(opp => {
+        return {
+          ...opp,
+          LeadId: leadToOpportunityMap.get(opp.Id)
+        };
+      });
+      
+      allOpportunities = [...allOpportunities, ...opportunitiesWithLeads];
     } catch (error) {
       console.error(`Error in batch ${i+1}:`, error);
       throw error;
@@ -163,8 +224,7 @@ function transformOpportunities(salesforceOpportunities: SalesforceOpportunity[]
       stage: opp.StageName || null,
       close_date: opp.CloseDate || null,
       account_id: opp.AccountId || null,
-      lead_id: opp.Lead_ID__c,
-      actualized_tuition: opp.Actualized_Tuition__c || null
+      lead_id: opp.LeadId // Using the LeadId we added in fetchOpportunitiesFromLeads
     };
   });
 }
@@ -220,7 +280,7 @@ async function syncSalesforceOpportunities(): Promise<{
     
     const authResponse = await getSalesforceToken();
     
-    const salesforceOpportunities = await fetchSalesforceOpportunitiesByLeadIds(
+    const salesforceOpportunities = await fetchOpportunitiesFromLeads(
       authResponse.access_token, 
       authResponse.instance_url,
       leadIds
