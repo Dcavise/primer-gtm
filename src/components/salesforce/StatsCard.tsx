@@ -8,16 +8,18 @@ interface StatsCardProps {
   value: number | string;
   description?: string;
   icon: LucideIcon;
+  className?: string;
 }
 
 export const StatsCard: React.FC<StatsCardProps> = ({ 
   title, 
   value, 
   description, 
-  icon: Icon 
+  icon: Icon,
+  className = ''
 }) => {
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}

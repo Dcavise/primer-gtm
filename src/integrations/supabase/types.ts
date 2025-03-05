@@ -77,6 +77,39 @@ export type Database = {
           },
         ]
       }
+      google_sheets_data: {
+        Row: {
+          created_at: string | null
+          data: Json
+          id: string
+          last_synced: string | null
+          row_id: string | null
+          sheet_id: string
+          sheet_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data: Json
+          id?: string
+          last_synced?: string | null
+          row_id?: string | null
+          sheet_id: string
+          sheet_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json
+          id?: string
+          last_synced?: string | null
+          row_id?: string | null
+          sheet_id?: string
+          sheet_name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       salesforce_leads: {
         Row: {
           campus_id: string | null
