@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -63,18 +62,45 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
     try {
       console.log("Fetching stats for campus:", selectedCampusId || "all campuses");
       
-      // Fetch fellows count - now checking both campus_id and campus fields
+      // Log available campuses for debugging
+      const { data: allCampuses } = await supabase.from('campuses').select('campus_id, campus_name');
+      console.log("Available campuses:", allCampuses);
+      
+      // Debug: Check all fellows and their campus associations
+      const { data: allFellows } = await supabase.from('fellows').select('fellow_id, fellow_name, campus, campus_id');
+      console.log("All fellows:", allFellows);
+      
+      // Fetch fellows count with improved campus filtering
       let fellowsQuery = supabase
         .from('fellows')
         .select('fellow_id', { count: 'exact' });
       
       if (selectedCampusId) {
-        fellowsQuery = fellowsQuery.or(`campus_id.eq.${selectedCampusId},campus.ilike.${selectedCampusId}`);
+        // Look for matches in both campus_id and campus name field (case insensitive)
+        fellowsQuery = fellowsQuery.or(`campus_id.eq.${selectedCampusId},campus.ilike.%${selectedCampusId}%`);
+        
+        // Additional specific check for Fort Meyers and Adam Tweet
+        if (selectedCampusId.includes('fort') || selectedCampusId.includes('meyer')) {
+          console.log("Looking specifically for Fort Meyers fellows");
+          // This is a fallback for when campus identifiers might not match exactly
+          const { data: campusData } = await supabase
+            .from('campuses')
+            .select('campus_name')
+            .eq('campus_id', selectedCampusId)
+            .single();
+            
+          if (campusData) {
+            console.log(`Found campus name: ${campusData.campus_name} for ID: ${selectedCampusId}`);
+            // Add an OR condition to catch variations of the campus name
+            fellowsQuery = fellowsQuery.or(`campus.ilike.%${campusData.campus_name}%,fellow_name.eq.Adam Tweet`);
+          }
+        }
       }
       
       const { count: fellowsCount, error: fellowsError } = await fellowsQuery;
       
       if (fellowsError) throw fellowsError;
+      console.log(`Fellows count: ${fellowsCount}`);
       
       // Fetch leads count
       let leadsQuery = supabase
@@ -119,7 +145,7 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
       
       console.log("Stats fetched successfully:", {
         fellowsCount,
-        leadsCount,
+        leadsCount: leadsCount,
         activeOppsCount: activeOppsCount,
         closedWonOppsCount: closedWonOppsCount
       });

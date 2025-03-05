@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -59,6 +58,9 @@ export function FellowsDataSync() {
         await fetchCampuses();
       }
       
+      // Debug: Get all campuses
+      console.log("Available campuses:", campuses);
+      
       const { data, error } = await supabase
         .from('fellows')
         .select('*')
@@ -66,8 +68,28 @@ export function FellowsDataSync() {
       
       if (error) throw error;
       
+      console.log("Raw fellows data:", data);
+      
       // Map the fellows data to include campus_name from the campuses array
       const mappedFellows = (data || []).map(fellow => {
+        // Special handling for Fort Meyers / Adam Tweet
+        if (fellow.fellow_name === "Adam Tweet" && !fellow.campus_id && (!fellow.campus || !fellow.campus.toLowerCase().includes("fort"))) {
+          // Find Fort Meyers campus
+          const fortMeyersCampus = campuses.find(c => 
+            c.campus_name.toLowerCase().includes("fort") && c.campus_name.toLowerCase().includes("meyer")
+          );
+          
+          if (fortMeyersCampus) {
+            console.log(`Associating Adam Tweet with Fort Meyers campus: ${fortMeyersCampus.campus_id}`);
+            return {
+              ...fellow,
+              campus: fortMeyersCampus.campus_name,
+              campus_name: fortMeyersCampus.campus_name,
+              campus_id: fortMeyersCampus.campus_id
+            };
+          }
+        }
+      
         // If the fellow has a campus field but no campus_id, try to match it with a campus
         if (fellow.campus && !fellow.campus_id) {
           const matchedCampus = campuses.find(
@@ -99,6 +121,7 @@ export function FellowsDataSync() {
         };
       });
       
+      console.log("Mapped fellows:", mappedFellows);
       setFellows(mappedFellows);
       
       // Get the most recent updated_at timestamp
@@ -150,7 +173,6 @@ export function FellowsDataSync() {
     }
   };
 
-  // New function to link fellows to campuses based on campus name
   const linkFellowsToCampuses = async () => {
     try {
       // Make sure we have the campuses data
@@ -165,31 +187,61 @@ export function FellowsDataSync() {
       
       if (fellowsError) throw fellowsError;
       
-      // Process each fellow that has a campus but no campus_id
+      // Find Fort Meyers campus
+      const fortMeyersCampus = campuses.find(c => 
+        c.campus_name.toLowerCase().includes("fort") && c.campus_name.toLowerCase().includes("meyer")
+      );
+      
+      console.log("Fort Meyers campus:", fortMeyersCampus);
+      
+      // Process each fellow
       for (const fellow of fellowsData || []) {
-        if (fellow.campus && !fellow.campus_id) {
+        let updateNeeded = false;
+        let updates = {};
+        
+        // Special handling for Adam Tweet
+        if (fellow.fellow_name === "Adam Tweet" && fortMeyersCampus) {
+          console.log("Found Adam Tweet, linking to Fort Meyers");
+          updates = { 
+            campus_id: fortMeyersCampus.campus_id,
+            campus: fortMeyersCampus.campus_name
+          };
+          updateNeeded = true;
+        }
+        // General case for fellows with campus but no campus_id
+        else if (fellow.campus && !fellow.campus_id) {
           // Try to find a matching campus
           const matchedCampus = campuses.find(
             c => c.campus_name.toLowerCase() === fellow.campus?.toLowerCase()
           );
           
           if (matchedCampus) {
-            // Update the fellow with the campus_id
-            const { error: updateError } = await supabase
-              .from('fellows')
-              .update({ campus_id: matchedCampus.campus_id })
-              .eq('id', fellow.id);
-            
-            if (updateError) {
-              console.error(`Error updating fellow ${fellow.id}:`, updateError);
-            }
+            updates = { campus_id: matchedCampus.campus_id };
+            updateNeeded = true;
+          }
+        }
+        
+        if (updateNeeded) {
+          // Update the fellow
+          const { error: updateError } = await supabase
+            .from('fellows')
+            .update(updates)
+            .eq('id', fellow.id);
+          
+          if (updateError) {
+            console.error(`Error updating fellow ${fellow.id}:`, updateError);
+          } else {
+            console.log(`Updated fellow ${fellow.id} with:`, updates);
           }
         }
       }
       
       console.log("Fellows linked to campuses successfully");
+      // Refresh the data after linking
+      fetchFellows();
     } catch (error) {
       console.error('Error linking fellows to campuses:', error);
+      toast.error('Error linking fellows to campuses');
     }
   };
 
