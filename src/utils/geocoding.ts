@@ -1,6 +1,6 @@
-
 import { toast } from "sonner";
 import { SUPABASE_URL } from "@/services/api-config";
+import { supabase } from "@/integrations/supabase/client";
 
 // Define coordinate type
 export interface Coordinates {
@@ -24,82 +24,44 @@ export const geocodeAddress = async (address: string): Promise<{
       return null;
     }
     
-    // Make API request to our supabase function that wraps Google Maps API
-    console.log(`Making request to ${SUPABASE_URL}/functions/v1/geocode-address`);
+    // Make API request to our supabase function
+    console.log(`Using Supabase edge function to geocode address`);
     
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/geocode-address`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({ address }),
-      // Add timeout to prevent hanging requests
-      signal: AbortSignal.timeout(15000) // 15 second timeout (increased from 10s)
+    const { data, error } = await supabase.functions.invoke('geocode-address', {
+      body: { address }
     });
     
-    // If we got a non-200 response, handle it specifically
-    if (!response.ok) {
-      const errorText = await response.text();
-      let errorMessage = "Could not find coordinates for the provided address.";
-      let errorDetails = "Please check the address and try again.";
-      
-      // Try to parse the error response if it's JSON
-      try {
-        const errorJson = JSON.parse(errorText);
-        if (errorJson.error) {
-          errorMessage = errorJson.error;
-          if (errorJson.details) {
-            errorDetails = errorJson.details;
-          }
-        }
-      } catch (e) {
-        // If we can't parse the error as JSON, use the raw text
-        errorDetails = errorText;
-      }
-      
-      console.error(`Geocoding API error: Status ${response.status}, Error: ${errorMessage}`, errorText);
+    if (error) {
+      console.error(`Geocoding edge function error:`, error);
       toast.error("Geocoding failed", {
-        description: errorDetails
+        description: error.message || "Could not find coordinates for the provided address."
       });
       return null;
     }
     
-    // Parse the successful response
-    const result = await response.json();
-    console.log("Geocoding API response:", result);
-    
-    if (!result || !result.coordinates) {
-      console.error("Invalid geocoding result structure:", result);
+    if (!data || !data.coordinates) {
+      console.error("Invalid geocoding result structure:", data);
       toast.error("Address location error", {
         description: "The system couldn't determine exact coordinates for this address."
       });
       return null;
     }
     
-    console.log(`Successfully geocoded address to: ${result.formattedAddress} (${result.coordinates.lat}, ${result.coordinates.lng})`);
+    console.log(`Successfully geocoded address to: ${data.formattedAddress} (${data.coordinates.lat}, ${data.coordinates.lng})`);
     
     return {
-      address: result.formattedAddress || address,
+      address: data.formattedAddress || address,
       coordinates: {
-        lat: result.coordinates.lat,
-        lng: result.coordinates.lng
+        lat: data.coordinates.lat,
+        lng: data.coordinates.lng
       }
     };
   } catch (error) {
     console.error("Error geocoding address:", error);
     
-    // Provide a more specific error message if it's a timeout
-    if (error.name === "TimeoutError" || error.name === "AbortError") {
-      toast.error("Geocoding request timed out", {
-        description: "The request took too long to complete. Please try again later."
-      });
-    } else {
-      toast.error("Geocoding failed", {
-        description: "Could not find coordinates for the provided address. Please check the address and try again."
-      });
-    }
+    toast.error("Geocoding failed", {
+      description: "Could not find coordinates for the provided address. Please check the address and try again."
+    });
     
     return null;
   }

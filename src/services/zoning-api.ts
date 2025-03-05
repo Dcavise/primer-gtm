@@ -1,6 +1,7 @@
 
 import { toast } from "sonner";
-import { API_BASE_URL, getApiKey } from "./api-config";
+import { SUPABASE_URL } from "./api-config";
+import { supabase } from "@/integrations/supabase/client";
 
 // Mock data for fallback when the API is unavailable
 const fallbackZoningData = {
@@ -61,62 +62,34 @@ export async function fetchZoneDetails(params: {
   replace_STF?: boolean;
 }) {
   try {
-    // Fetch the API key securely from Supabase
-    const apiKey = await getApiKey('zoneomics');
-    
-    const queryParams = new URLSearchParams({
-      api_key: apiKey,
-    });
-
-    if (params.lat && params.lng) {
-      queryParams.append("lat", params.lat.toString());
-      queryParams.append("lng", params.lng.toString());
-    }
-
-    if (params.address) {
-      queryParams.append("address", params.address);
-    }
-
-    if (params.output_fields) {
-      queryParams.append("output_fields", params.output_fields);
-    }
-
-    if (params.group_plu) {
-      queryParams.append("group_plu", params.group_plu);
-    }
-
-    if (params.replace_STF !== undefined) {
-      queryParams.append("replace_STF", params.replace_STF.toString());
-    }
-
-    console.log("Fetching zoning details with params:", queryParams.toString());
+    console.log("Fetching zoning details with params:", params);
     
     try {
-      // Add timeout to the fetch request
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
-      
-      const response = await fetch(`${API_BASE_URL}/zoneDetail?${queryParams}`, {
-        signal: controller.signal
+      // Use the Supabase edge function to get zoning data
+      const { data, error } = await supabase.functions.invoke('get-zoning', {
+        body: params
       });
       
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to fetch zoning details");
+      if (error) {
+        console.error("Supabase edge function error:", error);
+        toast.warning("Using sample zoning data", {
+          description: "Unable to connect to zoning database. Showing sample data instead."
+        });
+        return fallbackZoningData;
       }
-
-      const data = await response.json();
+      
+      if (!data) {
+        console.error("No data returned from zoning edge function");
+        toast.warning("Using sample zoning data", {
+          description: "Unable to retrieve zoning data. Showing sample data instead."
+        });
+        return fallbackZoningData;
+      }
+      
       console.log("Zoning API response:", data);
-      
-      if (!data || typeof data.success !== 'boolean') {
-        throw new Error("Invalid or incomplete response from zoning API");
-      }
-      
       return data;
     } catch (fetchError) {
-      console.warn("Fetch operation failed, using fallback data:", fetchError);
+      console.warn("Supabase edge function failed, using fallback data:", fetchError);
       toast.warning("Using sample zoning data", {
         description: "Unable to connect to zoning database. Showing sample data instead."
       });

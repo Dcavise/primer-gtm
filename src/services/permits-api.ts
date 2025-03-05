@@ -1,7 +1,6 @@
-
 import { PermitResponse, PermitSearchParams } from "@/types";
 import { toast } from "sonner";
-import { API_BASE_URL, getApiKey } from "./api-config";
+import { supabase } from "@/integrations/supabase/client";
 
 // Mock data for fallback when the API is unavailable
 const fallbackPermitData = {
@@ -102,113 +101,49 @@ const fallbackPermitData = {
 
 export async function searchPermits(params: PermitSearchParams): Promise<PermitResponse> {
   try {
-    // Fetch the API key securely from Supabase
-    const apiKey = await getApiKey('zoneomics');
-    
-    const queryParams = new URLSearchParams({
-      api_key: apiKey,
-      bottom_left_lat: params.bottom_left_lat.toString(),
-      bottom_left_lng: params.bottom_left_lng.toString(),
-      top_right_lat: params.top_right_lat.toString(),
-      top_right_lng: params.top_right_lng.toString()
-    });
-
     console.log(`Fetching permits with coordinates: (${params.bottom_left_lat}, ${params.bottom_left_lng}) to (${params.top_right_lat}, ${params.top_right_lng})`);
 
-    // Set up a timeout for the fetch request
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
-    
     try {
-      // Add more debugging
-      console.log(`Making permit API request to: ${API_BASE_URL}/zonePermits?${queryParams}`);
+      // Use the Supabase edge function to get permit data
+      const { data, error } = await supabase.functions.invoke('get-permits', {
+        body: params
+      });
       
-      const response = await fetch(`${API_BASE_URL}/zonePermits?${queryParams}`, {
-        signal: controller.signal,
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json'
+      if (error) {
+        console.error("Supabase edge function error:", error);
+        // Use fallback data but update it with the searched address
+        if (params.exact_address) {
+          const modifiedFallbackData = {
+            ...fallbackPermitData,
+            permits: fallbackPermitData.permits.map(permit => ({
+              ...permit,
+              address: params.exact_address
+            }))
+          };
+          return modifiedFallbackData;
         }
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        console.error(`Permit API error: ${response.status} - ${response.statusText}`);
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to fetch permits: ${response.status}`);
+        return fallbackPermitData;
       }
       
-      const data = await response.json();
-      console.log(`API returned ${data.data?.length || 0} permits`);
-      
-      // Process the API data to ensure all required fields are present
-      const processedPermits = (data.data || []).map((permit: any) => {
-        return {
-          id: permit.id || `permit-${Math.random().toString(36).substring(7)}`,
-          record_id: permit.record_id || "",
-          applicant: permit.applicant || "",
-          project_type: permit.project_type || "",
-          address: permit.address || "",
-          postcode: permit.postcode || "",
-          city: permit.city || "",
-          state: permit.state || "",
-          project_brief: permit.project_brief || "",
-          project_name: permit.project_name || "",
-          status: permit.status || "",
-          date: permit.date || permit.created_date || permit.last_updated_date || new Date().toISOString(),
-          created_date: permit.created_date || new Date().toISOString(),
-          last_updated_date: permit.last_updated_date || new Date().toISOString(),
-          applicant_contact: permit.applicant_contact || "",
-          record_link: permit.record_link || "",
-          contact_phone_number: permit.contact_phone_number || "",
-          contact_email: permit.contact_email || "",
-          source: permit.source || "Zoneomics API",
-          pin: permit.pin || { location: { lat: permit.latitude || "0", lon: permit.longitude || "0" } },
-          latitude: permit.latitude || "0",
-          longitude: permit.longitude || "0",
-          // Adding all required fields with default values if not present
-          department_id: permit.department_id || "",
-          zoning_classification_pre: permit.zoning_classification_pre || "",
-          zoning_classification_post: permit.zoning_classification_post || "",
-          document_link: permit.document_link || "",
-          contact_website: permit.contact_website || "",
-          parcel_number: permit.parcel_number || "",
-          block: permit.block || "",
-          lot: permit.lot || "",
-          owner: permit.owner || "",
-          authority: permit.authority || "",
-          owner_address: permit.owner_address || "",
-          owner_phone: permit.owner_phone || "",
-          comments: permit.comments || "",
-          remarks: permit.remarks || "",
-          suburb: permit.suburb || ""
-        };
-      });
-      
-      // Filter for exact address matches if exact_address is provided
-      if (params.exact_address && processedPermits.length > 0) {
-        const exactAddress = params.exact_address.toLowerCase().trim();
-        const exactMatches = processedPermits.filter((permit: any) => {
-          if (!permit.address) return false;
-          
-          return permit.address.toLowerCase().trim() === exactAddress;
-        });
-        
-        console.log(`Found ${exactMatches.length} exact address matches for "${exactAddress}"`);
-        
-        return {
-          permits: exactMatches || [],
-          total: exactMatches.length || 0
-        };
+      if (!data) {
+        console.error("No data returned from permits edge function");
+        // Use fallback data but update it with the searched address
+        if (params.exact_address) {
+          const modifiedFallbackData = {
+            ...fallbackPermitData,
+            permits: fallbackPermitData.permits.map(permit => ({
+              ...permit,
+              address: params.exact_address
+            }))
+          };
+          return modifiedFallbackData;
+        }
+        return fallbackPermitData;
       }
       
-      return {
-        permits: processedPermits,
-        total: processedPermits.length
-      };
+      return data as PermitResponse;
     } catch (fetchError) {
-      console.warn("Fetch operation failed, using fallback permit data:", fetchError);
+      console.warn("Supabase edge function failed, using fallback permit data:", fetchError);
       
       // Use fallback data but update it with the searched address
       if (params.exact_address) {
