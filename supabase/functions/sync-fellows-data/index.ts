@@ -14,17 +14,45 @@ const SPREADSHEET_ID = "1Lz5_CWhpQ1rJiIhThRoPRC1rgBhXyn2AIUsZO-hvVtA";
 const SHEET_RANGE = "Sheet1!A2:F"; // Starting from row 2 to skip headers, all columns (A-F)
 
 // Function to fetch data from Google Sheets
-async function fetchGoogleSheetData(serviceAccountCredentials: string) {
+async function fetchGoogleSheetData(serviceAccountCredentialsStr: string) {
   try {
-    // Parse the credentials string to JSON
+    // Handle different credential formats - some may be API keys, some may be JSON
     let credentials;
+    let isApiKey = false;
+
     try {
-      credentials = JSON.parse(serviceAccountCredentials);
+      // Try to parse as JSON first
+      credentials = JSON.parse(serviceAccountCredentialsStr);
+      console.log("Credentials parsed as JSON successfully");
     } catch (error) {
-      console.error("Error parsing service account credentials:", error);
-      throw new Error("Invalid service account credentials format");
+      // If not valid JSON, assume it's an API key string
+      console.log("Credentials not in JSON format, treating as API key");
+      isApiKey = true;
+      credentials = { api_key: serviceAccountCredentialsStr.trim() };
     }
     
+    // If using an API key
+    if (isApiKey) {
+      console.log("Using API key authentication method");
+      // Use the API key directly to fetch data
+      const response = await fetch(
+        `${GOOGLE_SHEETS_API_URL}/${SPREADSHEET_ID}/values/${SHEET_RANGE}?key=${credentials.api_key}`,
+        { method: "GET" }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("API response error:", response.status, errorText);
+        throw new Error(`Google Sheets API error: ${response.status} ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log("Successfully fetched Google Sheet data with API key:", data.values?.length || 0, "rows");
+      return data.values || [];
+    }
+    
+    // If using service account credentials
+    console.log("Using service account authentication method");
     // Create a JWT for Google API authentication
     const jwtPayload = {
       iss: credentials.client_email,
@@ -83,8 +111,14 @@ async function fetchGoogleSheetData(serviceAccountCredentials: string) {
       }
     );
 
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("API response error:", response.status, errorText);
+      throw new Error(`Google Sheets API error: ${response.status} ${errorText}`);
+    }
+
     const data = await response.json();
-    console.log("Successfully fetched Google Sheet data:", data.values?.length || 0, "rows");
+    console.log("Successfully fetched Google Sheet data with service account:", data.values?.length || 0, "rows");
     return data.values || [];
   } catch (error) {
     console.error("Error fetching Google Sheet data:", error);
@@ -162,14 +196,18 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get service account credentials from environment
-    const serviceAccountCredentialsJson = Deno.env.get('GOOGLESHEETS_SERVICE_ACCOUNT_CREDENTIALS');
-    if (!serviceAccountCredentialsJson) {
+    const serviceAccountCredentialsStr = Deno.env.get('GOOGLESHEETS_SERVICE_ACCOUNT_CREDENTIALS');
+    if (!serviceAccountCredentialsStr) {
       throw new Error('Google service account credentials not found');
     }
 
+    console.log("Credential string type:", typeof serviceAccountCredentialsStr);
+    console.log("Credential string length:", serviceAccountCredentialsStr.length);
+    console.log("Credential string preview:", serviceAccountCredentialsStr.substring(0, 30) + "...");
+
     // Fetch Google Sheet data - pass the credentials as a string
     console.log("Fetching Google Sheet data...");
-    const sheetData = await fetchGoogleSheetData(serviceAccountCredentialsJson);
+    const sheetData = await fetchGoogleSheetData(serviceAccountCredentialsStr);
     
     if (!Array.isArray(sheetData) || sheetData.length === 0) {
       throw new Error('No data found in Google Sheet');
