@@ -1,3 +1,4 @@
+
 import { getApiKey } from "@/services/api-config";
 import { toast } from "sonner";
 import mapboxgl from "mapbox-gl";
@@ -38,7 +39,7 @@ export async function geocodeAddress(address: string): Promise<GeocodingResult |
 
 async function geocodeWithMapbox(address: string): Promise<GeocodingResult | null> {
   try {
-    let token;
+    let token = '';
     try {
       token = await getApiKey('mapbox');
       if (!token || token.trim() === '') {
