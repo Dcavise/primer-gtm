@@ -20,14 +20,14 @@ const MarketExplorer = () => {
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const [selectedMarket, setSelectedMarket] = useState<string>("default");
   const { campuses } = useCampuses();
-  const [mapInitialized, setMapInitialized] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
+  const [mapReady, setMapReady] = useState(false);
   
-  // Track whether we've already created the map to prevent double initialization
-  const mapCreatedRef = useRef(false);
+  // This prevents re-initialization of the map
+  const hasInitializedRef = useRef(false);
   
   // Initialize Mapbox token once
-  const { isLoading: isTokenLoading, error: tokenError } = useQuery({
+  const { isLoading: isTokenLoading, error: tokenError, data: tokenInitialized } = useQuery({
     queryKey: ['mapbox-token-init'],
     queryFn: async () => {
       console.log("Initializing Mapbox token (ONCE ONLY)");
@@ -45,8 +45,8 @@ const MarketExplorer = () => {
   }, []);
   
   // Create demo markers for the US overview
-  const createDemoMap = useCallback((mapInstance: mapboxgl.Map) => {
-    if (!mapInstance) return;
+  const createDemoMap = useCallback(() => {
+    if (!map.current) return;
     
     console.log("Creating demo map for All Campuses view");
     
@@ -76,7 +76,7 @@ const MarketExplorer = () => {
           const marker = new mapboxgl.Marker(el)
             .setLngLat(location.coordinates)
             .setPopup(popup)
-            .addTo(mapInstance);
+            .addTo(map.current!);
             
           markersRef.current.push(marker);
         } catch (err) {
@@ -85,7 +85,7 @@ const MarketExplorer = () => {
       });
       
       // Smoothly fly to the default view
-      mapInstance.flyTo({
+      map.current.flyTo({
         center: marketCoordinates.default.center,
         zoom: marketCoordinates.default.zoom,
         pitch: 30,
@@ -97,17 +97,16 @@ const MarketExplorer = () => {
     }
   }, [clearMarkers]);
   
-  // Initialize map once Mapbox token is ready
+  // Initialize map once - this is critical to prevent re-initialization
   useEffect(() => {
-    // Prevent initialization if already in progress or completed, or if token is still loading
-    if (isTokenLoading || mapCreatedRef.current || !mapContainer.current || map.current) return;
+    // Skip if token is still loading, map is already created, or container isn't ready
+    if (isTokenLoading || !tokenInitialized || !mapContainer.current || hasInitializedRef.current) {
+      return;
+    }
     
-    // Set flag to prevent duplicate initialization
-    mapCreatedRef.current = true;
+    console.log("Initializing Mapbox map...");
     
     try {
-      console.log("Initializing Mapbox map...");
-      
       // Create the map instance
       const newMap = new mapboxgl.Map({
         container: mapContainer.current,
@@ -143,14 +142,16 @@ const MarketExplorer = () => {
       newMap.on('load', () => {
         console.log("✅ Map loaded successfully");
         setMapError(null);
-        setMapInitialized(true);
+        setMapReady(true);
+        hasInitializedRef.current = true;
         
         toast.success("Map loaded successfully", {
           description: "Market explorer is ready to use"
         });
         
-        if (selectedMarket === "default" && newMap) {
-          createDemoMap(newMap);
+        // Only create demo map on initial load
+        if (selectedMarket === "default") {
+          createDemoMap();
         }
       });
 
@@ -165,27 +166,23 @@ const MarketExplorer = () => {
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       setMapError(`Failed to load map: ${errorMessage}`);
       toast.error(`Failed to load map: ${errorMessage}`);
-      // Reset the flag so we can try again
-      mapCreatedRef.current = false;
     }
     
-    // Return cleanup function
+    // Return cleanup function that will run when component unmounts
     return () => {
       if (map.current) {
-        console.log("Cleaning up map instance");
+        console.log("UNMOUNTING: Cleaning up map instance");
         clearMarkers();
         map.current.remove();
         map.current = null;
-        setMapInitialized(false);
-        // Reset the flag when unmounting
-        mapCreatedRef.current = false;
+        hasInitializedRef.current = false;
       }
     };
-  }, [isTokenLoading, clearMarkers, createDemoMap]); // Remove selectedMarket from dependencies
+  }, [isTokenLoading, tokenInitialized, createDemoMap, clearMarkers]);
 
   // Update map when selected market changes
   useEffect(() => {
-    if (!mapInitialized || !map.current) return;
+    if (!mapReady || !map.current) return;
     
     const updateMapView = async () => {
       console.log("Updating map view for selected market:", selectedMarket);
@@ -200,9 +197,7 @@ const MarketExplorer = () => {
         
         // If default view is selected, show the demo map with multiple markers
         if (selectedMarket === "default") {
-          if (map.current) {
-            createDemoMap(map.current);
-          }
+          createDemoMap();
           return;
         }
         
@@ -297,14 +292,18 @@ const MarketExplorer = () => {
     };
     
     updateMapView();
-  }, [selectedMarket, campuses, createDemoMap, mapInitialized, clearMarkers]);
+  }, [selectedMarket, campuses, createDemoMap, mapReady, clearMarkers]);
 
   const handleMarketChange = (marketId: string) => {
     console.log("Market changed to:", marketId);
     setSelectedMarket(marketId);
   };
 
-  const isLoading = isTokenLoading;
+  const handleResetView = useCallback(() => {
+    setSelectedMarket("default");
+  }, []);
+
+  const isLoading = isTokenLoading || !mapReady;
 
   const displayError = mapError || (tokenError 
     ? `Failed to initialize Mapbox: ${tokenError instanceof Error ? tokenError.message : "Unknown error"}`
@@ -355,7 +354,7 @@ const MarketExplorer = () => {
                   <Button 
                     variant="secondary" 
                     size="sm"
-                    onClick={() => setSelectedMarket("default")}
+                    onClick={handleResetView}
                   >
                     Reset View
                   </Button>

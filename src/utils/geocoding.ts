@@ -3,6 +3,9 @@ import { getApiKey } from "@/services/api-config";
 import { toast } from "sonner";
 import mapboxgl from 'mapbox-gl';
 
+// Track if the token has been initialized
+let tokenInitialized = false;
+
 export interface Coordinates {
   lat: number;
   lng: number;
@@ -35,6 +38,12 @@ export interface GeocodingOptions {
  * Sets the Mapbox access token for the application
  */
 export async function initializeMapboxToken(): Promise<boolean> {
+  // If already initialized, return true immediately
+  if (tokenInitialized && mapboxgl.accessToken) {
+    console.log("Mapbox token already initialized");
+    return true;
+  }
+  
   try {
     const token = await getApiKey('mapbox');
     if (!token || token.trim() === '') {
@@ -44,6 +53,7 @@ export async function initializeMapboxToken(): Promise<boolean> {
     // Set the token for the entire mapboxgl instance
     mapboxgl.accessToken = token;
     console.log("Successfully initialized Mapbox token");
+    tokenInitialized = true;
     return true;
   } catch (error) {
     console.error("Error initializing Mapbox token:", error);
@@ -70,9 +80,9 @@ export async function geocodeAddress(
     console.log(`Geocoding address with Mapbox: ${address}`);
     
     // Get Mapbox token if not already set
-    if (!mapboxgl.accessToken) {
-      const tokenInitialized = await initializeMapboxToken();
-      if (!tokenInitialized) {
+    if (!mapboxgl.accessToken || !tokenInitialized) {
+      const tokenInitResult = await initializeMapboxToken();
+      if (!tokenInitResult) {
         throw new Error("Failed to initialize Mapbox token");
       }
     }
@@ -182,9 +192,9 @@ export async function reverseGeocode(
     console.log(`Reverse geocoding coordinates: ${coordinates.lat}, ${coordinates.lng}`);
     
     // Get Mapbox token if not already set
-    if (!mapboxgl.accessToken) {
-      const tokenInitialized = await initializeMapboxToken();
-      if (!tokenInitialized) {
+    if (!mapboxgl.accessToken || !tokenInitialized) {
+      const tokenInitResult = await initializeMapboxToken();
+      if (!tokenInitResult) {
         throw new Error("Failed to initialize Mapbox token");
       }
     }
