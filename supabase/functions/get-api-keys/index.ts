@@ -71,6 +71,12 @@ serve(async (req) => {
       );
     }
     
+    // Log all available environment variables (without values) for debugging
+    console.log("Available environment variables:");
+    for (const key of ["GOOGLE_API_KEY", "GOOGLE_MAPS_API_KEY", "MAPS_PLATFORM_API_KEY"]) {
+      console.log(`- ${key}: ${Deno.env.has(key) ? "Present" : "Not found"}`);
+    }
+    
     // Check if the requested key exists in our API_KEYS object
     if (!Object.prototype.hasOwnProperty.call(API_KEYS, keyName)) {
       console.error(`Invalid key requested: ${keyName}`);

@@ -57,12 +57,17 @@ serve(async (req) => {
     }
 
     console.log(`Geocoding address: ${address}`);
-    const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
+    
+    // Explicitly get GOOGLE_API_KEY - checking multiple environment variable names
+    const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY") || Deno.env.get("GOOGLE_MAPS_API_KEY");
     
     if (!GOOGLE_API_KEY) {
-      console.error("Google Maps API key not found in environment variables");
+      console.error("Google Maps API key not found in environment variables. Checked both GOOGLE_API_KEY and GOOGLE_MAPS_API_KEY");
       return new Response(
-        JSON.stringify({ error: "Server configuration error: Missing API key" }),
+        JSON.stringify({ 
+          error: "Server configuration error: Missing API key",
+          details: "The Google Maps API key was not found in environment variables. Please ensure it's configured correctly." 
+        }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -70,10 +75,14 @@ serve(async (req) => {
       );
     }
     
+    // Log that we found a key (don't log the key itself)
+    console.log("Found Google Maps API key in environment variables");
+    
     const encodedAddress = encodeURIComponent(address);
+    // Using proper Google Maps Geocoding API endpoint as per documentation
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${GOOGLE_API_KEY}`;
     
-    console.log(`Making geocoding request to Google Maps API`);
+    console.log(`Making geocoding request to Google Maps API for address: ${address}`);
     
     try {
       const response = await fetch(url, {
@@ -94,6 +103,35 @@ serve(async (req) => {
       
       const data = await response.json();
       console.log(`Google Maps API response status: ${data.status}`);
+      
+      // Check for various Google Maps API status codes as per documentation
+      if (data.status === "REQUEST_DENIED") {
+        console.error("Google Maps API request denied. Likely an issue with the API key:", data.error_message);
+        return new Response(
+          JSON.stringify({
+            error: "Google Maps API request denied",
+            details: data.error_message || "The API key may be invalid, expired, or missing required permissions."
+          }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+      
+      if (data.status === "ZERO_RESULTS") {
+        console.error("No results found for the provided address:", address);
+        return new Response(
+          JSON.stringify({
+            error: "No results found",
+            details: "The Google Maps API couldn't find any results for the provided address."
+          }),
+          { 
+            status: 404, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
       
       if (data.status === "OK" && data.results && data.results.length > 0) {
         const result = data.results[0];

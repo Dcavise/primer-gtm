@@ -10,48 +10,51 @@ export async function getApiKey(keyType: 'zoneomics' | 'census' | 'google_maps' 
   try {
     console.log(`Fetching ${keyType} API key from Supabase edge function`);
     
+    // Standardize key name for Google Maps API
+    const requestedKey = keyType === 'google_maps' ? 'google_maps' : keyType;
+    
     try {
       // Try POST method first (which is the recommended approach)
-      console.log(`Using POST method for fetching ${keyType} API key`);
+      console.log(`Using POST method for fetching ${requestedKey} API key`);
       const { data, error } = await supabase.functions.invoke('get-api-keys', {
-        body: { key: keyType }
+        body: { key: requestedKey }
       });
 
       if (error) {
-        console.error(`Error fetching ${keyType} API key with POST:`, error);
+        console.error(`Error fetching ${requestedKey} API key with POST:`, error);
         throw error;
       }
 
       if (!data || !data.key) {
-        console.error(`No API key data returned for ${keyType}:`, data);
-        throw new Error(`No API key returned for ${keyType}`);
+        console.error(`No API key data returned for ${requestedKey}:`, data);
+        throw new Error(`No API key returned for ${requestedKey}`);
       }
 
-      console.log(`Successfully retrieved ${keyType} API key`);
+      console.log(`Successfully retrieved ${requestedKey} API key`);
       return data.key;
     } catch (postError) {
-      console.warn(`POST request failed for ${keyType} API key:`, postError);
+      console.warn(`POST request failed for ${requestedKey} API key:`, postError);
       
       // Fall back to GET method if POST fails
-      console.log(`Trying GET method for ${keyType} API key`);
+      console.log(`Trying GET method for ${requestedKey} API key`);
       
       // Use URL concatenation to add the key parameter
-      const endpoint = `get-api-keys?key=${keyType}`;
+      const endpoint = `get-api-keys?key=${requestedKey}`;
       const { data, error } = await supabase.functions.invoke(endpoint, {
         method: 'GET'
       });
       
       if (error) {
-        console.error(`Error fetching ${keyType} API key with GET:`, error);
+        console.error(`Error fetching ${requestedKey} API key with GET:`, error);
         throw error;
       }
       
       if (!data || !data.key) {
-        console.error(`No API key returned for ${keyType} using GET method:`, data);
-        throw new Error(`No API key returned for ${keyType} using GET method`);
+        console.error(`No API key returned for ${requestedKey} using GET method:`, data);
+        throw new Error(`No API key returned for ${requestedKey} using GET method`);
       }
       
-      console.log(`Successfully retrieved ${keyType} API key using GET method`);
+      console.log(`Successfully retrieved ${requestedKey} API key using GET method`);
       return data.key;
     }
   } catch (error) {
