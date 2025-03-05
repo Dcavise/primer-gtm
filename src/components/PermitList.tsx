@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { Permit } from "@/types";
 import { PermitCard } from "./PermitCard";
@@ -5,15 +6,17 @@ import { PermitDetail } from "./PermitDetail";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { LoadingState } from "./LoadingState";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building, FileText, Wrench, CreditCard, Map, CheckCircle, MapPin, ArrowUpDown, AlertCircle } from "lucide-react";
+import { Building, FileText, Wrench, CreditCard, Map, CheckCircle, MapPin, ArrowUpDown, AlertCircle, InfoIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/utils/format";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 
 interface PermitListProps {
   permits: Permit[];
   isLoading: boolean;
   searchedAddress: string;
+  isUsingFallbackData?: boolean;
 }
 
 const getPermitTypeIcon = (permitType: string) => {
@@ -34,7 +37,7 @@ const getPermitTypeIcon = (permitType: string) => {
   }
 };
 
-export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListProps) => {
+export const PermitList = ({ permits, isLoading, searchedAddress, isUsingFallbackData = false }: PermitListProps) => {
   const [selectedPermit, setSelectedPermit] = useState<Permit | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [activeType, setActiveType] = useState("All");
@@ -114,7 +117,25 @@ export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListPr
 
   return (
     <>
-      {searchedAddress && permits.length > 0 && (
+      {isUsingFallbackData && (
+        <Alert 
+          className="mb-6 bg-amber-50 border-amber-200 dark:bg-amber-900/10 dark:border-amber-900/30"
+        >
+          <div className="flex items-start">
+            <InfoIcon className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+            <div className="ml-3">
+              <AlertTitle className="text-amber-800 dark:text-amber-300">
+                Using sample permit data
+              </AlertTitle>
+              <AlertDescription className="text-amber-700 dark:text-amber-400">
+                We're currently unable to connect to the permit database. Showing sample data instead.
+              </AlertDescription>
+            </div>
+          </div>
+        </Alert>
+      )}
+
+      {searchedAddress && permits.length > 0 && !isUsingFallbackData && (
         <Alert 
           className="mb-6 bg-green-50 border-green-200 dark:bg-green-900/10 dark:border-green-900/30"
         >
@@ -136,9 +157,15 @@ export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListPr
         <div>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">
+              <Badge variant={isUsingFallbackData ? "outline" : "default"} className={isUsingFallbackData ? "border-amber-300 text-amber-700" : "bg-green-100 text-green-800"}>
                 {permits.length}
-              </span>
+              </Badge>
+              {isUsingFallbackData && (
+                <span className="text-amber-600 text-xs font-medium flex items-center">
+                  <AlertCircle className="h-3 w-3 mr-1" />
+                  Sample data
+                </span>
+              )}
             </div>
             <Button 
               variant="outline" 

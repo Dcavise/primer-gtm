@@ -185,14 +185,22 @@ serve(async (req) => {
       };
     }) || [];
 
+    // IMPORTANT: Filter schools by the specified radius
+    const schoolsWithinRadius = formattedSchools.filter(school => 
+      school.location.distanceMiles <= radius
+    );
+    
+    console.log(`Filtered to ${schoolsWithinRadius.length} schools within ${radius} miles of ${address}`);
+
     // Return the data with detailed information
     return new Response(
       JSON.stringify({
-        schools: formattedSchools,
+        schools: schoolsWithinRadius,
         searchedAddress: address,
         coordinates: { lat, lon },
         radiusMiles: radius,
-        totalResults: formattedSchools.length
+        totalResults: schoolsWithinRadius.length,
+        unfilteredCount: formattedSchools.length
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

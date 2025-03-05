@@ -1,9 +1,10 @@
+
 import { useState } from "react";
 import { School } from "@/types/schools";
 import { SchoolCard } from "./SchoolCard";
 import { LoadingState } from "./LoadingState";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building, GraduationCap, School as SchoolIcon, ArrowUpDown, MapPin } from "lucide-react";
+import { Building, GraduationCap, School as SchoolIcon, ArrowUpDown, MapPin, AlertCircle, InfoIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -73,6 +74,9 @@ export const SchoolsList = ({ schools, isLoading, searchedAddress }: SchoolsList
     return schoolsByLevel[level]?.length || 0;
   };
 
+  // Check for schools with extremely large distances (indicating a location mismatch)
+  const hasLocationMismatch = schools.some(school => school.location?.distanceMiles > 50);
+
   const sortedLevels = Object.keys(schoolsByLevel).sort((a, b) => {
     if (a === "All") return -1; // All should always be first
     if (b === "All") return 1;
@@ -108,7 +112,23 @@ export const SchoolsList = ({ schools, isLoading, searchedAddress }: SchoolsList
 
   return (
     <>
-      {searchedAddress && schools.length > 0 && (
+      {hasLocationMismatch && (
+        <Alert className="mb-6 bg-amber-50 border-amber-200 dark:bg-amber-900/10 dark:border-amber-900/30">
+          <div className="flex items-start">
+            <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+            <div className="ml-3">
+              <AlertTitle className="text-amber-800 dark:text-amber-300">
+                Location mismatch detected
+              </AlertTitle>
+              <AlertDescription className="text-amber-700 dark:text-amber-400">
+                The schools shown may not be near the searched address due to a location mismatch. Distance information may be inaccurate.
+              </AlertDescription>
+            </div>
+          </div>
+        </Alert>
+      )}
+
+      {searchedAddress && schools.length > 0 && !hasLocationMismatch && (
         <Alert className="mb-6 bg-blue-50 border-blue-200 dark:bg-blue-900/10 dark:border-blue-900/30">
           <div className="flex items-start">
             <MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
@@ -131,6 +151,12 @@ export const SchoolsList = ({ schools, isLoading, searchedAddress }: SchoolsList
               <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
                 {schools.length}
               </Badge>
+              {hasLocationMismatch && (
+                <span className="text-amber-600 text-xs font-medium flex items-center">
+                  <InfoIcon className="h-3 w-3 mr-1" />
+                  Distance data may be incorrect
+                </span>
+              )}
             </div>
             <Button 
               variant="outline" 

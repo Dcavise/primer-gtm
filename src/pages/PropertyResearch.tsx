@@ -18,7 +18,7 @@ import { Navbar } from "@/components/Navbar";
 
 const PropertyResearch = () => {
   // Permits data
-  const { permits, status: permitStatus, searchedAddress: permitAddress, fetchPermits, reset: resetPermits } = usePermits();
+  const { permits, status: permitStatus, searchedAddress: permitAddress, isUsingFallbackData: isUsingFallbackPermitData, fetchPermits, reset: resetPermits } = usePermits();
   const isSearchingPermits = permitStatus === "loading";
   const [testResults, setTestResults] = useState<{
     permits: Permit[],
@@ -26,7 +26,7 @@ const PropertyResearch = () => {
   } | null>(null);
 
   // Zoning data
-  const { zoningData, status: zoningStatus, searchedAddress: zoningAddress, isUsingFallbackData, fetchZoningData, reset: resetZoning } = useZoningData();
+  const { zoningData, status: zoningStatus, searchedAddress: zoningAddress, isUsingFallbackData: isUsingFallbackZoningData, fetchZoningData, reset: resetZoning } = useZoningData();
   const isSearchingZoning = zoningStatus === "loading";
 
   // Schools data
@@ -68,18 +68,24 @@ const PropertyResearch = () => {
       const geocodingResult = await geocodeAddress(address);
       if (geocodingResult) {
         setCoordinates(geocodingResult.coordinates);
+        
+        // Start all API requests concurrently
+        await Promise.all([
+          fetchPermits({
+            ...params,
+            exact_address: geocodingResult.address // Use the standardized address from geocoding
+          }, geocodingResult.address),
+          fetchZoningData(geocodingResult.address),
+          fetchSchoolsData({
+            top_right_lat: geocodingResult.coordinates.lat,
+            top_right_lng: geocodingResult.coordinates.lng
+          }, geocodingResult.address)
+        ]);
+        
+        toast.success("Property research complete", {
+          description: "All available data has been retrieved for this location."
+        });
       }
-      
-      // Start all API requests concurrently
-      await Promise.all([
-        fetchPermits(params, address),
-        fetchZoningData(address),
-        fetchSchoolsData(params, address)
-      ]);
-      
-      toast.success("Property research complete", {
-        description: "All available data has been retrieved for this location."
-      });
     } catch (error) {
       console.error("Error in consolidated search:", error);
       toast.error("Search error", {
@@ -183,7 +189,7 @@ const PropertyResearch = () => {
                 zoningData={zoningData}
                 isLoading={isSearchingZoning}
                 searchedAddress={zoningAddress}
-                isUsingFallbackData={isUsingFallbackData}
+                isUsingFallbackData={isUsingFallbackZoningData}
               />
             </section>
             
@@ -214,6 +220,7 @@ const PropertyResearch = () => {
                 permits={testResults ? testResults.permits : permits} 
                 isLoading={isSearchingPermits && !testResults} 
                 searchedAddress={permitAddress || (testResults ? testResults.address : "")}
+                isUsingFallbackData={isUsingFallbackPermitData}
               />
             </section>
           </div>
