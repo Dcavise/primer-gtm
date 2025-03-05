@@ -25,14 +25,13 @@ export const PipelineChartDialog: React.FC<PipelineChartDialogProps> = ({
   opportunityStageCounts,
   selectedCampusName
 }) => {
-  // Using a progression color scheme that moves from yellow/orange to green
-  // This indicates increasing probability of conversion as stages advance
-  // Family Interview (start) -> Admission Offered (final stage)
+  // Using recommended color scheme from custom instructions
+  // These colors align with Bar & Column Charts section
   const colorsByStage = {
-    "Family Interview": "#FF7F0E", // Orange for starting stage
-    "Awaiting Documents": "#F0C75E", // Gold/Yellow
-    "Preparing Offer": "#6BAED6", // Blue for intermediate stage
-    "Admission Offered": "#2CA02C"  // Green for final stage (not red)
+    "Family Interview": "#1F77B4", // Blue for starting stage
+    "Awaiting Documents": "#FF7F0E", // Orange for second stage
+    "Preparing Offer": "#2CA02C", // Green for third stage
+    "Admission Offered": "#D62728"  // Red for final stage
   };
 
   // Order stages in progression sequence

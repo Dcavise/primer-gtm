@@ -58,7 +58,8 @@ export const MetricsCharts: React.FC<MetricsChartsProps> = ({
     }
   }
   
-  // Use the right color palette for data visualization
+  // Use the recommended color palette for data visualization
+  // Primary colors from the custom instructions
   const colors = ['#1F77B4', '#FF7F0E', '#2CA02C', '#D62728', '#9467BD'];
   
   return (
