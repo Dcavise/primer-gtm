@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
@@ -20,6 +21,9 @@ const SALESFORCE_SECURITY_TOKEN = Deno.env.get('SALESFORCE_SECURITY_TOKEN') || '
 // Initialize the Supabase client
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Define batch size for ID processing to avoid URI Too Long errors
+const BATCH_SIZE = 100;
+
 interface SalesforceAuthResponse {
   access_token: string;
   instance_url: string;
@@ -32,26 +36,29 @@ interface SalesforceAuthResponse {
 interface SalesforceQueryResponse {
   totalSize: number;
   done: boolean;
-  records: SalesforceOpportunity[];
+  records: any[];
   nextRecordsUrl?: string;
 }
 
 interface SalesforceOpportunity {
   Id: string;
-  Name: string;
   StageName: string;
-  CloseDate: string;
-  AccountId: string;
+  Lead_ID__c: string | null;
+  Name: string | null;
+  AccountId: string | null;
+  CloseDate: string | null;
+  Actualized_Tuition__c: number | null;
   [key: string]: any;
 }
 
 interface SupabaseOpportunity {
   opportunity_id: string;
-  opportunity_name: string | null;
-  stage: string | null;
-  close_date: string | null;
-  account_id: string | null;
   lead_id: string;
+  stage: string | null;
+  opportunity_name: string | null;
+  account_id: string | null;
+  close_date: string | null;
+  actualized_tuition: number | null;
 }
 
 // Get Salesforce OAuth token
@@ -84,21 +91,127 @@ async function getSalesforceToken(): Promise<SalesforceAuthResponse> {
   return await response.json();
 }
 
-// Query Salesforce for all opportunities
-async function fetchSalesforceOpportunities(token: string, instanceUrl: string): Promise<SalesforceOpportunity[]> {
-  console.log("Fetching all Salesforce opportunities...");
+// Get all lead IDs from our database - including those that are already converted
+async function getExistingLeadIds(): Promise<string[]> {
+  console.log("Fetching existing lead IDs from database...");
   
-  // Query only standard fields that we know exist in every Salesforce org
-  const query = `
-    SELECT Id, Name, StageName, CloseDate, AccountId 
-    FROM Opportunity
-    WHERE Id != null
-    ORDER BY CreatedDate DESC
-    LIMIT 1000
-  `;
+  const { data, error } = await supabase
+    .from('salesforce_leads')
+    .select('lead_id');
   
-  console.log("SOQL Query:", query);
+  if (error) {
+    console.error("Error fetching lead IDs:", error);
+    throw new Error(`Failed to fetch lead IDs: ${error.message}`);
+  }
   
+  const leadIds = data.map(lead => lead.lead_id);
+  console.log(`Found ${leadIds.length} existing lead IDs`);
+  
+  return leadIds;
+}
+
+// Get leads with converted opportunity IDs
+async function getConvertedOpportunityIds(): Promise<Record<string, string>> {
+  console.log("Fetching leads with converted opportunity IDs...");
+  
+  const { data, error } = await supabase
+    .from('salesforce_leads')
+    .select('lead_id, converted_opportunity_id')
+    .not('converted_opportunity_id', 'is', null);
+  
+  if (error) {
+    console.error("Error fetching converted opportunity IDs:", error);
+    throw new Error(`Failed to fetch converted opportunity IDs: ${error.message}`);
+  }
+  
+  // Create a mapping of converted opportunity ID to lead ID
+  const opportunityToLeadMap: Record<string, string> = {};
+  data.forEach(item => {
+    if (item.converted_opportunity_id) {
+      opportunityToLeadMap[item.converted_opportunity_id] = item.lead_id;
+    }
+  });
+  
+  console.log(`Found ${Object.keys(opportunityToLeadMap).length} leads with converted opportunity IDs`);
+  
+  return opportunityToLeadMap;
+}
+
+// Split array into chunks of specified size
+function chunkArray<T>(array: T[], chunkSize: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += chunkSize) {
+    chunks.push(array.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
+
+// Query Salesforce for opportunities using batched requests
+async function fetchSalesforceOpportunities(
+  token: string, 
+  instanceUrl: string, 
+  leadIds: string[], 
+  convertedOpportunityIds: string[]
+): Promise<SalesforceOpportunity[]> {
+  console.log("Fetching Salesforce opportunities linked to our leads...");
+  
+  if (leadIds.length === 0 && convertedOpportunityIds.length === 0) {
+    console.log("No lead IDs or opportunity IDs to query opportunities for");
+    return [];
+  }
+  
+  let allOpportunities: SalesforceOpportunity[] = [];
+  
+  // Process lead IDs in batches
+  if (leadIds.length > 0) {
+    const leadIdBatches = chunkArray(leadIds, BATCH_SIZE);
+    console.log(`Processing ${leadIds.length} lead IDs in ${leadIdBatches.length} batches`);
+    
+    for (let i = 0; i < leadIdBatches.length; i++) {
+      const batch = leadIdBatches[i];
+      console.log(`Processing lead ID batch ${i+1}/${leadIdBatches.length} with ${batch.length} IDs`);
+      
+      const leadIdList = batch.map(id => `'${id}'`).join(', ');
+      const query = `
+        SELECT Id, StageName, Lead_ID__c, Name, AccountId, CloseDate, Actualized_Tuition__c
+        FROM Opportunity
+        WHERE Lead_ID__c IN (${leadIdList})
+        ORDER BY CreatedDate DESC
+      `;
+      
+      const batchOpportunities = await querySalesforce(token, instanceUrl, query);
+      allOpportunities = [...allOpportunities, ...batchOpportunities];
+    }
+  }
+  
+  // Process converted opportunity IDs in batches
+  if (convertedOpportunityIds.length > 0) {
+    const oppIdBatches = chunkArray(convertedOpportunityIds, BATCH_SIZE);
+    console.log(`Processing ${convertedOpportunityIds.length} opportunity IDs in ${oppIdBatches.length} batches`);
+    
+    for (let i = 0; i < oppIdBatches.length; i++) {
+      const batch = oppIdBatches[i];
+      console.log(`Processing opportunity ID batch ${i+1}/${oppIdBatches.length} with ${batch.length} IDs`);
+      
+      const oppIdList = batch.map(id => `'${id}'`).join(', ');
+      const query = `
+        SELECT Id, StageName, Lead_ID__c, Name, AccountId, CloseDate, Actualized_Tuition__c
+        FROM Opportunity
+        WHERE Id IN (${oppIdList})
+        ORDER BY CreatedDate DESC
+      `;
+      
+      const batchOpportunities = await querySalesforce(token, instanceUrl, query);
+      allOpportunities = [...allOpportunities, ...batchOpportunities];
+    }
+  }
+  
+  console.log(`Retrieved a total of ${allOpportunities.length} opportunities from Salesforce`);
+  return allOpportunities;
+}
+
+// Execute a SOQL query against Salesforce
+async function querySalesforce(token: string, instanceUrl: string, query: string): Promise<SalesforceOpportunity[]> {
   const encodedQuery = encodeURIComponent(query);
   const queryUrl = `${instanceUrl}/services/data/v58.0/query?q=${encodedQuery}`;
   
@@ -112,72 +225,38 @@ async function fetchSalesforceOpportunities(token: string, instanceUrl: string):
   if (!response.ok) {
     const errorText = await response.text();
     console.error("Salesforce query error:", errorText);
-    throw new Error(`Failed to fetch Salesforce opportunities: ${response.status} ${errorText}`);
+    throw new Error(`Failed to fetch Salesforce data: ${response.status} ${errorText}`);
   }
 
   const data: SalesforceQueryResponse = await response.json();
-  console.log(`Retrieved ${data.records.length} opportunities from Salesforce`);
-  return data.records;
-}
-
-// Find corresponding leads for opportunities
-async function findLeadsForOpportunities(opportunities: SalesforceOpportunity[]): Promise<Map<string, string>> {
-  console.log("Finding corresponding leads for opportunities...");
-  
-  // Get all leads with converted_opportunity_id values
-  const { data, error } = await supabase
-    .from('salesforce_leads')
-    .select('lead_id, converted_opportunity_id')
-    .not('converted_opportunity_id', 'is', null);
-  
-  if (error) {
-    console.error("Error fetching leads with opportunity IDs:", error);
-    throw new Error(`Failed to fetch leads: ${error.message}`);
-  }
-  
-  // Create a mapping of opportunity IDs to lead IDs
-  const opportunityToLeadMap = new Map<string, string>();
-  for (const lead of data) {
-    if (lead.converted_opportunity_id) {
-      opportunityToLeadMap.set(lead.converted_opportunity_id, lead.lead_id);
-    }
-  }
-  
-  console.log(`Found ${opportunityToLeadMap.size} lead-opportunity mappings`);
-  return opportunityToLeadMap;
+  return data.records as SalesforceOpportunity[];
 }
 
 // Transform Salesforce opportunities to Supabase format
-async function transformOpportunities(
-  salesforceOpportunities: SalesforceOpportunity[]
-): Promise<SupabaseOpportunity[]> {
+function transformOpportunities(
+  salesforceOpportunities: SalesforceOpportunity[], 
+  opportunityToLeadMap: Record<string, string>
+): SupabaseOpportunity[] {
   console.log(`Transforming ${salesforceOpportunities.length} Salesforce opportunities...`);
   
-  // Get mapping of opportunities to leads
-  const opportunityToLeadMap = await findLeadsForOpportunities(salesforceOpportunities);
-  
-  // Transform the opportunities
-  const transformedOpportunities = salesforceOpportunities.map(opp => {
-    // Find the lead ID for this opportunity (if any)
-    const leadId = opportunityToLeadMap.get(opp.Id) || 'unknown';
+  return salesforceOpportunities.map(opp => {
+    // First try to get the lead ID from the map (for converted opportunities)
+    // If not found, fallback to Lead_ID__c field
+    const leadId = opportunityToLeadMap[opp.Id] || opp.Lead_ID__c;
     
+    // Format close date if available
     const closeDate = opp.CloseDate ? opp.CloseDate : null;
     
     return {
       opportunity_id: opp.Id,
-      opportunity_name: opp.Name || null,
+      lead_id: leadId as string,
       stage: opp.StageName || null,
-      close_date: closeDate,
+      opportunity_name: opp.Name || null,
       account_id: opp.AccountId || null,
-      lead_id: leadId
+      close_date: closeDate,
+      actualized_tuition: opp.Actualized_Tuition__c || null
     };
-  });
-  
-  // Only keep opportunities that we have a lead for
-  const filteredOpportunities = transformedOpportunities.filter(opp => opp.lead_id !== 'unknown');
-  
-  console.log(`Filtered to ${filteredOpportunities.length} opportunities with matching leads`);
-  return filteredOpportunities;
+  }).filter(opp => opp.lead_id); // Only keep opportunities that have a lead ID
 }
 
 // Upsert opportunities to Supabase
@@ -189,40 +268,61 @@ async function syncOpportunitiesToSupabase(opportunities: SupabaseOpportunity[])
     return 0;
   }
   
-  const { data, error } = await supabase
-    .from('salesforce_opportunities')
-    .upsert(opportunities, { 
-      onConflict: 'opportunity_id',
-      ignoreDuplicates: false,
-      returning: 'minimal'
-    })
-    .select();
+  // Process in batches to avoid request size limits
+  const UPSERT_BATCH_SIZE = 500;
+  const batches = chunkArray(opportunities, UPSERT_BATCH_SIZE);
+  let totalSynced = 0;
   
-  if (error) {
-    console.error("Supabase upsert error:", error);
-    throw new Error(`Failed to sync opportunities to Supabase: ${error.message}`);
+  for (let i = 0; i < batches.length; i++) {
+    const batch = batches[i];
+    console.log(`Processing upsert batch ${i+1}/${batches.length} with ${batch.length} records`);
+    
+    const { data, error } = await supabase
+      .from('salesforce_opportunities')
+      .upsert(batch, { 
+        onConflict: 'opportunity_id',
+        ignoreDuplicates: false
+      });
+    
+    if (error) {
+      console.error("Supabase upsert error:", error);
+      throw new Error(`Failed to sync opportunities to Supabase: ${error.message}`);
+    }
+    
+    totalSynced += batch.length;
   }
   
-  console.log(`Successfully synced ${data?.length || 0} opportunities`);
-  return data?.length || 0;
+  console.log(`Successfully synced ${totalSynced} opportunities`);
+  return totalSynced;
 }
 
 // Main sync function
-async function syncSalesforceOpportunities(): Promise<{ 
-  success: boolean; 
-  synced: number; 
-  error?: string 
-}> {
+async function syncSalesforceOpportunities(): Promise<{ success: boolean; synced: number; error?: string }> {
   try {
+    // Get existing lead IDs from our database
+    const leadIds = await getExistingLeadIds();
+    
+    // Get mapping of converted opportunity IDs to lead IDs
+    const opportunityToLeadMap = await getConvertedOpportunityIds();
+    
+    // Get Salesforce access token
     const authResponse = await getSalesforceToken();
     
+    // Fetch opportunities for our leads (both via Lead_ID__c and ConvertedOpportunityId)
     const salesforceOpportunities = await fetchSalesforceOpportunities(
       authResponse.access_token, 
-      authResponse.instance_url
+      authResponse.instance_url,
+      leadIds,
+      Object.keys(opportunityToLeadMap)
     );
     
-    const transformedOpportunities = await transformOpportunities(salesforceOpportunities);
+    // Transform opportunities
+    const transformedOpportunities = transformOpportunities(
+      salesforceOpportunities,
+      opportunityToLeadMap
+    );
     
+    // Sync opportunities to Supabase
     const syncedCount = await syncOpportunitiesToSupabase(transformedOpportunities);
     
     return { 
@@ -252,7 +352,6 @@ serve(async (req) => {
         const body = await req.json();
         options = body;
       } catch (e) {
-        // Ignore parsing errors
       }
     }
     
