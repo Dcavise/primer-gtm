@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -11,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FileUpload } from '@/components/FileUpload';
 import { FileList } from '@/components/FileList';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
 import { 
   ArrowLeft, 
   MapPin, 
@@ -25,15 +26,21 @@ import {
   AlertCircle,
   Flame,
   Wifi,
-  FolderOpen
+  FolderOpen,
+  Save,
+  Edit,
+  X
 } from 'lucide-react';
 
 const PropertyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [fileRefreshKey, setFileRefreshKey] = useState(0);
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [notesValue, setNotesValue] = useState('');
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
   
-  const { data: property, isLoading, error } = useQuery({
+  const { data: property, isLoading, error, refetch } = useQuery({
     queryKey: ['property', id],
     queryFn: async (): Promise<RealEstateProperty | null> => {
       if (!id) return null;
@@ -53,12 +60,58 @@ const PropertyDetail: React.FC = () => {
     }
   });
 
+  React.useEffect(() => {
+    if (property && property.status_notes) {
+      setNotesValue(property.status_notes);
+    }
+  }, [property]);
+
   const handleBackClick = () => {
     navigate('/real-estate-pipeline');
   };
 
   const handleFileUploadComplete = () => {
     setFileRefreshKey(prev => prev + 1);
+  };
+
+  const handleEditNotes = () => {
+    setIsEditingNotes(true);
+  };
+
+  const handleCancelEditNotes = () => {
+    if (property && property.status_notes) {
+      setNotesValue(property.status_notes);
+    } else {
+      setNotesValue('');
+    }
+    setIsEditingNotes(false);
+  };
+
+  const handleSaveNotes = async () => {
+    if (!id) return;
+    
+    setIsSavingNotes(true);
+    try {
+      const { error } = await supabase
+        .from('real_estate_pipeline')
+        .update({ status_notes: notesValue })
+        .eq('id', parseInt(id));
+      
+      if (error) {
+        console.error('Error saving notes:', error);
+        toast.error('Failed to save notes');
+        return;
+      }
+      
+      setIsEditingNotes(false);
+      toast.success('Notes saved successfully');
+      refetch();
+    } catch (error) {
+      console.error('Error saving notes:', error);
+      toast.error('Failed to save notes');
+    } finally {
+      setIsSavingNotes(false);
+    }
   };
 
   if (isLoading) {
@@ -115,7 +168,6 @@ const PropertyDetail: React.FC = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
-            {/* Property Information */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-xl flex items-center justify-between">
@@ -173,7 +225,6 @@ const PropertyDetail: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Status Information */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-xl">Status Information</CardTitle>
@@ -218,21 +269,66 @@ const PropertyDetail: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Notes */}
-            {property.status_notes && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-xl">Notes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="whitespace-pre-line">{property.status_notes}</p>
-                </CardContent>
-              </Card>
-            )}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl flex items-center justify-between">
+                  Notes
+                  <div className="space-x-2">
+                    {isEditingNotes ? (
+                      <>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={handleCancelEditNotes}
+                          disabled={isSavingNotes}
+                        >
+                          <X className="h-4 w-4 mr-1" /> Cancel
+                        </Button>
+                        <Button 
+                          variant="default" 
+                          size="sm" 
+                          onClick={handleSaveNotes}
+                          disabled={isSavingNotes}
+                        >
+                          {isSavingNotes ? (
+                            <span className="flex items-center">
+                              <LoadingState message="Saving..." showSpinner={true} />
+                            </span>
+                          ) : (
+                            <>
+                              <Save className="h-4 w-4 mr-1" /> Save
+                            </>
+                          )}
+                        </Button>
+                      </>
+                    ) : (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleEditNotes}
+                      >
+                        <Edit className="h-4 w-4 mr-1" /> Edit
+                      </Button>
+                    )}
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isEditingNotes ? (
+                  <Textarea
+                    value={notesValue}
+                    onChange={(e) => setNotesValue(e.target.value)}
+                    placeholder="Enter property notes here..."
+                    className="min-h-[150px]"
+                  />
+                ) : (
+                  <p className="whitespace-pre-line">{property.status_notes || 'No notes added yet.'}</p>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
           <div className="space-y-6">
-            {/* Contact Information */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-xl">Contact Information</CardTitle>
@@ -268,7 +364,6 @@ const PropertyDetail: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Document Repository */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-xl flex items-center">
