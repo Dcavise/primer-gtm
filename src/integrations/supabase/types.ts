@@ -123,10 +123,19 @@ export type Database = {
           stage?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_salesforce_leads_campus"
+            columns: ["campus_id"]
+            isOneToOne: false
+            referencedRelation: "campuses"
+            referencedColumns: ["campus_id"]
+          },
+        ]
       }
       salesforce_opportunities: {
         Row: {
+          campus_id: string | null
           close_date: string | null
           created_at: string
           id: string
@@ -137,6 +146,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          campus_id?: string | null
           close_date?: string | null
           created_at?: string
           id?: string
@@ -147,6 +157,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          campus_id?: string | null
           close_date?: string | null
           created_at?: string
           id?: string
@@ -156,7 +167,15 @@ export type Database = {
           stage?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_salesforce_opportunities_campus"
+            columns: ["campus_id"]
+            isOneToOne: false
+            referencedRelation: "campuses"
+            referencedColumns: ["campus_id"]
+          },
+        ]
       }
     }
     Views: {

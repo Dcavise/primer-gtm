@@ -1,22 +1,29 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { RefreshCw, AlertCircle, Info } from "lucide-react";
+import { RefreshCw, AlertCircle, Info, Filter } from "lucide-react";
 import { LoadingState } from "@/components/LoadingState";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SalesforceOpportunity, SalesforceAccount, SalesforceContact, SalesforceLead } from "@/types";
+import { SalesforceOpportunity, SalesforceAccount, SalesforceContact, SalesforceLead, Campus, Fellow } from "@/types";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function SalesforceLeadsPage() {
   const [leads, setLeads] = useState<SalesforceLead[]>([]);
   const [opportunities, setOpportunities] = useState<SalesforceOpportunity[]>([]);
   const [accounts, setAccounts] = useState<SalesforceAccount[]>([]);
   const [contacts, setContacts] = useState<SalesforceContact[]>([]);
+  const [campuses, setCampuses] = useState<Campus[]>([]);
+  const [fellows, setFellows] = useState<Fellow[]>([]);
+  const [selectedCampusId, setSelectedCampusId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [opportunitiesLoading, setOpportunitiesLoading] = useState(false);
+  const [fellowsLoading, setFellowsLoading] = useState(false);
+  const [campusesLoading, setCampusesLoading] = useState(false);
   const [syncLoading, setSyncLoading] = useState(false);
   const [opportunitiesSyncLoading, setOpportunitiesSyncLoading] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
@@ -26,14 +33,37 @@ export function SalesforceLeadsPage() {
   const [showDetailedError, setShowDetailedError] = useState(false);
   const [showOpportunitiesDetailedError, setShowOpportunitiesDetailedError] = useState(false);
 
-  const fetchLeads = async () => {
-    setLoading(true);
+  const fetchCampuses = async () => {
+    setCampusesLoading(true);
     try {
       const { data, error } = await supabase
+        .from('campuses')
+        .select('*')
+        .order('campus_name', { ascending: true });
+      
+      if (error) throw error;
+      setCampuses(data);
+    } catch (error) {
+      console.error('Error fetching campuses:', error);
+      toast.error('Error loading campuses data');
+    } finally {
+      setCampusesLoading(false);
+    }
+  };
+
+  const fetchLeads = async (campusId?: string) => {
+    setLoading(true);
+    try {
+      let query = supabase
         .from('salesforce_leads')
         .select('*')
-        .not('campus_id', 'is', null)
         .order('created_date', { ascending: false });
+      
+      if (campusId) {
+        query = query.eq('campus_id', campusId);
+      }
+      
+      const { data, error } = await query;
       
       if (error) throw error;
       
@@ -59,24 +89,30 @@ export function SalesforceLeadsPage() {
     }
   };
 
-  const fetchOpportunities = async () => {
+  const fetchOpportunities = async (campusId?: string) => {
     setOpportunitiesLoading(true);
     try {
-      const { data: oppsData, error: oppsError } = await supabase
+      let query = supabase
         .from('salesforce_opportunities')
         .select('*')
         .order('updated_at', { ascending: false });
+      
+      // Filter by campus_id if provided
+      if (campusId) {
+        query = query.eq('campus_id', campusId);
+      }
+      
+      const { data: oppsData, error: oppsError } = await query;
       
       if (oppsError) throw oppsError;
       
       const typedOpportunities: SalesforceOpportunity[] = oppsData ? oppsData.map(opp => ({
         ...opp,
-        preferred_campus: opp.preferred_campus || null
+        preferred_campus: opp.preferred_campus || null,
+        campus_id: opp.campus_id || null
       })) : [];
       
       setOpportunities(typedOpportunities);
-      
-      setAccounts([]);
       
       if (oppsData && oppsData.length > 0) {
         const mostRecent = new Date(Math.max(...oppsData.map(o => new Date(o.updated_at).getTime())));
@@ -88,6 +124,45 @@ export function SalesforceLeadsPage() {
     } finally {
       setOpportunitiesLoading(false);
     }
+  };
+
+  const fetchFellows = async (campusId?: string) => {
+    setFellowsLoading(true);
+    try {
+      let query = supabase
+        .from('fellows')
+        .select('*')
+        .order('fellow_name', { ascending: true });
+      
+      // Filter by campus_id if provided
+      if (campusId) {
+        query = query.eq('campus_id', campusId);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      setFellows(data);
+    } catch (error) {
+      console.error('Error fetching fellows:', error);
+      toast.error('Error loading fellows data');
+    } finally {
+      setFellowsLoading(false);
+    }
+  };
+
+  const handleCampusChange = (campusId: string) => {
+    setSelectedCampusId(campusId);
+    fetchLeads(campusId);
+    fetchOpportunities(campusId);
+    fetchFellows(campusId);
+  };
+
+  const clearCampusFilter = () => {
+    setSelectedCampusId(null);
+    fetchLeads();
+    fetchOpportunities();
+    fetchFellows();
   };
 
   const syncSalesforceLeads = async () => {
@@ -114,7 +189,9 @@ export function SalesforceLeadsPage() {
       
       toast.success(`Successfully synced ${response.data.synced || 0} leads, matched ${response.data.matched || 0} with campuses, and synced ${syncedAccounts} accounts and ${syncedContacts} contacts`);
       
-      await fetchLeads();
+      // Reload all data after sync
+      fetchLeads(selectedCampusId || undefined);
+      fetchCampuses();
     } catch (error: any) {
       console.error('Error syncing Salesforce leads:', error);
       const errorMessage = error.message || 'Unknown error occurred';
@@ -146,7 +223,8 @@ export function SalesforceLeadsPage() {
       
       toast.success(`Successfully synced ${response.data.synced || 0} opportunities`);
       
-      await fetchOpportunities();
+      // Reload data after sync
+      fetchOpportunities(selectedCampusId || undefined);
     } catch (error: any) {
       console.error('Error syncing Salesforce opportunities:', error);
       const errorMessage = error.message || 'Unknown error occurred';
@@ -158,8 +236,10 @@ export function SalesforceLeadsPage() {
   };
 
   useEffect(() => {
+    fetchCampuses();
     fetchLeads();
     fetchOpportunities();
+    fetchFellows();
   }, []);
 
   const toggleDetailedError = () => {
@@ -195,19 +275,55 @@ export function SalesforceLeadsPage() {
       </header>
 
       <main className="container mx-auto px-4 md:px-8 py-8 max-w-5xl">
+        {/* Campus Filter */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+          <div className="w-full sm:w-72">
+            <Select
+              value={selectedCampusId || ""}
+              onValueChange={handleCampusChange}
+              disabled={campusesLoading}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Filter by campus..." />
+              </SelectTrigger>
+              <SelectContent>
+                {campuses.map((campus) => (
+                  <SelectItem key={campus.campus_id} value={campus.campus_id}>
+                    {campus.campus_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {selectedCampusId && (
+            <Button 
+              variant="outline" 
+              onClick={clearCampusFilter}
+              className="flex items-center"
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Clear filter
+            </Button>
+          )}
+        </div>
+
         <Tabs defaultValue="leads" className="w-full">
           <TabsList className="mb-6">
-            <TabsTrigger value="leads">Matched Leads</TabsTrigger>
+            <TabsTrigger value="leads">Leads</TabsTrigger>
             <TabsTrigger value="opportunities">Opportunities</TabsTrigger>
+            <TabsTrigger value="fellows">Fellows</TabsTrigger>
           </TabsList>
           
           <TabsContent value="leads">
             <Card>
               <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <CardTitle>Matched Salesforce Leads</CardTitle>
+                  <CardTitle>Salesforce Leads</CardTitle>
                   <CardDescription>
-                    Leads from Salesforce that have been matched to a campus
+                    {selectedCampusId 
+                      ? `Showing leads for campus: ${campuses.find(c => c.campus_id === selectedCampusId)?.campus_name || selectedCampusId}`
+                      : "Showing all leads from Salesforce"}
                     {lastUpdated && (
                       <span className="block text-sm mt-1">
                         Last updated: {lastUpdated}
@@ -218,7 +334,7 @@ export function SalesforceLeadsPage() {
               </CardHeader>
               <CardContent>
                 {loading ? (
-                  <LoadingState message="Loading matched leads data..." />
+                  <LoadingState message="Loading leads data..." />
                 ) : (
                   <>
                     {syncError && (
@@ -255,7 +371,7 @@ export function SalesforceLeadsPage() {
                     
                     <div className="rounded-md border overflow-auto max-h-[600px]">
                       <Table>
-                        <TableCaption>List of matched leads from Salesforce</TableCaption>
+                        <TableCaption>List of leads from Salesforce</TableCaption>
                         <TableHeader>
                           <TableRow>
                             <TableHead>Name</TableHead>
@@ -263,7 +379,7 @@ export function SalesforceLeadsPage() {
                             <TableHead>Stage</TableHead>
                             <TableHead>Lead Source</TableHead>
                             <TableHead>Preferred Campus</TableHead>
-                            <TableHead>Matched Campus</TableHead>
+                            <TableHead>Campus ID</TableHead>
                             <TableHead>Converted</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -271,7 +387,7 @@ export function SalesforceLeadsPage() {
                           {leads.length === 0 ? (
                             <TableRow>
                               <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
-                                No matched leads data available
+                                No leads data available
                               </TableCell>
                             </TableRow>
                           ) : (
@@ -313,7 +429,7 @@ export function SalesforceLeadsPage() {
               <CardFooter className="flex justify-between">
                 <Button 
                   variant="outline"
-                  onClick={fetchLeads}
+                  onClick={() => fetchLeads(selectedCampusId || undefined)}
                   disabled={loading || syncLoading}
                 >
                   Refresh List
@@ -344,7 +460,9 @@ export function SalesforceLeadsPage() {
                 <div>
                   <CardTitle>Salesforce Opportunities</CardTitle>
                   <CardDescription>
-                    Opportunities from Salesforce with preferred campus matching our campuses
+                    {selectedCampusId 
+                      ? `Showing opportunities for campus: ${campuses.find(c => c.campus_id === selectedCampusId)?.campus_name || selectedCampusId}`
+                      : "Showing all opportunities from Salesforce"}
                     {opportunitiesLastUpdated && (
                       <span className="block text-sm mt-1">
                         Last updated: {opportunitiesLastUpdated}
@@ -392,20 +510,21 @@ export function SalesforceLeadsPage() {
                     
                     <div className="rounded-md border overflow-auto max-h-[600px]">
                       <Table>
-                        <TableCaption>List of opportunities with matching preferred campus</TableCaption>
+                        <TableCaption>List of opportunities from Salesforce</TableCaption>
                         <TableHeader>
                           <TableRow>
                             <TableHead>Opportunity Name</TableHead>
                             <TableHead>Stage</TableHead>
                             <TableHead>Close Date</TableHead>
                             <TableHead>Preferred Campus</TableHead>
+                            <TableHead>Campus ID</TableHead>
                             <TableHead>Updated</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {opportunities.length === 0 ? (
                             <TableRow>
-                              <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                              <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
                                 No opportunities data available
                               </TableCell>
                             </TableRow>
@@ -422,6 +541,13 @@ export function SalesforceLeadsPage() {
                                 </TableCell>
                                 <TableCell>{formatDate(opportunity.close_date)}</TableCell>
                                 <TableCell>{opportunity.preferred_campus || '-'}</TableCell>
+                                <TableCell>
+                                  {opportunity.campus_id ? (
+                                    <span className="font-medium text-blue-600">{opportunity.campus_id}</span>
+                                  ) : (
+                                    <span className="text-muted-foreground">Not matched</span>
+                                  )}
+                                </TableCell>
                                 <TableCell>{formatDate(opportunity.updated_at)}</TableCell>
                               </TableRow>
                             ))
@@ -435,7 +561,7 @@ export function SalesforceLeadsPage() {
               <CardFooter className="flex justify-between">
                 <Button 
                   variant="outline"
-                  onClick={fetchOpportunities}
+                  onClick={() => fetchOpportunities(selectedCampusId || undefined)}
                   disabled={opportunitiesLoading || opportunitiesSyncLoading}
                 >
                   Refresh List
@@ -455,6 +581,76 @@ export function SalesforceLeadsPage() {
                       Sync Opportunities
                     </>
                   )}
+                </Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="fellows">
+            <Card>
+              <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <CardTitle>Fellows</CardTitle>
+                  <CardDescription>
+                    {selectedCampusId 
+                      ? `Showing fellows for campus: ${campuses.find(c => c.campus_id === selectedCampusId)?.campus_name || selectedCampusId}`
+                      : "Showing all fellows"}
+                  </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {fellowsLoading ? (
+                  <LoadingState message="Loading fellows data..." />
+                ) : (
+                  <div className="rounded-md border overflow-auto max-h-[600px]">
+                    <Table>
+                      <TableCaption>List of fellows</TableCaption>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Campus</TableHead>
+                          <TableHead>Cohort</TableHead>
+                          <TableHead>Grade Band</TableHead>
+                          <TableHead>Employment Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {fellows.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                              No fellows data available
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          fellows.map((fellow) => (
+                            <TableRow key={fellow.id}>
+                              <TableCell className="font-medium">
+                                {fellow.fellow_name}
+                              </TableCell>
+                              <TableCell>
+                                {fellow.campus || (fellow.campus_id ? campuses.find(c => c.campus_id === fellow.campus_id)?.campus_name : '-')}
+                              </TableCell>
+                              <TableCell>{fellow.cohort || '-'}</TableCell>
+                              <TableCell>{fellow.grade_band || '-'}</TableCell>
+                              <TableCell>{fellow.fte_employment_status || '-'}</TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button 
+                  variant="outline"
+                  onClick={() => fetchFellows(selectedCampusId || undefined)}
+                  disabled={fellowsLoading}
+                >
+                  Refresh List
+                </Button>
+                <Button asChild variant="outline">
+                  <Link to="/fellows">Manage Fellows</Link>
                 </Button>
               </CardFooter>
             </Card>

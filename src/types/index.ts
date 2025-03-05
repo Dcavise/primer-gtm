@@ -114,7 +114,7 @@ export interface SalesforceLead {
   updated_at: string;
 }
 
-// Updated SalesforceOpportunity interface without account_id
+// Updated SalesforceOpportunity interface with campus_id field
 export interface SalesforceOpportunity {
   id: string;
   opportunity_id: string;
@@ -124,6 +124,7 @@ export interface SalesforceOpportunity {
   created_at: string;
   updated_at: string;
   preferred_campus: string | null;
+  campus_id: string | null;
 }
 
 // Updated SalesforceAccount to match actual structure

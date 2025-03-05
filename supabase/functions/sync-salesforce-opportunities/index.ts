@@ -52,6 +52,7 @@ interface SupabaseOpportunity {
   stage: string | null;
   close_date: string | null;
   preferred_campus: string | null;
+  campus_id: string | null;
 }
 
 interface Campus {
@@ -59,23 +60,21 @@ interface Campus {
   campus_name: string;
 }
 
-// Get all campus names from the campuses table
-async function getCampusNames(): Promise<string[]> {
-  console.log("Fetching campus names from database...");
+// Get all campuses from the campuses table
+async function getAllCampuses(): Promise<Campus[]> {
+  console.log("Fetching all campuses from database...");
   
   const { data, error } = await supabase
     .from('campuses')
-    .select('campus_name');
+    .select('campus_id, campus_name');
   
   if (error) {
-    console.error("Error fetching campus names:", error);
-    throw new Error(`Failed to fetch campus names: ${error.message}`);
+    console.error("Error fetching campuses:", error);
+    throw new Error(`Failed to fetch campuses: ${error.message}`);
   }
   
-  const campusNames = data.map(campus => campus.campus_name);
-  console.log(`Found ${campusNames.length} campuses:`, campusNames);
-  
-  return campusNames;
+  console.log(`Found ${data.length} campuses`);
+  return data;
 }
 
 // Get Salesforce OAuth token
@@ -146,17 +145,53 @@ async function fetchSalesforceOpportunities(token: string, instanceUrl: string, 
   return data.records;
 }
 
+// Find campus_id for a given preferred_campus value
+function findCampusId(preferredCampus: string | null, campuses: Campus[]): string | null {
+  if (!preferredCampus) return null;
+  
+  // Convert to lowercase for case-insensitive matching
+  const preferredCampusLower = preferredCampus.toLowerCase();
+  
+  // Find a perfect match first
+  let matchingCampus = campuses.find(campus => 
+    campus.campus_name.toLowerCase() === preferredCampusLower
+  );
+  
+  // If no perfect match, try to find a partial match
+  if (!matchingCampus) {
+    matchingCampus = campuses.find(campus => {
+      const campusNameLower = campus.campus_name.toLowerCase();
+      return (
+        campusNameLower.includes(preferredCampusLower) || 
+        preferredCampusLower.includes(campusNameLower)
+      );
+    });
+  }
+  
+  return matchingCampus ? matchingCampus.campus_id : null;
+}
+
 // Transform Salesforce opportunities to Supabase format
-function transformOpportunities(salesforceOpportunities: SalesforceOpportunity[]): SupabaseOpportunity[] {
+function transformOpportunities(salesforceOpportunities: SalesforceOpportunity[], campuses: Campus[]): SupabaseOpportunity[] {
   console.log(`Transforming ${salesforceOpportunities.length} Salesforce opportunities...`);
   
   return salesforceOpportunities.map(opportunity => {
+    const preferredCampus = opportunity.Preferred_Campus__c;
+    const campusId = findCampusId(preferredCampus, campuses);
+    
+    if (campusId) {
+      console.log(`Matched opportunity ${opportunity.Id} (${preferredCampus}) with campus ID ${campusId}`);
+    } else if (preferredCampus) {
+      console.log(`No campus match found for opportunity ${opportunity.Id} (${preferredCampus})`);
+    }
+    
     return {
       opportunity_id: opportunity.Id,
       opportunity_name: opportunity.Name,
       stage: opportunity.StageName,
       close_date: opportunity.CloseDate,
       preferred_campus: opportunity.Preferred_Campus__c,
+      campus_id: campusId
     };
   });
 }
@@ -190,11 +225,13 @@ async function syncSalesforceOpportunities(): Promise<{
   error?: string 
 }> {
   try {
-    const campusNames = await getCampusNames();
+    const campuses = await getAllCampuses();
     
-    if (campusNames.length === 0) {
+    if (campuses.length === 0) {
       return { success: true, synced: 0, error: "No campuses found. Import campuses first." };
     }
+    
+    const campusNames = campuses.map(campus => campus.campus_name);
     
     const authResponse = await getSalesforceToken();
     
@@ -208,7 +245,7 @@ async function syncSalesforceOpportunities(): Promise<{
       return { success: true, synced: 0 };
     }
     
-    const transformedOpportunities = transformOpportunities(salesforceOpportunities);
+    const transformedOpportunities = transformOpportunities(salesforceOpportunities, campuses);
     
     const syncedCount = await syncOpportunitiesToSupabase(transformedOpportunities);
     
