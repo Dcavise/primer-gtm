@@ -6,6 +6,7 @@ import App from './App.tsx'
 import './index.css'
 import Fellows from './pages/Fellows.tsx'
 import Campuses from './pages/Campuses.tsx'
+import SalesforceLeadsPage from './pages/SalesforceLeads.tsx'
 import Index from './pages/Index.tsx'
 import NotFound from './pages/NotFound.tsx'
 
@@ -25,6 +26,10 @@ const router = createBrowserRouter([
       {
         path: "campuses",
         element: <Campuses />
+      },
+      {
+        path: "salesforce-leads",
+        element: <SalesforceLeadsPage />
       }
     ],
     errorElement: <NotFound />

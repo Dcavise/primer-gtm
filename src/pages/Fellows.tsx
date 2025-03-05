@@ -12,9 +12,12 @@ const Fellows = () => {
           <p className="text-white/80 mt-2">
             View and synchronize fellows data from Google Sheets
           </p>
-          <div className="mt-4">
+          <div className="mt-4 space-x-2">
             <Button asChild variant="secondary">
               <Link to="/campuses">Manage Campuses</Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link to="/salesforce-leads">View Salesforce Leads</Link>
             </Button>
           </div>
         </div>
