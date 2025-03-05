@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/LoadingState';
 import { RealEstateProperty } from '@/types/realEstate';
 import PhaseSelector from './PhaseSelector';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PropertyBasicInfoProps {
   property: RealEstateProperty;
@@ -35,7 +36,8 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
   // Individual field edit states
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
-  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  // Changed the type to Record<string, string | null> to handle properties that might be null
+  const [fieldValues, setFieldValues] = useState<Record<string, string | null>>({});
 
   // Initialize field values when property changes
   React.useEffect(() => {
@@ -96,7 +98,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
         } as React.ChangeEvent<HTMLInputElement>;
         onInputChange(syntheticEvent);
       } else if (onPhaseChange && fieldName === 'phase') {
-        onPhaseChange(fieldValues.phase);
+        onPhaseChange(fieldValues.phase || '');
       }
       
     } catch (error) {
