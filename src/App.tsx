@@ -21,6 +21,7 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 5, // 5 minutes
     },
   },
 });
@@ -33,9 +34,13 @@ function App() {
           <SonnerToaster position="top-right" />
           <Toaster />
           <Routes>
+            {/* Public routes */}
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/property_research" element={<PropertyResearch />} />
+            <Route path="/find-contacts" element={<FindContacts />} />
+            
+            {/* Protected routes */}
             <Route path="/real-estate-pipeline" element={
               <ProtectedRouteWrapper>
                 <RealEstatePipeline />
@@ -51,7 +56,8 @@ function App() {
                 <SalesforceLeads />
               </ProtectedRouteWrapper>
             } />
-            <Route path="/find-contacts" element={<FindContacts />} />
+            
+            {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

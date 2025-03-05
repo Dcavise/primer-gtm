@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { LoadingState } from '@/components/LoadingState';
 
 const Auth: React.FC = () => {
   const navigate = useNavigate();
@@ -28,7 +29,11 @@ const Auth: React.FC = () => {
   const from = location.state?.from?.pathname || '/';
 
   useEffect(() => {
+    console.log('Auth page state:', { user: !!user, loading, from });
+    
+    // If user is authenticated and not loading, redirect to the intended destination
     if (user && !loading) {
+      console.log('User is authenticated, redirecting to:', from);
       navigate(from, { replace: true });
     }
   }, [user, loading, navigate, from]);
@@ -41,8 +46,6 @@ const Auth: React.FC = () => {
       const { error } = await signIn(loginEmail, loginPassword);
       if (error) {
         toast.error(error.message);
-      } else {
-        toast.success('Signed in successfully');
       }
     } catch (error: any) {
       toast.error(error.message || 'An error occurred during sign in');
@@ -71,16 +74,13 @@ const Auth: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <p>Checking authentication status...</p>
-            </div>
-          </CardContent>
-        </Card>
+        <LoadingState message="Checking authentication status..." />
       </div>
     );
   }
+
+  // If user is already logged in, we should never see this page
+  // The useEffect will handle the redirect
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
