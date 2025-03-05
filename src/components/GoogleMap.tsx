@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { geocodeAddress } from '@/utils/maps';
 
 interface GoogleMapProps {
   address: string;
@@ -61,31 +62,19 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
     fetchApiKey();
   }, []);
 
-  // Geocode the address using direct API call
+  // Geocode the address using our centralized geocoding function
   useEffect(() => {
-    if (!apiKey || !address) return;
+    if (!address) return;
     
-    const geocodeAddress = async () => {
+    const handleGeocoding = async () => {
       try {
-        const encodedAddress = encodeURIComponent(address);
-        const response = await fetch(
-          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${apiKey}`
-        );
+        const result = await geocodeAddress(address);
         
-        if (!response.ok) {
-          throw new Error(`Geocoding failed: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.status !== 'OK' || !data.results || data.results.length === 0) {
+        if (result) {
+          setCoordinates(result.coordinates);
+        } else {
           setError(`Could not find coordinates for address: ${address}`);
-          setIsLoading(false);
-          return;
         }
-        
-        const location = data.results[0].geometry.location;
-        setCoordinates({ lat: location.lat, lng: location.lng });
       } catch (error) {
         console.error('Error geocoding address:', error);
         setError('Error finding location coordinates');
@@ -97,8 +86,8 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
       }
     };
     
-    geocodeAddress();
-  }, [apiKey, address]);
+    handleGeocoding();
+  }, [address]);
 
   // Load the Google Maps JS API and render the map
   useEffect(() => {
