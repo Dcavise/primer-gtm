@@ -12,6 +12,7 @@ import { FileUpload } from '@/components/FileUpload';
 import { FileList } from '@/components/FileList';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import GoogleMap from '@/components/GoogleMap';
 import { 
   ArrowLeft, 
   MapPin, 
@@ -29,7 +30,8 @@ import {
   FolderOpen,
   Save,
   Edit,
-  X
+  X,
+  Map
 } from 'lucide-react';
 
 const PropertyDetail: React.FC = () => {
@@ -168,16 +170,27 @@ const PropertyDetail: React.FC = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
+            {property.address && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-xl flex items-center">
+                    <Map className="h-5 w-5 mr-2 text-blue-500" />
+                    Property Location
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <GoogleMap 
+                    address={property.address} 
+                    height="300px" 
+                    zoom={16}
+                  />
+                </CardContent>
+              </Card>
+            )}
+            
             <Card>
               <CardHeader>
-                <CardTitle className="text-xl flex items-center justify-between">
-                  Property Information
-                  {property.market && (
-                    <Badge variant="outline" className="ml-2">
-                      {property.market}
-                    </Badge>
-                  )}
-                </CardTitle>
+                <CardTitle className="text-xl">Property Information</CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {property.phase && (
