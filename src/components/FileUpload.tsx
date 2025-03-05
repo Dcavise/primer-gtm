@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Upload, FileX } from 'lucide-react';
 import { toast } from 'sonner';
+import { storeFileMetadata } from './FileMetadataHandler';
 
 interface FileUploadProps {
   propertyId: number;
@@ -44,34 +45,30 @@ export const FileUpload: React.FC<FileUploadProps> = ({ propertyId, onUploadComp
       const fileName = `${Date.now()}_${file.name}`;
       const filePath = `property_${propertyId}/${fileName}`;
       
-      // Create metadata with display name and description
-      const metadata = {
-        propertyId: propertyId,
-        originalName: file.name,
-        displayName: displayName || file.name.split('.').slice(0, -1).join('.'),
-        description: description || '',
-        uploadedAt: new Date().toISOString(),
-      };
-      
-      // Upload the file with metadata
+      // Upload the file
       const { error: uploadError } = await supabase.storage
         .from('property_documents')
         .upload(filePath, file, {
-          metadata
+          cacheControl: '3600',
+          upsert: false
         });
       
       if (uploadError) {
         throw uploadError;
       }
       
-      // Make sure metadata is also updated separately (as some storage providers might not handle it correctly during upload)
-      const { error: metadataError } = await supabase.storage
-        .from('property_documents')
-        .updateMetadata(filePath, metadata);
-        
-      if (metadataError) {
-        console.warn('Error updating metadata:', metadataError);
-        // We'll continue even if metadata update fails, as the file was uploaded successfully
+      // Store metadata in our separate table
+      const metadataStored = await storeFileMetadata({
+        propertyId,
+        filePath,
+        fileName: file.name,
+        displayName: displayName || file.name.split('.').slice(0, -1).join('.'),
+        description: description || '',
+        uploadedAt: new Date().toISOString()
+      });
+      
+      if (!metadataStored) {
+        console.warn('Metadata storage failed, but file was uploaded');
       }
       
       toast.success('File uploaded successfully');

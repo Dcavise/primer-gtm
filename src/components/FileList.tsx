@@ -6,15 +6,28 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { FileText, Image, FileIcon, Download, Trash2, Info } from 'lucide-react';
 import { toast } from 'sonner';
+import { getAllFileMetadata, deleteFileMetadata } from './FileMetadataHandler';
 
-// Fix type definition to match what Supabase returns
 interface FileObject {
   name: string;
   id: string;
   created_at: string;
   updated_at: string;
   last_accessed_at: string;
-  metadata: Record<string, any>; // This matches Supabase's type
+}
+
+interface FileMetadata {
+  id: number;
+  property_id: number;
+  file_path: string;
+  file_name: string;
+  display_name: string;
+  description: string;
+  uploaded_at: string;
+}
+
+interface EnhancedFile extends FileObject {
+  metadata?: FileMetadata;
 }
 
 interface FileListProps {
@@ -23,16 +36,16 @@ interface FileListProps {
 }
 
 export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted }) => {
-  const [files, setFiles] = useState<FileObject[]>([]);
+  const [files, setFiles] = useState<EnhancedFile[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [fileDetailsOpen, setFileDetailsOpen] = useState<boolean>(false);
-  const [selectedFile, setSelectedFile] = useState<FileObject | null>(null);
+  const [selectedFile, setSelectedFile] = useState<EnhancedFile | null>(null);
 
   const fetchFiles = async () => {
     setIsLoading(true);
     try {
       // List files with the property prefix
-      const { data, error } = await supabase.storage
+      const { data: storageFiles, error } = await supabase.storage
         .from('property_documents')
         .list(`property_${propertyId}`, {
           sortBy: { column: 'created_at', order: 'desc' },
@@ -42,24 +55,21 @@ export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted })
         throw error;
       }
 
-      // Fetch the metadata for each file
-      const filesWithMetadata = await Promise.all((data || []).map(async (file) => {
-        try {
-          const { data: metadata } = await supabase.storage
-            .from('property_documents')
-            .getMetadata(`property_${propertyId}/${file.name}`);
-          
-          return {
-            ...file,
-            metadata: metadata || {}
-          };
-        } catch (err) {
-          console.error(`Error fetching metadata for ${file.name}:`, err);
-          return file;
-        }
-      }));
+      // Get all metadata for this property's files
+      const metadataRecords = await getAllFileMetadata(propertyId);
+      
+      // Combine storage files with their metadata
+      const enhancedFiles = storageFiles?.map(file => {
+        const filePath = `property_${propertyId}/${file.name}`;
+        const metadata = metadataRecords.find(m => m.file_path === filePath);
+        
+        return {
+          ...file,
+          metadata
+        };
+      }) || [];
 
-      setFiles(filesWithMetadata);
+      setFiles(enhancedFiles);
     } catch (error) {
       console.error('Error fetching files:', error);
       toast.error('Failed to load files');
@@ -97,6 +107,8 @@ export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted })
   const handleDelete = async (fileName: string) => {
     try {
       const filePath = `property_${propertyId}/${fileName}`;
+      
+      // Delete the file from storage
       const { error } = await supabase.storage
         .from('property_documents')
         .remove([filePath]);
@@ -104,6 +116,9 @@ export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted })
       if (error) {
         throw error;
       }
+      
+      // Also delete the metadata
+      await deleteFileMetadata(propertyId, filePath);
 
       toast.success('File deleted successfully');
       fetchFiles();
@@ -116,7 +131,7 @@ export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted })
     }
   };
 
-  const handleViewDetails = (file: FileObject) => {
+  const handleViewDetails = (file: EnhancedFile) => {
     setSelectedFile(file);
     setFileDetailsOpen(true);
   };
@@ -135,10 +150,10 @@ export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted })
   };
 
   // Format file name for display
-  const getDisplayName = (file: FileObject) => {
+  const getDisplayName = (file: EnhancedFile) => {
     // Check if we have custom metadata with a display name
-    if (file.metadata && file.metadata.displayName) {
-      return file.metadata.displayName;
+    if (file.metadata && file.metadata.display_name) {
+      return file.metadata.display_name;
     }
     
     // Fall back to the original filename without timestamp prefix
@@ -227,10 +242,10 @@ export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted })
                 <div className="font-medium break-all">{selectedFile.name.replace(/^\d+_/, '')}</div>
               </div>
               
-              {selectedFile.metadata && selectedFile.metadata.displayName && (
+              {selectedFile.metadata && selectedFile.metadata.display_name && (
                 <div>
                   <div className="text-sm text-muted-foreground mb-1">Display Name</div>
-                  <div className="font-medium break-all">{selectedFile.metadata.displayName}</div>
+                  <div className="font-medium break-all">{selectedFile.metadata.display_name}</div>
                 </div>
               )}
               
@@ -244,8 +259,8 @@ export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted })
               <div>
                 <div className="text-sm text-muted-foreground mb-1">Uploaded</div>
                 <div>
-                  {selectedFile.metadata && selectedFile.metadata.uploadedAt 
-                    ? new Date(selectedFile.metadata.uploadedAt).toLocaleString() 
+                  {selectedFile.metadata && selectedFile.metadata.uploaded_at 
+                    ? new Date(selectedFile.metadata.uploaded_at).toLocaleString() 
                     : new Date(selectedFile.created_at).toLocaleString()}
                 </div>
               </div>
