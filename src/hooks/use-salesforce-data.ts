@@ -68,10 +68,11 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
       console.log("Available campuses:", allCampuses);
       
       // Fetch fellows count with improved campus filtering and excluding specific employment statuses
+      // Note: Fixed the filter to account for "Declined FTE Offer" (with -ed) instead of "Decline FTE Offer"
       let query = supabase
         .from('fellows')
         .select('fellow_id', { count: 'exact', head: true })
-        .not('fte_employment_status', 'in', '("Exiting","Decline FTE Offer")');
+        .not('fte_employment_status', 'in', '("Exiting","Declined FTE Offer")');
       
       if (selectedCampusId) {
         // For Fort Myers campus (special case)
@@ -81,7 +82,7 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
             .from('fellows')
             .select('fellow_id', { count: 'exact', head: true })
             .ilike('campus', '%fort%myers%')
-            .not('fte_employment_status', 'in', '("Exiting","Decline FTE Offer")');
+            .not('fte_employment_status', 'in', '("Exiting","Declined FTE Offer")');
         } else {
           // For other campuses
           const { data: campusData } = await supabase
@@ -96,7 +97,7 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
               .from('fellows')
               .select('fellow_id', { count: 'exact', head: true })
               .ilike('campus', `%${campusData.campus_name}%`)
-              .not('fte_employment_status', 'in', '("Exiting","Decline FTE Offer")');
+              .not('fte_employment_status', 'in', '("Exiting","Declined FTE Offer")');
           }
         }
       }
