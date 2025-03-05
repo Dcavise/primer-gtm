@@ -3,6 +3,9 @@ import React, { useState } from 'react';
 import { Loader2, CheckCircle, AlertTriangle, Clock, RefreshCw, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+// Google API constants (must match the ones in the edge function)
+const SPREADSHEET_ID = "1xOXQdZaZTJkAjnI1fHI4tSTCFnF9p0hhfAX05-MYyG8";
+
 type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
 
 interface SyncStatusDisplayProps {
