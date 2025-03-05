@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
 
@@ -217,37 +216,51 @@ async function fetchGoogleSheetData(credentialsStr: string) {
 function mapColumnNames(sheetData: Record<string, any>): Record<string, any> {
   // Updated map with lowercase/underscored DB column names that match our Supabase schema
   const columnMap: Record<string, string> = {
-    'Property Name': 'site_name_type',
-    'Status': 'status',
-    'Address': 'address',
-    'Market': 'market',
-    'Zip Code': 'zipcode',
+    'Phase': 'phase',
     'State': 'state',
+    'Market': 'market',
+    'Site Name / Type': 'site_name_type',
+    'Address': 'address',
+    'Site Coordinator': 'site_coordinator',
+    'Coordinator Contact Info': 'coordinator_contact_info',
     'SF Available': 'sf_available',
-    'Priority': 'priority_jb',
-    'Fellow': 'fellow',
+    'Questionnaire': 'questionnaire',
+    'Initial Mock Up': 'initial_mock_up',
     'LL POC': 'll_poc',
     'LL Phone': 'll_phone',
     'LL Email': 'll_email',
-    'Phase': 'phase',
-    'Notes': 'property_notes',
-    'Lease': 'lease',
-    'LOI': 'loi',
-    'Site Coordinator': 'site_coordinator',
-    'Coordinator Contact Info': 'coordinator_contact_info',
-    'Fellow Contact POC': 'fellow_contact_poc',
-    'Permitted Use': 'permitted_use',
-    'Parking': 'parking',
-    'Zoning': 'zoning',
-    'Fire Sprinklers': 'fire_sprinklers',
-    'Fire Assessment': 'fire_assessment',
-    'Fire Inspection/COO': 'fire_inspection_coo',
-    'Floorplan': 'floorplan',
     'Airtable': 'airtable',
     'RE Folder': 're_folder',
+    'Floorplan': 'floorplan',
+    'Fire Sprinklers': 'fire_sprinklers',
     'Fiber': 'fiber',
-    'Latitude': 'lat',
-    'Longitude': 'lon'
+    'Fire Inspection / CoO': 'fire_inspection_coo',
+    'Zoning': 'zoning',
+    'Permitted Use': 'permitted_use',
+    'Parking': 'parking',
+    'AHJ Zoning Confirmation': 'ahj_zoning_confirmation',
+    'AHJ Building Records': 'ahj_building_records',
+    'AHJ HB-1285 Intro': 'ahj_hb1285_intro',
+    'Survey': 'survey',
+    'AOR Initial Analysis': 'aor_initial_analysis',
+    'Test Fit': 'test_fit',
+    'Fire Assessment': 'fire_assessment',
+    'EDC Contact': 'edc_contact',
+    'Pre-App': 'pre_app',
+    'LOI': 'loi',
+    'Lease': 'lease',
+    'Status': 'status',
+    'Property Notes': 'property_notes',
+    'Deep Research - General': 'deep_research_general',
+    'Deep Research - Previous School Use': 'deep_research_previous_school_use',
+    'Status (JB)': 'status_jb',
+    'Priority (JB)': 'priority_jb',
+    'fellow': 'fellow',
+    'Survey time': 'survey_time',
+    'Lat': 'lat',
+    'lon': 'lon',
+    'Confirmed survey time': 'confirmed_survey_time',
+    'fellow contact poc': 'fellow_contact_poc'
   };
 
   console.log("Starting column mapping");
@@ -256,8 +269,7 @@ function mapColumnNames(sheetData: Record<string, any>): Record<string, any> {
   const mappedData: Record<string, any> = {};
   
   // Add debug logs to understand exact column names
-  console.log("Available sheet column names:", Object.keys(sheetData).map(key => `"${key}"`).join(", "));
-  console.log("Exact keys and values in sheet data:", Object.entries(sheetData).map(([k, v]) => `"${k}": "${v}"`).join(", "));
+  console.log("Available sheet column names:", JSON.stringify(Object.keys(sheetData)));
   
   // Map each field from the sheet to its corresponding database column
   Object.entries(sheetData).forEach(([key, value]) => {
@@ -267,9 +279,9 @@ function mapColumnNames(sheetData: Record<string, any>): Record<string, any> {
       console.log(`Mapping exact match column: "${key}" => "${dbColumn}"`);
       
       // Handle boolean values
-      if (value === 'TRUE' || value === 'YES' || value === 'Y') {
+      if (value === 'TRUE' || value === 'YES' || value === 'Y' || value === true) {
         mappedData[dbColumn] = true;
-      } else if (value === 'FALSE' || value === 'NO' || value === 'N') {
+      } else if (value === 'FALSE' || value === 'NO' || value === 'N' || value === false) {
         mappedData[dbColumn] = false;
       } else {
         // Handle numeric values
@@ -290,9 +302,9 @@ function mapColumnNames(sheetData: Record<string, any>): Record<string, any> {
         console.log(`Mapping case-insensitive column: "${key}" => "${dbColumn}"`);
         
         // Handle boolean values
-        if (value === 'TRUE' || value === 'YES' || value === 'Y') {
+        if (value === 'TRUE' || value === 'YES' || value === 'Y' || value === true) {
           mappedData[dbColumn] = true;
-        } else if (value === 'FALSE' || value === 'NO' || value === 'N') {
+        } else if (value === 'FALSE' || value === 'NO' || value === 'N' || value === false) {
           mappedData[dbColumn] = false;
         } else {
           // Handle numeric values
@@ -304,13 +316,15 @@ function mapColumnNames(sheetData: Record<string, any>): Record<string, any> {
         }
       } else {
         // If no mapping found, convert the key to snake_case and use it
-        const snakeCaseKey = key.toLowerCase().replace(/\s+/g, '_');
+        const snakeCaseKey = key.toLowerCase().replace(/\s+/g, '_')
+                               .replace(/[^a-z0-9_]/g, '')  // Remove special chars
+                               .replace(/_+/g, '_');         // Remove duplicate underscores
         console.log(`Using snake_case for unmapped column: "${key}" => "${snakeCaseKey}"`);
         
         // Handle boolean values
-        if (value === 'TRUE' || value === 'YES' || value === 'Y') {
+        if (value === 'TRUE' || value === 'YES' || value === 'Y' || value === true) {
           mappedData[snakeCaseKey] = true;
-        } else if (value === 'FALSE' || value === 'NO' || value === 'N') {
+        } else if (value === 'FALSE' || value === 'NO' || value === 'N' || value === false) {
           mappedData[snakeCaseKey] = false;
         } else {
           // For any other values, just use them as is
@@ -324,7 +338,7 @@ function mapColumnNames(sheetData: Record<string, any>): Record<string, any> {
   mappedData['last_updated'] = new Date().toISOString();
   
   console.log("Output mapped data keys:", Object.keys(mappedData).join(", "));
-  console.log("Sample of mapped data:", JSON.stringify(mappedData).substring(0, 300));
+  console.log("Sample of mapped data:", JSON.stringify(mappedData).substring(0, 500));
   
   return mappedData;
 }

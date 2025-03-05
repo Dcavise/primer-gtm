@@ -30,6 +30,9 @@ export const RealEstatePipelineSync: React.FC<RealEstatePipelineSyncProps> = ({
   stopSync,
   isSyncing
 }) => {
+  // Build Google Sheets URL for display
+  const googleSheetsUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit`;
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
@@ -53,6 +56,16 @@ export const RealEstatePipelineSync: React.FC<RealEstatePipelineSyncProps> = ({
             </div>
             <p>Spreadsheet ID: <code className="bg-blue-100 px-1 rounded">{SPREADSHEET_ID}</code></p>
             <p>Sheet Range: <code className="bg-blue-100 px-1 rounded">{SHEET_RANGE}</code></p>
+            <p className="mt-1">
+              <a 
+                href={googleSheetsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-700 hover:text-blue-900 underline"
+              >
+                View Google Sheet
+              </a>
+            </p>
           </div>
           
           {isSyncing && (
