@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -210,7 +211,7 @@ function checkPermissions() {
   SpreadsheetApp.openById("${SPREADSHEET_ID}");
   Logger.log("Permissions granted successfully");
   return "Permissions check complete";
-}
+}`;
 
 // Instructions for setting up the Apps Script - updated with more detailed steps
 const setupInstructions = `
@@ -322,5 +323,6 @@ return (
     </CardFooter>
   </Card>
 );
+};
 
 export default GoogleSheetsScriptInfo;
