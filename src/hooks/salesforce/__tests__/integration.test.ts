@@ -9,85 +9,99 @@ describe('useStats integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     
+    // Reset all mocks to return themselves for chaining
+    Object.values(mockSupabase).forEach(method => {
+      if (typeof method === 'function') {
+        (method as any).mockReturnValue(mockSupabase);
+      }
+    });
+    
     // Setup mock implementation for all Supabase calls that returns proper mock data
-    // We need to create the implementations that return the correct data
-
     // 1. Fellows count
-    mockSupabase.from.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.select.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.not.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.not.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.or.mockImplementationOnce(() => 
-      Promise.resolve({
-        count: 15,
-        data: [
-          { fte_employment_status: 'Active', fellow_id: 1 },
-          { fte_employment_status: 'Active', fellow_id: 2 },
-          { fte_employment_status: 'Open', fellow_id: 3 }
-        ],
-        error: null
-      })
-    );
+    mockSupabase.or.mockImplementationOnce(() => {
+      return mockSupabase;
+    });
+    
+    // Setup the final promise return at the end of the chain
+    const mockFellowsData = [
+      { fte_employment_status: 'Active', fellow_id: 1 },
+      { fte_employment_status: 'Active', fellow_id: 2 },
+      { fte_employment_status: 'Open', fellow_id: 3 }
+    ];
+    
+    const mockFellowsPromise = Promise.resolve({
+      count: 15,
+      data: mockFellowsData,
+      error: null
+    });
+    
+    // Replace the implementation of or for the first call
+    mockSupabase.or.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockFellowsPromise.then(callback) };
+    });
     
     // 2. Leads count
-    mockSupabase.from.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.select.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.eq.mockImplementationOnce(() => 
-      Promise.resolve({
-        count: 25,
-        error: null
-      })
-    );
+    const mockLeadsPromise = Promise.resolve({
+      count: 25,
+      error: null
+    });
+    
+    mockSupabase.eq.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockLeadsPromise.then(callback) };
+    });
     
     // 3. Weekly lead counts
-    mockSupabase.rpc.mockImplementationOnce(() => 
-      Promise.resolve({
-        data: [
-          { week: '2023-01-01', lead_count: 5 },
-          { week: '2023-01-08', lead_count: 7 },
-          { week: '2023-01-15', lead_count: 8 },
-          { week: '2023-01-22', lead_count: 5 }
-        ],
-        error: null
-      })
-    );
+    const mockWeeklyLeadData = [
+      { week: '2023-01-01', lead_count: 5 },
+      { week: '2023-01-08', lead_count: 7 },
+      { week: '2023-01-15', lead_count: 8 },
+      { week: '2023-01-22', lead_count: 5 }
+    ];
+    
+    const mockWeeklyPromise = Promise.resolve({
+      data: mockWeeklyLeadData,
+      error: null
+    });
+    
+    mockSupabase.rpc.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockWeeklyPromise.then(callback) };
+    });
     
     // 4. Active opportunities count
-    mockSupabase.from.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.select.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.not.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.eq.mockImplementationOnce(() => 
-      Promise.resolve({
-        count: 10,
-        error: null
-      })
-    );
+    const mockActiveOppsPromise = Promise.resolve({
+      count: 10,
+      error: null
+    });
+    
+    mockSupabase.eq.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockActiveOppsPromise.then(callback) };
+    });
     
     // 5. Opportunity stages
-    mockSupabase.from.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.select.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.not.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.eq.mockImplementationOnce(() => 
-      Promise.resolve({
-        data: [
-          { stage: 'Family Interview', opportunity_id: '1' },
-          { stage: 'Family Interview', opportunity_id: '2' },
-          { stage: 'Awaiting Documents', opportunity_id: '3' }
-        ],
-        error: null
-      })
-    );
+    const mockStagesData = [
+      { stage: 'Family Interview', opportunity_id: '1' },
+      { stage: 'Family Interview', opportunity_id: '2' },
+      { stage: 'Awaiting Documents', opportunity_id: '3' }
+    ];
+    
+    const mockStagesPromise = Promise.resolve({
+      data: mockStagesData,
+      error: null
+    });
+    
+    mockSupabase.eq.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockStagesPromise.then(callback) };
+    });
     
     // 6. Closed won opportunities count
-    mockSupabase.from.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.select.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.eq.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.eq.mockImplementationOnce(() => 
-      Promise.resolve({
-        count: 8,
-        error: null
-      })
-    );
+    const mockClosedWonPromise = Promise.resolve({
+      count: 8,
+      error: null
+    });
+    
+    mockSupabase.eq.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockClosedWonPromise.then(callback) };
+    });
   });
   
   it('should integrate all hooks and return combined data', async () => {
@@ -131,78 +145,91 @@ describe('useStats integration', () => {
     vi.clearAllMocks();
     
     // Setup mock implementation for second fetch
+    // Reset all mocks to return themselves for chaining
+    Object.values(mockSupabase).forEach(method => {
+      if (typeof method === 'function') {
+        (method as any).mockReturnValue(mockSupabase);
+      }
+    });
+    
     // 1. Fellows count - updated data
-    mockSupabase.from.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.select.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.not.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.not.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.or.mockImplementationOnce(() => 
-      Promise.resolve({
-        count: 20, // Updated count
-        data: [],
-        error: null
-      })
-    );
+    const mockFellowsData = [
+      { fte_employment_status: 'Active', fellow_id: 4 },
+      { fte_employment_status: 'Active', fellow_id: 5 }
+    ];
+    
+    const mockFellowsPromise = Promise.resolve({
+      count: 20, // Updated count
+      data: mockFellowsData,
+      error: null
+    });
+    
+    mockSupabase.or.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockFellowsPromise.then(callback) };
+    });
     
     // 2. Leads count - updated
-    mockSupabase.from.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.select.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.eq.mockImplementationOnce(() => 
-      Promise.resolve({
-        count: 30,
-        error: null
-      })
-    );
+    const mockLeadsPromise = Promise.resolve({
+      count: 30,
+      error: null
+    });
+    
+    mockSupabase.eq.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockLeadsPromise.then(callback) };
+    });
     
     // 3. Weekly lead counts - updated
-    mockSupabase.rpc.mockImplementationOnce(() => 
-      Promise.resolve({
-        data: [
-          { week: '2023-01-01', lead_count: 6 },
-          { week: '2023-01-08', lead_count: 8 },
-          { week: '2023-01-15', lead_count: 9 },
-          { week: '2023-01-22', lead_count: 6 }
-        ],
-        error: null
-      })
-    );
+    const mockWeeklyLeadData = [
+      { week: '2023-01-01', lead_count: 6 },
+      { week: '2023-01-08', lead_count: 8 },
+      { week: '2023-01-15', lead_count: 9 },
+      { week: '2023-01-22', lead_count: 6 }
+    ];
+    
+    const mockWeeklyPromise = Promise.resolve({
+      data: mockWeeklyLeadData,
+      error: null
+    });
+    
+    mockSupabase.rpc.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockWeeklyPromise.then(callback) };
+    });
     
     // 4. Active opportunities count - updated
-    mockSupabase.from.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.select.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.not.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.eq.mockImplementationOnce(() => 
-      Promise.resolve({
-        count: 12,
-        error: null
-      })
-    );
+    const mockActiveOppsPromise = Promise.resolve({
+      count: 12,
+      error: null
+    });
+    
+    mockSupabase.eq.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockActiveOppsPromise.then(callback) };
+    });
     
     // 5. Opportunity stages - updated
-    mockSupabase.from.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.select.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.not.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.eq.mockImplementationOnce(() => 
-      Promise.resolve({
-        data: [
-          { stage: 'Family Interview', opportunity_id: '4' },
-          { stage: 'Family Interview', opportunity_id: '5' },
-          { stage: 'Awaiting Documents', opportunity_id: '6' }
-        ],
-        error: null
-      })
-    );
+    const mockStagesData = [
+      { stage: 'Family Interview', opportunity_id: '4' },
+      { stage: 'Family Interview', opportunity_id: '5' },
+      { stage: 'Awaiting Documents', opportunity_id: '6' }
+    ];
+    
+    const mockStagesPromise = Promise.resolve({
+      data: mockStagesData,
+      error: null
+    });
+    
+    mockSupabase.eq.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockStagesPromise.then(callback) };
+    });
     
     // 6. Closed won opportunities count - updated
-    mockSupabase.from.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.select.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.eq.mockImplementationOnce(() => mockSupabase);
-    mockSupabase.eq.mockImplementationOnce(() => 
-      Promise.resolve({
-        count: 10,
-        error: null
-      })
-    );
+    const mockClosedWonPromise = Promise.resolve({
+      count: 10,
+      error: null
+    });
+    
+    mockSupabase.eq.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockClosedWonPromise.then(callback) };
+    });
     
     // Call fetchStats manually
     act(() => {

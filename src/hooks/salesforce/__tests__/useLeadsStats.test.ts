@@ -8,18 +8,26 @@ describe('fetchLeadsStats', () => {
   
   beforeEach(() => {
     vi.clearAllMocks();
+    
+    // Ensure all mock methods return the mock object for chaining
+    Object.values(mockSupabase).forEach(method => {
+      if (typeof method === 'function') {
+        (method as any).mockReturnValue(mockSupabase);
+      }
+    });
   });
   
   it('should return correct lead count and weekly data when API calls succeed', async () => {
     // Mock leads count response
-    mockSupabase.from.mockReturnThis();
-    mockSupabase.select.mockReturnThis();
-    mockSupabase.eq.mockImplementationOnce(() => 
-      Promise.resolve({
-        count: 25,
-        error: null
-      })
-    );
+    const mockLeadsPromise = Promise.resolve({
+      count: 25,
+      error: null
+    });
+    
+    // Setup the last method in the chain to return a thenable
+    mockSupabase.eq.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockLeadsPromise.then(callback) };
+    });
     
     // Mock weekly lead counts response
     const mockWeeklyData = [
@@ -29,12 +37,15 @@ describe('fetchLeadsStats', () => {
       { week: '2023-01-22', lead_count: 7 }
     ];
     
-    mockSupabase.rpc.mockImplementationOnce(() => 
-      Promise.resolve({
-        data: mockWeeklyData,
-        error: null
-      })
-    );
+    const mockWeeklyPromise = Promise.resolve({
+      data: mockWeeklyData,
+      error: null
+    });
+    
+    // Setup the rpc method to return a thenable
+    mockSupabase.rpc.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockWeeklyPromise.then(callback) };
+    });
     
     const result = await fetchLeadsStats(null, mockHandleError);
     
@@ -47,22 +58,26 @@ describe('fetchLeadsStats', () => {
   it('should filter by campus ID when provided', async () => {
     const campusId = 'campus-123';
     
-    // Mock with checking for campus filter
-    mockSupabase.from.mockReturnThis();
-    mockSupabase.select.mockReturnThis();
+    // Mock leads count response
+    const mockLeadsPromise = Promise.resolve({
+      count: 15,
+      error: null
+    });
+    
+    // Setup the last method in the chain to return a thenable
     mockSupabase.eq.mockImplementationOnce(() => {
-      return Promise.resolve({
-        count: 15,
-        error: null
-      });
+      return { ...mockSupabase, then: (callback: any) => mockLeadsPromise.then(callback) };
     });
     
     // Mock RPC call
+    const mockWeeklyPromise = Promise.resolve({
+      data: [],
+      error: null
+    });
+    
+    // Setup the rpc method to return a thenable
     mockSupabase.rpc.mockImplementationOnce(() => {
-      return Promise.resolve({
-        data: [],
-        error: null
-      });
+      return { ...mockSupabase, then: (callback: any) => mockWeeklyPromise.then(callback) };
     });
     
     const result = await fetchLeadsStats(campusId, mockHandleError);
@@ -72,22 +87,26 @@ describe('fetchLeadsStats', () => {
   
   it('should use fallback method when weekly data RPC fails', async () => {
     // Mock leads count response
-    mockSupabase.from.mockReturnThis();
-    mockSupabase.select.mockReturnThis();
-    mockSupabase.eq.mockImplementationOnce(() => 
-      Promise.resolve({
-        count: 25,
-        error: null
-      })
-    );
+    const mockLeadsPromise = Promise.resolve({
+      count: 25,
+      error: null
+    });
+    
+    // Setup the last method in the chain to return a thenable
+    mockSupabase.eq.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockLeadsPromise.then(callback) };
+    });
     
     // Mock RPC error
-    mockSupabase.rpc.mockImplementationOnce(() => 
-      Promise.resolve({
-        data: null,
-        error: new Error('RPC error')
-      })
-    );
+    const mockRpcPromise = Promise.resolve({
+      data: null,
+      error: new Error('RPC error')
+    });
+    
+    // Setup the rpc method to return a thenable
+    mockSupabase.rpc.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockRpcPromise.then(callback) };
+    });
     
     // Mock fallback data
     const mockFallbackData = [
@@ -96,15 +115,15 @@ describe('fetchLeadsStats', () => {
       { lead_id: '3', created_date: '2023-01-15T00:00:00Z' }
     ];
     
-    mockSupabase.from.mockReturnThis();
-    mockSupabase.select.mockReturnThis();
-    mockSupabase.gte.mockReturnThis();
-    mockSupabase.eq.mockImplementationOnce(() => 
-      Promise.resolve({
-        data: mockFallbackData,
-        error: null
-      })
-    );
+    const mockFallbackPromise = Promise.resolve({
+      data: mockFallbackData,
+      error: null
+    });
+    
+    // Setup another eq method after gte for the fallback
+    mockSupabase.eq.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockFallbackPromise.then(callback) };
+    });
     
     const result = await fetchLeadsStats(null, mockHandleError);
     
@@ -116,14 +135,16 @@ describe('fetchLeadsStats', () => {
   it('should handle API errors', async () => {
     const mockError = new Error('API error');
     
-    mockSupabase.from.mockReturnThis();
-    mockSupabase.select.mockReturnThis();
-    mockSupabase.eq.mockImplementationOnce(() => 
-      Promise.resolve({
-        count: null,
-        error: mockError
-      })
-    );
+    // Setup error response for leads count
+    const mockLeadsPromise = Promise.resolve({
+      count: null,
+      error: mockError
+    });
+    
+    // Setup the last method in the chain to return a thenable
+    mockSupabase.eq.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockLeadsPromise.then(callback) };
+    });
     
     await fetchLeadsStats(null, mockHandleError);
     
@@ -133,14 +154,16 @@ describe('fetchLeadsStats', () => {
   it('should return empty data on error', async () => {
     const mockError = new Error('API error');
     
-    mockSupabase.from.mockReturnThis();
-    mockSupabase.select.mockReturnThis();
-    mockSupabase.eq.mockImplementationOnce(() => 
-      Promise.resolve({
-        count: null,
-        error: mockError
-      })
-    );
+    // Setup error response for leads count
+    const mockLeadsPromise = Promise.resolve({
+      count: null,
+      error: mockError
+    });
+    
+    // Setup the last method in the chain to return a thenable
+    mockSupabase.eq.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockLeadsPromise.then(callback) };
+    });
     
     const result = await fetchLeadsStats(null, mockHandleError);
     

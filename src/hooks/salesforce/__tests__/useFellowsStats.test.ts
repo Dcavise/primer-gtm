@@ -8,6 +8,13 @@ describe('fetchFellowsStats', () => {
   
   beforeEach(() => {
     vi.clearAllMocks();
+    
+    // Ensure all mock methods return the mock object for chaining
+    Object.values(mockSupabase).forEach(method => {
+      if (typeof method === 'function') {
+        (method as any).mockReturnValue(mockSupabase);
+      }
+    });
   });
   
   it('should return correct data when API call succeeds', async () => {
@@ -18,18 +25,17 @@ describe('fetchFellowsStats', () => {
       { id: 3, fellow_name: 'Bob Johnson', fte_employment_status: 'Open' }
     ];
     
-    // Setup mock response
-    mockSupabase.from.mockReturnThis();
-    mockSupabase.select.mockReturnThis();
-    mockSupabase.not.mockReturnThis();
-    mockSupabase.not.mockReturnThis();
-    mockSupabase.or.mockImplementationOnce(() =>
-      Promise.resolve({
-        count: 3,
-        data: mockFellowsData,
-        error: null
-      })
-    );
+    // Setup the promise to be returned at the end of the chain
+    const mockResponse = Promise.resolve({
+      count: 3,
+      data: mockFellowsData,
+      error: null
+    });
+    
+    // Setup the last method in the chain to return a thenable that resolves to our mock data
+    mockSupabase.or.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockResponse.then(callback) };
+    });
     
     const result = await fetchFellowsStats(null, mockHandleError);
     
@@ -44,17 +50,19 @@ describe('fetchFellowsStats', () => {
   it('should filter by campus ID when provided', async () => {
     const campusId = 'campus-123';
     
-    mockSupabase.from.mockReturnThis();
-    mockSupabase.select.mockReturnThis();
-    mockSupabase.not.mockReturnThis();
-    mockSupabase.not.mockReturnThis();
+    // Setup the promise to be returned at the end of the chain
+    const mockResponse = Promise.resolve({
+      count: 2,
+      data: [
+        { id: 1, fellow_name: 'John Doe', fte_employment_status: 'Active' },
+        { id: 2, fellow_name: 'Jane Smith', fte_employment_status: 'Active' }
+      ],
+      error: null
+    });
+    
+    // Setup the last method in the chain to return a thenable
     mockSupabase.or.mockImplementationOnce(() => {
-      // Verify that the filter contains the campus ID
-      return Promise.resolve({
-        count: 2,
-        data: [],
-        error: null
-      });
+      return { ...mockSupabase, then: (callback: any) => mockResponse.then(callback) };
     });
     
     const result = await fetchFellowsStats(campusId, mockHandleError);
@@ -65,17 +73,17 @@ describe('fetchFellowsStats', () => {
   it('should handle API error', async () => {
     const mockError = new Error('API error');
     
-    mockSupabase.from.mockReturnThis();
-    mockSupabase.select.mockReturnThis();
-    mockSupabase.not.mockReturnThis();
-    mockSupabase.not.mockReturnThis();
-    mockSupabase.or.mockImplementationOnce(() => 
-      Promise.resolve({
-        count: null,
-        data: null,
-        error: mockError
-      })
-    );
+    // Setup the promise to be returned at the end of the chain
+    const mockResponse = Promise.resolve({
+      count: null,
+      data: null,
+      error: mockError
+    });
+    
+    // Setup the last method in the chain to return a thenable
+    mockSupabase.or.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockResponse.then(callback) };
+    });
     
     await fetchFellowsStats(null, mockHandleError);
     
@@ -85,17 +93,17 @@ describe('fetchFellowsStats', () => {
   it('should return empty data on error', async () => {
     const mockError = new Error('API error');
     
-    mockSupabase.from.mockReturnThis();
-    mockSupabase.select.mockReturnThis();
-    mockSupabase.not.mockReturnThis();
-    mockSupabase.not.mockReturnThis();
-    mockSupabase.or.mockImplementationOnce(() => 
-      Promise.resolve({
-        count: null,
-        data: null,
-        error: mockError
-      })
-    );
+    // Setup the promise to be returned at the end of the chain
+    const mockResponse = Promise.resolve({
+      count: null,
+      data: null,
+      error: mockError
+    });
+    
+    // Setup the last method in the chain to return a thenable
+    mockSupabase.or.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockResponse.then(callback) };
+    });
     
     const result = await fetchFellowsStats(null, mockHandleError);
     

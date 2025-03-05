@@ -8,19 +8,26 @@ describe('fetchOpportunitiesStats', () => {
   
   beforeEach(() => {
     vi.clearAllMocks();
+    
+    // Ensure all mock methods return the mock object for chaining
+    Object.values(mockSupabase).forEach(method => {
+      if (typeof method === 'function') {
+        (method as any).mockReturnValue(mockSupabase);
+      }
+    });
   });
   
   it('should return correct counts and stages when API calls succeed', async () => {
     // Mock active opportunities count
-    mockSupabase.from.mockReturnThis();
-    mockSupabase.select.mockReturnThis();
-    mockSupabase.not.mockReturnThis();
-    mockSupabase.eq.mockImplementationOnce(() => 
-      Promise.resolve({
-        count: 10,
-        error: null
-      })
-    );
+    const mockActiveOppsPromise = Promise.resolve({
+      count: 10,
+      error: null
+    });
+    
+    // Setup the last method in the chain to return a thenable
+    mockSupabase.eq.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockActiveOppsPromise.then(callback) };
+    });
     
     // Mock stage data
     const mockStagesData = [
@@ -30,26 +37,26 @@ describe('fetchOpportunitiesStats', () => {
       { stage: 'Preparing Offer', opportunity_id: '4' }
     ];
     
-    mockSupabase.from.mockReturnThis();
-    mockSupabase.select.mockReturnThis();
-    mockSupabase.not.mockReturnThis();
-    mockSupabase.eq.mockImplementationOnce(() => 
-      Promise.resolve({
-        data: mockStagesData,
-        error: null
-      })
-    );
+    const mockStagesPromise = Promise.resolve({
+      data: mockStagesData,
+      error: null
+    });
+    
+    // Setup the last method in the chain to return a thenable
+    mockSupabase.eq.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockStagesPromise.then(callback) };
+    });
     
     // Mock closed won opportunities count
-    mockSupabase.from.mockReturnThis();
-    mockSupabase.select.mockReturnThis();
-    mockSupabase.eq.mockReturnThis();
-    mockSupabase.eq.mockImplementationOnce(() => 
-      Promise.resolve({
-        count: 5,
-        error: null
-      })
-    );
+    const mockClosedWonPromise = Promise.resolve({
+      count: 5,
+      error: null
+    });
+    
+    // Setup the last method in the chain to return a thenable
+    mockSupabase.eq.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockClosedWonPromise.then(callback) };
+    });
     
     const result = await fetchOpportunitiesStats(null, mockHandleError);
     
@@ -67,37 +74,37 @@ describe('fetchOpportunitiesStats', () => {
   it('should filter by campus ID when provided', async () => {
     const campusId = 'campus-123';
     
-    // Check campus filter is passed correctly for active opps
-    mockSupabase.from.mockReturnThis();
-    mockSupabase.select.mockReturnThis();
-    mockSupabase.not.mockReturnThis();
-    mockSupabase.eq.mockImplementationOnce(() => {
-      return Promise.resolve({
-        count: 5,
-        error: null
-      });
+    // Mock active opportunities count with campus filter
+    const mockActiveOppsPromise = Promise.resolve({
+      count: 5,
+      error: null
     });
     
-    // For stages query
-    mockSupabase.from.mockReturnThis();
-    mockSupabase.select.mockReturnThis();
-    mockSupabase.not.mockReturnThis();
+    // Setup the last method in the chain to return a thenable
     mockSupabase.eq.mockImplementationOnce(() => {
-      return Promise.resolve({
-        data: [],
-        error: null
-      });
+      return { ...mockSupabase, then: (callback: any) => mockActiveOppsPromise.then(callback) };
     });
     
-    // For closed won count
-    mockSupabase.from.mockReturnThis();
-    mockSupabase.select.mockReturnThis();
-    mockSupabase.eq.mockReturnThis();
+    // Mock stage data with campus filter
+    const mockStagesPromise = Promise.resolve({
+      data: [],
+      error: null
+    });
+    
+    // Setup the last method in the chain to return a thenable
     mockSupabase.eq.mockImplementationOnce(() => {
-      return Promise.resolve({
-        count: 3,
-        error: null
-      });
+      return { ...mockSupabase, then: (callback: any) => mockStagesPromise.then(callback) };
+    });
+    
+    // Mock closed won opportunities count with campus filter
+    const mockClosedWonPromise = Promise.resolve({
+      count: 3,
+      error: null
+    });
+    
+    // Setup the last method in the chain to return a thenable
+    mockSupabase.eq.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockClosedWonPromise.then(callback) };
     });
     
     const result = await fetchOpportunitiesStats(campusId, mockHandleError);
@@ -109,16 +116,16 @@ describe('fetchOpportunitiesStats', () => {
   it('should handle API errors', async () => {
     const mockError = new Error('API error');
     
-    // Error in first query
-    mockSupabase.from.mockReturnThis();
-    mockSupabase.select.mockReturnThis();
-    mockSupabase.not.mockReturnThis();
-    mockSupabase.eq.mockImplementationOnce(() => 
-      Promise.resolve({
-        count: null,
-        error: mockError
-      })
-    );
+    // Error in first query (active opportunities count)
+    const mockErrorPromise = Promise.resolve({
+      count: null,
+      error: mockError
+    });
+    
+    // Setup the last method in the chain to return a thenable
+    mockSupabase.eq.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockErrorPromise.then(callback) };
+    });
     
     await fetchOpportunitiesStats(null, mockHandleError);
     
@@ -128,15 +135,16 @@ describe('fetchOpportunitiesStats', () => {
   it('should return empty data on error', async () => {
     const mockError = new Error('API error');
     
-    mockSupabase.from.mockReturnThis();
-    mockSupabase.select.mockReturnThis();
-    mockSupabase.not.mockReturnThis();
-    mockSupabase.eq.mockImplementationOnce(() => 
-      Promise.resolve({
-        count: null,
-        error: mockError
-      })
-    );
+    // Error in first query (active opportunities count)
+    const mockErrorPromise = Promise.resolve({
+      count: null,
+      error: mockError
+    });
+    
+    // Setup the last method in the chain to return a thenable
+    mockSupabase.eq.mockImplementationOnce(() => {
+      return { ...mockSupabase, then: (callback: any) => mockErrorPromise.then(callback) };
+    });
     
     const result = await fetchOpportunitiesStats(null, mockHandleError);
     
