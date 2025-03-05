@@ -12,21 +12,21 @@ interface PipelineColumnProps {
 const getPhaseColor = (phase: string): string => {
   switch(phase) {
     case '0. New Site':
-      return 'bg-gray-200';
+      return 'bg-gray-200 text-gray-800';
     case '1. Initial Diligence':
-      return 'bg-blue-100';
+      return 'bg-[#1F77B4] text-white';
     case '2. Survey':
-      return 'bg-orange-200';
+      return 'bg-[#FF7F0E] text-white';
     case '3. Test Fit':
-      return 'bg-purple-200';
+      return 'bg-[#9467BD] text-white';
     case '4. Plan Production':
-      return 'bg-yellow-200';
+      return 'bg-[#2CA02C] text-white';
     case '5. Permitting':
-      return 'bg-blue-400 text-white';
+      return 'bg-[#1F77B4] text-white';
     case '6. Construction':
-      return 'bg-slate-600 text-white';
+      return 'bg-[#495057] text-white';
     case '7. Set Up':
-      return 'bg-green-600 text-white';
+      return 'bg-[#2CA02C] text-white';
     case 'Hold':
       return 'bg-amber-800 text-white';
     case 'Deprioritize':
@@ -41,12 +41,13 @@ export const PipelineColumn: React.FC<PipelineColumnProps> = ({
   properties
 }) => {
   const phaseColorClass = getPhaseColor(title);
+  const textColorClass = title === '0. New Site' ? 'text-gray-800' : 'text-white';
 
   return (
     <div className="flex flex-col h-full">
       <div className={`p-2 rounded-t-md ${phaseColorClass}`}>
-        <h3 className="font-medium text-center">{title}</h3>
-        <div className={`text-xs text-center ${title === '0. New Site' || title === '1. Initial Diligence' || title === '2. Survey' || title === '3. Test Fit' || title === '4. Plan Production' ? 'text-gray-600' : 'text-gray-200'}`}>
+        <h3 className={`font-medium text-center ${textColorClass}`}>{title}</h3>
+        <div className={`text-xs text-center ${textColorClass} opacity-80`}>
           {properties.length} properties
         </div>
       </div>

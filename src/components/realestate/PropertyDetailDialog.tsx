@@ -1,190 +1,209 @@
 
-import React from 'react';
-import {
-  Dialog,
-  DialogContent,
+import React, { useState, useEffect } from 'react';
+import { 
+  Dialog, 
+  DialogContent, 
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  DialogFooter,
+  DialogDescription
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { RealEstateProperty } from '@/types/realEstate';
-import { 
-  MapPin, 
-  Building, 
-  Phone, 
-  Mail, 
-  FileText, 
-  Clipboard, 
-  Calendar, 
-  SquareCheck, 
-  AlertCircle 
-} from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { PhaseSelector } from './PhaseSelector';
 
 interface PropertyDetailDialogProps {
-  property: RealEstateProperty | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  propertyId: number | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: () => void;
 }
 
 export const PropertyDetailDialog: React.FC<PropertyDetailDialogProps> = ({
-  property,
-  open,
-  onOpenChange,
+  propertyId,
+  isOpen,
+  onClose,
+  onSave
 }) => {
-  if (!property) return null;
+  const [property, setProperty] = useState<RealEstateProperty | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [formValues, setFormValues] = useState<Partial<RealEstateProperty>>({});
+
+  useEffect(() => {
+    if (isOpen && propertyId) {
+      fetchPropertyDetails();
+    } else {
+      setProperty(null);
+      setFormValues({});
+    }
+  }, [isOpen, propertyId]);
+
+  const fetchPropertyDetails = async () => {
+    if (!propertyId) return;
+    
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('real_estate_pipeline')
+        .select('*')
+        .eq('id', propertyId)
+        .single();
+      
+      if (error) throw error;
+      
+      setProperty(data);
+      setFormValues(data);
+    } catch (error) {
+      console.error('Error fetching property details:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormValues(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handlePhaseChange = (value: string) => {
+    setFormValues(prev => ({ ...prev, phase: value }));
+  };
+
+  const handleSave = async () => {
+    if (!propertyId) return;
+    
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('real_estate_pipeline')
+        .update(formValues)
+        .eq('id', propertyId);
+      
+      if (error) throw error;
+      
+      onSave();
+      onClose();
+    } catch (error) {
+      console.error('Error updating property:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Loading property details...</DialogTitle>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle className="text-xl">{property.site_name || 'Property Details'}</DialogTitle>
-          <DialogDescription className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            {property.address || 'No address available'}
+          <DialogTitle>{property?.site_name || 'Property Details'}</DialogTitle>
+          <DialogDescription>
+            Edit the property information below.
           </DialogDescription>
         </DialogHeader>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold border-b pb-2">Property Information</h3>
-            
-            <div className="space-y-3">
-              <div className="flex gap-x-2">
-                <Building className="h-4 w-4 text-muted-foreground mt-1" />
-                <div>
-                  <p className="font-medium">Market</p>
-                  <p className="text-muted-foreground">{property.market || 'Not specified'}</p>
-                </div>
-              </div>
-
-              <div className="flex gap-x-2">
-                <FileText className="h-4 w-4 text-muted-foreground mt-1" />
-                <div>
-                  <p className="font-medium">Square Footage Available</p>
-                  <p className="text-muted-foreground">{property.sf_available || 'Not specified'}</p>
-                </div>
-              </div>
-
-              <div className="flex gap-x-2">
-                <Clipboard className="h-4 w-4 text-muted-foreground mt-1" />
-                <div>
-                  <p className="font-medium">Zoning</p>
-                  <p className="text-muted-foreground">{property.zoning || 'Not specified'}</p>
-                </div>
-              </div>
-
-              <div className="flex gap-x-2">
-                <Clipboard className="h-4 w-4 text-muted-foreground mt-1" />
-                <div>
-                  <p className="font-medium">Permitted Use</p>
-                  <p className="text-muted-foreground">{property.permitted_use || 'Not specified'}</p>
-                </div>
-              </div>
-
-              <div className="flex gap-x-2">
-                <Clipboard className="h-4 w-4 text-muted-foreground mt-1" />
-                <div>
-                  <p className="font-medium">Parking</p>
-                  <p className="text-muted-foreground">{property.parking || 'Not specified'}</p>
-                </div>
-              </div>
+        
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="site_name" className="text-right">
+              Name
+            </Label>
+            <Input
+              id="site_name"
+              name="site_name"
+              value={formValues.site_name || ''}
+              onChange={handleChange}
+              className="col-span-3"
+            />
+          </div>
+          
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="address" className="text-right">
+              Address
+            </Label>
+            <Input
+              id="address"
+              name="address"
+              value={formValues.address || ''}
+              onChange={handleChange}
+              className="col-span-3"
+            />
+          </div>
+          
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="market" className="text-right">
+              Market
+            </Label>
+            <Input
+              id="market"
+              name="market"
+              value={formValues.market || ''}
+              onChange={handleChange}
+              className="col-span-3"
+            />
+          </div>
+          
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="phase" className="text-right">
+              Phase
+            </Label>
+            <div className="col-span-3">
+              <PhaseSelector
+                value={formValues.phase || undefined}
+                onChange={handlePhaseChange}
+              />
             </div>
           </div>
-
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold border-b pb-2">Contact Information</h3>
-            
-            <div className="space-y-3">
-              <div className="flex gap-x-2">
-                <Phone className="h-4 w-4 text-muted-foreground mt-1" />
-                <div>
-                  <p className="font-medium">Point of Contact</p>
-                  <p className="text-muted-foreground">{property.ll_poc || 'Not specified'}</p>
-                </div>
-              </div>
-
-              <div className="flex gap-x-2">
-                <Phone className="h-4 w-4 text-muted-foreground mt-1" />
-                <div>
-                  <p className="font-medium">Phone</p>
-                  <p className="text-muted-foreground">{property.ll_phone || 'Not specified'}</p>
-                </div>
-              </div>
-
-              <div className="flex gap-x-2">
-                <Mail className="h-4 w-4 text-muted-foreground mt-1" />
-                <div>
-                  <p className="font-medium">Email</p>
-                  <p className="text-muted-foreground">{property.ll_email || 'Not specified'}</p>
-                </div>
-              </div>
-            </div>
-
-            <h3 className="text-lg font-semibold border-b pb-2 mt-6">Pipeline Status</h3>
-            
-            <div className="space-y-3">
-              <div className="flex gap-x-2">
-                <Calendar className="h-4 w-4 text-muted-foreground mt-1" />
-                <div>
-                  <p className="font-medium">Current Phase</p>
-                  <p className="text-muted-foreground">{property.phase || 'Not specified'}</p>
-                </div>
-              </div>
-
-              <div className="flex gap-x-2">
-                <SquareCheck className="h-4 w-4 text-muted-foreground mt-1" />
-                <div>
-                  <p className="font-medium">Survey Status</p>
-                  <p className="text-muted-foreground">{property.survey_status || 'Not specified'}</p>
-                </div>
-              </div>
-
-              <div className="flex gap-x-2">
-                <SquareCheck className="h-4 w-4 text-muted-foreground mt-1" />
-                <div>
-                  <p className="font-medium">Test Fit Status</p>
-                  <p className="text-muted-foreground">{property.test_fit_status || 'Not specified'}</p>
-                </div>
-              </div>
-
-              <div className="flex gap-x-2">
-                <SquareCheck className="h-4 w-4 text-muted-foreground mt-1" />
-                <div>
-                  <p className="font-medium">LOI Status</p>
-                  <p className="text-muted-foreground">{property.loi_status || 'Not specified'}</p>
-                </div>
-              </div>
-
-              <div className="flex gap-x-2">
-                <SquareCheck className="h-4 w-4 text-muted-foreground mt-1" />
-                <div>
-                  <p className="font-medium">Lease Status</p>
-                  <p className="text-muted-foreground">{property.lease_status || 'Not specified'}</p>
-                </div>
-              </div>
-            </div>
+          
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="sf_available" className="text-right">
+              SF Available
+            </Label>
+            <Input
+              id="sf_available"
+              name="sf_available"
+              value={formValues.sf_available || ''}
+              onChange={handleChange}
+              className="col-span-3"
+            />
+          </div>
+          
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="status_notes" className="text-right">
+              Notes
+            </Label>
+            <Textarea
+              id="status_notes"
+              name="status_notes"
+              value={formValues.status_notes || ''}
+              onChange={handleChange}
+              className="col-span-3"
+              rows={4}
+            />
           </div>
         </div>
-
-        {property.status_notes && (
-          <div className="border-t pt-4 mt-2">
-            <div className="flex gap-x-2">
-              <AlertCircle className="h-4 w-4 text-muted-foreground mt-1" />
-              <div>
-                <p className="font-medium">Status Notes</p>
-                <p className="text-muted-foreground whitespace-pre-line">{property.status_notes}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Close
+        
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
           </Button>
-        </DialogFooter>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

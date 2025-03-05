@@ -1,10 +1,40 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CalendarDays, Home, MapPin } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { RealEstateProperty } from '@/types/realEstate';
-import { Badge } from '@/components/ui/badge';
-import { MapPin, Building, Phone, Mail, FileText } from 'lucide-react';
+
+// Function to get the appropriate color class based on the phase
+const getPhaseColorClass = (phase: string | null): string => {
+  if (!phase) return 'bg-gray-100 text-gray-800';
+  
+  switch(phase) {
+    case '0. New Site':
+      return 'bg-gray-200 text-gray-800';
+    case '1. Initial Diligence':
+      return 'bg-[#1F77B4] text-white';
+    case '2. Survey':
+      return 'bg-[#FF7F0E] text-white';
+    case '3. Test Fit':
+      return 'bg-[#9467BD] text-white';
+    case '4. Plan Production':
+      return 'bg-[#2CA02C] text-white';
+    case '5. Permitting':
+      return 'bg-[#1F77B4] text-white';
+    case '6. Construction':
+      return 'bg-[#495057] text-white';
+    case '7. Set Up':
+      return 'bg-[#2CA02C] text-white';
+    case 'Hold':
+      return 'bg-amber-800 text-white';
+    case 'Deprioritize':
+      return 'bg-gray-700 text-white';
+    default:
+      return 'bg-secondary text-secondary-foreground';
+  }
+};
 
 interface PropertyCardProps {
   property: RealEstateProperty;
@@ -12,66 +42,52 @@ interface PropertyCardProps {
 
 export const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
   const navigate = useNavigate();
-
-  const handlePropertyClick = () => {
+  
+  const handleClick = () => {
     navigate(`/real-estate-pipeline/property/${property.id}`);
   };
-
+  
   return (
     <Card 
-      className="h-full hover:shadow-md transition-shadow cursor-pointer" 
-      onClick={handlePropertyClick}
+      className="cursor-pointer transition-all hover:shadow-md border-l-4 border-l-primary" 
+      onClick={handleClick}
     >
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base font-medium flex items-start justify-between">
-          <span className="truncate">{property.site_name || 'Unnamed Property'}</span>
-          {property.market && (
-            <Badge className="ml-2 shrink-0" variant="outline">
-              {property.market}
-            </Badge>
-          )}
-        </CardTitle>
+      <CardHeader className="p-3 pb-0">
+        <div className="flex justify-between items-start">
+          <h3 className="font-medium text-base">
+            {property.site_name || 'Unnamed Property'}
+          </h3>
+          <div className={`px-2 py-1 rounded-md text-xs font-medium ${getPhaseColorClass(property.phase)}`}>
+            {property.phase || 'No Phase'}
+          </div>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-2 text-sm">
+      
+      <CardContent className="p-3 pb-0">
         {property.address && (
-          <div className="flex items-start">
-            <MapPin className="h-4 w-4 mr-2 mt-0.5 shrink-0 text-muted-foreground" />
-            <span className="text-muted-foreground">{property.address}</span>
+          <div className="flex items-start mb-2">
+            <MapPin className="h-4 w-4 text-muted-foreground mr-1 mt-0.5" />
+            <p className="text-sm text-muted-foreground">{property.address}</p>
           </div>
         )}
         
-        {property.phase && (
-          <div className="flex items-start">
-            <Building className="h-4 w-4 mr-2 mt-0.5 shrink-0 text-muted-foreground" />
-            <span className="text-muted-foreground">Phase: {property.phase}</span>
-          </div>
-        )}
-        
-        {property.sf_available && (
-          <div className="flex items-start">
-            <FileText className="h-4 w-4 mr-2 mt-0.5 shrink-0 text-muted-foreground" />
-            <span className="text-muted-foreground">{property.sf_available} sq ft available</span>
-          </div>
-        )}
-        
-        {property.ll_poc && (
-          <div className="flex flex-col space-y-1 mt-3 border-t pt-2">
-            <span className="font-medium">Contact: {property.ll_poc}</span>
-            {property.ll_phone && (
-              <div className="flex items-center">
-                <Phone className="h-3 w-3 mr-2 text-muted-foreground" />
-                <span className="text-muted-foreground text-xs">{property.ll_phone}</span>
-              </div>
-            )}
-            {property.ll_email && (
-              <div className="flex items-center">
-                <Mail className="h-3 w-3 mr-2 text-muted-foreground" />
-                <span className="text-muted-foreground text-xs truncate">{property.ll_email}</span>
-              </div>
-            )}
+        {property.market && (
+          <div className="flex items-start mb-2">
+            <Home className="h-4 w-4 text-muted-foreground mr-1 mt-0.5" />
+            <p className="text-sm text-muted-foreground">{property.market}</p>
           </div>
         )}
       </CardContent>
+      
+      <CardFooter className="p-3 text-xs text-muted-foreground">
+        <div className="flex items-center">
+          <CalendarDays className="h-3 w-3 mr-1" />
+          {property.created_at ? 
+            `Added ${formatDistanceToNow(new Date(property.created_at), { addSuffix: true })}` : 
+            'Recently added'
+          }
+        </div>
+      </CardFooter>
     </Card>
   );
 };
