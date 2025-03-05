@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
@@ -8,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, LayoutDashboard, FileText, Home, UserRound, Map } from "lucide-react";
+import { ChevronDown, LayoutDashboard, FileText, Home, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const routes = [
@@ -16,7 +15,6 @@ const routes = [
   { path: "/salesforce-leads", name: "Salesforce Analytics", icon: <LayoutDashboard className="mr-2 h-4 w-4" /> },
   { path: "/real-estate-pipeline", name: "Real Estate Pipeline", icon: <FileText className="mr-2 h-4 w-4" /> },
   { path: "/find-contacts", name: "Find Contacts", icon: <UserRound className="mr-2 h-4 w-4" /> },
-  { path: "/market-explorer", name: "Market Explorer", icon: <Map className="mr-2 h-4 w-4" /> },
 ];
 
 export const Navbar = () => {

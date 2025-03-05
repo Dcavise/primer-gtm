@@ -15,8 +15,7 @@ export default defineConfig({
         'src/hooks/salesforce/useFellowsStats.ts',
         'src/hooks/salesforce/useLeadsStats.ts',
         'src/hooks/salesforce/useOpportunitiesStats.ts',
-        'src/hooks/salesforce/useStats.ts',
-        'src/utils/geocoding.ts'
+        'src/hooks/salesforce/useStats.ts'
       ],
     },
   },
