@@ -23,7 +23,9 @@ export default defineConfig({
         'src/hooks/use-census-data.tsx',
         'src/hooks/use-permits.tsx',
         'src/hooks/use-schools-data.tsx',
-        'src/hooks/use-zoning-data.tsx'
+        'src/hooks/use-zoning-data.tsx',
+        'src/hooks/useGoogleMapsScript.ts',
+        'src/services/geocoding-service.ts'
       ],
     },
   },
