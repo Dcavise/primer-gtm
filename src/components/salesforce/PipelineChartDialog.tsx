@@ -25,10 +25,9 @@ export const PipelineChartDialog: React.FC<PipelineChartDialogProps> = ({
   opportunityStageCounts,
   selectedCampusName
 }) => {
-  // Color palette optimized for data visualization
-  // Using a sequential palette with sufficient contrast between categories
-  // These colors maintain accessibility standards and have similar luminance
-  const colors = ['#4361ee', '#3a0ca3', '#7209b7', '#f72585'];
+  // Following the data visualization color guidelines for bar charts
+  // Using the recommended distinct values for categories
+  const colors = ['#1F77B4', '#FF7F0E', '#2CA02C', '#D62728'];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

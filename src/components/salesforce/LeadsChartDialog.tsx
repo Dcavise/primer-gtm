@@ -26,7 +26,7 @@ interface LeadsChartDialogProps {
 const CustomizedLabel = (props: any) => {
   const { x, y, value } = props;
   return (
-    <text x={x} y={y - 10} fill="#4361ee" textAnchor="middle" dominantBaseline="middle">
+    <text x={x} y={y - 10} fill="#1F77B4" textAnchor="middle" dominantBaseline="middle">
       {value}
     </text>
   );
@@ -103,7 +103,7 @@ export const LeadsChartDialog: React.FC<LeadsChartDialogProps> = ({
                   type="monotone" 
                   dataKey="count" 
                   name="New Leads" 
-                  stroke="#4361ee" 
+                  stroke="#1F77B4" 
                   strokeWidth={2} 
                   activeDot={{ r: 8 }} 
                   label={<CustomizedLabel />}
