@@ -96,14 +96,14 @@ export default function PropertyResearch() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div className="bg-card rounded-lg shadow-sm border p-6">
               <h3 className="text-lg font-semibold mb-4">Nearby Schools</h3>
-              {schoolsStatus === "loading" ? (
+              {schoolsStatus === SearchStatus.LOADING ? (
                 <LoadingState className="py-8" message="Loading schools data..." showSpinner={true} />
-              ) : schoolsStatus === "error" ? (
+              ) : schoolsStatus === SearchStatus.ERROR ? (
                 <div className="text-red-500 py-4">Error loading schools data</div>
               ) : (
                 <SchoolsList 
                   schools={schools} 
-                  isLoading={schoolsStatus === "loading"} 
+                  isLoading={schoolsStatus === SearchStatus.LOADING} 
                   searchedAddress={schoolsAddress} 
                 />
               )}
@@ -111,14 +111,14 @@ export default function PropertyResearch() {
             
             <div className="bg-card rounded-lg shadow-sm border p-6">
               <h3 className="text-lg font-semibold mb-4">Zoning Information</h3>
-              {zoningStatus === "loading" ? (
+              {zoningStatus === SearchStatus.LOADING ? (
                 <LoadingState className="py-8" message="Loading zoning data..." showSpinner={true} />
-              ) : zoningStatus === "error" ? (
+              ) : zoningStatus === SearchStatus.ERROR ? (
                 <div className="text-red-500 py-4">Error loading zoning data</div>
               ) : (
                 <ZoningList 
                   zoningData={zoningData} 
-                  isLoading={zoningStatus === "loading"} 
+                  isLoading={zoningStatus === SearchStatus.LOADING} 
                   searchedAddress={zoningAddress} 
                 />
               )}
@@ -127,14 +127,14 @@ export default function PropertyResearch() {
           
           <div className="bg-card rounded-lg shadow-sm border p-6">
             <h3 className="text-lg font-semibold mb-4">Building Permits</h3>
-            {permitsStatus === "loading" ? (
+            {permitsStatus === SearchStatus.LOADING ? (
               <LoadingState className="py-8" message="Loading permit data..." showSpinner={true} />
-            ) : permitsStatus === "error" ? (
+            ) : permitsStatus === SearchStatus.ERROR ? (
               <div className="text-red-500 py-4">Error loading permit data</div>
             ) : (
               <PermitList 
                 permits={permits} 
-                isLoading={permitsStatus === "loading"} 
+                isLoading={permitsStatus === SearchStatus.LOADING} 
                 searchedAddress={permitsAddress} 
               />
             )}
