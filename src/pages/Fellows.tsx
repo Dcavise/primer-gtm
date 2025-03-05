@@ -14,9 +14,6 @@ const Fellows = () => {
           </p>
           <div className="mt-4 space-x-2">
             <Button asChild variant="secondary">
-              <Link to="/campuses">Manage Campuses</Link>
-            </Button>
-            <Button asChild variant="secondary">
               <Link to="/salesforce-leads">View Salesforce Leads</Link>
             </Button>
           </div>
