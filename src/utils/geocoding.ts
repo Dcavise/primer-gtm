@@ -1,4 +1,3 @@
-
 import { getApiKey } from "@/services/api-config";
 import { toast } from "sonner";
 import mapboxgl from "mapbox-gl";
@@ -11,35 +10,43 @@ export interface Coordinates {
 export interface GeocodingResult {
   address: string;
   coordinates: Coordinates;
+  context?: {
+    country?: string;
+    region?: string;
+    place?: string;
+    neighborhood?: string;
+    postcode?: string;
+  };
+  featureType?: string;
+  bbox?: [number, number, number, number]; // [minLng, minLat, maxLng, maxLat]
 }
 
-export async function geocodeAddress(address: string): Promise<GeocodingResult | null> {
+export interface GeocodingOptions {
+  types?: Array<'country' | 'region' | 'postcode' | 'district' | 'place' | 'locality' | 'neighborhood' | 'street' | 'address'>;
+  limit?: number;
+  proximity?: Coordinates;
+  autocomplete?: boolean;
+  language?: string;
+  country?: string | string[];
+}
+
+/**
+ * Geocode an address string into coordinates
+ */
+export async function geocodeAddress(
+  address: string, 
+  options: GeocodingOptions = {}
+): Promise<GeocodingResult | null> {
   if (!address || address.trim() === '') {
     console.warn("Empty address provided to geocodeAddress");
     return null;
   }
   
   try {
-    // Use Mapbox for geocoding
-    const result = await geocodeWithMapbox(address);
+    console.log(`Geocoding address with Mapbox: ${address}`);
     
-    if (!result) {
-      throw new Error("Geocoding failed");
-    }
-    
-    return result;
-  } catch (error) {
-    console.error("Geocoding error:", error);
-    toast.error("Could not find this address", {
-      description: "Please check the address and try again"
-    });
-    return null;
-  }
-}
-
-async function geocodeWithMapbox(address: string): Promise<GeocodingResult | null> {
-  try {
-    let token = '';
+    // Get Mapbox token
+    let token;
     try {
       token = await getApiKey('mapbox');
       if (!token || token.trim() === '') {
@@ -47,12 +54,44 @@ async function geocodeWithMapbox(address: string): Promise<GeocodingResult | nul
       }
     } catch (error) {
       console.error("Error fetching Mapbox token:", error);
-      throw error;
+      toast.error("Could not authenticate with Mapbox", {
+        description: "Please check your API configuration"
+      });
+      return null;
     }
     
-    console.log("Geocoding address with Mapbox:", address);
     const encodedAddress = encodeURIComponent(address);
-    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${token}`;
+    
+    // Build URL with options
+    let url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${token}`;
+    
+    // Add options to URL if provided
+    if (options.types && options.types.length > 0) {
+      url += `&types=${options.types.join(',')}`;
+    }
+    
+    if (options.limit) {
+      url += `&limit=${options.limit}`;
+    }
+    
+    if (options.proximity) {
+      url += `&proximity=${options.proximity.lng},${options.proximity.lat}`;
+    }
+    
+    if (options.autocomplete !== undefined) {
+      url += `&autocomplete=${options.autocomplete}`;
+    }
+    
+    if (options.language) {
+      url += `&language=${options.language}`;
+    }
+    
+    if (options.country) {
+      const countries = Array.isArray(options.country) 
+        ? options.country.join(',') 
+        : options.country;
+      url += `&country=${countries}`;
+    }
 
     const response = await fetch(url);
     if (!response.ok) {
@@ -72,14 +111,151 @@ async function geocodeWithMapbox(address: string): Promise<GeocodingResult | nul
         lat: result.center[1]
       };
 
-      console.log("Successfully geocoded with Mapbox:", formattedAddress, coordinates);
-      return { address: formattedAddress, coordinates };
+      // Extract context information (country, region, etc.)
+      const context: GeocodingResult['context'] = {};
+      
+      if (result.context) {
+        for (const ctx of result.context) {
+          if (ctx.id.startsWith('country')) {
+            context.country = ctx.text;
+          } else if (ctx.id.startsWith('region')) {
+            context.region = ctx.text;
+          } else if (ctx.id.startsWith('place')) {
+            context.place = ctx.text;
+          } else if (ctx.id.startsWith('neighborhood')) {
+            context.neighborhood = ctx.text;
+          } else if (ctx.id.startsWith('postcode')) {
+            context.postcode = ctx.text;
+          }
+        }
+      }
+
+      // Create result object
+      const geocodingResult: GeocodingResult = {
+        address: formattedAddress,
+        coordinates,
+        context,
+        featureType: result.place_type?.[0],
+        bbox: result.bbox
+      };
+
+      console.log("Successfully geocoded with Mapbox:", formattedAddress, geocodingResult);
+      return geocodingResult;
     } else {
-      console.error("Mapbox geocoding failed:", data);
+      console.warn("No results found for geocoding:", address);
       return null;
     }
   } catch (error) {
     console.error("Mapbox geocoding error:", error);
+    toast.error("Geocoding failed", {
+      description: error instanceof Error ? error.message : "Unknown error"
+    });
+    return null;
+  }
+}
+
+/**
+ * Reverse geocode coordinates into an address
+ */
+export async function reverseGeocode(
+  coordinates: Coordinates,
+  options: Omit<GeocodingOptions, 'autocomplete' | 'proximity'> = {}
+): Promise<GeocodingResult | null> {
+  try {
+    console.log(`Reverse geocoding coordinates: ${coordinates.lat}, ${coordinates.lng}`);
+    
+    // Get Mapbox token
+    let token;
+    try {
+      token = await getApiKey('mapbox');
+      if (!token || token.trim() === '') {
+        throw new Error("No Mapbox token available");
+      }
+    } catch (error) {
+      console.error("Error fetching Mapbox token:", error);
+      toast.error("Could not authenticate with Mapbox", {
+        description: "Please check your API configuration"
+      });
+      return null;
+    }
+    
+    // Build URL with options
+    let url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${coordinates.lng},${coordinates.lat}.json?access_token=${token}`;
+    
+    // Add options to URL if provided
+    if (options.types && options.types.length > 0) {
+      url += `&types=${options.types.join(',')}`;
+    }
+    
+    if (options.limit) {
+      url += `&limit=${options.limit}`;
+    }
+    
+    if (options.language) {
+      url += `&language=${options.language}`;
+    }
+    
+    if (options.country) {
+      const countries = Array.isArray(options.country) 
+        ? options.country.join(',') 
+        : options.country;
+      url += `&country=${countries}`;
+    }
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Mapbox API returned status ${response.status}: ${errorText}`);
+    }
+    
+    const data = await response.json();
+
+    if (data.features && data.features.length > 0) {
+      const result = data.features[0];
+      const formattedAddress = result.place_name;
+      
+      // Extract context information (country, region, etc.)
+      const context: GeocodingResult['context'] = {};
+      
+      if (result.context) {
+        for (const ctx of result.context) {
+          if (ctx.id.startsWith('country')) {
+            context.country = ctx.text;
+          } else if (ctx.id.startsWith('region')) {
+            context.region = ctx.text;
+          } else if (ctx.id.startsWith('place')) {
+            context.place = ctx.text;
+          } else if (ctx.id.startsWith('neighborhood')) {
+            context.neighborhood = ctx.text;
+          } else if (ctx.id.startsWith('postcode')) {
+            context.postcode = ctx.text;
+          }
+        }
+      }
+
+      // Create result object
+      const geocodingResult: GeocodingResult = {
+        address: formattedAddress,
+        coordinates: {
+          lng: coordinates.lng,
+          lat: coordinates.lat
+        },
+        context,
+        featureType: result.place_type?.[0],
+        bbox: result.bbox
+      };
+
+      console.log("Successfully reverse geocoded with Mapbox:", formattedAddress, geocodingResult);
+      return geocodingResult;
+    } else {
+      console.warn("No results found for reverse geocoding:", coordinates);
+      return null;
+    }
+  } catch (error) {
+    console.error("Mapbox reverse geocoding error:", error);
+    toast.error("Reverse geocoding failed", {
+      description: error instanceof Error ? error.message : "Unknown error"
+    });
     return null;
   }
 }

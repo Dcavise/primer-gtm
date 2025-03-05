@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,18 +22,15 @@ const MarketExplorer = () => {
   const mapInitialized = useRef(false);
   const [mapError, setMapError] = useState<string | null>(null);
   
-  // Memoize createDemoMap to prevent unnecessary re-creation
   const createDemoMap = useCallback((mapInstance: mapboxgl.Map) => {
     if (!mapInstance) return;
     
     console.log("Creating demo map for All Campuses view");
     
     try {
-      // Clear existing markers
       const existingMarkers = document.querySelectorAll('.mapboxgl-marker');
       existingMarkers.forEach(marker => marker.remove());
       
-      // Use a subset of the market coordinates as sample data points
       const demoLocations = [
         { name: "San Francisco", coordinates: marketCoordinates.sf.center, color: "#1F77B4" },
         { name: "New York City", coordinates: marketCoordinates.nyc.center, color: "#FF7F0E" },
@@ -48,10 +44,8 @@ const MarketExplorer = () => {
         { name: "Atlanta", coordinates: marketCoordinates.atl.center, color: "#17BECF" }
       ];
       
-      // Add markers for each location
       demoLocations.forEach(location => {
         try {
-          // Create a DOM element for the marker
           const el = document.createElement('div');
           el.className = 'mapboxgl-marker';
           el.style.width = '20px';
@@ -61,11 +55,9 @@ const MarketExplorer = () => {
           el.style.border = '2px solid white';
           el.style.boxShadow = '0 0 4px rgba(0,0,0,0.3)';
           
-          // Add a popup with the location name
           const popup = new mapboxgl.Popup({ offset: 25 })
             .setText(location.name);
           
-          // Add marker to map
           new mapboxgl.Marker(el)
             .setLngLat(location.coordinates)
             .setPopup(popup)
@@ -75,7 +67,6 @@ const MarketExplorer = () => {
         }
       });
       
-      // Zoom out to see all of the United States
       mapInstance.flyTo({
         center: marketCoordinates.default.center,
         zoom: marketCoordinates.default.zoom,
@@ -87,7 +78,6 @@ const MarketExplorer = () => {
     }
   }, []);
   
-  // Use React Query to fetch the Mapbox token once
   const { 
     data: mapboxToken, 
     isLoading: isTokenLoading, 
@@ -98,26 +88,21 @@ const MarketExplorer = () => {
       console.log("Fetching Mapbox token (ONCE ONLY)");
       return getApiKey('mapbox');
     },
-    staleTime: Infinity, // Never consider this data stale
-    gcTime: Infinity, // Keep in cache forever (formerly cacheTime)
-    retry: 2, // Retry twice on failure
+    staleTime: Infinity,
+    gcTime: Infinity,
+    retry: 2
   });
 
-  // Initialize map once we have the token - with strict checks to prevent multiple initializations
   useEffect(() => {
-    // Only proceed if we have a token, container ref, and map is not already initialized
     if (!mapboxToken || !mapContainer.current || mapInitialized.current || map.current) return;
     
     try {
       console.log("Initializing Mapbox map (ONCE ONLY)...");
       
-      // Set the access token for mapboxgl
       mapboxgl.accessToken = mapboxToken;
       
-      // Mark as initialized before creating map to prevent race conditions
       mapInitialized.current = true;
       
-      // Create map instance
       const newMap = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/light-v11',
@@ -125,10 +110,9 @@ const MarketExplorer = () => {
         zoom: marketCoordinates.default.zoom,
         pitch: 30,
         antialias: true,
-        attributionControl: false,  // Disable default attribution
+        attributionControl: false
       });
 
-      // Add navigation controls
       newMap.addControl(
         new mapboxgl.NavigationControl({
           visualizePitch: true,
@@ -136,7 +120,6 @@ const MarketExplorer = () => {
         'top-right'
       );
       
-      // Add attribution control in a more subtle position
       newMap.addControl(
         new mapboxgl.AttributionControl({
           compact: true
@@ -144,10 +127,8 @@ const MarketExplorer = () => {
         'bottom-right'
       );
 
-      // Set map reference
       map.current = newMap;
 
-      // Wait for map to load before updating state
       newMap.on('load', () => {
         console.log("✅ Map loaded successfully");
         setMapError(null);
@@ -155,13 +136,11 @@ const MarketExplorer = () => {
           description: "Market explorer is ready to use"
         });
         
-        // If "All Campuses" is selected, create a demo map with sample data points
         if (selectedMarket === "default" && newMap) {
           createDemoMap(newMap);
         }
       });
 
-      // Handle map load error
       newMap.on('error', (e) => {
         console.error("Mapbox error:", e);
         const errorMessage = e.error ? e.error.message : "Unknown error";
@@ -170,14 +149,12 @@ const MarketExplorer = () => {
       });
     } catch (error) {
       console.error("Error initializing map:", error);
-      // Reset the initialization flag if there was an error
       mapInitialized.current = false;
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       setMapError(`Failed to load map: ${errorMessage}`);
       toast.error(`Failed to load map: ${errorMessage}`);
     }
 
-    // Cleanup map instance when component unmounts
     return () => {
       if (map.current) {
         console.log("Cleaning up map instance");
@@ -188,7 +165,6 @@ const MarketExplorer = () => {
     };
   }, [mapboxToken, selectedMarket, createDemoMap]);
 
-  // Update map view when selected market changes - without reinitializing the map
   useEffect(() => {
     if (!map.current || !mapInitialized.current) return;
     
@@ -196,16 +172,13 @@ const MarketExplorer = () => {
       console.log("Updating map view for selected market:", selectedMarket);
       
       try {
-        // Remove previous markers
         const existingMarkers = document.querySelectorAll('.mapboxgl-marker');
         existingMarkers.forEach(marker => marker.remove());
         
-        // Default coordinates
         let coordinates = marketCoordinates.default.center;
         let zoom = marketCoordinates.default.zoom;
         
         if (selectedMarket === "default") {
-          // If "All Campuses" is selected, show demo map
           if (map.current) {
             createDemoMap(map.current);
           }
@@ -214,7 +187,7 @@ const MarketExplorer = () => {
           
           if (selectedCampus) {
             console.log("Selected campus:", selectedCampus.campus_name);
-            // First try to find in marketCoordinates
+            
             const campusNameLower = selectedCampus.campus_name.toLowerCase();
             let found = false;
             
@@ -228,21 +201,23 @@ const MarketExplorer = () => {
               }
             }
             
-            // If not found in marketCoordinates, use geocoding
             if (!found) {
               try {
-                // Format the address as "Campus Name, State"
                 const addressToGeocode = `${selectedCampus.campus_name}${selectedCampus.State ? `, ${selectedCampus.State.trim()}` : ''}`;
                 console.log("Geocoding address:", addressToGeocode);
                 
-                const result = await geocodeAddress(addressToGeocode);
+                const result = await geocodeAddress(addressToGeocode, {
+                  types: ['place', 'locality', 'neighborhood'],
+                  limit: 1,
+                  autocomplete: false,
+                  country: 'us'
+                });
+                
                 if (result) {
-                  // Convert to mapbox format [lng, lat]
                   coordinates = [result.coordinates.lng, result.coordinates.lat];
-                  zoom = 11; // Standard city zoom level
+                  zoom = 11;
                   console.log("Geocoding result:", result);
                   
-                  // Add a marker for the geocoded location
                   if (map.current) {
                     const el = document.createElement('div');
                     el.className = 'mapboxgl-marker';
@@ -268,7 +243,6 @@ const MarketExplorer = () => {
                 console.error("Error geocoding address:", error);
               }
             } else if (map.current) {
-              // Add a marker for the location found in marketCoordinates
               const el = document.createElement('div');
               el.className = 'mapboxgl-marker';
               el.style.width = '20px';
@@ -286,7 +260,6 @@ const MarketExplorer = () => {
           }
         }
         
-        // Animate to the new location if map exists
         if (map.current) {
           console.log("Flying to coordinates:", coordinates, "with zoom:", zoom);
           map.current.flyTo({
@@ -294,7 +267,7 @@ const MarketExplorer = () => {
             zoom: zoom,
             pitch: 30,
             duration: 2000,
-            essential: true // This animation is considered essential with respect to prefers-reduced-motion
+            essential: true
           });
         }
       } catch (error) {
@@ -312,10 +285,8 @@ const MarketExplorer = () => {
     setSelectedMarket(marketId);
   };
 
-  // Determine if we're in a loading state
   const isLoading = isTokenLoading;
 
-  // Determine if there's an error to display
   const displayError = mapError || (tokenError 
     ? `Failed to fetch Mapbox token: ${tokenError instanceof Error ? tokenError.message : "Unknown error"}`
     : null);
