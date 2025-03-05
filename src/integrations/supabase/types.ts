@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      campuses: {
+        Row: {
+          campus_id: string
+          campus_name: string
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          campus_id: string
+          campus_name: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          campus_id?: string
+          campus_name?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       fellows: {
         Row: {
           campus: string | null
@@ -39,6 +63,51 @@ export type Database = {
           grade_band?: string | null
           id?: number
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      salesforce_leads: {
+        Row: {
+          campus_id: string | null
+          converted: boolean | null
+          converted_date: string | null
+          created_date: string | null
+          first_name: string | null
+          id: string
+          last_name: string
+          lead_id: string
+          lead_source: string | null
+          preferred_campus: string | null
+          stage: string | null
+          updated_at: string
+        }
+        Insert: {
+          campus_id?: string | null
+          converted?: boolean | null
+          converted_date?: string | null
+          created_date?: string | null
+          first_name?: string | null
+          id?: string
+          last_name: string
+          lead_id: string
+          lead_source?: string | null
+          preferred_campus?: string | null
+          stage?: string | null
+          updated_at?: string
+        }
+        Update: {
+          campus_id?: string | null
+          converted?: boolean | null
+          converted_date?: string | null
+          created_date?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string
+          lead_id?: string
+          lead_source?: string | null
+          preferred_campus?: string | null
+          stage?: string | null
+          updated_at?: string
         }
         Relationships: []
       }

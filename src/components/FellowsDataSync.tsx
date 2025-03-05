@@ -8,11 +8,19 @@ import { toast } from "sonner";
 import { RefreshCw, AlertCircle, Info } from "lucide-react";
 import { LoadingState } from "@/components/LoadingState";
 
+interface Campus {
+  id: string;
+  campus_id: string;
+  campus_name: string;
+}
+
 interface Fellow {
   id: number;
   fellow_id: number;
   fellow_name: string;
   campus: string | null;
+  campus_id: string | null; // New field to store the campus_id reference
+  campus_name: string | null; // For display purposes
   cohort: number | null;
   grade_band: string | null;
   fte_employment_status: string | null;
@@ -21,15 +29,35 @@ interface Fellow {
 
 export function FellowsDataSync() {
   const [fellows, setFellows] = useState<Fellow[]>([]);
+  const [campuses, setCampuses] = useState<Campus[]>([]);
   const [loading, setLoading] = useState(false);
   const [syncLoading, setSyncLoading] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [showDetailedError, setShowDetailedError] = useState(false);
 
+  const fetchCampuses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('campuses')
+        .select('*');
+      
+      if (error) throw error;
+      
+      setCampuses(data || []);
+    } catch (error) {
+      console.error('Error fetching campuses:', error);
+    }
+  };
+
   const fetchFellows = async () => {
     setLoading(true);
     try {
+      // First, make sure we have the campuses data
+      if (campuses.length === 0) {
+        await fetchCampuses();
+      }
+      
       const { data, error } = await supabase
         .from('fellows')
         .select('*')
@@ -37,7 +65,40 @@ export function FellowsDataSync() {
       
       if (error) throw error;
       
-      setFellows(data || []);
+      // Map the fellows data to include campus_name from the campuses array
+      const mappedFellows = (data || []).map(fellow => {
+        // If the fellow has a campus field but no campus_id, try to match it with a campus
+        if (fellow.campus && !fellow.campus_id) {
+          const matchedCampus = campuses.find(
+            c => c.campus_name.toLowerCase() === fellow.campus?.toLowerCase()
+          );
+          if (matchedCampus) {
+            return {
+              ...fellow,
+              campus_name: matchedCampus.campus_name,
+              campus_id: matchedCampus.campus_id
+            };
+          }
+        } 
+        // If the fellow has a campus_id, get the campus_name
+        else if (fellow.campus_id) {
+          const matchedCampus = campuses.find(c => c.campus_id === fellow.campus_id);
+          if (matchedCampus) {
+            return {
+              ...fellow,
+              campus_name: matchedCampus.campus_name
+            };
+          }
+        }
+        
+        // Default case, just return the fellow as is
+        return {
+          ...fellow,
+          campus_name: fellow.campus // Use the campus field as campus_name if no match
+        };
+      });
+      
+      setFellows(mappedFellows);
       
       // Get the most recent updated_at timestamp
       if (data && data.length > 0) {
@@ -72,7 +133,12 @@ export function FellowsDataSync() {
       }
       
       toast.success(`Successfully synced ${response.data.result?.inserted || 0} fellows records`);
-      fetchFellows(); // Refresh the data after sync
+
+      // After sync, link fellows to campuses
+      await linkFellowsToCampuses();
+      
+      // Then refresh the data
+      await fetchFellows();
     } catch (error: any) {
       console.error('Error syncing fellows data:', error);
       const errorMessage = error.message || 'Unknown error occurred';
@@ -83,7 +149,51 @@ export function FellowsDataSync() {
     }
   };
 
+  // New function to link fellows to campuses based on campus name
+  const linkFellowsToCampuses = async () => {
+    try {
+      // Make sure we have the campuses data
+      if (campuses.length === 0) {
+        await fetchCampuses();
+      }
+      
+      // Get all fellows
+      const { data: fellowsData, error: fellowsError } = await supabase
+        .from('fellows')
+        .select('*');
+      
+      if (fellowsError) throw fellowsError;
+      
+      // Process each fellow that has a campus but no campus_id
+      for (const fellow of fellowsData || []) {
+        if (fellow.campus && !fellow.campus_id) {
+          // Try to find a matching campus
+          const matchedCampus = campuses.find(
+            c => c.campus_name.toLowerCase() === fellow.campus?.toLowerCase()
+          );
+          
+          if (matchedCampus) {
+            // Update the fellow with the campus_id
+            const { error: updateError } = await supabase
+              .from('fellows')
+              .update({ campus_id: matchedCampus.campus_id })
+              .eq('id', fellow.id);
+            
+            if (updateError) {
+              console.error(`Error updating fellow ${fellow.id}:`, updateError);
+            }
+          }
+        }
+      }
+      
+      console.log("Fellows linked to campuses successfully");
+    } catch (error) {
+      console.error('Error linking fellows to campuses:', error);
+    }
+  };
+
   useEffect(() => {
+    fetchCampuses();
     fetchFellows();
   }, []);
 
@@ -168,7 +278,7 @@ export function FellowsDataSync() {
                         <TableRow key={fellow.id}>
                           <TableCell>{fellow.fellow_id}</TableCell>
                           <TableCell className="font-medium">{fellow.fellow_name}</TableCell>
-                          <TableCell>{fellow.campus || '-'}</TableCell>
+                          <TableCell>{fellow.campus_name || fellow.campus || '-'}</TableCell>
                           <TableCell>{fellow.cohort || '-'}</TableCell>
                           <TableCell>{fellow.grade_band || '-'}</TableCell>
                           <TableCell>{fellow.fte_employment_status || '-'}</TableCell>
@@ -181,11 +291,17 @@ export function FellowsDataSync() {
             </>
           )}
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex justify-between">
+          <Button 
+            variant="outline"
+            onClick={linkFellowsToCampuses}
+            disabled={loading || syncLoading}
+          >
+            Update Campus Links
+          </Button>
           <Button 
             onClick={syncFellowsData} 
             disabled={syncLoading}
-            className="ml-auto"
           >
             {syncLoading ? (
               <>

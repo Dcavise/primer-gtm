@@ -1,5 +1,7 @@
 
 import { FellowsDataSync } from "@/components/FellowsDataSync";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const Fellows = () => {
   return (
@@ -10,6 +12,11 @@ const Fellows = () => {
           <p className="text-white/80 mt-2">
             View and synchronize fellows data from Google Sheets
           </p>
+          <div className="mt-4">
+            <Button asChild variant="secondary">
+              <Link to="/campuses">Manage Campuses</Link>
+            </Button>
+          </div>
         </div>
       </header>
 

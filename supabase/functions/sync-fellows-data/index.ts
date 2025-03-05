@@ -178,27 +178,75 @@ async function fetchGoogleSheetData(credentialsStr) {
   }
 }
 
+// Get campus ID from campus name by looking it up in the campuses table
+async function getCampusIdFromName(supabase, campusName) {
+  if (!campusName) return null;
+  
+  try {
+    const { data, error } = await supabase
+      .from('campuses')
+      .select('campus_id')
+      .ilike('campus_name', campusName)
+      .limit(1);
+    
+    if (error) {
+      console.error("Error getting campus ID:", error);
+      return null;
+    }
+    
+    return data && data.length > 0 ? data[0].campus_id : null;
+  } catch (error) {
+    console.error("Error in getCampusIdFromName:", error);
+    return null;
+  }
+}
+
 // Process and upsert fellows data to Supabase
 async function upsertFellowsData(supabase, fellowsData) {
   try {
     console.log(`Processing ${fellowsData.length} rows of data`);
     
+    // First, get all campuses for mapping
+    const { data: campusesData, error: campusesError } = await supabase
+      .from('campuses')
+      .select('campus_id, campus_name');
+    
+    if (campusesError) {
+      console.error("Error fetching campuses:", campusesError);
+    }
+    
+    const campusesMap = (campusesData || []).reduce((map, campus) => {
+      map[campus.campus_name.toLowerCase()] = campus.campus_id;
+      return map;
+    }, {});
+    
     // Map Google Sheets columns to database schema
-    const processedFellows = fellowsData.map(row => {
+    const processedFellows = [];
+    
+    for (const row of fellowsData) {
       // Ensure we have at least 6 columns (even if some are empty)
       const paddedRow = [...row];
       while (paddedRow.length < 6) paddedRow.push('');
       
-      return {
+      const campusName = paddedRow[2] || null;
+      let campusId = null;
+      
+      // Try to find the campus_id from the campus name
+      if (campusName) {
+        campusId = campusesMap[campusName.toLowerCase()];
+      }
+      
+      processedFellows.push({
         fellow_id: paddedRow[0] ? parseInt(paddedRow[0]) : null,
         fellow_name: paddedRow[1] || '',
-        campus: paddedRow[2] || null,
+        campus: campusName,
+        campus_id: campusId,
         cohort: paddedRow[3] ? parseInt(paddedRow[3]) : null,
         grade_band: paddedRow[4] || null,
         fte_employment_status: paddedRow[5] || null,
         updated_at: new Date().toISOString()
-      };
-    });
+      });
+    }
 
     // Filter out invalid records (must have ID and name)
     const validFellows = processedFellows.filter(fellow => 
