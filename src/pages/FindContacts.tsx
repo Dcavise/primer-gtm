@@ -151,7 +151,7 @@ export default function FindContactsPage() {
                       <SelectValue placeholder="Any department" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Any department</SelectItem>
+                      <SelectItem value="any">Any department</SelectItem>
                       <SelectItem value="executive">Executive</SelectItem>
                       <SelectItem value="it">IT</SelectItem>
                       <SelectItem value="finance">Finance</SelectItem>
@@ -173,7 +173,7 @@ export default function FindContactsPage() {
                       <SelectValue placeholder="Any seniority" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Any seniority</SelectItem>
+                      <SelectItem value="any">Any seniority</SelectItem>
                       <SelectItem value="junior">Junior</SelectItem>
                       <SelectItem value="senior">Senior</SelectItem>
                       <SelectItem value="executive">Executive</SelectItem>
@@ -188,7 +188,7 @@ export default function FindContactsPage() {
                       <SelectValue placeholder="Any type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Any type</SelectItem>
+                      <SelectItem value="any">Any type</SelectItem>
                       <SelectItem value="personal">Personal</SelectItem>
                       <SelectItem value="generic">Generic</SelectItem>
                     </SelectContent>

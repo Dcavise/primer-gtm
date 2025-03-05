@@ -46,9 +46,13 @@ export type ContactsSearchParams = {
 
 export async function searchContactsByDomain(params: ContactsSearchParams): Promise<HunterDomainResponse | null> {
   try {
-    const { domain, limit, department, seniority, type } = params;
+    const { domain, limit } = params;
+    // Clean up params - if department, seniority or type is 'any', remove it
+    const department = params.department === 'any' ? undefined : params.department;
+    const seniority = params.seniority === 'any' ? undefined : params.seniority;
+    const type = params.type === 'any' ? undefined : params.type as "personal" | "generic" | undefined;
     
-    console.log('Calling domain-search edge function with params:', params);
+    console.log('Calling domain-search edge function with params:', { domain, limit, department, seniority, type });
     
     const { data, error } = await supabase.functions.invoke('domain-search', {
       body: { domain, limit, department, seniority, type }
