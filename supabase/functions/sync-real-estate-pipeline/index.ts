@@ -9,8 +9,8 @@ const corsHeaders = {
 };
 
 // Google API constants
-// Using a spreadsheet ID from the error logs for debugging
-const SPREADSHEET_ID = "1xOXQdZaZTJkAjnI1fHI4tSTCFnF9p0hhfAX05-MYyG8"; 
+// Updated to use the correct spreadsheet ID
+const SPREADSHEET_ID = "1sNaNYFCYEEPmh8t_uISJ9av2HatheCdce3ssRkgOFYU"; 
 const SHEET_RANGE = "Sheet1!A1:Z"; // Try a more generic sheet name to debug
 
 async function fetchWithGoogleAuth(url: string, credentials: any) {

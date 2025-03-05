@@ -12,7 +12,7 @@ import {
 import { Loader2, RefreshCw, Info } from 'lucide-react';
 
 // Google API constants (must match the ones in the edge function)
-const SPREADSHEET_ID = "1xOXQdZaZTJkAjnI1fHI4tSTCFnF9p0hhfAX05-MYyG8";
+const SPREADSHEET_ID = "1sNaNYFCYEEPmh8t_uISJ9av2HatheCdce3ssRkgOFYU";
 const SHEET_RANGE = "Sheet1!A1:Z";
 
 interface RealEstatePipelineSyncProps {
