@@ -5,6 +5,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import App from './App.tsx'
 import './index.css'
 import SalesforceLeadsPage from './pages/SalesforceLeads.tsx'
+import RealEstatePipelinePage from './pages/RealEstatePipeline.tsx'
 import Index from './pages/Index.tsx'
 import NotFound from './pages/NotFound.tsx'
 
@@ -20,6 +21,10 @@ const router = createBrowserRouter([
       {
         path: "salesforce-leads",
         element: <SalesforceLeadsPage />
+      },
+      {
+        path: "real-estate-pipeline",
+        element: <RealEstatePipelinePage />
       }
     ],
     errorElement: <NotFound />
