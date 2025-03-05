@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { SearchForm } from "@/components/SearchForm";
 import { PermitList } from "@/components/PermitList";
@@ -12,7 +13,6 @@ import { FileTextIcon, MapIcon, School, SearchIcon } from "lucide-react";
 import { Permit } from "@/types";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
-import { geocodeAddress } from "@/utils/geocoding";
 import { Navbar } from "@/components/Navbar";
 
 const PropertyResearch = () => {
@@ -32,9 +32,6 @@ const PropertyResearch = () => {
   const { schools, status: schoolsStatus, searchedAddress: schoolsAddress, fetchSchoolsData, reset: resetSchools } = useSchoolsData();
   const isSearchingSchools = schoolsStatus === "loading";
 
-  // Geocoded coordinates
-  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
-
   // Consolidated state
   const [userAddress, setUserAddress] = useState("");
   const [isSearching, setIsSearching] = useState(false);
@@ -52,7 +49,6 @@ const PropertyResearch = () => {
     resetPermits();
     resetZoning();
     resetSchools();
-    setCoordinates(null);
     
     // Then start the new search
     setUserAddress(address);
@@ -63,33 +59,40 @@ const PropertyResearch = () => {
     });
     
     try {
-      // Geocode the address to get coordinates
-      const geocodingResult = await geocodeAddress(address);
-      if (geocodingResult) {
-        setCoordinates(geocodingResult.coordinates);
-        
-        console.log(`Geocoded coordinates: ${JSON.stringify(geocodingResult.coordinates)}`);
-        
-        // Start all API requests concurrently
-        await Promise.all([
-          fetchPermits({
-            bottom_left_lat: geocodingResult.coordinates.lat - 0.0001,
-            bottom_left_lng: geocodingResult.coordinates.lng - 0.0001,
-            top_right_lat: geocodingResult.coordinates.lat + 0.0001,
-            top_right_lng: geocodingResult.coordinates.lng + 0.0001,
-            exact_address: geocodingResult.address // Use the standardized address from geocoding
-          }, geocodingResult.address),
-          fetchZoningData(geocodingResult.address),
-          fetchSchoolsData({
-            lat: geocodingResult.coordinates.lat,
-            lon: geocodingResult.coordinates.lng
-          }, geocodingResult.address)
-        ]);
-        
-        toast.success("Property research complete", {
-          description: "All available data has been retrieved for this location."
-        });
+      console.log("Starting consolidated property search with params:", params);
+      
+      // Make sure we have coordinates
+      if (!params.coordinates) {
+        throw new Error("No coordinates found for the address");
       }
+      
+      const coordinates = params.coordinates;
+      console.log(`Using coordinates for search: (${coordinates.lat}, ${coordinates.lng})`);
+      
+      // Start all API requests concurrently
+      await Promise.all([
+        // Fetch permits with a very small bounding box
+        fetchPermits({
+          bottom_left_lat: coordinates.lat - 0.0001,
+          bottom_left_lng: coordinates.lng - 0.0001,
+          top_right_lat: coordinates.lat + 0.0001,
+          top_right_lng: coordinates.lng + 0.0001,
+          exact_address: address
+        }, address),
+        
+        // Fetch zoning data with the address
+        fetchZoningData(address),
+        
+        // Fetch schools data with coordinates
+        fetchSchoolsData({
+          lat: coordinates.lat,
+          lon: coordinates.lng
+        }, address)
+      ]);
+      
+      toast.success("Property research complete", {
+        description: "All available data has been retrieved for this location."
+      });
     } catch (error) {
       console.error("Error in consolidated search:", error);
       toast.error("Search error", {

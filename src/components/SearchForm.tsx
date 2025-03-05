@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,67 +26,64 @@ export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProp
       return;
     }
     
-    // For zoning, census, schools, and property-research searches, we use geocoding
-    if (searchType === "zoning" || searchType === "census" || searchType === "schools" || searchType === "property-research") {
+    try {
+      // For all search types, we use geocoding
+      console.log(`Starting ${searchType} search for address: ${address.trim()}`);
+      toast.info(`Searching for ${address.trim()}`, {
+        description: "Looking up location coordinates..."
+      });
+      
       const geocodeResult = await geocodeAddress(address.trim());
       
-      if (!geocodeResult) return; // Error is already handled in geocodeAddress
+      if (!geocodeResult) {
+        console.error("Geocoding failed, cannot proceed with search");
+        return; // Error is already handled in geocodeAddress
+      }
       
       const { coordinates } = geocodeResult;
       toast.success(`Address found: ${geocodeResult.address}`, {
         description: `Searching for ${searchType === "property-research" ? "property data" : searchType} in this area...`
       });
       
-      // For property-research and schools tab, we need both the address and coordinates
-      if (searchType === "schools" || searchType === "property-research") {
-        // For property research, we create a small bounding box just for the exact address
-        if (searchType === "property-research") {
-          // Create a very small bounding box around the exact coordinates
-          const radiusInMeters = 10; // Very small radius (10 meters) to get exact matches only
-          const { bottomLeft, topRight } = createBoundingBox(coordinates, radiusInMeters);
-          
-          onSearch({
-            bottom_left_lat: bottomLeft.lat,
-            bottom_left_lng: bottomLeft.lng,
-            top_right_lat: topRight.lat,
-            top_right_lng: topRight.lng,
-            exact_address: geocodeResult.address // Pass the exact address for matching
-          }, geocodeResult.address);
-        } else {
-          // Just for schools
-          onSearch({
-            lat: coordinates.lat,
-            lon: coordinates.lng
-          }, geocodeResult.address);
-        }
-      } else {
+      // Different handling for different search types
+      if (searchType === "property-research") {
+        // For property research, we pass the exact coordinates
+        console.log(`Property research coordinates: (${coordinates.lat}, ${coordinates.lng})`);
+        onSearch({
+          coordinates,
+          address: geocodeResult.address
+        }, geocodeResult.address);
+      } 
+      else if (searchType === "schools") {
+        // Just for schools
+        onSearch({
+          lat: coordinates.lat,
+          lon: coordinates.lng
+        }, geocodeResult.address);
+      }
+      else if (searchType === "zoning" || searchType === "census") {
         // For zoning and census
         onSearch(geocodeResult.address, geocodeResult.address);
       }
-      return;
+      else if (searchType === "permits") {
+        // For permit searches, we use a very small bounding box
+        const radiusInMeters = 10; // Very small radius (10 meters) to get exact matches only
+        const { bottomLeft, topRight } = createBoundingBox(coordinates, radiusInMeters);
+        
+        onSearch({
+          bottom_left_lat: bottomLeft.lat,
+          bottom_left_lng: bottomLeft.lng,
+          top_right_lat: topRight.lat,
+          top_right_lng: topRight.lng,
+          exact_address: geocodeResult.address // Pass the exact address for matching
+        }, geocodeResult.address);
+      }
+    } catch (error) {
+      console.error(`Error in ${searchType} search:`, error);
+      toast.error("Search failed", {
+        description: `There was a problem with the ${searchType} search. Please try again.`
+      });
     }
-    
-    // For permit searches, we use geocoding and a very small bounding box
-    const geocodeResult = await geocodeAddress(address.trim());
-    
-    if (!geocodeResult) return; // Error is already handled in geocodeAddress
-    
-    const { coordinates } = geocodeResult;
-    toast.success(`Address found: ${geocodeResult.address}`, {
-      description: `Searching for ${searchType} at this address...`
-    });
-    
-    // Create a very small bounding box around the exact coordinates
-    const radiusInMeters = 10; // Very small radius (10 meters) to get exact matches only
-    const { bottomLeft, topRight } = createBoundingBox(coordinates, radiusInMeters);
-    
-    onSearch({
-      bottom_left_lat: bottomLeft.lat,
-      bottom_left_lng: bottomLeft.lng,
-      top_right_lat: topRight.lat,
-      top_right_lng: topRight.lng,
-      exact_address: geocodeResult.address // Pass the exact address for matching
-    }, geocodeResult.address);
   };
 
   return (

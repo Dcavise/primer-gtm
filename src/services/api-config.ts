@@ -10,8 +10,9 @@ export async function getApiKey(keyType: 'zoneomics' | 'census' | 'google_maps' 
   try {
     console.log(`Fetching ${keyType} API key from Supabase edge function`);
     
-    // Try POST method first (which is the recommended approach)
     try {
+      // Try POST method first (which is the recommended approach)
+      console.log(`Using POST method for fetching ${keyType} API key`);
       const { data, error } = await supabase.functions.invoke('get-api-keys', {
         body: { key: keyType }
       });
@@ -22,6 +23,7 @@ export async function getApiKey(keyType: 'zoneomics' | 'census' | 'google_maps' 
       }
 
       if (!data || !data.key) {
+        console.error(`No API key data returned for ${keyType}:`, data);
         throw new Error(`No API key returned for ${keyType}`);
       }
 
@@ -45,6 +47,7 @@ export async function getApiKey(keyType: 'zoneomics' | 'census' | 'google_maps' 
       }
       
       if (!data || !data.key) {
+        console.error(`No API key returned for ${keyType} using GET method:`, data);
         throw new Error(`No API key returned for ${keyType} using GET method`);
       }
       
