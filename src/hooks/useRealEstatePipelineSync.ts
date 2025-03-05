@@ -151,9 +151,10 @@ export const useRealEstatePipelineSync = () => {
     
     try {
       toast.info("Starting Real Estate Pipeline sync...");
-      console.log("Invoking sync-real-estate-pipeline function");
+      console.log("Invoking sync-real-estate-pipeline-v2 function");
       
-      const { data, error } = await supabase.functions.invoke('sync-real-estate-pipeline');
+      // Use the new v2 function
+      const { data, error } = await supabase.functions.invoke('sync-real-estate-pipeline-v2');
       
       console.log("Edge function response:", data);
       

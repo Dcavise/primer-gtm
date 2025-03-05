@@ -9,11 +9,11 @@ import {
   DialogHeader,
   DialogTitle 
 } from '@/components/ui/dialog';
-import { Loader2, RefreshCw, Info } from 'lucide-react';
+import { Loader2, RefreshCw, Info, Database } from 'lucide-react';
 
 // Google API constants (must match the ones in the edge function)
 const SPREADSHEET_ID = "1sNaNYFCYEEPmh8t_uISJ9av2HatheCdce3ssRkgOFYU";
-const SHEET_RANGE = "Sheet1!A1:Z";
+const SHEET_RANGE = "Sheet1!A1:Z1000";
 
 interface RealEstatePipelineSyncProps {
   isOpen: boolean;
@@ -44,6 +44,11 @@ export const RealEstatePipelineSync: React.FC<RealEstatePipelineSyncProps> = ({
         </DialogHeader>
         
         <div className="py-4">
+          <div className="flex items-center gap-2 mb-3 bg-blue-50 text-blue-700 p-2 rounded-md text-sm">
+            <Database className="h-4 w-4" />
+            <span className="font-medium">Using v2 Sync Implementation</span>
+          </div>
+          
           <p className="text-sm mb-4">
             This will pull the latest real estate pipeline data from Google Sheets 
             and update the database. The process may take a few moments to complete.
@@ -52,7 +57,7 @@ export const RealEstatePipelineSync: React.FC<RealEstatePipelineSyncProps> = ({
           <div className="text-xs p-3 bg-blue-50 rounded-md text-blue-700 mb-4">
             <div className="flex items-center mb-1">
               <Info className="h-4 w-4 mr-1" />
-              <span className="font-semibold">Info:</span>
+              <span className="font-semibold">Sync Information:</span>
             </div>
             <p>Spreadsheet ID: <code className="bg-blue-100 px-1 rounded">{SPREADSHEET_ID}</code></p>
             <p>Sheet Range: <code className="bg-blue-100 px-1 rounded">{SHEET_RANGE}</code></p>
@@ -66,6 +71,17 @@ export const RealEstatePipelineSync: React.FC<RealEstatePipelineSyncProps> = ({
                 View Google Sheet
               </a>
             </p>
+          </div>
+          
+          <div className="text-xs p-3 bg-gray-50 rounded-md text-gray-700 mb-4">
+            <p className="font-medium mb-1">How the v2 sync works:</p>
+            <ol className="list-decimal list-inside space-y-1">
+              <li>Clears existing database records</li>
+              <li>Fetches all data from Google Sheets</li>
+              <li>Maps columns correctly (exact matches + case insensitive)</li>
+              <li>Converts data types (booleans, numbers)</li>
+              <li>Inserts all records in a single operation</li>
+            </ol>
           </div>
           
           {isSyncing && (
