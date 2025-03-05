@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import MapEmbed from '@/components/MapEmbed';
 import { Input } from '@/components/ui/input';
+import StageProgressBar, { Stage } from '@/components/StageProgressBar';
 import { 
   ArrowLeft, 
   MapPin, 
@@ -117,6 +118,33 @@ const PropertyDetail: React.FC = () => {
 
   const handleBackClick = () => {
     navigate('/real-estate-pipeline');
+  };
+
+  const getProgressStages = (): Stage[] => {
+    if (!property || !property.phase) return [];
+    
+    const allPhases: string[] = [
+      '0. New Site',
+      '1. Initial Diligence',
+      '2. Survey',
+      '3. Test Fit',
+      '4. Plan Production',
+      '5. Permitting',
+      '6. Construction',
+      '7. Set Up'
+    ];
+    
+    const currentPhaseIndex = allPhases.findIndex(
+      phase => property.phase && property.phase.includes(phase)
+    );
+    
+    if (currentPhaseIndex === -1) return [];
+    
+    return allPhases.map((phase, index) => ({
+      name: phase.split('. ')[1] || phase,
+      isCompleted: index < currentPhaseIndex,
+      isCurrent: index === currentPhaseIndex
+    }));
   };
 
   const handleFileUploadComplete = () => {
@@ -383,6 +411,8 @@ const PropertyDetail: React.FC = () => {
     );
   }
 
+  const progressStages = getProgressStages();
+
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-gradient-to-r from-blue-600 to-blue-500 text-white py-6 px-6">
@@ -406,6 +436,10 @@ const PropertyDetail: React.FC = () => {
         <Button variant="outline" onClick={handleBackClick} className="mb-6">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Pipeline
         </Button>
+        
+        {progressStages.length > 0 && (
+          <StageProgressBar stages={progressStages} />
+        )}
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
