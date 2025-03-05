@@ -61,31 +61,31 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
     fetchApiKey();
   }, []);
 
-  // Geocode the address to get coordinates
+  // Geocode the address to get coordinates using the geocode-address edge function
   useEffect(() => {
-    if (!apiKey || !address) return;
+    if (!address) return;
     
     const geocodeAddress = async () => {
       try {
-        const encodedAddress = encodeURIComponent(address);
-        const response = await fetch(
-          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${apiKey}`
-        );
+        // Use the dedicated geocode-address edge function instead of direct API call
+        const { data, error } = await supabase.functions.invoke('geocode-address', {
+          body: { address }
+        });
         
-        if (!response.ok) {
-          throw new Error(`Geocoding failed: ${response.status}`);
+        if (error) {
+          console.error('Error geocoding address:', error);
+          setError('Failed to geocode address');
+          setIsLoading(false);
+          return;
         }
         
-        const data = await response.json();
-        
-        if (data.status !== 'OK' || !data.results || data.results.length === 0) {
+        if (!data || !data.coordinates) {
           setError(`Could not find coordinates for address: ${address}`);
           setIsLoading(false);
           return;
         }
         
-        const location = data.results[0].geometry.location;
-        setCoordinates({ lat: location.lat, lng: location.lng });
+        setCoordinates(data.coordinates);
       } catch (error) {
         console.error('Error geocoding address:', error);
         setError('Error finding location coordinates');
@@ -98,7 +98,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
     };
     
     geocodeAddress();
-  }, [apiKey, address]);
+  }, [address]);
 
   // Load the Google Maps JS API and render the map
   useEffect(() => {
