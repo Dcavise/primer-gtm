@@ -134,6 +134,7 @@ export type Database = {
           lead_id: string
           opportunity_id: string
           opportunity_name: string | null
+          preferred_campus: string | null
           stage: string | null
           updated_at: string
         }
@@ -145,6 +146,7 @@ export type Database = {
           lead_id: string
           opportunity_id: string
           opportunity_name?: string | null
+          preferred_campus?: string | null
           stage?: string | null
           updated_at?: string
         }
@@ -156,6 +158,7 @@ export type Database = {
           lead_id?: string
           opportunity_id?: string
           opportunity_name?: string | null
+          preferred_campus?: string | null
           stage?: string | null
           updated_at?: string
         }

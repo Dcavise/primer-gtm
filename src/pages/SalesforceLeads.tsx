@@ -41,7 +41,8 @@ export function SalesforceLeadsPage() {
         ...lead,
         is_converted: lead.converted,
         converted_account_id: lead.converted_account_id || null,
-        converted_contact_id: lead.converted_contact_id || null
+        converted_contact_id: lead.converted_contact_id || null,
+        converted_opportunity_id: lead.converted_opportunity_id || null
       }));
       
       setLeads(typedLeads);
