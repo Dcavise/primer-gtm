@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { useGoogleMapsScript } from '@/hooks/useGoogleMapsScript';
 import { geocodeAddress } from '@/services/geocoding-service';
 import GoogleMapRenderer from '@/components/maps/GoogleMapRenderer';
+import { toast } from 'sonner';
 
 interface GoogleMapProps {
   address: string;
@@ -27,28 +28,41 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   
   // Load Google Maps API script
   const { isLoaded, isLoading: isScriptLoading, error: scriptError } = useGoogleMapsScript({
-    libraries: ['maps', 'marker'],
+    libraries: ['maps', 'places'],
     mapId
   });
   
   // Geocode the address
   useEffect(() => {
-    if (!address) return;
+    if (!address) {
+      setIsGeocodingLoading(false);
+      setGeocodeError('No address provided');
+      return;
+    }
     
     const handleGeocoding = async () => {
       try {
+        console.log(`Starting geocoding for address: ${address}`);
         setIsGeocodingLoading(true);
         const result = await geocodeAddress(address);
         
         if (result.coordinates) {
+          console.log(`Geocoding successful: ${JSON.stringify(result.coordinates)}`);
           setCoordinates(result.coordinates);
           setGeocodeError(null);
         } else {
+          console.error(`Geocoding error: ${result.error}`);
           setGeocodeError(result.error || 'Could not find coordinates for address');
+          toast.error('Location error', { 
+            description: result.error || 'Could not determine coordinates for this address'
+          });
         }
       } catch (error) {
         console.error('Error in geocoding process:', error);
         setGeocodeError('Error finding location coordinates');
+        toast.error('Location error', { 
+          description: 'Could not determine coordinates for this address'
+        });
       } finally {
         setIsGeocodingLoading(false);
       }
@@ -56,6 +70,18 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
     
     handleGeocoding();
   }, [address]);
+  
+  // Debug logging for component state
+  useEffect(() => {
+    console.log('GoogleMap component state:', { 
+      isLoaded, 
+      isScriptLoading, 
+      scriptError,
+      coordinates,
+      geocodeError,
+      isGeocodingLoading
+    });
+  }, [isLoaded, isScriptLoading, scriptError, coordinates, geocodeError, isGeocodingLoading]);
   
   // Combine errors from different sources
   const error = scriptError || geocodeError;

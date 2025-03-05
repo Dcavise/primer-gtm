@@ -17,10 +17,24 @@ export function useGoogleMapsScript(options: GoogleMapsScriptOptions = {}) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
+  // Check if Google Maps is already loaded
+  useEffect(() => {
+    if (window.google && window.google.maps) {
+      console.log("Google Maps already loaded");
+      setIsLoaded(true);
+      setIsLoading(false);
+      return;
+    }
+  }, []);
+
   // Fetch the Google Maps API key from Supabase Edge Function
   useEffect(() => {
+    // Skip if already loaded or already fetching
+    if (isLoaded || apiKey) return;
+    
     const fetchApiKey = async () => {
       try {
+        console.log("Fetching Google Maps API key");
         const { data, error } = await supabase.functions.invoke('get-api-keys', {
           body: { key: 'maps_platform_api' }
         });
@@ -36,11 +50,13 @@ export function useGoogleMapsScript(options: GoogleMapsScriptOptions = {}) {
         }
         
         if (!data || !data.key) {
+          console.error('No API key returned');
           setError('No API key returned');
           setIsLoading(false);
           return;
         }
         
+        console.log("API key retrieved successfully");
         setApiKey(data.key);
       } catch (error) {
         console.error('Error in fetchApiKey:', error);
@@ -50,16 +66,17 @@ export function useGoogleMapsScript(options: GoogleMapsScriptOptions = {}) {
     };
     
     fetchApiKey();
-  }, []);
+  }, [isLoaded, apiKey]);
   
   // Load the Google Maps JS API
   useEffect(() => {
-    if (!apiKey) return;
+    if (!apiKey || isLoaded) return;
     
     // Function to handle script loading
     const loadGoogleMapsScript = () => {
       // Check if the script is already loaded
       if (window.google && window.google.maps) {
+        console.log("Google Maps already loaded (check in load effect)");
         setIsLoaded(true);
         setIsLoading(false);
         return;
@@ -74,6 +91,8 @@ export function useGoogleMapsScript(options: GoogleMapsScriptOptions = {}) {
       // Build libraries parameter
       const libraries = options.libraries || ['maps', 'marker'];
       
+      console.log("Loading Google Maps script with API key");
+      
       // Create a new script element
       const script = document.createElement('script');
       script.id = 'google-maps-script';
@@ -83,13 +102,14 @@ export function useGoogleMapsScript(options: GoogleMapsScriptOptions = {}) {
       
       // Create a global callback function for the script
       window.initMap = () => {
+        console.log("Google Maps script loaded via callback");
         setIsLoaded(true);
         setIsLoading(false);
       };
       
       // Handle errors
-      script.onerror = () => {
-        console.error('Failed to load Google Maps JavaScript API');
+      script.onerror = (e) => {
+        console.error('Failed to load Google Maps JavaScript API', e);
         setError('Failed to load map');
         setIsLoading(false);
       };
@@ -107,7 +127,7 @@ export function useGoogleMapsScript(options: GoogleMapsScriptOptions = {}) {
         window.initMap = undefined;
       }
     };
-  }, [apiKey, options.libraries]);
+  }, [apiKey, isLoaded, options.libraries]);
   
   return { isLoading, isLoaded, error, apiKey };
 }
