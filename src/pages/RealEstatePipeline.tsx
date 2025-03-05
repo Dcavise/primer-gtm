@@ -61,19 +61,9 @@ const RealEstatePipeline: React.FC = () => {
       grouped[group] = {};
     });
     
-    // Add any custom phase groups found in the data that aren't in our predefined list
-    properties.forEach(property => {
-      const phaseGroup = property.phase_group || 'Unspecified';
-      if (!grouped[phaseGroup]) {
-        grouped[phaseGroup] = {};
-      }
-    });
-    
     // Initialize phases within each group
     PHASES.forEach(phase => {
-      // Find which group this phase belongs to based on our mapping
-      const group = PHASE_TO_GROUP[phase] || 'Unspecified';
-      
+      const group = PHASE_TO_GROUP[phase];
       if (grouped[group]) {
         grouped[group][phase] = [];
       }
@@ -84,7 +74,7 @@ const RealEstatePipeline: React.FC = () => {
       grouped[group]["Unspecified"] = [];
     });
     
-    // Now populate the groups
+    // Now populate the groups with properties
     properties.forEach(property => {
       // Use the property's phase_group if available, otherwise determine it from the phase
       let phaseGroup = property.phase_group;
@@ -150,61 +140,31 @@ const RealEstatePipeline: React.FC = () => {
 
       <main className="container mx-auto py-6">
         {/* Phase Groups */}
-        {PHASE_GROUPS.map((phaseGroup) => (
-          groupedProperties[phaseGroup] && Object.keys(groupedProperties[phaseGroup]).length > 0 && (
+        {PHASE_GROUPS.map((phaseGroup) => {
+          // Get all phases for this group
+          const phasesByGroup = PHASES.filter(phase => PHASE_TO_GROUP[phase] === phaseGroup);
+          
+          // Only display groups that have defined phases
+          if (phasesByGroup.length === 0) return null;
+          
+          return (
             <div key={phaseGroup} className="mb-8">
               <h2 className="text-xl font-semibold mb-4 pb-2 border-b">{phaseGroup}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-                {Object.entries(groupedProperties[phaseGroup])
-                  .sort(([phaseA], [phaseB]) => {
-                    // Sort columns according to the predefined order
-                    const indexA = PHASES.indexOf(phaseA as PropertyPhase);
-                    const indexB = PHASES.indexOf(phaseB as PropertyPhase);
-                    
-                    // Place predefined phases first in order, then unknown phases, then "Unspecified" last
-                    if (indexA === -1 && indexB === -1) {
-                      // Both are custom phases, sort alphabetically
-                      return phaseA === "Unspecified" ? 1 : phaseB === "Unspecified" ? -1 : phaseA.localeCompare(phaseB);
-                    }
-                    if (indexA === -1) return 1; // phaseA is custom, place after predefined
-                    if (indexB === -1) return -1; // phaseB is custom, place after predefined
-                    return indexA - indexB; // Both are predefined, sort by index
-                  })
-                  .filter(([_, phaseProperties]) => phaseProperties.length > 0) // Only show phases with properties
-                  .map(([phase, phaseProperties]) => (
-                    <PipelineColumn
-                      key={phase}
-                      title={phase}
-                      properties={phaseProperties}
-                      onPropertyClick={handlePropertyClick}
-                    />
-                  ))
-                }
-              </div>
-            </div>
-          )
-        ))}
-
-        {/* Handle any properties with unspecified phase group */}
-        {groupedProperties['Unspecified'] && Object.values(groupedProperties['Unspecified']).flat().length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 pb-2 border-b">Unspecified</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-              {Object.entries(groupedProperties['Unspecified'])
-                .filter(([_, phaseProperties]) => phaseProperties.length > 0)
-                .map(([phase, phaseProperties]) => (
+                {phasesByGroup.map(phase => (
                   <PipelineColumn
                     key={phase}
                     title={phase}
-                    properties={phaseProperties}
+                    properties={groupedProperties[phaseGroup]?.[phase] || []}
                     onPropertyClick={handlePropertyClick}
                   />
-                ))
-              }
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })}
 
+        {/* Property Detail Dialog */}
         <PropertyDetailDialog 
           property={selectedProperty}
           open={dialogOpen}
