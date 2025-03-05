@@ -5,6 +5,7 @@ import { DashboardHeader } from '@/components/salesforce/DashboardHeader';
 import { CampusSelector } from '@/components/salesforce/CampusSelector';
 import { StatsCardGrid } from '@/components/salesforce/StatsCardGrid';
 import { SyncErrorAlert } from '@/components/salesforce/SyncErrorAlert';
+import { MetricsDashboard } from '@/components/salesforce/MetricsDashboard';
 
 const SalesforceLeadsPage: React.FC = () => {
   const [selectedCampusId, setSelectedCampusId] = useState<string | null>(null);
@@ -15,6 +16,8 @@ const SalesforceLeadsPage: React.FC = () => {
     employmentStatusCounts,
     weeklyLeadCounts,
     opportunityStageCounts,
+    leadsMetrics,
+    opportunityMetrics,
     campuses,
     syncLoading,
     syncError,
@@ -50,6 +53,12 @@ const SalesforceLeadsPage: React.FC = () => {
         weeklyLeadCounts={weeklyLeadCounts}
         opportunityStageCounts={opportunityStageCounts}
         selectedCampusId={selectedCampusId}
+        selectedCampusName={selectedCampusName}
+      />
+      
+      <MetricsDashboard
+        leadsMetrics={leadsMetrics}
+        opportunityMetrics={opportunityMetrics}
         selectedCampusName={selectedCampusName}
       />
     </div>

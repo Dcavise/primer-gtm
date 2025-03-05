@@ -3,15 +3,35 @@ import { useState } from 'react';
 import { useStats } from './salesforce/useStats';
 import { useCampuses } from './salesforce/useCampuses';
 import { useSyncSalesforce } from './salesforce/useSyncSalesforce';
-import { SummaryStats, Campus, SyncStatus, EmploymentStatusCount, WeeklyLeadCount, OpportunityStageCount } from './salesforce/types';
+import { useMetrics } from './salesforce/useMetrics';
+import { 
+  SummaryStats, 
+  Campus, 
+  SyncStatus, 
+  EmploymentStatusCount, 
+  WeeklyLeadCount, 
+  OpportunityStageCount,
+  LeadsMetricsData,
+  OpportunityMetricsData
+} from './salesforce/types';
 
-export type { SummaryStats, Campus, SyncStatus, EmploymentStatusCount, WeeklyLeadCount, OpportunityStageCount };
+export type { 
+  SummaryStats, 
+  Campus, 
+  SyncStatus, 
+  EmploymentStatusCount, 
+  WeeklyLeadCount, 
+  OpportunityStageCount,
+  LeadsMetricsData,
+  OpportunityMetricsData
+};
 
 export const useSalesforceData = (selectedCampusId: string | null) => {
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
   
   const { stats, employmentStatusCounts, weeklyLeadCounts, opportunityStageCounts, fetchStats } = useStats(selectedCampusId);
   const { campuses, fetchCampuses } = useCampuses();
+  const { leadsMetrics, opportunityMetrics } = useMetrics(selectedCampusId);
   const { syncLoading, syncError, syncStatus, syncSalesforceData } = useSyncSalesforce(() => {
     fetchStats();
     fetchCampuses();
@@ -23,6 +43,8 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
     employmentStatusCounts,
     weeklyLeadCounts,
     opportunityStageCounts,
+    leadsMetrics,
+    opportunityMetrics,
     campuses,
     syncLoading,
     syncError,
