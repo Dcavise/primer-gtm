@@ -52,6 +52,12 @@ export async function initializeMapboxToken(): Promise<boolean> {
     
     // Set the token for the entire mapboxgl instance
     mapboxgl.accessToken = token;
+    
+    // Set the worker URL for CSP compatibility
+    if (typeof mapboxgl.workerUrl === 'undefined') {
+      mapboxgl.workerUrl = "https://api.mapbox.com/mapbox-gl-js/v3.10.0/mapbox-gl-csp-worker.js";
+    }
+    
     console.log("Successfully initialized Mapbox token");
     tokenInitialized = true;
     return true;
