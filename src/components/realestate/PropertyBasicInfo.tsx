@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Edit, Save, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -36,7 +35,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
   // Individual field edit states
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
-  // Changed the type to Record<string, string | null> to handle properties that might be null
+  // Update type to include PropertyPhase
   const [fieldValues, setFieldValues] = useState<Record<string, string | null | PropertyPhase>>({});
 
   // Initialize field values when property changes
@@ -56,12 +55,34 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
 
   const handleEditField = (fieldName: string) => {
     setEditingFields(prev => ({ ...prev, [fieldName]: true }));
-    setFieldValues(prev => ({ ...prev, [fieldName]: property[fieldName as keyof RealEstateProperty] || '' }));
+    // Type assertion for phase field
+    if (fieldName === 'phase') {
+      setFieldValues(prev => ({ 
+        ...prev, 
+        [fieldName]: property.phase || '' as PropertyPhase | ''
+      }));
+    } else {
+      setFieldValues(prev => ({ 
+        ...prev, 
+        [fieldName]: property[fieldName as keyof RealEstateProperty] || '' 
+      }));
+    }
   };
 
   const handleCancelField = (fieldName: string) => {
     setEditingFields(prev => ({ ...prev, [fieldName]: false }));
-    setFieldValues(prev => ({ ...prev, [fieldName]: property[fieldName as keyof RealEstateProperty] || '' }));
+    // Type assertion for phase field
+    if (fieldName === 'phase') {
+      setFieldValues(prev => ({ 
+        ...prev, 
+        [fieldName]: property.phase || '' as PropertyPhase | ''
+      }));
+    } else {
+      setFieldValues(prev => ({ 
+        ...prev, 
+        [fieldName]: property[fieldName as keyof RealEstateProperty] || '' 
+      }));
+    }
   };
 
   const handleFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {

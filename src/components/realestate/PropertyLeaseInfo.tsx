@@ -31,7 +31,7 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
   // Individual field edit states
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
-  // Changed the type to Record<string, string | null> to handle properties that might be null
+  // Use more specific type for field values
   const [fieldValues, setFieldValues] = useState<Record<string, string | null>>({});
 
   // Initialize field values when property changes
@@ -46,12 +46,18 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
 
   const handleEditField = (fieldName: string) => {
     setEditingFields(prev => ({ ...prev, [fieldName]: true }));
-    setFieldValues(prev => ({ ...prev, [fieldName]: property[fieldName as keyof RealEstateProperty] || '' }));
+    setFieldValues(prev => ({ 
+      ...prev, 
+      [fieldName]: property[fieldName as keyof RealEstateProperty] || '' 
+    }));
   };
 
   const handleCancelField = (fieldName: string) => {
     setEditingFields(prev => ({ ...prev, [fieldName]: false }));
-    setFieldValues(prev => ({ ...prev, [fieldName]: property[fieldName as keyof RealEstateProperty] || '' }));
+    setFieldValues(prev => ({ 
+      ...prev, 
+      [fieldName]: property[fieldName as keyof RealEstateProperty] || '' 
+    }));
   };
 
   const handleFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {

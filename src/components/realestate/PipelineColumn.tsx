@@ -13,8 +13,15 @@ export const PipelineColumn: React.FC<PipelineColumnProps> = ({
   title,
   properties
 }) => {
-  // Cast title to PropertyPhase for the color class function
-  const phaseColorClass = getPhaseColorClass(title as PropertyPhase);
+  // Cast title to PropertyPhase for the color class function if it's a valid phase
+  const isValidPhase = (title: string): title is PropertyPhase => {
+    return ['0. New Site', '1. Initial Diligence', '2. Survey', '3. Test Fit', 
+            '4. Plan Production', '5. Permitting', '6. Construction', '7. Set Up', 
+            'Hold', 'Deprioritize'].includes(title);
+  };
+  
+  const phaseForColor = isValidPhase(title) ? title : '0. New Site' as PropertyPhase;
+  const phaseColorClass = getPhaseColorClass(phaseForColor);
   const textColorClass = title === '0. New Site' ? 'text-gray-800' : 'text-white';
 
   return (
