@@ -1,62 +1,85 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle 
+} from '@/components/ui/dialog';
 import { Loader2, RefreshCw } from 'lucide-react';
-import useRealEstatePipelineSync from '@/hooks/useRealEstatePipelineSync';
-import SyncStatusDisplay from './RealEstatePipeline/SyncStatusDisplay';
-import SyncErrorAlert from './RealEstatePipeline/SyncErrorAlert';
-import SyncStatsInfo from './RealEstatePipeline/SyncStatsInfo';
 
-export const RealEstatePipelineSync: React.FC = () => {
-  const { syncStats, syncRealEstateData } = useRealEstatePipelineSync();
+interface RealEstatePipelineSyncProps {
+  isOpen: boolean;
+  onClose: () => void;
+  startSync: () => void;
+  stopSync: () => void;
+  isSyncing: boolean;
+}
 
+export const RealEstatePipelineSync: React.FC<RealEstatePipelineSyncProps> = ({
+  isOpen,
+  onClose,
+  startSync,
+  stopSync,
+  isSyncing
+}) => {
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-xl">Real Estate Pipeline Sync</CardTitle>
-        <CardDescription>
-          Sync real estate pipeline data from Google Sheets to the database
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {syncStats.error && <SyncErrorAlert error={syncStats.error} />}
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Sync Real Estate Pipeline</DialogTitle>
+          <DialogDescription>
+            Sync real estate pipeline data from Google Sheets to the database
+          </DialogDescription>
+        </DialogHeader>
         
-        <div className="flex flex-col gap-2">
-          <div className="flex justify-between text-sm items-center">
-            <span className="text-muted-foreground">Status:</span>
-            <SyncStatusDisplay 
-              status={syncStats.status} 
-              lastSynced={syncStats.lastSynced} 
-            />
-          </div>
+        <div className="py-4">
+          <p className="text-sm mb-4">
+            This will pull the latest real estate pipeline data from Google Sheets 
+            and update the database. The process may take a few moments to complete.
+          </p>
           
-          <SyncStatsInfo 
-            lastSynced={syncStats.lastSynced}
-            syncedRecords={syncStats.syncedRecords}
-          />
-        </div>
-      </CardContent>
-      <CardFooter>
-        <Button 
-          onClick={syncRealEstateData} 
-          disabled={syncStats.status === 'syncing'}
-          className="w-full"
-        >
-          {syncStats.status === 'syncing' ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Syncing...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Sync Now
-            </>
+          {isSyncing && (
+            <div className="flex items-center justify-center p-4 bg-blue-50 rounded-md text-blue-700">
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              <span>Syncing data, please wait...</span>
+            </div>
           )}
-        </Button>
-      </CardFooter>
-    </Card>
+        </div>
+        
+        <DialogFooter className="flex sm:justify-between">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={isSyncing}
+          >
+            Cancel
+          </Button>
+          
+          {isSyncing ? (
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={stopSync}
+            >
+              Stop Sync
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              onClick={startSync}
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Start Sync
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

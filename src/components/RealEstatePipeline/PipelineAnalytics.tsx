@@ -9,10 +9,23 @@ import PropertyMarketChart from './PropertyMarketChart';
 type RealEstateProperty = Tables<'real_estate_pipeline'>;
 
 interface PipelineAnalyticsProps {
-  properties: RealEstateProperty[];
+  pipelineAnalytics: RealEstateProperty[];
 }
 
-export const PipelineAnalytics: React.FC<PipelineAnalyticsProps> = ({ properties }) => {
+export const PipelineAnalytics: React.FC<PipelineAnalyticsProps> = ({ pipelineAnalytics }) => {
+  if (!pipelineAnalytics || pipelineAnalytics.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Pipeline Analytics</CardTitle>
+          <CardDescription>
+            No data available. Please sync data to view analytics.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+  
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <Card>
@@ -23,7 +36,7 @@ export const PipelineAnalytics: React.FC<PipelineAnalyticsProps> = ({ properties
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <PropertyStatusChart properties={properties} />
+          <PropertyStatusChart properties={pipelineAnalytics} />
         </CardContent>
       </Card>
       
@@ -35,7 +48,7 @@ export const PipelineAnalytics: React.FC<PipelineAnalyticsProps> = ({ properties
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <PropertyMarketChart properties={properties} />
+          <PropertyMarketChart properties={pipelineAnalytics} />
         </CardContent>
       </Card>
       
@@ -47,7 +60,7 @@ export const PipelineAnalytics: React.FC<PipelineAnalyticsProps> = ({ properties
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <PropertyPhaseChart properties={properties} />
+          <PropertyPhaseChart properties={pipelineAnalytics} />
         </CardContent>
       </Card>
     </div>
