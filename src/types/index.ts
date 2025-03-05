@@ -1,4 +1,3 @@
-
 export interface Coordinates {
   lat: number;
   lng: number;
@@ -95,22 +94,20 @@ export interface Fellow {
 }
 
 // Enhanced Salesforce types based on the Salesforce schema
-export interface SalesforceAccount {
+export interface SalesforceLead {
   id: string;
-  account_id: string;
-  account_name: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface SalesforceContact {
-  id: string;
-  contact_id: string;
-  account_id: string | null;
+  lead_id: string;
   first_name: string | null;
   last_name: string;
-  email: string | null;
-  created_at: string;
+  created_date: string | null;
+  converted_date: string | null;
+  converted: boolean | null;
+  is_converted?: boolean | null;
+  stage: string | null;
+  lead_source: string | null;
+  preferred_campus: string | null;
+  campus_id: string | null;
+  converted_opportunity_id: string | null;
   updated_at: string;
 }
 
@@ -123,25 +120,6 @@ export interface SalesforceOpportunity {
   opportunity_name: string | null;
   close_date: string | null;
   created_at: string;
-  updated_at: string;
-}
-
-export interface SalesforceLead {
-  id: string;
-  lead_id: string;
-  first_name: string | null;
-  last_name: string;
-  created_date: string | null;
-  converted_date: string | null;
-  converted: boolean | null;
-  is_converted: boolean | null;
-  stage: string | null;
-  lead_source: string | null;
-  preferred_campus: string | null;
-  campus_id: string | null;
-  converted_account_id: string | null;
-  converted_contact_id: string | null;
-  converted_opportunity_id: string | null;
   updated_at: string;
 }
 

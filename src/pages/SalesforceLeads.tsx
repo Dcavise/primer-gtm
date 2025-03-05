@@ -1,20 +1,19 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { RefreshCw, AlertCircle, Info, ArrowDown, ArrowUp, DollarSign } from "lucide-react";
+import { RefreshCw, AlertCircle, Info } from "lucide-react";
 import { LoadingState } from "@/components/LoadingState";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SalesforceOpportunity, SalesforceAccount, SalesforceContact, SalesforceLead } from "@/types";
+import { SalesforceOpportunity, SalesforceLead } from "@/types";
 
 export function SalesforceLeadsPage() {
   const [leads, setLeads] = useState<SalesforceLead[]>([]);
   const [opportunities, setOpportunities] = useState<SalesforceOpportunity[]>([]);
-  const [accounts, setAccounts] = useState<SalesforceAccount[]>([]);
-  const [contacts, setContacts] = useState<SalesforceContact[]>([]);
   const [loading, setLoading] = useState(false);
   const [opportunitiesLoading, setOpportunitiesLoading] = useState(false);
   const [syncLoading, setSyncLoading] = useState(false);
@@ -37,14 +36,7 @@ export function SalesforceLeadsPage() {
       
       if (error) throw error;
       
-      const typedLeads: SalesforceLead[] = data.map(lead => ({
-        ...lead,
-        is_converted: lead.converted,
-        converted_account_id: null, // Add required properties that might not be in DB yet
-        converted_contact_id: null
-      }));
-      
-      setLeads(typedLeads);
+      setLeads(data);
       
       if (data && data.length > 0) {
         const mostRecent = new Date(Math.max(...data.map(l => new Date(l.updated_at).getTime())));
@@ -68,35 +60,7 @@ export function SalesforceLeadsPage() {
       
       if (oppsError) throw oppsError;
       
-      setOpportunities(oppsData as SalesforceOpportunity[] || []);
-      
-      // Try to fetch accounts table if it exists
-      try {
-        // For now, we'll handle the case where these tables don't exist yet
-        // without showing error messages, as they're expected to be created later
-        const { data: accountsData } = await supabase
-          .from('salesforce_accounts')
-          .select('*');
-        
-        if (accountsData) {
-          setAccounts(accountsData as SalesforceAccount[]);
-        }
-      } catch (e) {
-        console.log('salesforce_accounts table may not exist yet');
-      }
-      
-      // Try to fetch contacts table if it exists
-      try {
-        const { data: contactsData } = await supabase
-          .from('salesforce_contacts')
-          .select('*');
-        
-        if (contactsData) {
-          setContacts(contactsData as SalesforceContact[]);
-        }
-      } catch (e) {
-        console.log('salesforce_contacts table may not exist yet');
-      }
+      setOpportunities(oppsData || []);
       
       if (oppsData && oppsData.length > 0) {
         const mostRecent = new Date(Math.max(...oppsData.map(o => new Date(o.updated_at).getTime())));
@@ -129,13 +93,9 @@ export function SalesforceLeadsPage() {
         throw new Error(response.data.error || 'Sync operation failed');
       }
       
-      const syncedAccounts = response.data.accounts || 0;
-      const syncedContacts = response.data.contacts || 0;
-      
-      toast.success(`Successfully synced ${response.data.synced || 0} leads, matched ${response.data.matched || 0} with campuses, and synced ${syncedAccounts} accounts and ${syncedContacts} contacts`);
+      toast.success(`Successfully synced ${response.data.synced || 0} leads, matched ${response.data.matched || 0} with campuses`);
       
       await fetchLeads();
-      await fetchOpportunities();
     } catch (error: any) {
       console.error('Error syncing Salesforce leads:', error);
       const errorMessage = error.message || 'Unknown error occurred';
@@ -196,29 +156,13 @@ export function SalesforceLeadsPage() {
     return new Date(dateString).toLocaleDateString();
   };
 
-  const formatCurrency = (amount: number | null) => {
-    if (amount === null || amount === undefined) return '-';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
-
-  const getAccountName = (accountId: string | null) => {
-    if (!accountId) return '-';
-    const account = accounts.find(a => a.account_id === accountId);
-    return account ? account.account_name : accountId;
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-gradient-to-r from-blue-600 to-blue-500 text-white py-8 px-6">
         <div className="container mx-auto max-w-5xl">
           <h1 className="text-2xl md:text-3xl font-semibold">Salesforce Data</h1>
           <p className="text-white/80 mt-2">
-            View Salesforce leads, accounts, contacts, and opportunities that correspond to a campus
+            View Salesforce leads and opportunities that match our campuses
           </p>
           <div className="mt-4">
             <Button asChild variant="secondary" className="mr-2">
@@ -302,74 +246,44 @@ export function SalesforceLeadsPage() {
                             <TableHead>Preferred Campus</TableHead>
                             <TableHead>Matched Campus</TableHead>
                             <TableHead>Converted</TableHead>
-                            <TableHead>Opportunity</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {leads.length === 0 ? (
                             <TableRow>
-                              <TableCell colSpan={8} className="text-center h-24 text-muted-foreground">
+                              <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
                                 No matched leads data available
                               </TableCell>
                             </TableRow>
                           ) : (
-                            leads.map((lead) => {
-                              const opportunity = opportunities.find(
-                                o => o.opportunity_id === lead.converted_opportunity_id
-                              );
-
-                              return (
-                                <TableRow key={lead.id}>
-                                  <TableCell className="font-medium">
-                                    {lead.first_name ? `${lead.first_name} ${lead.last_name}` : lead.last_name}
-                                  </TableCell>
-                                  <TableCell>{formatDate(lead.created_date)}</TableCell>
-                                  <TableCell>{lead.stage || '-'}</TableCell>
-                                  <TableCell>{lead.lead_source || '-'}</TableCell>
-                                  <TableCell>{lead.preferred_campus || '-'}</TableCell>
-                                  <TableCell>
-                                    {lead.campus_id ? (
-                                      <span className="font-medium text-blue-600">{lead.campus_id}</span>
-                                    ) : (
-                                      <span className="text-muted-foreground">Not matched</span>
-                                    )}
-                                  </TableCell>
-                                  <TableCell>
-                                    {lead.converted || lead.is_converted ? (
-                                      <div className="flex items-center">
-                                        <span className="h-2 w-2 rounded-full bg-green-500 mr-2"></span>
-                                        {formatDate(lead.converted_date)}
-                                      </div>
-                                    ) : (
-                                      <span className="text-muted-foreground">No</span>
-                                    )}
-                                  </TableCell>
-                                  <TableCell>
-                                    {lead.converted_opportunity_id ? (
-                                      <div>
-                                        {opportunity ? (
-                                          <div className="text-xs">
-                                            <div className="font-medium">{opportunity.opportunity_name || 'Unnamed'}</div>
-                                            <div className="text-muted-foreground">
-                                              {opportunity.stage} {opportunity.actualized_tuition ? 
-                                                <span className="text-green-600 font-medium">
-                                                  ({formatCurrency(opportunity.actualized_tuition)})
-                                                </span> : ''}
-                                            </div>
-                                          </div>
-                                        ) : (
-                                          <span className="text-xs text-muted-foreground">
-                                            {lead.converted_opportunity_id.substring(0, 10)}...
-                                          </span>
-                                        )}
-                                      </div>
-                                    ) : (
-                                      <span className="text-muted-foreground">-</span>
-                                    )}
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })
+                            leads.map((lead) => (
+                              <TableRow key={lead.id}>
+                                <TableCell className="font-medium">
+                                  {lead.first_name ? `${lead.first_name} ${lead.last_name}` : lead.last_name}
+                                </TableCell>
+                                <TableCell>{formatDate(lead.created_date)}</TableCell>
+                                <TableCell>{lead.stage || '-'}</TableCell>
+                                <TableCell>{lead.lead_source || '-'}</TableCell>
+                                <TableCell>{lead.preferred_campus || '-'}</TableCell>
+                                <TableCell>
+                                  {lead.campus_id ? (
+                                    <span className="font-medium text-blue-600">{lead.campus_id}</span>
+                                  ) : (
+                                    <span className="text-muted-foreground">Not matched</span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {lead.converted ? (
+                                    <div className="flex items-center">
+                                      <span className="h-2 w-2 rounded-full bg-green-500 mr-2"></span>
+                                      {formatDate(lead.converted_date)}
+                                    </div>
+                                  ) : (
+                                    <span className="text-muted-foreground">No</span>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))
                           )}
                         </TableBody>
                       </Table>
@@ -411,7 +325,7 @@ export function SalesforceLeadsPage() {
                 <div>
                   <CardTitle>Salesforce Opportunities</CardTitle>
                   <CardDescription>
-                    Opportunities from Salesforce connected to our leads
+                    Opportunities from Salesforce
                     {opportunitiesLastUpdated && (
                       <span className="block text-sm mt-1">
                         Last updated: {opportunitiesLastUpdated}
@@ -459,11 +373,11 @@ export function SalesforceLeadsPage() {
                     
                     <div className="rounded-md border overflow-auto max-h-[600px]">
                       <Table>
-                        <TableCaption>List of opportunities linked to leads</TableCaption>
+                        <TableCaption>List of opportunities from Salesforce</TableCaption>
                         <TableHeader>
                           <TableRow>
                             <TableHead>Opportunity Name</TableHead>
-                            <TableHead>Account</TableHead>
+                            <TableHead>Account ID</TableHead>
                             <TableHead>Stage</TableHead>
                             <TableHead>Close Date</TableHead>
                             <TableHead>Lead ID</TableHead>
@@ -483,7 +397,7 @@ export function SalesforceLeadsPage() {
                                 <TableCell className="font-medium">
                                   {opportunity.opportunity_name || 'Unnamed'}
                                 </TableCell>
-                                <TableCell>{getAccountName(opportunity.account_id)}</TableCell>
+                                <TableCell>{opportunity.account_id || '-'}</TableCell>
                                 <TableCell>
                                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                     {opportunity.stage || 'Unknown'}

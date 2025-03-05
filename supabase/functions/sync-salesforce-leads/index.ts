@@ -61,13 +61,10 @@ interface SupabaseLead {
   created_date: string | null;
   converted_date: string | null;
   converted: boolean | null;
-  is_converted: boolean | null;
   stage: string | null;
   lead_source: string | null;
   preferred_campus: string | null;
   campus_id: string | null;
-  converted_account_id: string | null;
-  converted_contact_id: string | null;
   converted_opportunity_id: string | null;
 }
 
@@ -166,7 +163,23 @@ async function fetchSalesforceLeads(token: string, instanceUrl: string): Promise
 function transformLeads(salesforceLeads: SalesforceLead[], campusNames: string[]): SupabaseLead[] {
   console.log(`Transforming ${salesforceLeads.length} Salesforce leads...`);
   
-  return salesforceLeads.map(lead => {
+  // Filter leads to only include those with preferred_campus matching a campus_name
+  const filteredLeads = salesforceLeads.filter(lead => {
+    if (!lead.Preferred_Campus__c) return false;
+    
+    // Check if preferred_campus matches (or is similar to) any campus name
+    return campusNames.some(campusName => {
+      const preferredCampusLower = lead.Preferred_Campus__c?.toLowerCase() || '';
+      const campusNameLower = campusName.toLowerCase();
+      
+      return preferredCampusLower.includes(campusNameLower) || 
+             campusNameLower.includes(preferredCampusLower);
+    });
+  });
+  
+  console.log(`Filtered to ${filteredLeads.length} leads with matching campus names`);
+  
+  return filteredLeads.map(lead => {
     const createdDate = lead.CreatedDate ? new Date(lead.CreatedDate).toISOString().split('T')[0] : null;
     const convertedDate = lead.ConvertedDate ? new Date(lead.ConvertedDate).toISOString().split('T')[0] : null;
     
@@ -180,13 +193,10 @@ function transformLeads(salesforceLeads: SalesforceLead[], campusNames: string[]
       created_date: createdDate,
       converted_date: convertedDate,
       converted: lead.IsConverted,
-      is_converted: lead.IsConverted,
       stage: stage,
       lead_source: lead.LeadSource,
       preferred_campus: preferredCampus,
       campus_id: null, // This will be linked later in a separate function
-      converted_account_id: lead.ConvertedAccountId,
-      converted_contact_id: lead.ConvertedContactId,
       converted_opportunity_id: lead.ConvertedOpportunityId
     };
   });
@@ -214,9 +224,9 @@ async function syncLeadsToSupabase(leads: SupabaseLead[]): Promise<number> {
   return data?.length || 0;
 }
 
-// Match leads with campuses using fuzzy matching
+// Match leads with campuses using exact matching to campus_name
 async function matchLeadsWithCampuses(): Promise<number> {
-  console.log("Matching leads with campuses using fuzzy matching...");
+  console.log("Matching leads with campuses using direct matching...");
   
   // Get all campuses
   const { data: campuses, error: campusError } = await supabase
@@ -252,7 +262,7 @@ async function matchLeadsWithCampuses(): Promise<number> {
   
   let matchedCount = 0;
   
-  // For each lead, try to find a matching campus using fuzzy matching
+  // For each lead, try to find a matching campus using exact or partial matching
   for (const lead of leads) {
     if (!lead.preferred_campus) continue;
     
@@ -363,193 +373,12 @@ async function clearIncorrectPreferredCampus(): Promise<number> {
   return cleanedCount;
 }
 
-// Fetch and sync account data
-async function syncSalesforceAccounts(token: string, instanceUrl: string): Promise<number> {
-  console.log("Fetching and syncing Salesforce accounts...");
-  
-  // Get all ConvertedAccountId values from leads
-  const { data: leads, error: leadsError } = await supabase
-    .from('salesforce_leads')
-    .select('converted_account_id')
-    .not('converted_account_id', 'is', null);
-  
-  if (leadsError) {
-    console.error("Error fetching leads with account IDs:", leadsError);
-    throw new Error(`Failed to fetch leads: ${leadsError.message}`);
-  }
-  
-  if (!leads || leads.length === 0) {
-    console.log("No leads with account IDs found");
-    return 0;
-  }
-  
-  // Extract unique account IDs
-  const accountIds = [...new Set(leads.map(l => l.converted_account_id).filter(Boolean))];
-  
-  if (accountIds.length === 0) {
-    console.log("No account IDs to sync");
-    return 0;
-  }
-  
-  console.log(`Found ${accountIds.length} unique account IDs to sync`);
-  
-  // Prepare a comma-separated list of account IDs enclosed in single quotes
-  const accountIdList = accountIds.map(id => `'${id}'`).join(', ');
-  
-  const query = `
-    SELECT Id, Name
-    FROM Account
-    WHERE Id IN (${accountIdList})
-    LIMIT 1000
-  `;
-  
-  console.log("SOQL Query for accounts:", query);
-  
-  const encodedQuery = encodeURIComponent(query);
-  const queryUrl = `${instanceUrl}/services/data/v58.0/query?q=${encodedQuery}`;
-  
-  const response = await fetch(queryUrl, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    }
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("Salesforce account query error:", errorText);
-    throw new Error(`Failed to fetch Salesforce accounts: ${response.status} ${errorText}`);
-  }
-
-  const data = await response.json();
-  console.log(`Retrieved ${data.records.length} accounts from Salesforce`);
-  
-  if (data.records.length === 0) {
-    return 0;
-  }
-  
-  // Transform and upsert account records
-  const accounts = data.records.map(account => ({
-    account_id: account.Id,
-    account_name: account.Name
-  }));
-  
-  const { data: syncedAccounts, error: syncError } = await supabase
-    .from('salesforce_accounts')
-    .upsert(accounts, {
-      onConflict: 'account_id',
-      ignoreDuplicates: false,
-      returning: 'minimal'
-    })
-    .select();
-  
-  if (syncError) {
-    console.error("Error syncing accounts:", syncError);
-    throw new Error(`Failed to sync accounts: ${syncError.message}`);
-  }
-  
-  return syncedAccounts?.length || 0;
-}
-
-// Fetch and sync contact data
-async function syncSalesforceContacts(token: string, instanceUrl: string): Promise<number> {
-  console.log("Fetching and syncing Salesforce contacts...");
-  
-  // Get all ConvertedContactId values from leads
-  const { data: leads, error: leadsError } = await supabase
-    .from('salesforce_leads')
-    .select('converted_contact_id')
-    .not('converted_contact_id', 'is', null);
-  
-  if (leadsError) {
-    console.error("Error fetching leads with contact IDs:", leadsError);
-    throw new Error(`Failed to fetch leads: ${leadsError.message}`);
-  }
-  
-  if (!leads || leads.length === 0) {
-    console.log("No leads with contact IDs found");
-    return 0;
-  }
-  
-  // Extract unique contact IDs
-  const contactIds = [...new Set(leads.map(l => l.converted_contact_id).filter(Boolean))];
-  
-  if (contactIds.length === 0) {
-    console.log("No contact IDs to sync");
-    return 0;
-  }
-  
-  console.log(`Found ${contactIds.length} unique contact IDs to sync`);
-  
-  // Prepare a comma-separated list of contact IDs enclosed in single quotes
-  const contactIdList = contactIds.map(id => `'${id}'`).join(', ');
-  
-  const query = `
-    SELECT Id, FirstName, LastName, Email, AccountId
-    FROM Contact
-    WHERE Id IN (${contactIdList})
-    LIMIT 1000
-  `;
-  
-  console.log("SOQL Query for contacts:", query);
-  
-  const encodedQuery = encodeURIComponent(query);
-  const queryUrl = `${instanceUrl}/services/data/v58.0/query?q=${encodedQuery}`;
-  
-  const response = await fetch(queryUrl, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    }
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("Salesforce contact query error:", errorText);
-    throw new Error(`Failed to fetch Salesforce contacts: ${response.status} ${errorText}`);
-  }
-
-  const data = await response.json();
-  console.log(`Retrieved ${data.records.length} contacts from Salesforce`);
-  
-  if (data.records.length === 0) {
-    return 0;
-  }
-  
-  // Transform and upsert contact records
-  const contacts = data.records.map(contact => ({
-    contact_id: contact.Id,
-    first_name: contact.FirstName || null,
-    last_name: contact.LastName,
-    email: contact.Email || null,
-    account_id: contact.AccountId || null
-  }));
-  
-  const { data: syncedContacts, error: syncError } = await supabase
-    .from('salesforce_contacts')
-    .upsert(contacts, {
-      onConflict: 'contact_id',
-      ignoreDuplicates: false,
-      returning: 'minimal'
-    })
-    .select();
-  
-  if (syncError) {
-    console.error("Error syncing contacts:", syncError);
-    throw new Error(`Failed to sync contacts: ${syncError.message}`);
-  }
-  
-  return syncedContacts?.length || 0;
-}
-
 // Main sync function
 async function syncSalesforceLeads(): Promise<{ 
   success: boolean; 
   synced: number; 
   matched?: number; 
   cleaned?: number; 
-  accounts?: number;
-  contacts?: number;
   error?: string 
 }> {
   try {
@@ -571,24 +400,11 @@ async function syncSalesforceLeads(): Promise<{
     
     const matchedCount = await matchLeadsWithCampuses();
     
-    // Sync related objects
-    const accountsCount = await syncSalesforceAccounts(
-      authResponse.access_token,
-      authResponse.instance_url
-    );
-    
-    const contactsCount = await syncSalesforceContacts(
-      authResponse.access_token,
-      authResponse.instance_url
-    );
-    
     return { 
       success: true, 
       synced: syncedCount,
       matched: matchedCount,
-      cleaned: cleanedCount,
-      accounts: accountsCount,
-      contacts: contactsCount
+      cleaned: cleanedCount
     };
   } catch (error) {
     console.error("Error syncing Salesforce leads:", error);
@@ -613,6 +429,7 @@ serve(async (req) => {
         const body = await req.json();
         options = body;
       } catch (e) {
+        // Ignore parsing errors
       }
     }
     
