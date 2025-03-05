@@ -9,51 +9,13 @@ const corsHeaders = {
 };
 
 // Google API constants
-const GOOGLE_SHEETS_API_URL = "https://sheets.googleapis.com/v4/spreadsheets";
 const SPREADSHEET_ID = "1Lz5_CWhpQ1rJiIhThRoPRC1rgBhXyn2AIUsZO-hvVtA";
-const SHEET_RANGE = "Sheet1!A2:F"; // Starting from row 2 to skip headers, all columns (A-F)
+const SHEET_RANGE = "Sheet1!A2:F"; // Starting from row 2 to skip headers, columns A-F
 
-// Function to fetch data from Google Sheets
-async function fetchGoogleSheetData(serviceAccountCredentialsStr: string) {
+// Function to get access token using service account credentials
+async function getAccessToken(credentials) {
   try {
-    // Handle different credential formats - some may be API keys, some may be JSON
-    let credentials;
-    let isApiKey = false;
-
-    try {
-      // Try to parse as JSON first
-      credentials = JSON.parse(serviceAccountCredentialsStr);
-      console.log("Credentials parsed as JSON successfully");
-    } catch (error) {
-      // If not valid JSON, assume it's an API key string
-      console.log("Credentials not in JSON format, treating as API key");
-      isApiKey = true;
-      credentials = { api_key: serviceAccountCredentialsStr.trim() };
-    }
-    
-    // If using an API key
-    if (isApiKey) {
-      console.log("Using API key authentication method");
-      // Use the API key directly to fetch data
-      const response = await fetch(
-        `${GOOGLE_SHEETS_API_URL}/${SPREADSHEET_ID}/values/${SHEET_RANGE}?key=${credentials.api_key}`,
-        { method: "GET" }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("API response error:", response.status, errorText);
-        throw new Error(`Google Sheets API error: ${response.status} ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log("Successfully fetched Google Sheet data with API key:", data.values?.length || 0, "rows");
-      return data.values || [];
-    }
-    
-    // If using service account credentials
-    console.log("Using service account authentication method");
-    // Create a JWT for Google API authentication
+    // Create JWT payload
     const jwtPayload = {
       iss: credentials.client_email,
       scope: "https://www.googleapis.com/auth/spreadsheets.readonly",
@@ -62,7 +24,7 @@ async function fetchGoogleSheetData(serviceAccountCredentialsStr: string) {
       iat: Math.floor(Date.now() / 1000)
     };
 
-    // Sign the JWT with the private key from service account
+    // Sign the JWT with the private key
     const encoder = new TextEncoder();
     const privateKeyPEM = credentials.private_key;
     
@@ -86,7 +48,7 @@ async function fetchGoogleSheetData(serviceAccountCredentialsStr: string) {
       encoder.encode(JSON.stringify(jwtPayload))
     );
 
-    // Convert the signature to base64
+    // Convert to JWT format
     const jwt = `${btoa(JSON.stringify(jwtPayload))}.${btoa(String.fromCharCode.apply(null, new Uint8Array(signature)))}`;
 
     // Exchange JWT for access token
@@ -99,65 +61,91 @@ async function fetchGoogleSheetData(serviceAccountCredentialsStr: string) {
     });
 
     const tokenData = await tokenResponse.json();
-    const accessToken = tokenData.access_token;
-
-    // Use the access token to fetch the spreadsheet data
-    const response = await fetch(
-      `${GOOGLE_SHEETS_API_URL}/${SPREADSHEET_ID}/values/${SHEET_RANGE}?majorDimension=ROWS`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`
-        }
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("API response error:", response.status, errorText);
-      throw new Error(`Google Sheets API error: ${response.status} ${errorText}`);
-    }
-
-    const data = await response.json();
-    console.log("Successfully fetched Google Sheet data with service account:", data.values?.length || 0, "rows");
-    return data.values || [];
+    return tokenData.access_token;
   } catch (error) {
-    console.error("Error fetching Google Sheet data:", error);
+    console.error("Error getting access token:", error);
     throw error;
   }
 }
 
-// Function to process and upsert data to Supabase
-async function upsertFellowsData(supabase: any, fellowsData: any[]) {
+// Function to fetch Google Sheets data
+async function fetchGoogleSheetData(credentialsStr) {
   try {
-    console.log("Processing", fellowsData.length, "rows of data");
+    // Determine credential type (API key or service account)
+    let isApiKey = false;
+    let credentials;
     
-    const processedFellows = fellowsData.map(row => {
-      // Map columns to our database schema
-      // [Fellow ID, Fellow Name, Campus, Cohort, Grade Band, FTE Employment Status]
-      return {
-        fellow_id: row[0] ? parseInt(row[0]) : null,
-        fellow_name: row[1] || '',
-        campus: row[2] || null,
-        cohort: row[3] ? parseInt(row[3]) : null,
-        grade_band: row[4] || null,
-        fte_employment_status: row[5] || null,
-        updated_at: new Date().toISOString()
-      };
-    });
+    try {
+      // Try parsing as JSON first (service account)
+      credentials = JSON.parse(credentialsStr);
+      console.log("Using service account authentication");
+    } catch (error) {
+      // If parsing fails, treat as API key
+      isApiKey = true;
+      credentials = { api_key: credentialsStr.trim() };
+      console.log("Using API key authentication");
+    }
 
-    // Filter out rows with missing fellow_id or fellow_name
+    let url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_RANGE}`;
+    const options = { method: "GET", headers: {} };
+    
+    // Handle authentication based on credential type
+    if (isApiKey) {
+      // Append API key to URL
+      url += `?key=${credentials.api_key}`;
+    } else {
+      // Use service account - get access token and add to headers
+      const accessToken = await getAccessToken(credentials);
+      options.headers = { Authorization: `Bearer ${accessToken}` };
+    }
+
+    // Fetch data from Google Sheets
+    console.log(`Fetching data from: ${url.substring(0, 60)}...`);
+    const response = await fetch(url, options);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`API error: ${response.status} - ${errorText}`);
+      throw new Error(`Google Sheets API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log(`Successfully fetched ${data.values?.length || 0} rows`);
+    return data.values || [];
+  } catch (error) {
+    console.error("Error fetching sheet data:", error);
+    throw error;
+  }
+}
+
+// Process and upsert fellows data to Supabase
+async function upsertFellowsData(supabase, fellowsData) {
+  try {
+    console.log(`Processing ${fellowsData.length} rows of data`);
+    
+    // Map Google Sheets columns to database schema
+    const processedFellows = fellowsData.map(row => ({
+      fellow_id: row[0] ? parseInt(row[0]) : null,
+      fellow_name: row[1] || '',
+      campus: row[2] || null,
+      cohort: row[3] ? parseInt(row[3]) : null,
+      grade_band: row[4] || null,
+      fte_employment_status: row[5] || null,
+      updated_at: new Date().toISOString()
+    }));
+
+    // Filter out invalid records
     const validFellows = processedFellows.filter(fellow => 
       fellow.fellow_id !== null && fellow.fellow_name !== '');
-
-    console.log("Processing", validFellows.length, "valid fellows records");
+    
+    console.log(`Found ${validFellows.length} valid fellows records`);
 
     if (validFellows.length === 0) {
-      console.log("No valid fellows data to upsert");
       return { inserted: 0, updated: 0 };
     }
 
-    // Upsert the data (update if exists, insert if not)
-    const { data, error } = await supabase
+    // Upsert to Supabase
+    const { error } = await supabase
       .from('fellows')
       .upsert(validFellows, { 
         onConflict: 'fellow_id',
@@ -165,17 +153,18 @@ async function upsertFellowsData(supabase: any, fellowsData: any[]) {
       });
 
     if (error) {
-      console.error("Error upserting data:", error);
+      console.error("Supabase error:", error);
       throw error;
     }
 
     return { inserted: validFellows.length, updated: 0 };
   } catch (error) {
-    console.error("Error processing fellows data:", error);
+    console.error("Error processing data:", error);
     throw error;
   }
 }
 
+// Main handler function
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -185,47 +174,45 @@ serve(async (req) => {
   try {
     console.log("Starting sync-fellows-data function");
     
-    // Get Supabase client
+    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
     
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Supabase URL or service role key not found');
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Supabase credentials not found');
     }
     
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get service account credentials from environment
-    const serviceAccountCredentialsStr = Deno.env.get('GOOGLESHEETS_SERVICE_ACCOUNT_CREDENTIALS');
-    if (!serviceAccountCredentialsStr) {
-      throw new Error('Google service account credentials not found');
+    // Get Google credentials
+    const credentialsStr = Deno.env.get('GOOGLESHEETS_SERVICE_ACCOUNT_CREDENTIALS');
+    if (!credentialsStr) {
+      throw new Error('Google credentials not found');
     }
 
-    console.log("Credential string type:", typeof serviceAccountCredentialsStr);
-    console.log("Credential string length:", serviceAccountCredentialsStr.length);
-    console.log("Credential string preview:", serviceAccountCredentialsStr.substring(0, 30) + "...");
+    // Log credential info for debugging
+    console.log(`Credential string type: ${typeof credentialsStr}`);
+    console.log(`Credential string length: ${credentialsStr.length}`);
+    console.log(`Credential preview: ${credentialsStr.substring(0, 30)}...`);
 
-    // Fetch Google Sheet data - pass the credentials as a string
+    // Fetch and process data
     console.log("Fetching Google Sheet data...");
-    const sheetData = await fetchGoogleSheetData(serviceAccountCredentialsStr);
+    const sheetData = await fetchGoogleSheetData(credentialsStr);
     
     if (!Array.isArray(sheetData) || sheetData.length === 0) {
       throw new Error('No data found in Google Sheet');
     }
 
-    // Process and upsert the data
-    console.log("Upserting fellows data to Supabase...");
+    console.log("Upserting data to Supabase...");
     const result = await upsertFellowsData(supabase, sheetData);
 
     // Return success response
-    const responseBody = {
-      success: true,
-      message: `Successfully processed ${result.inserted} fellows records`,
-      result
-    };
-
     return new Response(
-      JSON.stringify(responseBody),
+      JSON.stringify({
+        success: true,
+        message: `Successfully processed ${result.inserted} fellows records`,
+        result
+      }),
       { 
         status: 200, 
         headers: { 
