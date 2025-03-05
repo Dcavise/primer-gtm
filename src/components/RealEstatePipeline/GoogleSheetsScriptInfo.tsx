@@ -160,7 +160,24 @@ function onOpen() {
     }
     
     Logger.log("Successfully opened spreadsheet, creating menu");
-    const ui = ss.getUi();
+    
+    // Get UI properly - using SpreadsheetApp.getUi() which is the correct method
+    // Instead of trying to get UI from the spreadsheet object
+    let ui;
+    try {
+      // This is the correct way to access the UI in a bound script
+      ui = SpreadsheetApp.getUi();
+    } catch (uiError) {
+      Logger.log("Could not get UI via SpreadsheetApp.getUi(): " + uiError.toString());
+      return;
+    }
+    
+    if (!ui) {
+      Logger.log("UI object is null or undefined");
+      return;
+    }
+    
+    // Create the menu
     ui.createMenu('Supabase Sync')
       .addItem('Sync to Database', 'syncToSupabase')
       .addToUi();
