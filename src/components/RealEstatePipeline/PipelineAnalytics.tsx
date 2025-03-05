@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import PropertyStatusChart from './PropertyStatusChart';
 import PropertyPhaseChart from './PropertyPhaseChart';
 import PropertyMarketChart from './PropertyMarketChart';
+import PropertyStateChart from './PropertyStateChart';
 
 type RealEstateProperty = Tables<'real_estate_pipeline'>;
 
@@ -49,6 +50,18 @@ export const PipelineAnalytics: React.FC<PipelineAnalyticsProps> = ({ pipelineAn
         </CardHeader>
         <CardContent>
           <PropertyMarketChart properties={pipelineAnalytics} />
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle>State Distribution</CardTitle>
+          <CardDescription>
+            Properties by state
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PropertyStateChart properties={pipelineAnalytics} />
         </CardContent>
       </Card>
       

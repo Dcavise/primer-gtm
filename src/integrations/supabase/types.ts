@@ -82,154 +82,148 @@ export type Database = {
       }
       real_estate_pipeline: {
         Row: {
-          address: string | null
-          ahj_building_records: string | null
-          ahj_hb1285_intro: string | null
-          ahj_zoning_confirmation: string | null
-          airtable: string | null
-          aor_initial_analysis: string | null
-          confirmed_survey_time: string | null
-          coordinator_contact_info: string | null
-          created_at: string | null
-          deep_research_general: string | null
-          deep_research_previous_school_use: string | null
-          edc_contact: string | null
+          Address: string | null
+          "AHJ Building Records": string | null
+          "AHJ HB-1285 Intro": string | null
+          "AHJ Zoning Confirmation": string | null
+          Airtable: string | null
+          "AOR Initial Analysis": string | null
+          "Confirmed survey time": string | null
+          "Coordinator Contact Info": string | null
+          "Deep Research - General": string | null
+          "Deep Research - Previous School Use": string | null
+          "EDC Contact": string | null
           fellow: string | null
-          fellow_contact_poc: string | null
-          fiber: string | null
-          fire_assessment: string | null
-          fire_inspection_coo: string | null
-          fire_sprinklers: string | null
-          floorplan: boolean | null
-          id: string
-          initial_mock_up: string | null
-          last_updated: string | null
-          lat: number | null
-          lease: string | null
-          ll_email: string | null
-          ll_phone: string | null
-          ll_poc: string | null
-          loi: string | null
+          "fellow contact poc": string | null
+          Fiber: string | null
+          "Fire Assessment": string | null
+          "Fire Inspection / CoO": string | null
+          "Fire Sprinklers": string | null
+          Floorplan: string | null
+          id: number
+          "Initial Mock Up": string | null
+          Lat: number | null
+          Lease: string | null
+          "LL Email": string | null
+          "LL Phone": string | null
+          "LL POC": string | null
+          LOI: string | null
           lon: number | null
-          market: string | null
-          parking: string | null
-          permitted_use: string | null
-          phase: string | null
-          pre_app: string | null
-          priority_jb: string | null
-          property_notes: string | null
-          questionnaire: string | null
-          re_folder: string | null
-          sf_available: string | null
-          site_coordinator: string | null
-          site_name_type: string | null
-          state: string | null
-          status: string | null
-          status_jb: string | null
-          survey: string | null
-          survey_time: string | null
-          test_fit: string | null
-          zoning: string | null
+          Market: string | null
+          Parking: string | null
+          "Permitted Use": string | null
+          Phase: string | null
+          "Pre-App": string | null
+          "Priority (JB)": string | null
+          "Property Notes": string | null
+          Questionnaire: string | null
+          "RE Folder": string | null
+          "SF Available": string | null
+          "Site Coordinator": string | null
+          "Site Name / Type": string | null
+          State: string | null
+          Status: string | null
+          "Status (JB)": string | null
+          Survey: string | null
+          "Survey time": string | null
+          "Test Fit": string | null
+          Zoning: string | null
         }
         Insert: {
-          address?: string | null
-          ahj_building_records?: string | null
-          ahj_hb1285_intro?: string | null
-          ahj_zoning_confirmation?: string | null
-          airtable?: string | null
-          aor_initial_analysis?: string | null
-          confirmed_survey_time?: string | null
-          coordinator_contact_info?: string | null
-          created_at?: string | null
-          deep_research_general?: string | null
-          deep_research_previous_school_use?: string | null
-          edc_contact?: string | null
+          Address?: string | null
+          "AHJ Building Records"?: string | null
+          "AHJ HB-1285 Intro"?: string | null
+          "AHJ Zoning Confirmation"?: string | null
+          Airtable?: string | null
+          "AOR Initial Analysis"?: string | null
+          "Confirmed survey time"?: string | null
+          "Coordinator Contact Info"?: string | null
+          "Deep Research - General"?: string | null
+          "Deep Research - Previous School Use"?: string | null
+          "EDC Contact"?: string | null
           fellow?: string | null
-          fellow_contact_poc?: string | null
-          fiber?: string | null
-          fire_assessment?: string | null
-          fire_inspection_coo?: string | null
-          fire_sprinklers?: string | null
-          floorplan?: boolean | null
-          id?: string
-          initial_mock_up?: string | null
-          last_updated?: string | null
-          lat?: number | null
-          lease?: string | null
-          ll_email?: string | null
-          ll_phone?: string | null
-          ll_poc?: string | null
-          loi?: string | null
+          "fellow contact poc"?: string | null
+          Fiber?: string | null
+          "Fire Assessment"?: string | null
+          "Fire Inspection / CoO"?: string | null
+          "Fire Sprinklers"?: string | null
+          Floorplan?: string | null
+          id: number
+          "Initial Mock Up"?: string | null
+          Lat?: number | null
+          Lease?: string | null
+          "LL Email"?: string | null
+          "LL Phone"?: string | null
+          "LL POC"?: string | null
+          LOI?: string | null
           lon?: number | null
-          market?: string | null
-          parking?: string | null
-          permitted_use?: string | null
-          phase?: string | null
-          pre_app?: string | null
-          priority_jb?: string | null
-          property_notes?: string | null
-          questionnaire?: string | null
-          re_folder?: string | null
-          sf_available?: string | null
-          site_coordinator?: string | null
-          site_name_type?: string | null
-          state?: string | null
-          status?: string | null
-          status_jb?: string | null
-          survey?: string | null
-          survey_time?: string | null
-          test_fit?: string | null
-          zoning?: string | null
+          Market?: string | null
+          Parking?: string | null
+          "Permitted Use"?: string | null
+          Phase?: string | null
+          "Pre-App"?: string | null
+          "Priority (JB)"?: string | null
+          "Property Notes"?: string | null
+          Questionnaire?: string | null
+          "RE Folder"?: string | null
+          "SF Available"?: string | null
+          "Site Coordinator"?: string | null
+          "Site Name / Type"?: string | null
+          State?: string | null
+          Status?: string | null
+          "Status (JB)"?: string | null
+          Survey?: string | null
+          "Survey time"?: string | null
+          "Test Fit"?: string | null
+          Zoning?: string | null
         }
         Update: {
-          address?: string | null
-          ahj_building_records?: string | null
-          ahj_hb1285_intro?: string | null
-          ahj_zoning_confirmation?: string | null
-          airtable?: string | null
-          aor_initial_analysis?: string | null
-          confirmed_survey_time?: string | null
-          coordinator_contact_info?: string | null
-          created_at?: string | null
-          deep_research_general?: string | null
-          deep_research_previous_school_use?: string | null
-          edc_contact?: string | null
+          Address?: string | null
+          "AHJ Building Records"?: string | null
+          "AHJ HB-1285 Intro"?: string | null
+          "AHJ Zoning Confirmation"?: string | null
+          Airtable?: string | null
+          "AOR Initial Analysis"?: string | null
+          "Confirmed survey time"?: string | null
+          "Coordinator Contact Info"?: string | null
+          "Deep Research - General"?: string | null
+          "Deep Research - Previous School Use"?: string | null
+          "EDC Contact"?: string | null
           fellow?: string | null
-          fellow_contact_poc?: string | null
-          fiber?: string | null
-          fire_assessment?: string | null
-          fire_inspection_coo?: string | null
-          fire_sprinklers?: string | null
-          floorplan?: boolean | null
-          id?: string
-          initial_mock_up?: string | null
-          last_updated?: string | null
-          lat?: number | null
-          lease?: string | null
-          ll_email?: string | null
-          ll_phone?: string | null
-          ll_poc?: string | null
-          loi?: string | null
+          "fellow contact poc"?: string | null
+          Fiber?: string | null
+          "Fire Assessment"?: string | null
+          "Fire Inspection / CoO"?: string | null
+          "Fire Sprinklers"?: string | null
+          Floorplan?: string | null
+          id?: number
+          "Initial Mock Up"?: string | null
+          Lat?: number | null
+          Lease?: string | null
+          "LL Email"?: string | null
+          "LL Phone"?: string | null
+          "LL POC"?: string | null
+          LOI?: string | null
           lon?: number | null
-          market?: string | null
-          parking?: string | null
-          permitted_use?: string | null
-          phase?: string | null
-          pre_app?: string | null
-          priority_jb?: string | null
-          property_notes?: string | null
-          questionnaire?: string | null
-          re_folder?: string | null
-          sf_available?: string | null
-          site_coordinator?: string | null
-          site_name_type?: string | null
-          state?: string | null
-          status?: string | null
-          status_jb?: string | null
-          survey?: string | null
-          survey_time?: string | null
-          test_fit?: string | null
-          zoning?: string | null
+          Market?: string | null
+          Parking?: string | null
+          "Permitted Use"?: string | null
+          Phase?: string | null
+          "Pre-App"?: string | null
+          "Priority (JB)"?: string | null
+          "Property Notes"?: string | null
+          Questionnaire?: string | null
+          "RE Folder"?: string | null
+          "SF Available"?: string | null
+          "Site Coordinator"?: string | null
+          "Site Name / Type"?: string | null
+          State?: string | null
+          Status?: string | null
+          "Status (JB)"?: string | null
+          Survey?: string | null
+          "Survey time"?: string | null
+          "Test Fit"?: string | null
+          Zoning?: string | null
         }
         Relationships: []
       }
