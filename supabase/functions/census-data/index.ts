@@ -81,11 +81,15 @@ serve(async (req) => {
     let censusData: CensusData | null = null;
     let response: CensusResponse;
 
+    // Log block groups info to help debug
+    console.log(`Found ${blockGroupsInRadius?.length || 0} block groups within radius`);
+    
     if (blockGroupsInRadius && blockGroupsInRadius.length > 0) {
       // Process block group data
       censusData = await processCensusData(blockGroupsInRadius, radiusMiles);
       
       if (censusData) {
+        console.log("Successfully processed census data, returning real data");
         response = {
           data: censusData,
           tractsIncluded: 0,
@@ -120,6 +124,9 @@ serve(async (req) => {
         error: "No census geographies found within 5 miles"
       };
     }
+
+    // Log the final response structure to help debug
+    console.log(`Returning response with isMockData: ${response.isMockData}, blockGroupsIncluded: ${response.blockGroupsIncluded}`);
 
     // Return the response
     return new Response(

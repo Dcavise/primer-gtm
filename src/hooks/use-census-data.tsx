@@ -53,36 +53,39 @@ export function useCensusData() {
       }
       
       console.log("Census data received:", response);
+      console.log("Is mock data:", response.isMockData);
+      
       setCensusData(response.data);
       setCensusResponse({
         data: response.data,
-        tractsIncluded: response.tractsIncluded,
-        blockGroupsIncluded: response.blockGroupsIncluded,
-        radiusMiles: response.radiusMiles,
-        isMockData: response.isMockData
+        tractsIncluded: response.tractsIncluded || 0,
+        blockGroupsIncluded: response.blockGroupsIncluded || 0,
+        radiusMiles: response.radiusMiles || 5,
+        isMockData: response.isMockData === true,
+        error: response.error
       });
       setStatus("success");
       setIsMockData(response.isMockData === true);
       setSearchedAddress(response.searchedAddress || address);
       
-      // Show different toast based on whether it's mock data and tracts found
-      if (response.isMockData) {
+      // Show different toast based on whether it's mock data and what was found
+      if (response.isMockData === true) {
         toast.info("Using demo census data", {
           description: response.error 
             ? `${response.error}. Showing sample data for demonstration.`
-            : "No census tracts found within 2 miles. Showing sample data for demonstration."
+            : "No census data found for this location. Showing sample data for demonstration."
         });
       } else if (response.blockGroupsIncluded > 0) {
         toast.success("Census data retrieved", {
           description: `Showing demographic data from ${response.blockGroupsIncluded} census block groups within ${response.radiusMiles} miles.`
         });
-      } else if (response.tractsIncluded === 0) {
-        toast.warning("Limited census data", {
-          description: "No census tracts found within search radius. Data may be less accurate."
-        });
-      } else {
+      } else if (response.tractsIncluded > 0) {
         toast.success("Census data retrieved", {
           description: `Showing demographic data from ${response.tractsIncluded} census tracts within ${response.radiusMiles} miles.`
+        });
+      } else {
+        toast.warning("Limited census data", {
+          description: "Limited census data available for this location."
         });
       }
     } catch (error) {
@@ -107,8 +110,9 @@ export function useCensusData() {
       setCensusData(mockData);
       setCensusResponse({
         data: mockData,
-        tractsIncluded: 5,
-        radiusMiles: 2,
+        tractsIncluded: 0,
+        blockGroupsIncluded: 2,
+        radiusMiles: 5,
         isMockData: true
       });
       setStatus("success");
