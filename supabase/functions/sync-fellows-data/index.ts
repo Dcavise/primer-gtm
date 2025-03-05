@@ -15,24 +15,36 @@ const SHEET_RANGE = "Sheet1!A2:F"; // Starting from row 2 to skip headers, colum
 // Function to get access token using service account credentials
 async function getAccessToken(credentials) {
   try {
+    console.log("Getting access token with service account");
+    
     // Create JWT payload
+    const now = Math.floor(Date.now() / 1000);
     const jwtPayload = {
       iss: credentials.client_email,
       scope: "https://www.googleapis.com/auth/spreadsheets.readonly",
       aud: "https://oauth2.googleapis.com/token",
-      exp: Math.floor(Date.now() / 1000) + 3600,
-      iat: Math.floor(Date.now() / 1000)
+      exp: now + 3600,
+      iat: now
     };
 
-    // Sign the JWT with the private key
-    const encoder = new TextEncoder();
-    const privateKeyPEM = credentials.private_key;
+    // Log credential info for debugging
+    console.log(`Using client email: ${credentials.client_email}`);
     
+    // Sign the JWT
+    const encoder = new TextEncoder();
+    const jwtHeader = { alg: "RS256", typ: "JWT" };
+    
+    // Format the data for JWT
+    const encodedHeader = btoa(JSON.stringify(jwtHeader));
+    const encodedPayload = btoa(JSON.stringify(jwtPayload));
+    const toSign = `${encodedHeader}.${encodedPayload}`;
+    
+    // Import the private key
     const privateKey = await crypto.subtle.importKey(
       "pkcs8",
       new Uint8Array(
-        atob(privateKeyPEM
-          .replace(/-----BEGIN PRIVATE KEY-----|\n|-----END PRIVATE KEY-----/g, '')
+        atob(credentials.private_key
+          .replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\n/g, '')
           .trim())
           .split('')
           .map(c => c.charCodeAt(0))
@@ -41,17 +53,20 @@ async function getAccessToken(credentials) {
       false,
       ["sign"]
     );
-
+    
+    // Sign the JWT
     const signature = await crypto.subtle.sign(
       { name: "RSASSA-PKCS1-v1_5" },
       privateKey,
-      encoder.encode(JSON.stringify(jwtPayload))
+      encoder.encode(toSign)
     );
-
-    // Convert to JWT format
-    const jwt = `${btoa(JSON.stringify(jwtPayload))}.${btoa(String.fromCharCode.apply(null, new Uint8Array(signature)))}`;
-
+    
+    // Create the complete JWT
+    const encodedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)));
+    const jwt = `${toSign}.${encodedSignature}`;
+    
     // Exchange JWT for access token
+    console.log("Requesting access token from Google OAuth");
     const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: {
@@ -59,8 +74,15 @@ async function getAccessToken(credentials) {
       },
       body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
     });
-
+    
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      console.error(`Token request failed: ${tokenResponse.status} - ${errorText}`);
+      throw new Error(`Failed to get access token: ${tokenResponse.status}`);
+    }
+    
     const tokenData = await tokenResponse.json();
+    console.log("Successfully obtained access token");
     return tokenData.access_token;
   } catch (error) {
     console.error("Error getting access token:", error);
@@ -71,6 +93,8 @@ async function getAccessToken(credentials) {
 // Function to fetch Google Sheets data
 async function fetchGoogleSheetData(credentialsStr) {
   try {
+    console.log("Starting Google Sheets data fetch");
+    
     // Determine credential type (API key or service account)
     let isApiKey = false;
     let credentials;
@@ -86,31 +110,42 @@ async function fetchGoogleSheetData(credentialsStr) {
       console.log("Using API key authentication");
     }
 
+    // Build request URL and options
     let url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_RANGE}`;
-    const options = { method: "GET", headers: {} };
+    const options = { 
+      method: "GET", 
+      headers: {} 
+    };
     
-    // Handle authentication based on credential type
+    // Add authentication based on credential type
     if (isApiKey) {
       // Append API key to URL
       url += `?key=${credentials.api_key}`;
+      console.log("Added API key to request");
     } else {
       // Use service account - get access token and add to headers
+      console.log("Getting access token for service account");
       const accessToken = await getAccessToken(credentials);
-      options.headers = { Authorization: `Bearer ${accessToken}` };
+      options.headers = { 
+        "Authorization": `Bearer ${accessToken}` 
+      };
+      console.log("Added access token to request headers");
     }
 
-    // Fetch data from Google Sheets
-    console.log(`Fetching data from: ${url.substring(0, 60)}...`);
+    // Make the request to Google Sheets API
+    console.log(`Requesting data from: ${url.substring(0, 60)}...`);
     const response = await fetch(url, options);
     
+    // Handle API response
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`API error: ${response.status} - ${errorText}`);
       throw new Error(`Google Sheets API error: ${response.status}`);
     }
 
+    // Parse and return the data
     const data = await response.json();
-    console.log(`Successfully fetched ${data.values?.length || 0} rows`);
+    console.log(`Successfully fetched ${data.values?.length || 0} rows of data`);
     return data.values || [];
   } catch (error) {
     console.error("Error fetching sheet data:", error);
@@ -124,17 +159,23 @@ async function upsertFellowsData(supabase, fellowsData) {
     console.log(`Processing ${fellowsData.length} rows of data`);
     
     // Map Google Sheets columns to database schema
-    const processedFellows = fellowsData.map(row => ({
-      fellow_id: row[0] ? parseInt(row[0]) : null,
-      fellow_name: row[1] || '',
-      campus: row[2] || null,
-      cohort: row[3] ? parseInt(row[3]) : null,
-      grade_band: row[4] || null,
-      fte_employment_status: row[5] || null,
-      updated_at: new Date().toISOString()
-    }));
+    const processedFellows = fellowsData.map(row => {
+      // Ensure we have at least 6 columns (even if some are empty)
+      const paddedRow = [...row];
+      while (paddedRow.length < 6) paddedRow.push('');
+      
+      return {
+        fellow_id: paddedRow[0] ? parseInt(paddedRow[0]) : null,
+        fellow_name: paddedRow[1] || '',
+        campus: paddedRow[2] || null,
+        cohort: paddedRow[3] ? parseInt(paddedRow[3]) : null,
+        grade_band: paddedRow[4] || null,
+        fte_employment_status: paddedRow[5] || null,
+        updated_at: new Date().toISOString()
+      };
+    });
 
-    // Filter out invalid records
+    // Filter out invalid records (must have ID and name)
     const validFellows = processedFellows.filter(fellow => 
       fellow.fellow_id !== null && fellow.fellow_name !== '');
     
@@ -157,7 +198,10 @@ async function upsertFellowsData(supabase, fellowsData) {
       throw error;
     }
 
-    return { inserted: validFellows.length, updated: 0 };
+    return { 
+      inserted: validFellows.length, 
+      updated: 0 
+    };
   } catch (error) {
     console.error("Error processing data:", error);
     throw error;
@@ -191,10 +235,8 @@ serve(async (req) => {
     }
 
     // Log credential info for debugging
-    console.log(`Credential string type: ${typeof credentialsStr}`);
     console.log(`Credential string length: ${credentialsStr.length}`);
-    console.log(`Credential preview: ${credentialsStr.substring(0, 30)}...`);
-
+    
     // Fetch and process data
     console.log("Fetching Google Sheet data...");
     const sheetData = await fetchGoogleSheetData(credentialsStr);
