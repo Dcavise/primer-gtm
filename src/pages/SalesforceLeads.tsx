@@ -78,13 +78,13 @@ const SalesforceLeadsPage: React.FC = () => {
     try {
       console.log("Fetching stats for campus:", selectedCampusId || "all campuses");
       
-      // Fetch fellows count
+      // Fetch fellows count - now checking both campus_id and campus fields
       let fellowsQuery = supabase
         .from('fellows')
         .select('fellow_id', { count: 'exact' });
       
       if (selectedCampusId) {
-        fellowsQuery = fellowsQuery.eq('campus_id', selectedCampusId);
+        fellowsQuery = fellowsQuery.or(`campus_id.eq.${selectedCampusId},campus.ilike.${selectedCampusId}`);
       }
       
       const { count: fellowsCount, error: fellowsError } = await fellowsQuery;
