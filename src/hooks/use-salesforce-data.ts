@@ -67,11 +67,14 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
       const { data: allCampuses } = await supabase.from('campuses').select('campus_id, campus_name');
       console.log("Available campuses:", allCampuses);
       
-      // Fetch fellows count with improved campus filtering and employment status exclusion
+      // Fetch fellows count with fixed employment status filtering
       let query = supabase
         .from('fellows')
-        .select('*', { count: 'exact' })
-        .not('fte_employment_status', 'in', '("Exiting","Declined FTE Offer")');
+        .select('*', { count: 'exact' });
+      
+      // Correctly filter out "Exiting" and "Declined FTE Offer" statuses
+      query = query.not('fte_employment_status', 'eq', 'Exiting')
+                   .not('fte_employment_status', 'eq', 'Declined FTE Offer');
       
       if (selectedCampusId) {
         // Get the campus name for the selected campus ID
@@ -85,9 +88,9 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
         console.log(`Selected campus: ID=${selectedCampusId}, Name=${campusName}`);
         
         if (campusName) {
-          // Use OR condition to match either campus_id or campus name
-          query = query.or(`campus_id.eq.${selectedCampusId},campus.ilike.%${campusName}%`);
-          console.log(`Using OR filter: campus_id=${selectedCampusId} OR campus ILIKE %${campusName}%`);
+          // Try different matching approaches for more reliable results
+          query = query.or(`campus_id.eq.${selectedCampusId},campus.eq.${campusName},campus.ilike.%${campusName}%`);
+          console.log(`Using enhanced campus filter: campus_id=${selectedCampusId} OR campus=${campusName} OR campus ILIKE %${campusName}%`);
         } else {
           console.log(`Campus name not found for ID: ${selectedCampusId}, using ID only`);
           query = query.eq('campus_id', selectedCampusId);
