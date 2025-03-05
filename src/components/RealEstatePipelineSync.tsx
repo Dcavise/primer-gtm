@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle 
 } from '@/components/ui/dialog';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { Loader2, RefreshCw, Info } from 'lucide-react';
 
 interface RealEstatePipelineSyncProps {
   isOpen: boolean;
@@ -41,6 +41,15 @@ export const RealEstatePipelineSync: React.FC<RealEstatePipelineSyncProps> = ({
             This will pull the latest real estate pipeline data from Google Sheets 
             and update the database. The process may take a few moments to complete.
           </p>
+          
+          <div className="text-xs p-3 bg-blue-50 rounded-md text-blue-700 mb-4">
+            <div className="flex items-center mb-1">
+              <Info className="h-4 w-4 mr-1" />
+              <span className="font-semibold">Info:</span>
+            </div>
+            <p>Spreadsheet ID: <code className="bg-blue-100 px-1 rounded">1xOXQdZaZTJkAjnI1fHI4tSTCFnF9p0hhfAX05-MYyG8</code></p>
+            <p>Sheet Range: <code className="bg-blue-100 px-1 rounded">Pipeline!A1:Z</code></p>
+          </div>
           
           {isSyncing && (
             <div className="flex items-center justify-center p-4 bg-blue-50 rounded-md text-blue-700">

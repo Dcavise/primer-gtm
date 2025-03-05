@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Loader2, CheckCircle, AlertTriangle, Clock, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, CheckCircle, AlertTriangle, Clock, RefreshCw, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
@@ -89,8 +89,12 @@ export const SyncStatusDisplay: React.FC<SyncStatusDisplayProps> = ({
       
       {showDebug && syncDebugInfo && (
         <div className="px-4 pb-4 pt-0">
+          <div className="text-xs mb-2 flex items-center text-blue-700">
+            <Info className="h-4 w-4 mr-1" />
+            <span>Using Google Sheet ID: <code className="bg-blue-50 px-1 rounded">1xOXQdZaZTJkAjnI1fHI4tSTCFnF9p0hhfAX05-MYyG8</code></span>
+          </div>
           <div className="bg-gray-100 p-3 rounded-md overflow-x-auto">
-            <pre className="text-xs">{syncDebugInfo}</pre>
+            <pre className="text-xs whitespace-pre-wrap">{syncDebugInfo}</pre>
           </div>
         </div>
       )}

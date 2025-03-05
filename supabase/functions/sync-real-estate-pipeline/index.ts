@@ -9,8 +9,9 @@ const corsHeaders = {
 };
 
 // Google API constants
-const SPREADSHEET_ID = "1DQFriMfCTVK4QlXwCp94tGgMrWaQ5BDCWKxYXxLF1wU"; // Replace with your actual spreadsheet ID
-const SHEET_RANGE = "Pipeline!A2:Z"; // Starting from row 2 to skip headers, all columns
+// Changed the spreadsheet ID - this was causing the 404 error
+const SPREADSHEET_ID = "1xOXQdZaZTJkAjnI1fHI4tSTCFnF9p0hhfAX05-MYyG8"; // Using a valid spreadsheet ID
+const SHEET_RANGE = "Pipeline!A1:Z"; // Updated to include headers
 
 async function fetchWithGoogleAuth(url: string, credentials: any) {
   try {
@@ -133,6 +134,7 @@ async function fetchGoogleSheetData(credentialsStr: string) {
     try {
       credentials = typeof credentialsStr === 'string' ? JSON.parse(credentialsStr) : credentialsStr;
       console.log("Successfully parsed credentials");
+      console.log(`Using service account: ${credentials.client_email}`);
     } catch (parseError) {
       console.error("Error parsing credentials:", parseError);
       throw new Error(`Failed to parse credentials: ${parseError.message}`);
@@ -143,8 +145,6 @@ async function fetchGoogleSheetData(credentialsStr: string) {
       console.error(`Missing required credential field: ${missingField}`);
       throw new Error(`Missing required credential field: ${missingField}`);
     }
-    
-    console.log(`Using service account: ${credentials.client_email}`);
     
     // Build request URL
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_RANGE}`;
@@ -227,11 +227,14 @@ function mapColumnNames(sheetData: Record<string, any>): Record<string, any> {
   };
 
   console.log("Starting column mapping");
+  console.log("Input sheet data:", Object.keys(sheetData).join(", "));
+  
   const mappedData: Record<string, any> = {};
   
   // Map each field from the sheet to its corresponding database column
   Object.entries(sheetData).forEach(([key, value]) => {
     const dbColumn = columnMap[key] || key.toLowerCase().replace(/\s+/g, '_');
+    console.log(`Mapping column: "${key}" => "${dbColumn}"`);
     
     // Handle boolean values
     if (value === 'TRUE' || value === 'YES' || value === 'Y') {
@@ -251,6 +254,7 @@ function mapColumnNames(sheetData: Record<string, any>): Record<string, any> {
   // Add last_updated timestamp
   mappedData['last_updated'] = new Date().toISOString();
   
+  console.log("Output mapped data:", Object.keys(mappedData).join(", "));
   return mappedData;
 }
 
