@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
@@ -40,6 +41,10 @@ interface SalesforceOpportunity {
   Id: string;
   StageName: string;
   Lead_ID__c: string | null;
+  Name: string | null;
+  AccountId: string | null;
+  CloseDate: string | null;
+  Actualized_Tuition__c: number | null;
   [key: string]: any;
 }
 
@@ -47,6 +52,10 @@ interface SupabaseOpportunity {
   opportunity_id: string;
   lead_id: string;
   stage: string | null;
+  opportunity_name: string | null;
+  account_id: string | null;
+  close_date: string | null;
+  actualized_tuition: number | null;
 }
 
 // Get Salesforce OAuth token
@@ -79,7 +88,7 @@ async function getSalesforceToken(): Promise<SalesforceAuthResponse> {
   return await response.json();
 }
 
-// Get all lead IDs from our database
+// Get all lead IDs from our database - including those that are already converted
 async function getExistingLeadIds(): Promise<string[]> {
   console.log("Fetching existing lead IDs from database...");
   
@@ -98,22 +107,66 @@ async function getExistingLeadIds(): Promise<string[]> {
   return leadIds;
 }
 
-// Query Salesforce for opportunities connected to our leads
-async function fetchSalesforceOpportunities(token: string, instanceUrl: string, leadIds: string[]): Promise<SalesforceOpportunity[]> {
+// Get leads with converted opportunity IDs
+async function getConvertedOpportunityIds(): Promise<Record<string, string>> {
+  console.log("Fetching leads with converted opportunity IDs...");
+  
+  const { data, error } = await supabase
+    .from('salesforce_leads')
+    .select('lead_id, converted_opportunity_id')
+    .not('converted_opportunity_id', 'is', null);
+  
+  if (error) {
+    console.error("Error fetching converted opportunity IDs:", error);
+    throw new Error(`Failed to fetch converted opportunity IDs: ${error.message}`);
+  }
+  
+  // Create a mapping of converted opportunity ID to lead ID
+  const opportunityToLeadMap: Record<string, string> = {};
+  data.forEach(item => {
+    if (item.converted_opportunity_id) {
+      opportunityToLeadMap[item.converted_opportunity_id] = item.lead_id;
+    }
+  });
+  
+  console.log(`Found ${Object.keys(opportunityToLeadMap).length} leads with converted opportunity IDs`);
+  
+  return opportunityToLeadMap;
+}
+
+// Query Salesforce for opportunities from Lead_ID__c field AND ConvertedOpportunityId
+async function fetchSalesforceOpportunities(token: string, instanceUrl: string, leadIds: string[], convertedOpportunityIds: string[]): Promise<SalesforceOpportunity[]> {
   console.log("Fetching Salesforce opportunities linked to our leads...");
   
-  if (leadIds.length === 0) {
-    console.log("No lead IDs to query opportunities for");
+  if (leadIds.length === 0 && convertedOpportunityIds.length === 0) {
+    console.log("No lead IDs or opportunity IDs to query opportunities for");
     return [];
   }
   
-  // Prepare a comma-separated list of lead IDs enclosed in single quotes
-  const leadIdList = leadIds.map(id => `'${id}'`).join(', ');
-  
-  const query = `
-    SELECT Id, StageName, Lead_ID__c
+  let query = `
+    SELECT Id, StageName, Lead_ID__c, Name, AccountId, CloseDate, Actualized_Tuition__c
     FROM Opportunity
-    WHERE Lead_ID__c IN (${leadIdList})
+    WHERE 
+  `;
+  
+  // Add conditions for Lead_ID__c field if we have lead IDs
+  if (leadIds.length > 0) {
+    // Prepare a comma-separated list of lead IDs enclosed in single quotes
+    const leadIdList = leadIds.map(id => `'${id}'`).join(', ');
+    query += `Lead_ID__c IN (${leadIdList})`;
+  }
+  
+  // Add conditions for opportunity IDs from converted leads
+  if (convertedOpportunityIds.length > 0) {
+    if (leadIds.length > 0) {
+      query += ` OR `;
+    }
+    // Prepare a comma-separated list of opportunity IDs enclosed in single quotes
+    const opportunityIdList = convertedOpportunityIds.map(id => `'${id}'`).join(', ');
+    query += `Id IN (${opportunityIdList})`;
+  }
+  
+  query += `
     ORDER BY CreatedDate DESC
     LIMIT 1000
   `;
@@ -142,19 +195,30 @@ async function fetchSalesforceOpportunities(token: string, instanceUrl: string, 
 }
 
 // Transform Salesforce opportunities to Supabase format
-function transformOpportunities(salesforceOpportunities: SalesforceOpportunity[]): SupabaseOpportunity[] {
+function transformOpportunities(
+  salesforceOpportunities: SalesforceOpportunity[], 
+  opportunityToLeadMap: Record<string, string>
+): SupabaseOpportunity[] {
   console.log(`Transforming ${salesforceOpportunities.length} Salesforce opportunities...`);
   
-  // Only keep opportunities that have a Lead ID
-  const validOpportunities = salesforceOpportunities.filter(opp => opp.Lead_ID__c);
-  
-  return validOpportunities.map(opp => {
+  return salesforceOpportunities.map(opp => {
+    // First try to get the lead ID from the map (for converted opportunities)
+    // If not found, fallback to Lead_ID__c field
+    const leadId = opportunityToLeadMap[opp.Id] || opp.Lead_ID__c;
+    
+    // Format close date if available
+    const closeDate = opp.CloseDate ? opp.CloseDate : null;
+    
     return {
       opportunity_id: opp.Id,
-      lead_id: opp.Lead_ID__c as string,
-      stage: opp.StageName || null
+      lead_id: leadId as string,
+      stage: opp.StageName || null,
+      opportunity_name: opp.Name || null,
+      account_id: opp.AccountId || null,
+      close_date: closeDate,
+      actualized_tuition: opp.Actualized_Tuition__c || null
     };
-  });
+  }).filter(opp => opp.lead_id); // Only keep opportunities that have a lead ID
 }
 
 // Upsert opportunities to Supabase
@@ -190,18 +254,25 @@ async function syncSalesforceOpportunities(): Promise<{ success: boolean; synced
     // Get existing lead IDs from our database
     const leadIds = await getExistingLeadIds();
     
+    // Get mapping of converted opportunity IDs to lead IDs
+    const opportunityToLeadMap = await getConvertedOpportunityIds();
+    
     // Get Salesforce access token
     const authResponse = await getSalesforceToken();
     
-    // Fetch opportunities for our leads
+    // Fetch opportunities for our leads (both via Lead_ID__c and ConvertedOpportunityId)
     const salesforceOpportunities = await fetchSalesforceOpportunities(
       authResponse.access_token, 
       authResponse.instance_url,
-      leadIds
+      leadIds,
+      Object.keys(opportunityToLeadMap)
     );
     
     // Transform opportunities
-    const transformedOpportunities = transformOpportunities(salesforceOpportunities);
+    const transformedOpportunities = transformOpportunities(
+      salesforceOpportunities,
+      opportunityToLeadMap
+    );
     
     // Sync opportunities to Supabase
     const syncedCount = await syncOpportunitiesToSupabase(transformedOpportunities);
