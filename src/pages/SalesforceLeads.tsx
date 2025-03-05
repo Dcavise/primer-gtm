@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -40,7 +39,9 @@ export function SalesforceLeadsPage() {
       
       const typedLeads: SalesforceLead[] = data.map(lead => ({
         ...lead,
-        is_converted: lead.converted
+        is_converted: lead.converted,
+        converted_account_id: lead.converted_account_id || null,
+        converted_contact_id: lead.converted_contact_id || null
       }));
       
       setLeads(typedLeads);
@@ -67,19 +68,14 @@ export function SalesforceLeadsPage() {
       
       if (oppsError) throw oppsError;
       
-      setOpportunities(oppsData || []);
+      const typedOpportunities: SalesforceOpportunity[] = oppsData ? oppsData.map(opp => ({
+        ...opp,
+        preferred_campus: opp.preferred_campus || null
+      })) : [];
       
-      try {
-        const { data: accountsData, error: accountsError } = await supabase
-          .from('salesforce_accounts')
-          .select('*');
-        
-        if (!accountsError && accountsData) {
-          setAccounts(accountsData);
-        }
-      } catch (e) {
-        console.log('salesforce_accounts table may not exist yet');
-      }
+      setOpportunities(typedOpportunities);
+      
+      setAccounts([]);
       
       if (oppsData && oppsData.length > 0) {
         const mostRecent = new Date(Math.max(...oppsData.map(o => new Date(o.updated_at).getTime())));
