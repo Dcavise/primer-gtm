@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { getApiKey } from "@/services/api-config";
 import { toast } from "sonner";
 import { LoadingState } from "@/components/LoadingState";
+import { MarketSelector } from "@/components/MarketSelector";
+import { marketCoordinates } from "@/utils/marketCoordinates";
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -13,6 +15,7 @@ const MarketExplorer = () => {
   const map = useRef<mapboxgl.Map | null>(null);
   const [mapboxToken, setMapboxToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedMarket, setSelectedMarket] = useState<string>("default");
 
   useEffect(() => {
     async function initializeMap() {
@@ -27,11 +30,13 @@ const MarketExplorer = () => {
         // Initialize Mapbox GL map
         mapboxgl.accessToken = token;
         
+        const coords = marketCoordinates[selectedMarket];
+        
         const newMap = new mapboxgl.Map({
           container: mapContainer.current,
           style: 'mapbox://styles/mapbox/light-v11',
-          center: [-98.5795, 39.8283], // Center of USA
-          zoom: 3.5,
+          center: coords.center,
+          zoom: coords.zoom,
           pitch: 30, // Add some tilt for a more dynamic view
         });
         
@@ -64,7 +69,19 @@ const MarketExplorer = () => {
       }
     }
     
-    initializeMap();
+    if (map.current) {
+      // If map already exists, just update the center and zoom
+      const coords = marketCoordinates[selectedMarket];
+      map.current.flyTo({
+        center: coords.center,
+        zoom: coords.zoom,
+        pitch: 30,
+        duration: 2000
+      });
+    } else {
+      // Initialize map for the first time
+      initializeMap();
+    }
     
     // Clean up map instance when component unmounts
     return () => {
@@ -72,7 +89,11 @@ const MarketExplorer = () => {
         map.current.remove();
       }
     };
-  }, []);
+  }, [selectedMarket]);
+
+  const handleMarketChange = (marketId: string) => {
+    setSelectedMarket(marketId);
+  };
 
   return (
     <div className="container mx-auto p-4 max-w-7xl">
@@ -84,6 +105,11 @@ const MarketExplorer = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <MarketSelector
+            selectedMarketId={selectedMarket}
+            onSelectMarket={handleMarketChange}
+          />
+          
           {isLoading ? (
             <LoadingState message="Loading map..." className="h-[600px]" />
           ) : (
@@ -97,14 +123,7 @@ const MarketExplorer = () => {
                   variant="secondary" 
                   size="sm"
                   onClick={() => {
-                    if (map.current) {
-                      map.current.flyTo({
-                        center: [-98.5795, 39.8283],
-                        zoom: 3.5,
-                        pitch: 30,
-                        bearing: 0
-                      });
-                    }
+                    setSelectedMarket("default");
                   }}
                 >
                   Reset View
