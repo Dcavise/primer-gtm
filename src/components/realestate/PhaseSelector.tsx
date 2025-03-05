@@ -77,6 +77,9 @@ export const PhaseSelector: React.FC<PhaseSelectorProps> = ({
 
   // Make sure we display the current phase or "--None--" if not set
   const displayValue = value || "--None--";
+  
+  // The colorClass for the button should reflect the current phase
+  const colorClass = value ? getPhaseColorClass(value) : '';
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -85,8 +88,9 @@ export const PhaseSelector: React.FC<PhaseSelectorProps> = ({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn("justify-between w-full border-input", 
-            value ? `hover:${getPhaseColorClass(value)}` : "",
+          className={cn(
+            "justify-between w-full border-input", 
+            value ? colorClass : "",
             className
           )}
           disabled={disabled}
