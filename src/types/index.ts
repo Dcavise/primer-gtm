@@ -73,4 +73,25 @@ export interface AddressSearchResult {
 
 export type SearchStatus = 'idle' | 'loading' | 'success' | 'error';
 
+export interface Campus {
+  id: string;
+  campus_id: string;
+  campus_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Fellow {
+  id: number;
+  fellow_id: number | null;
+  fellow_name: string;
+  campus: string | null;
+  campus_id: string | null;
+  campus_name?: string | null;
+  cohort: number | null;
+  grade_band: string | null;
+  fte_employment_status: string | null;
+  updated_at: string | null;
+}
+
 export * from './schools';
