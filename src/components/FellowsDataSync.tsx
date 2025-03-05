@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { RefreshCw, AlertCircle } from "lucide-react";
+import { RefreshCw, AlertCircle, Info } from "lucide-react";
 import { LoadingState } from "@/components/LoadingState";
 
 interface Fellow {
@@ -25,6 +25,7 @@ export function FellowsDataSync() {
   const [syncLoading, setSyncLoading] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [showDetailedError, setShowDetailedError] = useState(false);
 
   const fetchFellows = async () => {
     setLoading(true);
@@ -54,6 +55,7 @@ export function FellowsDataSync() {
   const syncFellowsData = async () => {
     setSyncLoading(true);
     setSyncError(null);
+    setShowDetailedError(false);
     
     try {
       console.log("Invoking sync-fellows-data function");
@@ -85,6 +87,10 @@ export function FellowsDataSync() {
     fetchFellows();
   }, []);
 
+  const toggleDetailedError = () => {
+    setShowDetailedError(!showDetailedError);
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -107,9 +113,32 @@ export function FellowsDataSync() {
               {syncError && (
                 <div className="mb-4 p-4 border border-red-200 bg-red-50 rounded-md text-red-800 flex items-start">
                   <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-medium">Error syncing data</p>
+                  <div className="w-full">
+                    <p className="font-medium flex items-center justify-between">
+                      <span>Error syncing data</span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={toggleDetailedError}
+                        className="text-red-800 h-6 px-2 -mr-2"
+                      >
+                        <Info className="h-4 w-4 mr-1" />
+                        {showDetailedError ? 'Hide details' : 'Show details'}
+                      </Button>
+                    </p>
                     <p className="text-sm mt-1">{syncError}</p>
+                    {showDetailedError && (
+                      <div className="mt-3 p-2 bg-red-100 rounded text-xs font-mono overflow-auto max-h-48">
+                        <p>Troubleshooting steps:</p>
+                        <ol className="list-decimal pl-5 space-y-1 mt-2">
+                          <li>Ensure the Google service account credentials are properly formatted JSON</li>
+                          <li>Make sure the service account has "Viewer" access to the Google Sheet</li>
+                          <li>Verify that the spreadsheet ID is correct</li>
+                          <li>Check that all required scopes are enabled for the service account</li>
+                          <li>Review Edge Function logs for more detailed error information</li>
+                        </ol>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

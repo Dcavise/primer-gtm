@@ -12,31 +12,13 @@ const corsHeaders = {
 const SPREADSHEET_ID = "1Lz5_CWhpQ1rJiIhThRoPRC1rgBhXyn2AIUsZO-hvVtA";
 const SHEET_RANGE = "Sheet1!A2:F"; // Starting from row 2 to skip headers, columns A-F
 
-// Function to get access token using service account credentials
-async function getAccessToken(credentials) {
+async function fetchWithGoogleAuth(url, credentials) {
   try {
-    console.log("Getting access token with service account");
-    
-    // Parse credentials if they're a string
-    if (typeof credentials === 'string') {
-      try {
-        credentials = JSON.parse(credentials);
-        console.log("Successfully parsed service account credentials JSON");
-      } catch (error) {
-        console.error("Failed to parse credentials as JSON:", error);
-        throw new Error("Invalid service account credentials format");
-      }
-    }
-    
-    // Verify required credential fields
-    if (!credentials.client_email || !credentials.private_key) {
-      console.error("Missing required credential fields:", 
-        !credentials.client_email ? "client_email" : "private_key");
-      throw new Error("Missing required credential fields");
-    }
-    
-    // Create JWT payload
+    console.log("Starting Google Sheets API fetch with authentication");
+
+    // Create a JWT for Google authentication
     const now = Math.floor(Date.now() / 1000);
+    const jwtHeader = { alg: "RS256", typ: "JWT" };
     const jwtPayload = {
       iss: credentials.client_email,
       scope: "https://www.googleapis.com/auth/spreadsheets.readonly",
@@ -45,33 +27,52 @@ async function getAccessToken(credentials) {
       iat: now
     };
 
-    console.log(`Using client email: ${credentials.client_email}`);
+    // Convert header and payload to base64url format
+    const base64url = (str) => {
+      return btoa(str)
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+    };
+
+    const encodedHeader = base64url(JSON.stringify(jwtHeader));
+    const encodedPayload = base64url(JSON.stringify(jwtPayload));
+    const signatureInput = `${encodedHeader}.${encodedPayload}`;
+
+    // Use a simple library to handle PEM parsing and RSA signing
+    // Convert to correct format for crypto APIs
+    // Note: Supabase edge functions run in Deno environment, which has some differences
+    // from Node.js in how it handles crypto operations
+
+    const pemHeader = "-----BEGIN PRIVATE KEY-----";
+    const pemFooter = "-----END PRIVATE KEY-----";
     
-    // Extract and clean up private key
+    // Extract the base64-encoded private key
     let privateKey = credentials.private_key;
     
-    // Handle any potential key format issues
-    privateKey = privateKey
-      .replace(/\\n/g, '\n')
-      .replace(/["']/g, '')
-      .trim();
+    // Clean up the private key - remove surrounding quotes and normalize newlines
+    privateKey = privateKey.replace(/\\n/g, '\n').replace(/^"|"$/g, '');
+    
+    // Ensure the key has proper PEM format
+    if (!privateKey.includes(pemHeader)) {
+      privateKey = `${pemHeader}\n${privateKey}\n${pemFooter}`;
+    }
+
+    console.log("Prepared private key for signing");
+    
+    // Convert PEM to binary
+    const cleanedKey = privateKey
+      .replace(pemHeader, '')
+      .replace(pemFooter, '')
+      .replace(/\s/g, '');
       
-    console.log("Prepared private key for JWT signing");
+    const binaryKey = Uint8Array.from(atob(cleanedKey), c => c.charCodeAt(0));
     
-    // Use the proper JWT creation with external library
-    const encoder = new TextEncoder();
-    const encodedHeader = btoa(JSON.stringify({ alg: "RS256", typ: "JWT" }));
-    const encodedPayload = btoa(JSON.stringify(jwtPayload));
-    const toSign = `${encodedHeader}.${encodedPayload}`;
-    
-    // Parse the PEM formatted private key
-    const privateKeyBuffer = new TextEncoder().encode(privateKey);
-    
+    // Import the key using WebCrypto API
     try {
-      // Import the private key for JWT signing
       const cryptoKey = await crypto.subtle.importKey(
         "pkcs8",
-        privateKeyBuffer,
+        binaryKey,
         {
           name: "RSASSA-PKCS1-v1_5",
           hash: "SHA-256",
@@ -80,24 +81,24 @@ async function getAccessToken(credentials) {
         ["sign"]
       );
       
-      console.log("Successfully imported private key for signing");
+      console.log("Successfully imported private key");
       
       // Sign the JWT
+      const encoder = new TextEncoder();
       const signature = await crypto.subtle.sign(
         { name: "RSASSA-PKCS1-v1_5" },
         cryptoKey,
-        encoder.encode(toSign)
+        encoder.encode(signatureInput)
       );
       
-      console.log("Successfully signed JWT payload");
+      // Convert signature to base64url format
+      const base64Signature = base64url(String.fromCharCode(...new Uint8Array(signature)));
+      const jwt = `${signatureInput}.${base64Signature}`;
       
-      // Create the complete JWT
-      const base64Signature = btoa(String.fromCharCode(...new Uint8Array(signature)));
-      const jwt = `${toSign}.${base64Signature}`;
+      console.log("Successfully created JWT");
       
       // Exchange JWT for access token
-      console.log("Requesting access token from Google OAuth");
-      const response = await fetch("https://oauth2.googleapis.com/token", {
+      const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded"
@@ -105,21 +106,35 @@ async function getAccessToken(credentials) {
         body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
       });
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Token request failed: ${response.status} - ${errorText}`);
-        throw new Error(`Failed to get access token: ${response.status}`);
+      if (!tokenResponse.ok) {
+        const errorText = await tokenResponse.text();
+        console.error(`Token request failed: ${tokenResponse.status} - ${errorText}`);
+        throw new Error(`Failed to get access token: ${tokenResponse.status} - ${errorText}`);
       }
       
-      const tokenData = await response.json();
+      const tokenData = await tokenResponse.json();
       console.log("Successfully obtained access token");
-      return tokenData.access_token;
+      
+      // Use the access token to fetch the sheet data
+      const response = await fetch(url, {
+        headers: {
+          "Authorization": `Bearer ${tokenData.access_token}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Sheets API failed: ${response.status} - ${errorText}`);
+        throw new Error(`Sheets API failed: ${response.status} - ${errorText}`);
+      }
+      
+      return await response.json();
     } catch (error) {
-      console.error("Error during JWT creation/signing:", error);
-      throw new Error(`JWT signing error: ${error.message}`);
+      console.error("Error during JWT creation or API call:", error);
+      throw error;
     }
   } catch (error) {
-    console.error("Error getting access token:", error);
+    console.error("Error in fetchWithGoogleAuth:", error);
     throw error;
   }
 }
@@ -129,40 +144,34 @@ async function fetchGoogleSheetData(credentialsStr) {
   try {
     console.log("Starting Google Sheets data fetch");
     
-    // Get access token and add to headers
-    console.log("Getting access token for service account");
-    const accessToken = await getAccessToken(credentialsStr);
-    
-    if (!accessToken) {
-      throw new Error("Failed to obtain access token");
+    // Parse credentials if they're a string
+    let credentials;
+    try {
+      credentials = typeof credentialsStr === 'string' ? JSON.parse(credentialsStr) : credentialsStr;
+      console.log("Successfully parsed credentials");
+    } catch (error) {
+      console.error("Error parsing credentials:", error);
+      throw new Error("Invalid credentials format");
     }
+    
+    // Verify credentials have required fields
+    if (!credentials.client_email || !credentials.private_key) {
+      const missingField = !credentials.client_email ? "client_email" : "private_key";
+      console.error(`Missing required credential field: ${missingField}`);
+      throw new Error(`Missing required credential field: ${missingField}`);
+    }
+    
+    console.log(`Using service account: ${credentials.client_email}`);
     
     // Build request URL
-    let url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_RANGE}`;
-    
-    // Make the request to Google Sheets API
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_RANGE}`;
     console.log(`Requesting data from: ${url}`);
-    const response = await fetch(url, {
-      method: "GET",
-      headers: { 
-        "Authorization": `Bearer ${accessToken}` 
-      }
-    });
     
-    // Log detailed response info for debugging
-    console.log(`API response status: ${response.status}`);
+    // Make authenticated request
+    const result = await fetchWithGoogleAuth(url, credentials);
     
-    // Handle API response
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`API error: ${response.status} - ${errorText}`);
-      throw new Error(`Google Sheets API error: ${response.status}`);
-    }
-
-    // Parse and return the data
-    const data = await response.json();
-    console.log(`Successfully fetched ${data.values?.length || 0} rows of data`);
-    return data.values || [];
+    console.log(`Successfully fetched ${result.values?.length || 0} rows of data`);
+    return result.values || [];
   } catch (error) {
     console.error("Error fetching sheet data:", error);
     throw error;
