@@ -12,7 +12,6 @@ import RealEstatePipeline from './pages/RealEstatePipeline.tsx'
 import PropertyDetail from './pages/PropertyDetail.tsx'
 import NotFound from './pages/NotFound.tsx'
 import Auth from './pages/Auth.tsx'
-import { AuthProvider } from './contexts/AuthContext.tsx'
 import ProtectedRoute from './components/ProtectedRoute.tsx'
 
 const router = createBrowserRouter([

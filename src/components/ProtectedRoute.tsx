@@ -2,6 +2,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { LoadingState } from './LoadingState';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -12,10 +13,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const location = useLocation();
   
   if (loading) {
-    // Show a loading spinner or placeholder while checking auth state
+    // Show a loading spinner with improved UI
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <LoadingState showSpinner={true} message="Authenticating..." />
       </div>
     );
   }
