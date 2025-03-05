@@ -18,17 +18,23 @@ const syncSalesforceLeads = async () => {
       throw new Error(response.data.error || 'Sync operation failed');
     }
     
-    const syncedAccounts = response.data.accounts || 0;
-    const syncedContacts = response.data.contacts || 0;
-    const fixedCount = response.data.fixed || 0;
-    
     let successMessage = `Successfully synced ${response.data.synced || 0} leads, matched ${response.data.matched || 0} with campuses`;
     
-    if (fixedCount > 0) {
-      successMessage += `, fixed ${fixedCount} campus ID mappings`;
+    if (response.data.fixed && response.data.fixed > 0) {
+      successMessage += `, fixed ${response.data.fixed} lead campus ID mappings`;
     }
     
-    successMessage += `, and synced ${syncedAccounts} accounts and ${syncedContacts} contacts`;
+    if (response.data.fixedOpportunities && response.data.fixedOpportunities > 0) {
+      successMessage += `, fixed ${response.data.fixedOpportunities} opportunity campus ID mappings`;
+    }
+    
+    if (response.data.fixedFellows && response.data.fixedFellows > 0) {
+      successMessage += `, fixed ${response.data.fixedFellows} fellow campus ID mappings`;
+    }
+    
+    if (response.data.cleaned && response.data.cleaned > 0) {
+      successMessage += `, cleaned ${response.data.cleaned} invalid campus references`;
+    }
     
     toast.success(successMessage);
     

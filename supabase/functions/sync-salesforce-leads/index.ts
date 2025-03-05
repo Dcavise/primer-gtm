@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
@@ -65,8 +66,6 @@ interface SupabaseLead {
   lead_source: string | null;
   preferred_campus: string | null;
   campus_id: string | null;
-  converted_account_id: string | null;
-  converted_contact_id: string | null;
   converted_opportunity_id: string | null;
 }
 
@@ -163,43 +162,47 @@ async function fetchSalesforceLeads(token: string, instanceUrl: string): Promise
 function findCampusId(preferredCampus: string | null, campuses: Campus[]): string | null {
   if (!preferredCampus) return null;
   
-  // Convert to lowercase for case-insensitive matching
-  const preferredCampusLower = preferredCampus.toLowerCase().trim();
+  // Normalize campus name: lowercase and trim
+  const preferredCampusNormalized = preferredCampus.toLowerCase().trim();
   
   // Log the matching attempt for debugging
-  console.log(`Finding campus ID for "${preferredCampus}" (lowercase: "${preferredCampusLower}")`);
-  console.log('Available campuses:', campuses.map(c => ({ id: c.campus_id, name: c.campus_name })));
+  console.log(`Finding campus ID for "${preferredCampus}" (normalized: "${preferredCampusNormalized}")`);
   
-  // Find a perfect match first
+  // Find a perfect match first (case-insensitive)
   let matchingCampus = campuses.find(campus => 
-    campus.campus_name.toLowerCase().trim() === preferredCampusLower
+    campus.campus_name.toLowerCase().trim() === preferredCampusNormalized ||
+    campus.campus_id.toLowerCase().trim() === preferredCampusNormalized
   );
   
   // If no perfect match, try to find a partial match
   if (!matchingCampus) {
     matchingCampus = campuses.find(campus => {
       const campusNameLower = campus.campus_name.toLowerCase().trim();
+      const campusIdLower = campus.campus_id.toLowerCase().trim();
       return (
-        campusNameLower.includes(preferredCampusLower) || 
-        preferredCampusLower.includes(campusNameLower)
+        campusNameLower.includes(preferredCampusNormalized) || 
+        preferredCampusNormalized.includes(campusNameLower) ||
+        campusIdLower.includes(preferredCampusNormalized) ||
+        preferredCampusNormalized.includes(campusIdLower)
       );
     });
   }
   
-  // If still no match, try to match against campus_id directly
+  // If still no match, try to match against a normalized version of the campus_id
   if (!matchingCampus) {
     // Convert preferredCampus to a format similar to campus_id (lowercase, dashed)
-    const normalizedPreferredCampus = preferredCampusLower.replace(/\s+/g, '-');
+    const normalizedPreferredCampus = preferredCampusNormalized.replace(/\s+/g, '-');
     
     matchingCampus = campuses.find(campus => {
       const campusIdLower = campus.campus_id.toLowerCase();
       return campusIdLower === normalizedPreferredCampus ||
-             campusIdLower === preferredCampusLower;
+             campusIdLower === preferredCampusNormalized;
     });
   }
   
   if (matchingCampus) {
     console.log(`Match found: "${preferredCampus}" → campus_id "${matchingCampus.campus_id}" (${matchingCampus.campus_name})`);
+    // Always return campus_id in its original case from the campuses table
     return matchingCampus.campus_id;
   } else {
     console.log(`NO MATCH for "${preferredCampus}"`);
@@ -237,8 +240,6 @@ function transformLeads(salesforceLeads: SalesforceLead[], campuses: Campus[]): 
       lead_source: lead.LeadSource,
       preferred_campus: preferredCampus,
       campus_id: campusId,
-      converted_account_id: lead.ConvertedAccountId,
-      converted_contact_id: lead.ConvertedContactId,
       converted_opportunity_id: lead.ConvertedOpportunityId
     };
   });
@@ -328,7 +329,7 @@ async function clearIncorrectPreferredCampus(campuses: Campus[]): Promise<number
   return cleanedCount;
 }
 
-// Fix existing leads with incorrect campus IDs
+// Fix existing leads with inconsistent campus IDs
 async function fixExistingLeads(campuses: Campus[]): Promise<number> {
   console.log("Checking for leads with mismatched campus IDs...");
   
@@ -379,183 +380,138 @@ async function fixExistingLeads(campuses: Campus[]): Promise<number> {
   return updatedCount;
 }
 
-// Fetch and sync account data
-async function syncSalesforceAccounts(token: string, instanceUrl: string): Promise<number> {
-  console.log("Fetching and syncing Salesforce accounts...");
+// Fix campus IDs in the opportunities table
+async function fixOpportunitiesCampusIds(campuses: Campus[]): Promise<number> {
+  console.log("Checking for opportunities with mismatched campus IDs...");
   
-  // Get all ConvertedAccountId values from leads
-  const { data: leads, error: leadsError } = await supabase
-    .from('salesforce_leads')
-    .select('converted_account_id')
-    .not('converted_account_id', 'is', null);
+  // Get all opportunities with preferred_campus value
+  const { data: opportunities, error: oppsError } = await supabase
+    .from('salesforce_opportunities')
+    .select('id, opportunity_id, preferred_campus, campus_id');
   
-  if (leadsError) {
-    console.error("Error fetching leads with account IDs:", leadsError);
-    throw new Error(`Failed to fetch leads: ${leadsError.message}`);
+  if (oppsError) {
+    console.error("Error fetching opportunities:", oppsError);
+    throw new Error(`Failed to fetch opportunities: ${oppsError.message}`);
   }
   
-  if (!leads || leads.length === 0) {
-    console.log("No leads with account IDs found");
+  if (!opportunities || opportunities.length === 0) {
+    console.log("No opportunities found");
     return 0;
   }
   
-  // Extract unique account IDs
-  const accountIds = [...new Set(leads.map(l => l.converted_account_id).filter(Boolean))];
+  console.log(`Found ${opportunities.length} opportunities to check`);
+  let updatedCount = 0;
   
-  if (accountIds.length === 0) {
-    console.log("No account IDs to sync");
-    return 0;
-  }
-  
-  console.log(`Found ${accountIds.length} unique account IDs to sync`);
-  
-  // Prepare a comma-separated list of account IDs enclosed in single quotes
-  const accountIdList = accountIds.map(id => `'${id}'`).join(', ');
-  
-  const query = `
-    SELECT Id, Name
-    FROM Account
-    WHERE Id IN (${accountIdList})
-    LIMIT 1000
-  `;
-  
-  console.log("SOQL Query for accounts:", query);
-  
-  const encodedQuery = encodeURIComponent(query);
-  const queryUrl = `${instanceUrl}/services/data/v58.0/query?q=${encodedQuery}`;
-  
-  const response = await fetch(queryUrl, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
+  // Process each opportunity with preferred_campus and fix campus_id
+  for (const opp of opportunities) {
+    // Skip if no preferred_campus to match against
+    if (!opp.preferred_campus) continue;
+    
+    // Find the correct campus_id using our enhanced matching function
+    const matchedCampusId = findCampusId(opp.preferred_campus, campuses);
+    
+    // If we found a match and it's different from the current value, update it
+    if (matchedCampusId && matchedCampusId !== opp.campus_id) {
+      console.log(`Updating opportunity ${opp.opportunity_id}: changing campus_id from "${opp.campus_id}" to "${matchedCampusId}"`);
+      
+      const { error: updateError } = await supabase
+        .from('salesforce_opportunities')
+        .update({ campus_id: matchedCampusId })
+        .eq('id', opp.id);
+      
+      if (updateError) {
+        console.error(`Error updating opportunity ${opp.id}:`, updateError);
+      } else {
+        updatedCount++;
+      }
     }
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("Salesforce account query error:", errorText);
-    throw new Error(`Failed to fetch Salesforce accounts: ${response.status} ${errorText}`);
-  }
-
-  const data = await response.json();
-  console.log(`Retrieved ${data.records.length} accounts from Salesforce`);
-  
-  if (data.records.length === 0) {
-    return 0;
-  }
-  
-  // Transform and upsert account records
-  const accounts = data.records.map(account => ({
-    account_id: account.Id,
-    account_name: account.Name
-  }));
-  
-  const { data: syncedAccounts, error: syncError } = await supabase
-    .from('salesforce_accounts')
-    .upsert(accounts, {
-      onConflict: 'account_id',
-      ignoreDuplicates: false,
-      returning: 'minimal'
-    })
-    .select();
-  
-  if (syncError) {
-    console.error("Error syncing accounts:", syncError);
-    throw new Error(`Failed to sync accounts: ${syncError.message}`);
+    
+    // If no campus_id but we found a match, update it
+    if (matchedCampusId && !opp.campus_id) {
+      console.log(`Setting campus_id for opportunity ${opp.opportunity_id} to "${matchedCampusId}"`);
+      
+      const { error: updateError } = await supabase
+        .from('salesforce_opportunities')
+        .update({ campus_id: matchedCampusId })
+        .eq('id', opp.id);
+      
+      if (updateError) {
+        console.error(`Error updating opportunity ${opp.id}:`, updateError);
+      } else {
+        updatedCount++;
+      }
+    }
   }
   
-  return syncedAccounts?.length || 0;
+  console.log(`Updated campus_id for ${updatedCount} opportunities`);
+  return updatedCount;
 }
 
-// Fetch and sync contact data
-async function syncSalesforceContacts(token: string, instanceUrl: string): Promise<number> {
-  console.log("Fetching and syncing Salesforce contacts...");
+// Fix campus IDs in the fellows table
+async function fixFellowsCampusIds(campuses: Campus[]): Promise<number> {
+  console.log("Checking for fellows with mismatched campus IDs...");
   
-  // Get all ConvertedContactId values from leads
-  const { data: leads, error: leadsError } = await supabase
-    .from('salesforce_leads')
-    .select('converted_contact_id')
-    .not('converted_contact_id', 'is', null);
+  // Get all fellows with campus value
+  const { data: fellows, error: fellowsError } = await supabase
+    .from('fellows')
+    .select('id, fellow_id, campus, campus_id');
   
-  if (leadsError) {
-    console.error("Error fetching leads with contact IDs:", leadsError);
-    throw new Error(`Failed to fetch leads: ${leadsError.message}`);
+  if (fellowsError) {
+    console.error("Error fetching fellows:", fellowsError);
+    throw new Error(`Failed to fetch fellows: ${fellowsError.message}`);
   }
   
-  if (!leads || leads.length === 0) {
-    console.log("No leads with contact IDs found");
+  if (!fellows || fellows.length === 0) {
+    console.log("No fellows found");
     return 0;
   }
   
-  // Extract unique contact IDs
-  const contactIds = [...new Set(leads.map(l => l.converted_contact_id).filter(Boolean))];
+  console.log(`Found ${fellows.length} fellows to check`);
+  let updatedCount = 0;
   
-  if (contactIds.length === 0) {
-    console.log("No contact IDs to sync");
-    return 0;
-  }
-  
-  console.log(`Found ${contactIds.length} unique contact IDs to sync`);
-  
-  // Prepare a comma-separated list of contact IDs enclosed in single quotes
-  const contactIdList = contactIds.map(id => `'${id}'`).join(', ');
-  
-  const query = `
-    SELECT Id, FirstName, LastName, Email, AccountId
-    FROM Contact
-    WHERE Id IN (${contactIdList})
-    LIMIT 1000
-  `;
-  
-  console.log("SOQL Query for contacts:", query);
-  
-  const encodedQuery = encodeURIComponent(query);
-  const queryUrl = `${instanceUrl}/services/data/v58.0/query?q=${encodedQuery}`;
-  
-  const response = await fetch(queryUrl, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
+  // Process each fellow with campus name and fix campus_id
+  for (const fellow of fellows) {
+    // Skip if no campus to match against
+    if (!fellow.campus) continue;
+    
+    // Find the correct campus_id using our enhanced matching function
+    const matchedCampusId = findCampusId(fellow.campus, campuses);
+    
+    // If we found a match and it's different from the current value, update it
+    if (matchedCampusId && matchedCampusId !== fellow.campus_id) {
+      console.log(`Updating fellow ${fellow.fellow_id}: changing campus_id from "${fellow.campus_id}" to "${matchedCampusId}"`);
+      
+      const { error: updateError } = await supabase
+        .from('fellows')
+        .update({ campus_id: matchedCampusId })
+        .eq('id', fellow.id);
+      
+      if (updateError) {
+        console.error(`Error updating fellow ${fellow.id}:`, updateError);
+      } else {
+        updatedCount++;
+      }
     }
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("Salesforce contact query error:", errorText);
-    throw new Error(`Failed to fetch Salesforce contacts: ${response.status} ${errorText}`);
-  }
-
-  const data = await response.json();
-  console.log(`Retrieved ${data.records.length} contacts from Salesforce`);
-  
-  if (data.records.length === 0) {
-    return 0;
-  }
-  
-  // Transform and upsert contact records
-  const contacts = data.records.map(contact => ({
-    contact_id: contact.Id,
-    first_name: contact.FirstName || null,
-    last_name: contact.LastName,
-    email: contact.Email || null,
-    account_id: contact.AccountId || null
-  }));
-  
-  const { data: syncedContacts, error: syncError } = await supabase
-    .from('salesforce_contacts')
-    .upsert(contacts, {
-      onConflict: 'contact_id',
-      ignoreDuplicates: false,
-      returning: 'minimal'
-    })
-    .select();
-  
-  if (syncError) {
-    console.error("Error syncing contacts:", syncError);
-    throw new Error(`Failed to sync contacts: ${syncError.message}`);
+    
+    // If no campus_id but we found a match, update it
+    if (matchedCampusId && !fellow.campus_id) {
+      console.log(`Setting campus_id for fellow ${fellow.fellow_id} to "${matchedCampusId}"`);
+      
+      const { error: updateError } = await supabase
+        .from('fellows')
+        .update({ campus_id: matchedCampusId })
+        .eq('id', fellow.id);
+      
+      if (updateError) {
+        console.error(`Error updating fellow ${fellow.id}:`, updateError);
+      } else {
+        updatedCount++;
+      }
+    }
   }
   
-  return syncedContacts?.length || 0;
+  console.log(`Updated campus_id for ${updatedCount} fellows`);
+  return updatedCount;
 }
 
 // Main sync function
@@ -565,6 +521,8 @@ async function syncSalesforceLeads(): Promise<{
   matched?: number; 
   cleaned?: number; 
   fixed?: number;
+  fixedOpportunities?: number;
+  fixedFellows?: number;
   accounts?: number;
   contacts?: number;
   error?: string 
@@ -572,8 +530,12 @@ async function syncSalesforceLeads(): Promise<{
   try {
     const campuses = await getAllCampuses();
     
-    // Fix existing leads with incorrect campus IDs
+    // Fix existing leads with inconsistent campus IDs
     const fixedCount = await fixExistingLeads(campuses);
+    
+    // Fix campus IDs in opportunities and fellows tables
+    const fixedOpportunitiesCount = await fixOpportunitiesCampusIds(campuses);
+    const fixedFellowsCount = await fixFellowsCampusIds(campuses);
     
     const authResponse = await getSalesforceToken();
     
@@ -597,25 +559,14 @@ async function syncSalesforceLeads(): Promise<{
     
     const matchedCount = matchedError ? 0 : (matchedLeads?.length || 0);
     
-    // Sync related objects
-    const accountsCount = await syncSalesforceAccounts(
-      authResponse.access_token,
-      authResponse.instance_url
-    );
-    
-    const contactsCount = await syncSalesforceContacts(
-      authResponse.access_token,
-      authResponse.instance_url
-    );
-    
     return { 
       success: true, 
       synced: syncedCount,
       matched: matchedCount,
       cleaned: cleanedCount,
       fixed: fixedCount,
-      accounts: accountsCount,
-      contacts: contactsCount
+      fixedOpportunities: fixedOpportunitiesCount,
+      fixedFellows: fixedFellowsCount
     };
   } catch (error) {
     console.error("Error syncing Salesforce leads:", error);
