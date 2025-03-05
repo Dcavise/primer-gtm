@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Edit, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,7 +32,7 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
   // Individual field edit states
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
-  // Update type to include number and null
+  // Update type to include string, null, and number
   const [fieldValues, setFieldValues] = useState<Record<string, string | null | number>>({});
 
   // Initialize field values when property changes

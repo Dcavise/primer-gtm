@@ -116,6 +116,21 @@ export type Database = {
           },
         ]
       }
+      phase_options: {
+        Row: {
+          id: number
+          phase_name: string
+        }
+        Insert: {
+          id?: never
+          phase_name: string
+        }
+        Update: {
+          id?: never
+          phase_name?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -212,17 +227,21 @@ export type Database = {
         Row: {
           address: string | null
           ahj_building_records: string | null
-          ahj_zoning_confirmation: string | null
+          ahj_zoning_confirmation:
+            | Database["public"]["Enums"]["ahj_zoning_confirmation_status"]
+            | null
           campus_id: string | null
           created_at: string
-          fiber: string | null
-          fire_sprinklers: string | null
+          fiber: Database["public"]["Enums"]["fiber_status"] | null
+          fire_sprinklers:
+            | Database["public"]["Enums"]["fire_sprinkler_status"]
+            | null
           id: number
-          lease_status: string | null
+          lease_status: Database["public"]["Enums"]["lease_status_enum"] | null
           ll_email: string | null
           ll_phone: string | null
           ll_poc: string | null
-          loi_status: string | null
+          loi_status: Database["public"]["Enums"]["loi_status_enum"] | null
           market: string | null
           parking: string | null
           permitted_use: string | null
@@ -231,24 +250,32 @@ export type Database = {
           sf_available: string | null
           site_name: string | null
           status_notes: string | null
-          survey_status: string | null
-          test_fit_status: string | null
+          survey_status:
+            | Database["public"]["Enums"]["survey_status_enum"]
+            | null
+          test_fit_status:
+            | Database["public"]["Enums"]["test_fit_status_enum"]
+            | null
           zoning: string | null
         }
         Insert: {
           address?: string | null
           ahj_building_records?: string | null
-          ahj_zoning_confirmation?: string | null
+          ahj_zoning_confirmation?:
+            | Database["public"]["Enums"]["ahj_zoning_confirmation_status"]
+            | null
           campus_id?: string | null
           created_at?: string
-          fiber?: string | null
-          fire_sprinklers?: string | null
+          fiber?: Database["public"]["Enums"]["fiber_status"] | null
+          fire_sprinklers?:
+            | Database["public"]["Enums"]["fire_sprinkler_status"]
+            | null
           id?: number
-          lease_status?: string | null
+          lease_status?: Database["public"]["Enums"]["lease_status_enum"] | null
           ll_email?: string | null
           ll_phone?: string | null
           ll_poc?: string | null
-          loi_status?: string | null
+          loi_status?: Database["public"]["Enums"]["loi_status_enum"] | null
           market?: string | null
           parking?: string | null
           permitted_use?: string | null
@@ -257,24 +284,32 @@ export type Database = {
           sf_available?: string | null
           site_name?: string | null
           status_notes?: string | null
-          survey_status?: string | null
-          test_fit_status?: string | null
+          survey_status?:
+            | Database["public"]["Enums"]["survey_status_enum"]
+            | null
+          test_fit_status?:
+            | Database["public"]["Enums"]["test_fit_status_enum"]
+            | null
           zoning?: string | null
         }
         Update: {
           address?: string | null
           ahj_building_records?: string | null
-          ahj_zoning_confirmation?: string | null
+          ahj_zoning_confirmation?:
+            | Database["public"]["Enums"]["ahj_zoning_confirmation_status"]
+            | null
           campus_id?: string | null
           created_at?: string
-          fiber?: string | null
-          fire_sprinklers?: string | null
+          fiber?: Database["public"]["Enums"]["fiber_status"] | null
+          fire_sprinklers?:
+            | Database["public"]["Enums"]["fire_sprinkler_status"]
+            | null
           id?: number
-          lease_status?: string | null
+          lease_status?: Database["public"]["Enums"]["lease_status_enum"] | null
           ll_email?: string | null
           ll_phone?: string | null
           ll_poc?: string | null
-          loi_status?: string | null
+          loi_status?: Database["public"]["Enums"]["loi_status_enum"] | null
           market?: string | null
           parking?: string | null
           permitted_use?: string | null
@@ -283,8 +318,12 @@ export type Database = {
           sf_available?: string | null
           site_name?: string | null
           status_notes?: string | null
-          survey_status?: string | null
-          test_fit_status?: string | null
+          survey_status?:
+            | Database["public"]["Enums"]["survey_status_enum"]
+            | null
+          test_fit_status?:
+            | Database["public"]["Enums"]["test_fit_status_enum"]
+            | null
           zoning?: string | null
         }
         Relationships: [
@@ -419,6 +458,11 @@ export type Database = {
       }
     }
     Enums: {
+      ahj_zoning_confirmation_status: "true" | "false" | "unknown"
+      fiber_status: "true" | "false" | "unknown"
+      fire_sprinkler_status: "true" | "false" | "unknown"
+      lease_status_enum: "pending" | "sent" | "signed"
+      loi_status_enum: "pending" | "sent" | "signed"
       property_phase:
         | "0. New Site"
         | "1. Initial Diligence"
@@ -430,6 +474,8 @@ export type Database = {
         | "7. Set Up"
         | "Hold"
         | "Deprioritize"
+      survey_status_enum: "complete" | "pending" | "unknown"
+      test_fit_status_enum: "unknown" | "pending" | "complete"
     }
     CompositeTypes: {
       [_ in never]: never

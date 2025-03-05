@@ -25,6 +25,7 @@ export interface RealEstateProperty {
   fiber: string | null;
 }
 
+// This precisely matches the enum defined in Supabase
 export type PropertyPhase = 
   | '0. New Site'
   | '1. Initial Diligence'
