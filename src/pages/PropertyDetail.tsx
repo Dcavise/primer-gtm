@@ -18,7 +18,7 @@ import PropertyDocuments from '@/components/realestate/PropertyDocuments';
 import PropertyDiscussion from '@/components/realestate/PropertyDiscussion';
 import PropertyLocation from '@/components/realestate/PropertyLocation';
 import PropertyProgress from '@/components/realestate/PropertyProgress';
-import { getProgressStages } from '@/components/PropertyProgressStages';
+import { mapPhaseToProgressStages } from '@/components/PropertyProgressStages';
 
 const PropertyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -371,7 +371,8 @@ const PropertyDetail: React.FC = () => {
     return <PropertyNotFound />;
   }
 
-  const progressStages = getProgressStages();
+  // Generate progress stages based on the property's phase
+  const progressStages = mapPhaseToProgressStages(property.phase);
 
   return (
     <div className="min-h-screen bg-background">

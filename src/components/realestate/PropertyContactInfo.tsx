@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Edit, Save, X, Phone, Mail } from 'lucide-react';
+import { Edit, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -99,15 +99,14 @@ const PropertyContactInfo: React.FC<PropertyContactInfoProps> = ({
     }
   };
 
-  const renderContactPersonField = () => {
-    const fieldName = 'll_poc';
+  const renderField = (fieldName: string, label: string) => {
     const isFieldEditing = editingFields[fieldName];
     const isFieldSaving = savingFields[fieldName];
     
     return (
       <div className="space-y-1">
         <div className="flex justify-between items-center">
-          <p className="text-sm text-muted-foreground">Contact Person</p>
+          <p className="text-sm text-muted-foreground">{label}</p>
           {!isEditing && !isFieldEditing && (
             <Button 
               variant="ghost" 
@@ -126,7 +125,7 @@ const PropertyContactInfo: React.FC<PropertyContactInfoProps> = ({
               name={fieldName} 
               value={fieldValues[fieldName] || ''} 
               onChange={handleFieldChange}
-              placeholder="Enter contact name"
+              placeholder={`Enter ${label.toLowerCase()}`}
             />
             <div className="flex justify-end space-x-2">
               <Button 
@@ -158,174 +157,12 @@ const PropertyContactInfo: React.FC<PropertyContactInfoProps> = ({
         ) : isEditing ? (
           <Input 
             name={fieldName} 
-            value={formValues.ll_poc || ''} 
+            value={formValues[fieldName as keyof RealEstateProperty] || ''} 
             onChange={onInputChange}
-            placeholder="Enter contact name"
+            placeholder={`Enter ${label.toLowerCase()}`}
           />
         ) : (
-          <p className="font-medium">{property.ll_poc || 'Not specified'}</p>
-        )}
-      </div>
-    );
-  };
-
-  const renderPhoneField = () => {
-    const fieldName = 'll_phone';
-    const isFieldEditing = editingFields[fieldName];
-    const isFieldSaving = savingFields[fieldName];
-    
-    return (
-      <div className="space-y-1">
-        <div className="flex justify-between items-center">
-          <p className="text-sm text-muted-foreground">Phone Number</p>
-          {!isEditing && !isFieldEditing && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => handleEditField(fieldName)}
-              className="h-6 px-2"
-            >
-              <Edit className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
-        
-        {isFieldEditing ? (
-          <div className="space-y-2">
-            <Input 
-              name={fieldName} 
-              value={fieldValues[fieldName] || ''} 
-              onChange={handleFieldChange}
-              placeholder="Enter phone number"
-              type="tel"
-            />
-            <div className="flex justify-end space-x-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => handleCancelField(fieldName)}
-                disabled={isFieldSaving}
-                className="h-7 px-2 text-xs"
-              >
-                <X className="h-3 w-3 mr-1" /> Cancel
-              </Button>
-              <Button 
-                variant="default" 
-                size="sm" 
-                onClick={() => handleSaveField(fieldName)}
-                disabled={isFieldSaving}
-                className="h-7 px-2 text-xs"
-              >
-                {isFieldSaving ? (
-                  <LoadingState message="Saving..." showSpinner={true} />
-                ) : (
-                  <>
-                    <Save className="h-3 w-3 mr-1" /> Save
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        ) : isEditing ? (
-          <Input 
-            name={fieldName} 
-            value={formValues.ll_phone || ''} 
-            onChange={onInputChange}
-            placeholder="Enter phone number"
-            type="tel"
-          />
-        ) : (
-          property.ll_phone ? (
-            <div className="flex items-center">
-              <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
-              <a href={`tel:${property.ll_phone}`} className="text-primary hover:underline">
-                {property.ll_phone}
-              </a>
-            </div>
-          ) : (
-            <p className="text-muted-foreground italic">No phone provided</p>
-          )
-        )}
-      </div>
-    );
-  };
-
-  const renderEmailField = () => {
-    const fieldName = 'll_email';
-    const isFieldEditing = editingFields[fieldName];
-    const isFieldSaving = savingFields[fieldName];
-    
-    return (
-      <div className="space-y-1">
-        <div className="flex justify-between items-center">
-          <p className="text-sm text-muted-foreground">Email Address</p>
-          {!isEditing && !isFieldEditing && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => handleEditField(fieldName)}
-              className="h-6 px-2"
-            >
-              <Edit className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
-        
-        {isFieldEditing ? (
-          <div className="space-y-2">
-            <Input 
-              name={fieldName} 
-              value={fieldValues[fieldName] || ''} 
-              onChange={handleFieldChange}
-              placeholder="Enter email address"
-              type="email"
-            />
-            <div className="flex justify-end space-x-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => handleCancelField(fieldName)}
-                disabled={isFieldSaving}
-                className="h-7 px-2 text-xs"
-              >
-                <X className="h-3 w-3 mr-1" /> Cancel
-              </Button>
-              <Button 
-                variant="default" 
-                size="sm" 
-                onClick={() => handleSaveField(fieldName)}
-                disabled={isFieldSaving}
-                className="h-7 px-2 text-xs"
-              >
-                {isFieldSaving ? (
-                  <LoadingState message="Saving..." showSpinner={true} />
-                ) : (
-                  <>
-                    <Save className="h-3 w-3 mr-1" /> Save
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        ) : isEditing ? (
-          <Input 
-            name={fieldName} 
-            value={formValues.ll_email || ''} 
-            onChange={onInputChange}
-            placeholder="Enter email address"
-            type="email"
-          />
-        ) : (
-          property.ll_email ? (
-            <div className="flex items-center">
-              <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-              <a href={`mailto:${property.ll_email}`} className="text-primary hover:underline truncate">
-                {property.ll_email}
-              </a>
-            </div>
-          ) : (
-            <p className="text-muted-foreground italic">No email provided</p>
-          )
+          <p className="font-medium">{property[fieldName as keyof RealEstateProperty] || 'Not specified'}</p>
         )}
       </div>
     );
@@ -335,7 +172,7 @@ const PropertyContactInfo: React.FC<PropertyContactInfoProps> = ({
     <Card>
       <CardHeader>
         <CardTitle className="text-xl flex items-center justify-between">
-          <div>Contact Information</div>
+          Contact Information
           <div className="space-x-2">
             {isEditing ? (
               <>
@@ -376,20 +213,10 @@ const PropertyContactInfo: React.FC<PropertyContactInfoProps> = ({
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="border-b pb-4">
-          <h3 className="font-medium text-lg mb-3">Landlord Contact</h3>
-          <div className="space-y-3">
-            {renderContactPersonField()}
-            {renderPhoneField()}
-            {renderEmailField()}
-          </div>
-        </div>
-        
-        <div className="text-sm text-muted-foreground">
-          <p>Property ID: {property.id}</p>
-          <p>Added on: {new Date(property.created_at).toLocaleDateString()}</p>
-        </div>
+      <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {renderField('ll_poc', 'Landlord Point of Contact')}
+        {renderField('ll_phone', 'Landlord Phone')}
+        {renderField('ll_email', 'Landlord Email')}
       </CardContent>
     </Card>
   );
