@@ -62,6 +62,8 @@ const SalesforceLeadsPage: React.FC = () => {
 
   const fetchStats = async () => {
     try {
+      console.log("Fetching stats for campus:", selectedCampusId || "all campuses");
+      
       // Fetch fellows count
       let fellowsQuery = supabase
         .from('fellows')
@@ -115,6 +117,13 @@ const SalesforceLeadsPage: React.FC = () => {
       const { count: closedWonOppsCount, error: closedWonOppsError } = await closedWonOppsQuery;
       
       if (closedWonOppsError) throw closedWonOppsError;
+      
+      console.log("Stats fetched successfully:", {
+        fellowsCount,
+        leadsCount,
+        activeOppsCount: activeOppsCount,
+        closedWonOppsCount: closedWonOppsCount
+      });
       
       // Update stats
       setStats({
