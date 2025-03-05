@@ -94,7 +94,7 @@ export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListPr
 
   if (permits.length === 0 && searchedAddress) {
     return (
-      <div className="py-12 text-center">
+      <div className="py-6 text-center">
         <h3 className="text-xl font-medium mb-2">No permits found</h3>
         <p className="text-muted-foreground">
           We couldn't find any permit data for this exact address. This could be because:
@@ -106,6 +106,10 @@ export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListPr
         </ul>
       </div>
     );
+  }
+
+  if (!searchedAddress) {
+    return null;
   }
 
   return (
@@ -129,11 +133,9 @@ export const PermitList = ({ permits, isLoading, searchedAddress }: PermitListPr
       )}
 
       {permits.length > 0 && (
-        <div className="mt-6">
+        <div>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-green-500" />
-              <h2 className="text-xl font-medium">Address Permits</h2>
               <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">
                 {permits.length}
               </span>

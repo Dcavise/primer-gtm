@@ -1,4 +1,3 @@
-
 import { ZoningData } from "@/hooks/use-zoning-data";
 import { LoadingState } from "./LoadingState";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { CalendarIcon, HomeIcon, Building2Icon, WarehouseIcon, Link, CheckIcon, XIcon, AlertCircleIcon } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface ZoningListProps {
   zoningData: ZoningData[];
@@ -34,7 +34,7 @@ export const ZoningList = ({ zoningData, isLoading, searchedAddress }: ZoningLis
 
   if (zoningData.length === 0 && searchedAddress) {
     return (
-      <div className="py-12 text-center">
+      <div className="py-6 text-center">
         <h3 className="text-xl font-medium mb-2">No zoning data found</h3>
         <p className="text-muted-foreground">
           We couldn't find any zoning data for this location. Try adjusting your search or try a different address.
@@ -44,41 +44,25 @@ export const ZoningList = ({ zoningData, isLoading, searchedAddress }: ZoningLis
   }
 
   if (!searchedAddress && !isLoading) {
-    return (
-      <motion.div 
-        className="py-16 text-center"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3, duration: 0.6 }}
-      >
-        <h2 className="text-2xl font-medium mb-3">Enter an address to get zoning information</h2>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          Search for zoning regulations and land use restrictions that may affect your property investment.
-          Understanding zoning is critical to:
-        </p>
-        <ul className="mt-4 text-muted-foreground max-w-lg mx-auto text-left list-disc pl-8">
-          <li className="mb-2">Determine allowed property uses and restrictions</li>
-          <li className="mb-2">Identify building height and density limitations</li>
-          <li className="mb-2">Verify setback and lot coverage requirements</li>
-          <li className="mb-2">Understand parking and landscape regulations</li>
-          <li className="mb-2">Plan for future property development options</li>
-        </ul>
-      </motion.div>
-    );
+    return null;
   }
 
   return (
-    <div className="mt-6">
-      {searchedAddress && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="mb-6"
-        >
-          <h2 className="text-lg md:text-xl font-medium mb-1">Zoning Results for</h2>
-          <p className="text-muted-foreground">{searchedAddress}</p>
-        </motion.div>
+    <div>
+      {searchedAddress && zoningData.length > 0 && (
+        <Alert className="mb-6 bg-blue-50 border-blue-200 dark:bg-blue-900/10 dark:border-blue-900/30">
+          <div className="flex items-start">
+            <Building2Icon className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+            <div className="ml-3">
+              <AlertTitle className="text-blue-800 dark:text-blue-300">
+                Zoning information found
+              </AlertTitle>
+              <AlertDescription className="text-blue-700 dark:text-blue-400">
+                Found zoning regulations for "{searchedAddress}".
+              </AlertDescription>
+            </div>
+          </div>
+        </Alert>
       )}
       
       <div className="grid grid-cols-1 gap-6">
@@ -196,20 +180,6 @@ export const ZoningList = ({ zoningData, isLoading, searchedAddress }: ZoningLis
                             <h4 className="font-medium text-xs uppercase text-muted-foreground mb-1">Standard Controls</h4>
                             <ul className="text-sm">
                               {Object.entries(zone.controls.standard).map(([key, value]) => (
-                                <li key={key} className="mb-1 grid grid-cols-2 gap-2">
-                                  <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}:</span>
-                                  <span>{value}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ) : null}
-                        
-                        {zone.controls["non-standard"] && Object.keys(zone.controls["non-standard"]).length > 0 ? (
-                          <div className="space-y-2 mt-4">
-                            <h4 className="font-medium text-xs uppercase text-muted-foreground mb-1">Non-Standard Controls</h4>
-                            <ul className="text-sm">
-                              {Object.entries(zone.controls["non-standard"]).map(([key, value]) => (
                                 <li key={key} className="mb-1 grid grid-cols-2 gap-2">
                                   <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}:</span>
                                   <span>{value}</span>

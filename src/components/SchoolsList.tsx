@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { School } from "@/types/schools";
 import { SchoolCard } from "./SchoolCard";
@@ -74,7 +73,6 @@ export const SchoolsList = ({ schools, isLoading, searchedAddress }: SchoolsList
     return schoolsByLevel[level]?.length || 0;
   };
 
-  // Sort tabs to ensure Elementary School is first
   const sortedLevels = Object.keys(schoolsByLevel).sort((a, b) => {
     if (a === "All") return -1; // All should always be first
     if (b === "All") return 1;
@@ -95,13 +93,17 @@ export const SchoolsList = ({ schools, isLoading, searchedAddress }: SchoolsList
 
   if (schools.length === 0 && searchedAddress) {
     return (
-      <div className="py-12 text-center">
+      <div className="py-6 text-center">
         <h3 className="text-xl font-medium mb-2">No schools found</h3>
         <p className="text-muted-foreground">
           We couldn't find any schools within 5 miles of this location. Try a different address or expand your search criteria.
         </p>
       </div>
     );
+  }
+
+  if (!searchedAddress) {
+    return null;
   }
 
   return (
@@ -123,11 +125,9 @@ export const SchoolsList = ({ schools, isLoading, searchedAddress }: SchoolsList
       )}
 
       {schools.length > 0 && (
-        <div className="mt-6">
+        <div>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <SchoolIcon className="h-5 w-5 text-blue-500" />
-              <h2 className="text-xl font-medium">Nearby Schools</h2>
               <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
                 {schools.length}
               </Badge>

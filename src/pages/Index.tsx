@@ -38,15 +38,12 @@ const Index = () => {
   // Consolidated state
   const [userAddress, setUserAddress] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [activeSection, setActiveSection] = useState<"zoning" | "schools" | "permits">("zoning");
   
   // Determine if any data is loading
   const isAnyDataLoading = isSearchingPermits || isSearchingZoning || isSearchingSchools;
   
-  // Determine the current displayed address (prioritize the active section's address)
-  const displayedAddress = activeSection === "zoning" ? zoningAddress : 
-                          activeSection === "schools" ? schoolsAddress :
-                          permitAddress || userAddress;
+  // Determine the current displayed address (use first available address)
+  const displayedAddress = zoningAddress || schoolsAddress || permitAddress || userAddress;
 
   const handleSearchAllData = async (params: any, address: string) => {
     // First, reset everything
@@ -78,9 +75,6 @@ const Index = () => {
         fetchZoningData(address),
         fetchSchoolsData(params, address)
       ]);
-      
-      // Set active section to zoning first (updated)
-      setActiveSection("zoning");
       
       toast.success("Property research complete", {
         description: "All available data has been retrieved for this location."
@@ -174,51 +168,50 @@ const Index = () => {
         )}
         
         {displayedAddress && (
-          <Tabs 
-            defaultValue="zoning" 
-            value={activeSection} 
-            onValueChange={(value) => setActiveSection(value as any)}
-            className="mt-6"
-          >
-            <TabsList className="bg-background border-b w-full justify-start overflow-x-auto">
-              <TabsTrigger value="zoning" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                <MapIcon className="h-4 w-4 mr-2" />
-                Zoning
-              </TabsTrigger>
-              <TabsTrigger value="schools" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                <School className="h-4 w-4 mr-2" />
-                Schools
-              </TabsTrigger>
-              <TabsTrigger value="permits" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                <FileTextIcon className="h-4 w-4 mr-2" />
-                Permits
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="zoning" className="py-6 animate-in fade-in-50">
+          <div className="space-y-12 mt-6">
+            {/* Zoning Section */}
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <MapIcon className="h-5 w-5 text-blue-500" />
+                <h2 className="text-xl font-medium">Zoning Information</h2>
+              </div>
               <ZoningList
                 zoningData={zoningData}
                 isLoading={isSearchingZoning}
                 searchedAddress={zoningAddress}
               />
-            </TabsContent>
+            </section>
             
-            <TabsContent value="schools" className="py-6 animate-in fade-in-50">
+            <Separator className="my-8" />
+            
+            {/* Schools Section */}
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <School className="h-5 w-5 text-blue-500" />
+                <h2 className="text-xl font-medium">Schools</h2>
+              </div>
               <SchoolsList
                 schools={schools}
                 isLoading={isSearchingSchools}
                 searchedAddress={schoolsAddress}
               />
-            </TabsContent>
+            </section>
             
-            <TabsContent value="permits" className="py-6 animate-in fade-in-50">
+            <Separator className="my-8" />
+            
+            {/* Permits Section */}
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <FileTextIcon className="h-5 w-5 text-blue-500" />
+                <h2 className="text-xl font-medium">Building Permits</h2>
+              </div>
               <PermitList 
                 permits={testResults ? testResults.permits : permits} 
                 isLoading={isSearchingPermits && !testResults} 
                 searchedAddress={permitAddress || (testResults ? testResults.address : "")}
               />
-            </TabsContent>
-          </Tabs>
+            </section>
+          </div>
         )}
       </main>
 
