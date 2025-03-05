@@ -31,11 +31,19 @@ export async function getApiKey(keyType: 'zoneomics' | 'census' | 'google_maps' 
       
       // Fall back to GET method if POST fails
       console.log(`Trying GET method for ${keyType} API key`);
-      const response = await fetch(`${supabase.functions.url('get-api-keys')}?key=${keyType}`, {
+      
+      // Get functions URL using the appropriate method
+      const functionUrl = `${supabase.functions.url}/get-api-keys?key=${keyType}`;
+      
+      // Make GET request with proper auth
+      const response = await fetch(functionUrl, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.auth.session()?.access_token || ''}`,
+          // Use current auth token if available
+          ...(supabase.auth.getSession && await supabase.auth.getSession().then(session => ({
+            'Authorization': `Bearer ${session?.data?.session?.access_token || ''}`
+          })))
         },
       });
 
@@ -55,7 +63,7 @@ export async function getApiKey(keyType: 'zoneomics' | 'census' | 'google_maps' 
     }
   } catch (error) {
     console.error(`Error in getApiKey for ${keyType}:`, error);
-    throw error;
+    throw new Error(`Failed to fetch API key: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
