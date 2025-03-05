@@ -31,7 +31,7 @@ const PropertyContactInfo: React.FC<PropertyContactInfoProps> = ({
   // Individual field edit states
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
-  // Update type definition to allow mixed types
+  // Update type to include number
   const [fieldValues, setFieldValues] = useState<Record<string, string | null | number>>({});
 
   // Initialize field values when property changes
@@ -172,7 +172,7 @@ const PropertyContactInfo: React.FC<PropertyContactInfoProps> = ({
     <Card>
       <CardHeader>
         <CardTitle className="text-xl flex items-center justify-between">
-          Contact Information
+          Landlord Contact
           <div className="space-x-2">
             {isEditing ? (
               <>
@@ -213,10 +213,10 @@ const PropertyContactInfo: React.FC<PropertyContactInfoProps> = ({
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {renderField('ll_poc', 'Landlord Point of Contact')}
-        {renderField('ll_phone', 'Landlord Phone')}
-        {renderField('ll_email', 'Landlord Email')}
+      <CardContent className="space-y-4">
+        {renderField('ll_poc', 'Contact Name')}
+        {renderField('ll_phone', 'Phone')}
+        {renderField('ll_email', 'Email')}
       </CardContent>
     </Card>
   );

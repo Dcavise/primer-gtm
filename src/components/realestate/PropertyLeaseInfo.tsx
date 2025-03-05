@@ -31,7 +31,7 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
   // Individual field edit states
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
-  // Update type to include number
+  // Update type to include number and null
   const [fieldValues, setFieldValues] = useState<Record<string, string | null | number>>({});
 
   // Initialize field values when property changes

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -57,28 +57,33 @@ const PropertyDetail: React.FC = () => {
         throw new Error(`Invalid property ID: ${id}`);
       }
       
-      const { data, error } = await supabase
-        .from('real_estate_pipeline')
-        .select('*')
-        .eq('id', propertyId)
-        .maybeSingle();
-      
-      if (error) {
-        console.error('Error fetching property details:', error);
-        throw new Error(`Failed to fetch property details: ${error.message}`);
-      }
-      
-      if (!data) {
-        console.error('Property not found with id:', id);
+      try {
+        const { data, error } = await supabase
+          .from('real_estate_pipeline')
+          .select('*')
+          .eq('id', propertyId)
+          .maybeSingle();
+        
+        if (error) {
+          console.error('Error fetching property details:', error);
+          throw new Error(`Failed to fetch property details: ${error.message}`);
+        }
+        
+        if (!data) {
+          console.error('Property not found with id:', id);
+          return null;
+        }
+        
+        console.log('Found property:', data);
+        return data;
+      } catch (error) {
+        console.error('Error during property fetch:', error);
         return null;
       }
-      
-      console.log('Found property:', data);
-      return data;
     }
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (property) {
       if (property.status_notes) {
         setNotesValue(property.status_notes);
@@ -371,8 +376,7 @@ const PropertyDetail: React.FC = () => {
     return <PropertyNotFound />;
   }
 
-  // Generate progress stages based on the property's phase
-  const progressStages = mapPhaseToProgressStages(property.phase);
+  const progressStages = property.phase ? mapPhaseToProgressStages(property.phase) : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -383,7 +387,9 @@ const PropertyDetail: React.FC = () => {
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Pipeline
         </Button>
         
-        <PropertyProgress stages={progressStages} />
+        {progressStages.length > 0 && (
+          <PropertyProgress stages={progressStages} />
+        )}
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">

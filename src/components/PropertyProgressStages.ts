@@ -1,4 +1,3 @@
-
 import { Stage } from '@/components/StageProgressBar';
 import { PropertyPhase } from '@/types/realEstate';
 
@@ -44,20 +43,24 @@ export const mapPhaseToProgressStages = (phase: PropertyPhase | null): Stage[] =
   
   if (!phase) return stages;
   
+  // Reset all stages to default state
+  stages.forEach(stage => {
+    stage.isCompleted = false;
+    stage.isCurrent = false;
+  });
+  
   // Determine which stages should be marked as completed or current based on the phase
   switch (phase) {
     case '0. New Site':
     case '1. Initial Diligence':
     case '2. Survey':
       // In diligence phase
-      stages[0].isCompleted = false;
       stages[0].isCurrent = true;
       return stages;
     
     case '3. Test Fit':
       // Test fit phase
       stages[0].isCompleted = true;
-      stages[1].isCompleted = false;
       stages[1].isCurrent = true;
       return stages;
       
@@ -65,7 +68,6 @@ export const mapPhaseToProgressStages = (phase: PropertyPhase | null): Stage[] =
       // Plan production phase
       stages[0].isCompleted = true;
       stages[1].isCompleted = true;
-      stages[2].isCompleted = false;
       stages[2].isCurrent = true;
       return stages;
       
@@ -74,7 +76,6 @@ export const mapPhaseToProgressStages = (phase: PropertyPhase | null): Stage[] =
       stages[0].isCompleted = true;
       stages[1].isCompleted = true;
       stages[2].isCompleted = true;
-      stages[3].isCompleted = false;
       stages[3].isCurrent = true;
       return stages;
       
@@ -84,7 +85,6 @@ export const mapPhaseToProgressStages = (phase: PropertyPhase | null): Stage[] =
       stages[1].isCompleted = true;
       stages[2].isCompleted = true;
       stages[3].isCompleted = true;
-      stages[4].isCompleted = false;
       stages[4].isCurrent = true;
       return stages;
       
@@ -95,8 +95,13 @@ export const mapPhaseToProgressStages = (phase: PropertyPhase | null): Stage[] =
       stages[2].isCompleted = true;
       stages[3].isCompleted = true;
       stages[4].isCompleted = true;
-      stages[5].isCompleted = false;
       stages[5].isCurrent = true;
+      return stages;
+      
+    case 'Hold':
+    case 'Deprioritize':
+      // Other phases - just show diligence as current
+      stages[0].isCurrent = true;
       return stages;
       
     default:
