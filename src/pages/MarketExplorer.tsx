@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getApiKey } from "@/services/api-config";
@@ -23,14 +23,17 @@ const MarketExplorer = () => {
   const { campuses, fetchCampuses } = useCampuses();
   const mapInitialized = useRef(false);
   const [mapError, setMapError] = useState<string | null>(null);
-
-  // Fetch API key and campuses when component mounts
+  const tokenFetchedRef = useRef(false);
+  
+  // Fetch API key only once when component mounts
   useEffect(() => {
-    const initializeData = async () => {
+    const fetchToken = async () => {
+      if (tokenFetchedRef.current) return;
+      
       try {
-        // Fetch Mapbox token
+        console.log("Fetching Mapbox token (first time)");
+        tokenFetchedRef.current = true;
         const token = await getApiKey('mapbox');
-        console.log("Mapbox token fetched successfully:", token ? "Token exists" : "Token is empty");
         
         if (!token) {
           setMapError("Mapbox token is empty or invalid");
@@ -38,21 +41,33 @@ const MarketExplorer = () => {
           return;
         }
         
+        console.log("Successfully set Mapbox token");
         setMapboxToken(token);
-        
-        // Fetch campuses
-        await fetchCampuses();
       } catch (error) {
-        console.error("Error initializing data:", error);
-        setMapError("Failed to initialize data. Please check your connection and try again.");
-        toast.error("Failed to initialize data", {
-          description: "Please check your connection and try again"
-        });
+        console.error("Error fetching Mapbox token:", error);
+        setMapError("Failed to fetch Mapbox token. Please check your connection and try again.");
         setIsLoading(false);
       }
     };
 
-    initializeData();
+    fetchToken();
+  }, []);
+  
+  // Fetch campuses in a separate effect
+  useEffect(() => {
+    const loadCampuses = async () => {
+      try {
+        await fetchCampuses();
+        console.log("Campuses loaded successfully");
+      } catch (error) {
+        console.error("Error fetching campuses:", error);
+        toast.error("Failed to fetch campus data", {
+          description: "Please check your connection and try again"
+        });
+      }
+    };
+    
+    loadCampuses();
   }, [fetchCampuses]);
 
   // Initialize map once we have the token
@@ -60,19 +75,19 @@ const MarketExplorer = () => {
     if (!mapboxToken || !mapContainer.current || mapInitialized.current) return;
     
     try {
-      console.log("Initializing Mapbox map with token", mapboxToken.substring(0, 10) + "...");
-      console.log("Map container exists:", !!mapContainer.current);
+      console.log("Initializing Mapbox map...");
       
       // Set the access token for mapboxgl
       mapboxgl.accessToken = mapboxToken;
       
-      console.log("Creating new map instance");
+      // Create map instance
       const newMap = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/light-v11',
         center: marketCoordinates.default.center,
         zoom: marketCoordinates.default.zoom,
         pitch: 30,
+        antialias: true
       });
 
       // Add navigation controls
@@ -89,7 +104,7 @@ const MarketExplorer = () => {
 
       // Wait for map to load before updating state
       newMap.on('load', () => {
-        console.log("Map loaded successfully");
+        console.log("✅ Map loaded successfully");
         setIsLoading(false);
         setMapError(null);
         toast.success("Map loaded successfully", {
@@ -106,16 +121,11 @@ const MarketExplorer = () => {
       newMap.on('error', (e) => {
         console.error("Mapbox error:", e);
         setMapError(`Map failed to load correctly: ${e.error ? e.error.message : "Unknown error"}`);
-        toast.error("Map failed to load correctly", {
-          description: e.error ? e.error.message : "Unknown error"
-        });
+        setIsLoading(false);
       });
     } catch (error) {
       console.error("Error initializing map:", error);
       setMapError(`Failed to load map: ${error instanceof Error ? error.message : "Unknown error"}`);
-      toast.error("Failed to load map", {
-        description: "Please check your connection and try again"
-      });
       setIsLoading(false);
     }
 
@@ -130,6 +140,60 @@ const MarketExplorer = () => {
     };
   }, [mapboxToken, selectedMarket]);
 
+  // Memoize createDemoMap to prevent unnecessary re-creation
+  const createDemoMap = useCallback((mapInstance: mapboxgl.Map) => {
+    console.log("Creating demo map for All Campuses view");
+    
+    // Clear existing markers
+    const existingMarkers = document.querySelectorAll('.mapboxgl-marker');
+    existingMarkers.forEach(marker => marker.remove());
+    
+    // Use a subset of the market coordinates as sample data points
+    const demoLocations = [
+      { name: "San Francisco", coordinates: marketCoordinates.sf.center, color: "#1F77B4" },
+      { name: "New York City", coordinates: marketCoordinates.nyc.center, color: "#FF7F0E" },
+      { name: "Chicago", coordinates: marketCoordinates.chi.center, color: "#2CA02C" },
+      { name: "Los Angeles", coordinates: marketCoordinates.la.center, color: "#D62728" },
+      { name: "Boston", coordinates: marketCoordinates.bos.center, color: "#9467BD" },
+      { name: "Seattle", coordinates: marketCoordinates.sea.center, color: "#8C564B" },
+      { name: "Miami", coordinates: marketCoordinates.mia.center, color: "#E377C2" },
+      { name: "Austin", coordinates: marketCoordinates.aus.center, color: "#7F7F7F" },
+      { name: "Denver", coordinates: marketCoordinates.den.center, color: "#BCBD22" },
+      { name: "Atlanta", coordinates: marketCoordinates.atl.center, color: "#17BECF" }
+    ];
+    
+    // Add markers for each location
+    demoLocations.forEach(location => {
+      // Create a DOM element for the marker
+      const el = document.createElement('div');
+      el.className = 'mapboxgl-marker';
+      el.style.width = '20px';
+      el.style.height = '20px';
+      el.style.borderRadius = '50%';
+      el.style.backgroundColor = location.color;
+      el.style.border = '2px solid white';
+      el.style.boxShadow = '0 0 4px rgba(0,0,0,0.3)';
+      
+      // Add a popup with the location name
+      const popup = new mapboxgl.Popup({ offset: 25 })
+        .setText(location.name);
+      
+      // Add marker to map
+      new mapboxgl.Marker(el)
+        .setLngLat(location.coordinates)
+        .setPopup(popup)
+        .addTo(mapInstance);
+    });
+    
+    // Zoom out to see all of the United States
+    mapInstance.flyTo({
+      center: marketCoordinates.default.center,
+      zoom: marketCoordinates.default.zoom,
+      pitch: 30,
+      duration: 2000
+    });
+  }, []);
+
   // Update map view when selected market changes
   useEffect(() => {
     if (!map.current || !mapInitialized.current) return;
@@ -137,11 +201,9 @@ const MarketExplorer = () => {
     const updateMapView = async () => {
       console.log("Updating map view for selected market:", selectedMarket);
       
-      // Remove previous demo markers if they exist
-      if (map.current) {
-        const existingMarkers = document.querySelectorAll('.mapboxgl-marker');
-        existingMarkers.forEach(marker => marker.remove());
-      }
+      // Remove previous markers
+      const existingMarkers = document.querySelectorAll('.mapboxgl-marker');
+      existingMarkers.forEach(marker => marker.remove());
       
       // Default coordinates
       let coordinates = marketCoordinates.default.center;
@@ -156,7 +218,7 @@ const MarketExplorer = () => {
         const selectedCampus = campuses.find(c => c.campus_id === selectedMarket);
         
         if (selectedCampus) {
-          console.log("Selected campus:", selectedCampus);
+          console.log("Selected campus:", selectedCampus.campus_name);
           // First try to find in marketCoordinates
           const campusNameLower = selectedCampus.campus_name.toLowerCase();
           let found = false;
@@ -210,57 +272,7 @@ const MarketExplorer = () => {
     };
     
     updateMapView();
-  }, [selectedMarket, campuses]);
-
-  // Create a demo map with sample data points for "All Campuses" view
-  const createDemoMap = (mapInstance: mapboxgl.Map) => {
-    console.log("Creating demo map for All Campuses view");
-    
-    // Use a subset of the market coordinates as sample data points
-    const demoLocations = [
-      { name: "San Francisco", coordinates: marketCoordinates.sf.center, color: "#1F77B4" },
-      { name: "New York City", coordinates: marketCoordinates.nyc.center, color: "#FF7F0E" },
-      { name: "Chicago", coordinates: marketCoordinates.chi.center, color: "#2CA02C" },
-      { name: "Los Angeles", coordinates: marketCoordinates.la.center, color: "#D62728" },
-      { name: "Boston", coordinates: marketCoordinates.bos.center, color: "#9467BD" },
-      { name: "Seattle", coordinates: marketCoordinates.sea.center, color: "#8C564B" },
-      { name: "Miami", coordinates: marketCoordinates.mia.center, color: "#E377C2" },
-      { name: "Austin", coordinates: marketCoordinates.aus.center, color: "#7F7F7F" },
-      { name: "Denver", coordinates: marketCoordinates.den.center, color: "#BCBD22" },
-      { name: "Atlanta", coordinates: marketCoordinates.atl.center, color: "#17BECF" }
-    ];
-    
-    // Add markers for each location
-    demoLocations.forEach(location => {
-      // Create a DOM element for the marker
-      const el = document.createElement('div');
-      el.className = 'mapboxgl-marker';
-      el.style.width = '20px';
-      el.style.height = '20px';
-      el.style.borderRadius = '50%';
-      el.style.backgroundColor = location.color;
-      el.style.border = '2px solid white';
-      el.style.boxShadow = '0 0 4px rgba(0,0,0,0.3)';
-      
-      // Add a popup with the location name
-      const popup = new mapboxgl.Popup({ offset: 25 })
-        .setText(location.name);
-      
-      // Add marker to map
-      new mapboxgl.Marker(el)
-        .setLngLat(location.coordinates)
-        .setPopup(popup)
-        .addTo(mapInstance);
-    });
-    
-    // Zoom out to see all of the United States
-    mapInstance.flyTo({
-      center: marketCoordinates.default.center,
-      zoom: marketCoordinates.default.zoom,
-      pitch: 30,
-      duration: 2000
-    });
-  };
+  }, [selectedMarket, campuses, createDemoMap]);
 
   const handleMarketChange = (marketId: string) => {
     setSelectedMarket(marketId);
@@ -305,6 +317,7 @@ const MarketExplorer = () => {
                 <div 
                   ref={mapContainer} 
                   className="w-full h-[600px] bg-gray-100"
+                  style={{ position: 'relative' }}
                   data-testid="map-container"
                 />
                 <div className="absolute bottom-5 right-5 flex gap-2">
