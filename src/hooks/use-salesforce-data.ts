@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from 'react';
 import { useStats } from './salesforce/useStats';
 import { useCampuses } from './salesforce/useCampuses';
 import { useSyncSalesforce } from './salesforce/useSyncSalesforce';
 import { useMetrics } from './salesforce/useMetrics';
 import { supabase } from '@/integrations/supabase/client';
+import { SUPABASE_URL } from '@/services/api-config';
 import { 
   SummaryStats, 
   Campus, 
@@ -38,7 +38,7 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
     const checkDatabaseConnection = async () => {
       try {
         console.log("Checking Supabase database connection...");
-        console.log("Supabase URL:", supabase.supabaseUrl);
+        console.log("Supabase URL:", SUPABASE_URL);
         
         const { data, error } = await supabase.from('salesforce_leads').select('count').limit(1);
         

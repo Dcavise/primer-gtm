@@ -10,6 +10,7 @@ import { Navbar } from '@/components/Navbar';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { SUPABASE_URL } from '@/services/api-config';
 
 const SalesforceLeadsPage: React.FC = () => {
   const [selectedCampusId, setSelectedCampusId] = useState<string | null>(null);
@@ -21,7 +22,7 @@ const SalesforceLeadsPage: React.FC = () => {
     const checkConnection = async () => {
       try {
         console.log("Checking Supabase connectivity from Salesforce Leads page");
-        console.log("Supabase URL:", supabase.supabaseUrl);
+        console.log("Supabase URL:", SUPABASE_URL);
         
         const { data, error } = await supabase.from('campuses').select('count').limit(1);
         
