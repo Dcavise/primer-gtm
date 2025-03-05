@@ -1,5 +1,5 @@
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useBaseStats } from '../useBaseStats';
 import { mockToast } from './setupTests';

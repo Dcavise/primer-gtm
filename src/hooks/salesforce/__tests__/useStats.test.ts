@@ -1,11 +1,14 @@
 
-import { describe, it, expect, beforeEach, vi, SpyInstance } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useStats } from '../useStats';
 import * as baseStatsModule from '../useBaseStats';
 import * as fellowsStatsModule from '../useFellowsStats';
 import * as leadsStatsModule from '../useLeadsStats';
 import * as opportunitiesStatsModule from '../useOpportunitiesStats';
+
+// Define the SpyInstance type manually
+type SpyInstance = ReturnType<typeof vi.spyOn>;
 
 // Mock the imported modules
 vi.mock('../useBaseStats', async () => {
