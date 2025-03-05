@@ -3,13 +3,14 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 type AuthContextType = {
   session: Session | null;
   user: User | null;
   profile: any | null;
   signIn: (email: string, password: string) => Promise<{ error: any | null }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any | null }>;
+  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any | null; data: any | null }>;
   signOut: () => Promise<void>;
   loading: boolean;
 };
@@ -75,7 +76,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const { error } = await supabase.auth.signUp({
+    // First, sign up the user
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -84,7 +86,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
       },
     });
-    return { error };
+    
+    // If sign up is successful, automatically sign them in
+    if (!error && data.user) {
+      // After signup, immediately sign in the user
+      await signIn(email, password);
+      toast.success('Account created and logged in successfully!');
+      navigate('/real-estate-pipeline');
+    }
+    
+    return { data, error };
   };
 
   const signOut = async () => {

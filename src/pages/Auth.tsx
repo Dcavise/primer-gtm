@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -56,8 +55,6 @@ const Auth: React.FC = () => {
       const { error } = await signUp(signupEmail, signupPassword, signupFullName);
       if (error) {
         toast.error(error.message);
-      } else {
-        toast.success('Account created successfully. Please check your email for verification.');
       }
     } catch (error: any) {
       toast.error(error.message || 'An error occurred during sign up');
