@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -80,18 +81,6 @@ export function SalesforceLeadsPage() {
         console.log('salesforce_accounts table may not exist yet');
       }
       
-      try {
-        const { data: contactsData, error: contactsError } = await supabase
-          .from('salesforce_contacts')
-          .select('*');
-        
-        if (!contactsError && contactsData) {
-          setContacts(contactsData);
-        }
-      } catch (e) {
-        console.log('salesforce_contacts table may not exist yet');
-      }
-      
       if (oppsData && oppsData.length > 0) {
         const mostRecent = new Date(Math.max(...oppsData.map(o => new Date(o.updated_at).getTime())));
         setOpportunitiesLastUpdated(mostRecent.toLocaleString());
@@ -129,7 +118,6 @@ export function SalesforceLeadsPage() {
       toast.success(`Successfully synced ${response.data.synced || 0} leads, matched ${response.data.matched || 0} with campuses, and synced ${syncedAccounts} accounts and ${syncedContacts} contacts`);
       
       await fetchLeads();
-      await fetchOpportunities();
     } catch (error: any) {
       console.error('Error syncing Salesforce leads:', error);
       const errorMessage = error.message || 'Unknown error occurred';
@@ -190,16 +178,6 @@ export function SalesforceLeadsPage() {
     return new Date(dateString).toLocaleDateString();
   };
 
-  const formatCurrency = (amount: number | null) => {
-    if (amount === null || amount === undefined) return '-';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
-
   const getAccountName = (accountId: string | null) => {
     if (!accountId) return '-';
     const account = accounts.find(a => a.account_id === accountId);
@@ -212,7 +190,7 @@ export function SalesforceLeadsPage() {
         <div className="container mx-auto max-w-5xl">
           <h1 className="text-2xl md:text-3xl font-semibold">Salesforce Data</h1>
           <p className="text-white/80 mt-2">
-            View Salesforce leads, accounts, contacts, and opportunities that correspond to a campus
+            View Salesforce leads and opportunities that correspond to a campus
           </p>
           <div className="mt-4">
             <Button asChild variant="secondary" className="mr-2">
@@ -296,74 +274,44 @@ export function SalesforceLeadsPage() {
                             <TableHead>Preferred Campus</TableHead>
                             <TableHead>Matched Campus</TableHead>
                             <TableHead>Converted</TableHead>
-                            <TableHead>Opportunity</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {leads.length === 0 ? (
                             <TableRow>
-                              <TableCell colSpan={8} className="text-center h-24 text-muted-foreground">
+                              <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
                                 No matched leads data available
                               </TableCell>
                             </TableRow>
                           ) : (
-                            leads.map((lead) => {
-                              const opportunity = opportunities.find(
-                                o => o.opportunity_id === lead.converted_opportunity_id
-                              );
-
-                              return (
-                                <TableRow key={lead.id}>
-                                  <TableCell className="font-medium">
-                                    {lead.first_name ? `${lead.first_name} ${lead.last_name}` : lead.last_name}
-                                  </TableCell>
-                                  <TableCell>{formatDate(lead.created_date)}</TableCell>
-                                  <TableCell>{lead.stage || '-'}</TableCell>
-                                  <TableCell>{lead.lead_source || '-'}</TableCell>
-                                  <TableCell>{lead.preferred_campus || '-'}</TableCell>
-                                  <TableCell>
-                                    {lead.campus_id ? (
-                                      <span className="font-medium text-blue-600">{lead.campus_id}</span>
-                                    ) : (
-                                      <span className="text-muted-foreground">Not matched</span>
-                                    )}
-                                  </TableCell>
-                                  <TableCell>
-                                    {lead.converted || lead.is_converted ? (
-                                      <div className="flex items-center">
-                                        <span className="h-2 w-2 rounded-full bg-green-500 mr-2"></span>
-                                        {formatDate(lead.converted_date)}
-                                      </div>
-                                    ) : (
-                                      <span className="text-muted-foreground">No</span>
-                                    )}
-                                  </TableCell>
-                                  <TableCell>
-                                    {lead.converted_opportunity_id ? (
-                                      <div>
-                                        {opportunity ? (
-                                          <div className="text-xs">
-                                            <div className="font-medium">{opportunity.opportunity_name || 'Unnamed'}</div>
-                                            <div className="text-muted-foreground">
-                                              {opportunity.stage} {opportunity.actualized_tuition ? 
-                                                <span className="text-green-600 font-medium">
-                                                  ({formatCurrency(opportunity.actualized_tuition)})
-                                                </span> : ''}
-                                            </div>
-                                          </div>
-                                        ) : (
-                                          <span className="text-xs text-muted-foreground">
-                                            {lead.converted_opportunity_id.substring(0, 10)}...
-                                          </span>
-                                        )}
-                                      </div>
-                                    ) : (
-                                      <span className="text-muted-foreground">-</span>
-                                    )}
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })
+                            leads.map((lead) => (
+                              <TableRow key={lead.id}>
+                                <TableCell className="font-medium">
+                                  {lead.first_name ? `${lead.first_name} ${lead.last_name}` : lead.last_name}
+                                </TableCell>
+                                <TableCell>{formatDate(lead.created_date)}</TableCell>
+                                <TableCell>{lead.stage || '-'}</TableCell>
+                                <TableCell>{lead.lead_source || '-'}</TableCell>
+                                <TableCell>{lead.preferred_campus || '-'}</TableCell>
+                                <TableCell>
+                                  {lead.campus_id ? (
+                                    <span className="font-medium text-blue-600">{lead.campus_id}</span>
+                                  ) : (
+                                    <span className="text-muted-foreground">Not matched</span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {lead.converted || lead.is_converted ? (
+                                    <div className="flex items-center">
+                                      <span className="h-2 w-2 rounded-full bg-green-500 mr-2"></span>
+                                      {formatDate(lead.converted_date)}
+                                    </div>
+                                  ) : (
+                                    <span className="text-muted-foreground">No</span>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))
                           )}
                         </TableBody>
                       </Table>
@@ -405,7 +353,7 @@ export function SalesforceLeadsPage() {
                 <div>
                   <CardTitle>Salesforce Opportunities</CardTitle>
                   <CardDescription>
-                    Opportunities from Salesforce connected to our leads
+                    Opportunities from Salesforce with preferred campus matching our campuses
                     {opportunitiesLastUpdated && (
                       <span className="block text-sm mt-1">
                         Last updated: {opportunitiesLastUpdated}
@@ -442,7 +390,7 @@ export function SalesforceLeadsPage() {
                               <ol className="list-decimal pl-5 space-y-1 mt-2">
                                 <li>Ensure Salesforce API credentials are correct</li>
                                 <li>Check that your Salesforce user has API access enabled</li>
-                                <li>Verify that the Lead_ID__c field exists on Opportunity objects</li>
+                                <li>Verify that the Preferred_Campus__c field exists on Opportunity objects</li>
                                 <li>Review Edge Function logs for more detailed error information</li>
                               </ol>
                             </div>
@@ -453,22 +401,21 @@ export function SalesforceLeadsPage() {
                     
                     <div className="rounded-md border overflow-auto max-h-[600px]">
                       <Table>
-                        <TableCaption>List of opportunities linked to leads</TableCaption>
+                        <TableCaption>List of opportunities with matching preferred campus</TableCaption>
                         <TableHeader>
                           <TableRow>
                             <TableHead>Opportunity Name</TableHead>
                             <TableHead>Account</TableHead>
                             <TableHead>Stage</TableHead>
                             <TableHead>Close Date</TableHead>
-                            <TableHead>Actualized Tuition</TableHead>
-                            <TableHead>Lead ID</TableHead>
+                            <TableHead>Preferred Campus</TableHead>
                             <TableHead>Updated</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {opportunities.length === 0 ? (
                             <TableRow>
-                              <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
+                              <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
                                 No opportunities data available
                               </TableCell>
                             </TableRow>
@@ -485,17 +432,7 @@ export function SalesforceLeadsPage() {
                                   </span>
                                 </TableCell>
                                 <TableCell>{formatDate(opportunity.close_date)}</TableCell>
-                                <TableCell>
-                                  {opportunity.actualized_tuition ? (
-                                    <span className="flex items-center text-green-600 font-medium">
-                                      <DollarSign className="h-3 w-3 mr-1" />
-                                      {formatCurrency(opportunity.actualized_tuition)}
-                                    </span>
-                                  ) : (
-                                    '-'
-                                  )}
-                                </TableCell>
-                                <TableCell className="font-mono text-xs">{opportunity.lead_id}</TableCell>
+                                <TableCell>{opportunity.preferred_campus || '-'}</TableCell>
                                 <TableCell>{formatDate(opportunity.updated_at)}</TableCell>
                               </TableRow>
                             ))

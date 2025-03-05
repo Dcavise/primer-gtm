@@ -1,4 +1,3 @@
-
 export interface Coordinates {
   lat: number;
   lng: number;
@@ -117,14 +116,13 @@ export interface SalesforceContact {
 export interface SalesforceOpportunity {
   id: string;
   opportunity_id: string;
-  lead_id: string;
-  stage: string | null;
-  account_id: string | null;
   opportunity_name: string | null;
-  actualized_tuition: number | null;
+  account_id: string | null;
+  stage: string | null;
   close_date: string | null;
   created_at: string;
   updated_at: string;
+  preferred_campus: string | null;
 }
 
 export interface SalesforceLead {
