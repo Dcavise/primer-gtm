@@ -66,23 +66,19 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
       const { data: allCampuses } = await supabase.from('campuses').select('campus_id, campus_name');
       console.log("Available campuses:", allCampuses);
       
-      // Debug: Check all fellows and their campus associations
-      const { data: allFellows } = await supabase.from('fellows').select('fellow_id, fellow_name, campus, campus_id');
-      console.log("All fellows:", allFellows);
-      
       // Fetch fellows count with improved campus filtering
-      let fellowsQuery = supabase
-        .from('fellows')
-        .select('fellow_id', { count: 'exact' });
+      let query = supabase.from('fellows').select('fellow_id', { count: 'exact', head: true });
       
       if (selectedCampusId) {
-        // Look for matches in both campus_id and campus name field (case insensitive)
-        fellowsQuery = fellowsQuery.or(`campus_id.eq.${selectedCampusId},campus.ilike.%${selectedCampusId}%`);
-        
-        // Additional specific check for Fort Meyers and Adam Tweet
-        if (selectedCampusId.includes('fort') || selectedCampusId.includes('meyer')) {
-          console.log("Looking specifically for Fort Meyers fellows");
-          // This is a fallback for when campus identifiers might not match exactly
+        // For Fort Myers campus (special case)
+        if (selectedCampusId === 'fort-myers') {
+          console.log("Handling Fort Myers campus specifically");
+          query = supabase
+            .from('fellows')
+            .select('fellow_id', { count: 'exact', head: true })
+            .ilike('campus', '%fort%myers%');
+        } else {
+          // For other campuses
           const { data: campusData } = await supabase
             .from('campuses')
             .select('campus_name')
@@ -90,22 +86,24 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
             .single();
             
           if (campusData) {
-            console.log(`Found campus name: ${campusData.campus_name} for ID: ${selectedCampusId}`);
-            // Add an OR condition to catch variations of the campus name
-            fellowsQuery = fellowsQuery.or(`campus.ilike.%${campusData.campus_name}%,fellow_name.eq.Adam Tweet`);
+            console.log(`Filtering by campus name: ${campusData.campus_name} for ID: ${selectedCampusId}`);
+            query = supabase
+              .from('fellows')
+              .select('fellow_id', { count: 'exact', head: true })
+              .ilike('campus', `%${campusData.campus_name}%`);
           }
         }
       }
       
-      const { count: fellowsCount, error: fellowsError } = await fellowsQuery;
+      const { count: fellowsCount, error: fellowsError } = await query;
       
       if (fellowsError) throw fellowsError;
-      console.log(`Fellows count: ${fellowsCount}`);
+      console.log(`Fellows count for ${selectedCampusId || 'all campuses'}: ${fellowsCount}`);
       
       // Fetch leads count
       let leadsQuery = supabase
         .from('salesforce_leads')
-        .select('lead_id', { count: 'exact' });
+        .select('lead_id', { count: 'exact', head: true });
       
       if (selectedCampusId) {
         leadsQuery = leadsQuery.eq('campus_id', selectedCampusId);
@@ -118,7 +116,7 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
       // Fetch active opportunities count (not Closed Won or Closed Lost)
       let activeOppsQuery = supabase
         .from('salesforce_opportunities')
-        .select('opportunity_id', { count: 'exact' })
+        .select('opportunity_id', { count: 'exact', head: true })
         .not('stage', 'in', '("Closed Won","Closed Lost")');
       
       if (selectedCampusId) {
@@ -132,7 +130,7 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
       // Fetch closed won opportunities count
       let closedWonOppsQuery = supabase
         .from('salesforce_opportunities')
-        .select('opportunity_id', { count: 'exact' })
+        .select('opportunity_id', { count: 'exact', head: true })
         .eq('stage', 'Closed Won');
       
       if (selectedCampusId) {
