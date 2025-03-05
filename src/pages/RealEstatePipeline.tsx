@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useRealEstatePipeline } from '@/hooks/useRealEstatePipeline';
 import { useCampuses } from '@/hooks/useCampuses';
@@ -10,7 +9,6 @@ import { Navbar } from '@/components/Navbar';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { CampusSelector } from '@/components/salesforce/CampusSelector';
 
-// Define the phases in the specific order shown in the image
 const PHASES: PropertyPhase[] = [
   '0. New Site',
   '1. Initial Diligence',
@@ -24,7 +22,6 @@ const PHASES: PropertyPhase[] = [
   'Deprioritize'
 ];
 
-// Define the phase groups and their display order
 const PHASE_GROUPS = [
   'Diligence',
   'Pre Construction',
@@ -33,7 +30,6 @@ const PHASE_GROUPS = [
   'Other'
 ];
 
-// Define the mapping of phases to phase groups
 const PHASE_TO_GROUP: Record<PropertyPhase, string> = {
   '0. New Site': 'Diligence',
   '1. Initial Diligence': 'Diligence',
@@ -55,22 +51,17 @@ const RealEstatePipeline: React.FC = () => {
   const [selectedProperty, setSelectedProperty] = useState<RealEstateProperty | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   
-  // Default open state for accordion - all groups initially expanded
   const [defaultAccordionValue, setDefaultAccordionValue] = useState<string[]>(PHASE_GROUPS);
 
-  // Group properties by phase_group and then by phase
   const groupedProperties = useMemo(() => {
     if (!properties) return {};
 
-    // Create a structure to hold properties grouped by phase_group and then by phase
     const grouped: Record<string, Record<string, RealEstateProperty[]>> = {};
     
-    // Initialize phase groups
     PHASE_GROUPS.forEach(group => {
       grouped[group] = {};
     });
     
-    // Initialize phases within each group
     PHASES.forEach(phase => {
       const group = PHASE_TO_GROUP[phase];
       if (grouped[group]) {
@@ -78,14 +69,11 @@ const RealEstatePipeline: React.FC = () => {
       }
     });
     
-    // Add an "Unspecified" category for properties without a phase
     Object.keys(grouped).forEach(group => {
       grouped[group]["Unspecified"] = [];
     });
     
-    // Now populate the groups with properties
     properties.forEach(property => {
-      // Use the property's phase_group if available, otherwise determine it from the phase
       let phaseGroup = property.phase_group;
       if (!phaseGroup && property.phase) {
         phaseGroup = PHASE_TO_GROUP[property.phase as PropertyPhase] || 'Unspecified';
@@ -95,17 +83,13 @@ const RealEstatePipeline: React.FC = () => {
       
       const phase = property.phase || 'Unspecified';
       
-      // If this phase group exists in our structure
       if (grouped[phaseGroup]) {
-        // If this phase doesn't exist in this group yet, create it
         if (!grouped[phaseGroup][phase]) {
           grouped[phaseGroup][phase] = [];
         }
         
-        // Add the property to its phase within its group
         grouped[phaseGroup][phase].push(property);
       } else {
-        // If we encounter a phase group we haven't accounted for
         grouped['Unspecified'] = grouped['Unspecified'] || {};
         grouped['Unspecified'][phase] = grouped['Unspecified'][phase] || [];
         grouped['Unspecified'][phase].push(property);
@@ -138,7 +122,6 @@ const RealEstatePipeline: React.FC = () => {
     );
   }
 
-  // Count total properties in each group for display
   const getGroupPropertyCount = (group: string) => {
     let count = 0;
     const phases = groupedProperties[group] || {};
@@ -150,7 +133,6 @@ const RealEstatePipeline: React.FC = () => {
     return count;
   };
 
-  // Count total properties for all groups
   const getTotalPropertyCount = () => {
     return PHASE_GROUPS.reduce((total, group) => total + getGroupPropertyCount(group), 0);
   };
@@ -170,7 +152,6 @@ const RealEstatePipeline: React.FC = () => {
       </header>
 
       <main className="container mx-auto py-6">
-        {/* Campus Selector */}
         {campuses && campuses.length > 0 && (
           <div className="mb-6">
             <CampusSelector 
@@ -187,18 +168,14 @@ const RealEstatePipeline: React.FC = () => {
           </div>
         )}
 
-        {/* Collapsible Phase Groups using Accordion */}
         <Accordion type="multiple" defaultValue={defaultAccordionValue} className="space-y-4">
           {PHASE_GROUPS.map((phaseGroup) => {
-            // Get all phases for this group
             const phasesByGroup = PHASES.filter(phase => PHASE_TO_GROUP[phase] === phaseGroup);
             
-            // Only display groups that have defined phases
             if (phasesByGroup.length === 0) return null;
             
             const propertyCount = getGroupPropertyCount(phaseGroup);
             
-            // Skip empty groups unless we're showing all campuses
             if (propertyCount === 0 && selectedCampusId) return null;
             
             return (
@@ -228,7 +205,6 @@ const RealEstatePipeline: React.FC = () => {
           })}
         </Accordion>
 
-        {/* Property Detail Dialog */}
         <PropertyDetailDialog 
           property={selectedProperty}
           open={dialogOpen}
