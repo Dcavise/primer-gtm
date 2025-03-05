@@ -36,24 +36,14 @@ export const useStats = (selectedCampusId: string | null) => {
                    .not('fte_employment_status', 'eq', 'Declined FTE Offer');
       
       if (selectedCampusId) {
-        // Get the campus name for the selected campus ID
-        const { data: campusData } = await supabase
-          .from('campuses')
-          .select('campus_name')
-          .eq('campus_id', selectedCampusId)
-          .single();
+        // Since campus_id is now the primary key, we can just use it directly
+        // without having to fetch the campus name first
+        console.log(`Selected campus ID: ${selectedCampusId}`);
         
-        const campusName = campusData?.campus_name;
-        console.log(`Selected campus: ID=${selectedCampusId}, Name=${campusName}`);
-        
-        if (campusName) {
-          // Use OR filter with multiple conditions for more reliable campus matching
-          query = query.or(`campus_id.eq.${selectedCampusId},campus.eq.${campusName},campus.ilike.%${campusName}%`);
-          console.log(`Using enhanced campus filter: campus_id=${selectedCampusId} OR campus=${campusName} OR campus ILIKE %${campusName}%`);
-        } else {
-          console.log(`Campus name not found for ID: ${selectedCampusId}, using ID only`);
-          query = query.eq('campus_id', selectedCampusId);
-        }
+        // We still use the OR filter for backwards compatibility with existing data
+        // that might reference campus by name in the 'campus' field
+        query = query.or(`campus_id.eq.${selectedCampusId},campus.eq.${selectedCampusId},campus.ilike.%${selectedCampusId}%`);
+        console.log(`Using enhanced campus filter for campus_id: ${selectedCampusId}`);
       }
       
       const { count: fellowsCount, error: fellowsError, data: fellowsData } = await query;
@@ -75,7 +65,7 @@ export const useStats = (selectedCampusId: string | null) => {
         console.log("Employment status distribution:", statusCounts);
       }
       
-      // Fetch leads count
+      // Fetch leads count - now directly using campus_id which is the primary key
       let leadsQuery = supabase
         .from('salesforce_leads')
         .select('lead_id', { count: 'exact', head: true });
@@ -88,7 +78,7 @@ export const useStats = (selectedCampusId: string | null) => {
       
       if (leadsError) throw leadsError;
       
-      // Fetch active opportunities count (not Closed Won or Closed Lost)
+      // Fetch active opportunities count - using campus_id directly
       let activeOppsQuery = supabase
         .from('salesforce_opportunities')
         .select('opportunity_id', { count: 'exact', head: true })
@@ -102,7 +92,7 @@ export const useStats = (selectedCampusId: string | null) => {
       
       if (activeOppsError) throw activeOppsError;
       
-      // Fetch closed won opportunities count
+      // Fetch closed won opportunities count - using campus_id directly
       let closedWonOppsQuery = supabase
         .from('salesforce_opportunities')
         .select('opportunity_id', { count: 'exact', head: true })

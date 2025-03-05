@@ -13,6 +13,7 @@ export const useCampuses = () => {
 
   const fetchCampuses = async () => {
     try {
+      // Since campus_id is now the primary key, we can rely on it for ordering
       const { data, error } = await supabase
         .from('campuses')
         .select('*')
