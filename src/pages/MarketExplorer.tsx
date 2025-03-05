@@ -1,6 +1,5 @@
-
 import React, { useEffect, useRef, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getApiKey } from "@/services/api-config";
 import { toast } from "sonner";
@@ -26,53 +25,26 @@ const MarketExplorer = () => {
   }, [fetchCampuses]);
 
   useEffect(() => {
-    // Log campuses for debugging
-    console.log("Available campuses:", campuses);
-    
-    async function initializeMap() {
+    async function initializeMapbox() {
       try {
-        setIsLoading(true);
-        // Get the Mapbox token from Supabase edge function
-        const token = await getApiKey('mapbox');
-        setMapboxToken(token);
-        
-        if (!mapContainer.current) return;
-        
-        // Initialize Mapbox GL map
-        mapboxgl.accessToken = token;
-        
-        // Get market coordinates
-        let coords = marketCoordinates["default"];
-        
-        // If a campus is selected, find its matching coordinates
-        if (selectedMarket !== "default") {
-          // Try to find a direct match in marketCoordinates
-          if (marketCoordinates[selectedMarket]) {
-            coords = marketCoordinates[selectedMarket];
-          } else {
-            // Otherwise, look for a campus with this ID and try to match by name
-            const selectedCampus = campuses.find(c => c.campus_id === selectedMarket);
-            if (selectedCampus) {
-              // Try to find coordinates by campus name
-              const matchingMarketKey = Object.keys(marketCoordinates).find(key => 
-                marketCoordinates[key].name.toLowerCase() === selectedCampus.campus_name.toLowerCase()
-              );
-              
-              if (matchingMarketKey) {
-                coords = marketCoordinates[matchingMarketKey];
-              }
-            }
-          }
+        if (!mapboxToken) {
+          const token = await getApiKey('mapbox');
+          setMapboxToken(token);
+          return; // The next useEffect will handle map creation
         }
-        
+
+        if (!mapContainer.current || map.current) return;
+
+        // Initialize the map
+        mapboxgl.accessToken = mapboxToken;
         const newMap = new mapboxgl.Map({
           container: mapContainer.current,
           style: 'mapbox://styles/mapbox/light-v11',
-          center: coords.center,
-          zoom: coords.zoom,
-          pitch: 30, // Add some tilt for a more dynamic view
+          center: marketCoordinates.default.center, // Default center
+          zoom: marketCoordinates.default.zoom,
+          pitch: 30,
         });
-        
+
         // Add navigation controls
         newMap.addControl(
           new mapboxgl.NavigationControl({
@@ -80,19 +52,17 @@ const MarketExplorer = () => {
           }),
           'top-right'
         );
-        
+
+        // Set the map reference
         map.current = newMap;
-        
-        // Show success message
-        toast.success("Map loaded successfully", {
-          description: "Market explorer is ready to use"
-        });
 
         // Wait for map to load before setting isLoading to false
         newMap.on('load', () => {
           setIsLoading(false);
+          toast.success("Map loaded successfully", {
+            description: "Market explorer is ready to use"
+          });
         });
-        
       } catch (error) {
         console.error("Error initializing map:", error);
         toast.error("Failed to load map", {
@@ -101,47 +71,52 @@ const MarketExplorer = () => {
         setIsLoading(false);
       }
     }
-    
-    if (map.current) {
-      // If map already exists, just update the center and zoom
-      let coords = marketCoordinates["default"];
-      
-      // Similar logic as above to find the right coordinates
-      if (selectedMarket !== "default") {
-        if (marketCoordinates[selectedMarket]) {
-          coords = marketCoordinates[selectedMarket];
-        } else {
-          const selectedCampus = campuses.find(c => c.campus_id === selectedMarket);
-          if (selectedCampus) {
-            const matchingMarketKey = Object.keys(marketCoordinates).find(key => 
-              marketCoordinates[key].name.toLowerCase() === selectedCampus.campus_name.toLowerCase()
-            );
-            
-            if (matchingMarketKey) {
-              coords = marketCoordinates[matchingMarketKey];
-            }
-          }
-        }
-      }
-      
-      map.current.flyTo({
-        center: coords.center,
-        zoom: coords.zoom,
-        pitch: 30,
-        duration: 2000
-      });
-    } else {
-      // Initialize map for the first time
-      initializeMap();
-    }
-    
-    // Clean up map instance when component unmounts
+
+    initializeMapbox();
+
+    // Cleanup map instance when component unmounts
     return () => {
       if (map.current) {
         map.current.remove();
+        map.current = null;
       }
     };
-  }, [selectedMarket, campuses]);
+  }, [mapboxToken]);
+
+  useEffect(() => {
+    if (!map.current || !mapboxToken) return;
+
+    let coords = marketCoordinates.default;
+    
+    // Find the coordinates for the selected market
+    if (selectedMarket !== "default") {
+      // Try to find direct match in marketCoordinates
+      if (marketCoordinates[selectedMarket]) {
+        coords = marketCoordinates[selectedMarket];
+      } else {
+        // Otherwise, look for campus with this ID and try to match by name
+        const selectedCampus = campuses.find(c => c.campus_id === selectedMarket);
+        if (selectedCampus) {
+          // Try to find coordinates by campus name
+          const matchingMarketKey = Object.keys(marketCoordinates).find(key => 
+            marketCoordinates[key].name.toLowerCase() === selectedCampus.campus_name.toLowerCase()
+          );
+          
+          if (matchingMarketKey) {
+            coords = marketCoordinates[matchingMarketKey];
+          }
+        }
+      }
+    }
+    
+    // Animate to the new location
+    map.current.flyTo({
+      center: coords.center,
+      zoom: coords.zoom,
+      pitch: 30,
+      duration: 2000
+    });
+  }, [selectedMarket, campuses, mapboxToken]);
 
   const handleMarketChange = (marketId: string) => {
     setSelectedMarket(marketId);
@@ -183,9 +158,7 @@ const MarketExplorer = () => {
                   <Button 
                     variant="secondary" 
                     size="sm"
-                    onClick={() => {
-                      setSelectedMarket("default");
-                    }}
+                    onClick={() => setSelectedMarket("default")}
                   >
                     Reset View
                   </Button>
