@@ -68,45 +68,43 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
       console.log("Available campuses:", allCampuses);
       
       // Fetch fellows count with improved campus filtering and excluding specific employment statuses
+      // Note: Fixed the filter to account for "Declined FTE Offer" (with -ed) instead of "Decline FTE Offer"
       let query = supabase
         .from('fellows')
-        .select('*', { count: 'exact' })
+        .select('fellow_id', { count: 'exact', head: true })
         .not('fte_employment_status', 'in', '("Exiting","Declined FTE Offer")');
       
       if (selectedCampusId) {
-        // Get the campus name for the selected ID for improved matching
-        const { data: campusData } = await supabase
-          .from('campuses')
-          .select('campus_name')
-          .eq('campus_id', selectedCampusId)
-          .single();
-        
-        if (campusData) {
-          const campusName = campusData.campus_name;
-          console.log(`Filtering by campus name: ${campusName} for ID: ${selectedCampusId}`);
-          
-          // Special case for Fort Myers as it might be written differently
-          if (selectedCampusId === 'fort-myers') {
-            query = query.or(`campus.ilike.%fort%myers%,campus_id.eq.${selectedCampusId}`);
-          } else {
-            // Try multiple variations of the campus name to catch different formatting
-            query = query.or(
-              `campus.ilike.%${campusName}%,` + 
-              `campus.eq.${campusName},` +
-              `campus_id.eq.${selectedCampusId}`
-            );
+        // For Fort Myers campus (special case)
+        if (selectedCampusId === 'fort-myers') {
+          console.log("Handling Fort Myers campus specifically");
+          query = supabase
+            .from('fellows')
+            .select('fellow_id', { count: 'exact', head: true })
+            .ilike('campus', '%fort%myers%')
+            .not('fte_employment_status', 'in', '("Exiting","Declined FTE Offer")');
+        } else {
+          // For other campuses
+          const { data: campusData } = await supabase
+            .from('campuses')
+            .select('campus_name')
+            .eq('campus_id', selectedCampusId)
+            .single();
+            
+          if (campusData) {
+            console.log(`Filtering by campus name: ${campusData.campus_name} for ID: ${selectedCampusId}`);
+            query = supabase
+              .from('fellows')
+              .select('fellow_id', { count: 'exact', head: true })
+              .ilike('campus', `%${campusData.campus_name}%`)
+              .not('fte_employment_status', 'in', '("Exiting","Declined FTE Offer")');
           }
-          
-          console.log("Query filter:", `campus.ilike.%${campusName}% OR campus.eq.${campusName} OR campus_id.eq.${selectedCampusId}`);
         }
       }
       
-      const { data: fellowsData, count: fellowsCount, error: fellowsError } = await query;
+      const { count: fellowsCount, error: fellowsError } = await query;
       
       if (fellowsError) throw fellowsError;
-      
-      // Log the actual fellows data for debugging
-      console.log(`Fellows data for ${selectedCampusId || 'all campuses'}:`, fellowsData?.slice(0, 5), `...and ${(fellowsData?.length || 0) - 5} more`);
       console.log(`Fellows count for ${selectedCampusId || 'all campuses'}: ${fellowsCount}`);
       
       // Fetch leads count
