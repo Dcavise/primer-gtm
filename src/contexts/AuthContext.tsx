@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
@@ -24,6 +23,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    supabase.auth.setSession({
+      refresh_token: localStorage.getItem('supabase.auth.refreshToken') || '',
+      access_token: localStorage.getItem('supabase.auth.accessToken') || '',
+    }).catch(err => {
+      console.error('Error setting session persistence:', err);
+    });
+
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        localStorage.setItem('supabase.auth.refreshToken', session.refresh_token || '');
+        localStorage.setItem('supabase.auth.accessToken', session.access_token);
+      } else if (event === 'SIGNED_OUT') {
+        localStorage.removeItem('supabase.auth.refreshToken');
+        localStorage.removeItem('supabase.auth.accessToken');
+      }
+    });
+  }, []);
 
   useEffect(() => {
     const setData = async () => {
@@ -83,8 +101,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           setProfile(null);
           
-          // Only redirect to auth page if we're on a protected route
-          // Avoid redirect loops by checking the current path
           const protectedRoutes = ['/real-estate-pipeline', '/salesforce-leads'];
           const isProtectedRoute = protectedRoutes.some(route => 
             location.pathname.startsWith(route)
@@ -106,7 +122,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password,
+      });
+      
       if (!error) {
         navigate('/real-estate-pipeline');
       }
@@ -119,7 +139,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
-      // First, sign up the user
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -130,9 +149,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
       });
       
-      // If sign up is successful, automatically sign them in
       if (!error && data.user) {
-        // After signup, immediately sign in the user
         await signIn(email, password);
         toast.success('Account created and logged in successfully!');
       }
@@ -147,6 +164,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
+      localStorage.removeItem('supabase.auth.refreshToken');
+      localStorage.removeItem('supabase.auth.accessToken');
       navigate('/auth');
     } catch (error) {
       console.error('Error signing out:', error);

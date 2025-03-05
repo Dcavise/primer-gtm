@@ -1,146 +1,127 @@
 
 import React, { useState } from 'react';
 import { Navbar } from '@/components/Navbar';
-import { LoadingState } from '@/components/LoadingState';
-import { useSchoolsData } from '@/hooks/use-schools-data';
-import { useZoningData } from '@/hooks/use-zoning-data';
-import { usePermits } from '@/hooks/use-permits';
+import { SearchForm } from '@/components/SearchForm';
+import { PermitList } from '@/components/PermitList';
 import { SchoolsList } from '@/components/SchoolsList';
 import { ZoningList } from '@/components/ZoningList';
-import { PermitList } from '@/components/PermitList';
-import { SearchForm } from '@/components/SearchForm';
-import { Search } from 'lucide-react';
+import { usePermits } from '@/hooks/use-permits';
+import { useSchoolsData } from '@/hooks/use-schools-data';
+import { useZoningData } from '@/hooks/use-zoning-data';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 import { SearchStatus } from '@/types';
 
-export default function PropertyResearch() {
-  const [isSearching, setIsSearching] = useState<boolean>(false);
+const PropertyResearch: React.FC = () => {
+  const [searchAddress, setSearchAddress] = useState<string>('');
+  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   
-  const { 
-    schools, 
-    status: schoolsStatus, 
+  const {
+    permits,
+    status: permitsStatus,
+    searchedAddress: permitAddress,
+    fetchPermits,
+  } = usePermits();
+  
+  const {
+    schools,
+    searchResponse: schoolsResponse,
+    status: schoolsStatus,
     searchedAddress: schoolsAddress,
-    fetchSchoolsData
+    fetchSchoolsData,
   } = useSchoolsData();
   
-  const { 
-    zoningData, 
+  const {
+    zoningData,
     status: zoningStatus,
     searchedAddress: zoningAddress,
-    fetchZoningData
+    fetchZoningData,
   } = useZoningData();
-  
-  const { 
-    permits, 
-    status: permitsStatus,
-    searchedAddress: permitsAddress,
-    fetchPermits
-  } = usePermits();
 
-  const handleSearch = async (address: string) => {
-    setIsSearching(true);
+  const handleSearch = async (address: string, coords: { lat: number; lng: number }) => {
+    setSearchAddress(address);
+    setCoordinates(coords);
     
-    try {
-      // For schools, we need to pass coordinates
-      // Since we don't have coordinates here, we'll use a placeholder
-      // The actual geocoding will happen in the SearchForm component
-      await fetchSchoolsData({ 
-        top_right_lat: 0, 
-        top_right_lng: 0 
-      }, address);
-      
-      // For zoning data
-      await fetchZoningData(address);
-      
-      // For permits, we need to create a small bounding box
-      // The actual geocoding will happen in the SearchForm component
-      await fetchPermits({
-        bottom_left_lat: 0,
-        bottom_left_lng: 0,
-        top_right_lat: 0,
-        top_right_lng: 0,
-        exact_address: address
-      }, address);
-    } finally {
-      setIsSearching(false);
-    }
+    // Fetch permits data
+    await fetchPermits({ address }, address);
+    
+    // Fetch schools data
+    await fetchSchoolsData({
+      top_right_lat: coords.lat,
+      top_right_lng: coords.lng,
+    }, address);
+    
+    // Fetch zoning data
+    await fetchZoningData(address);
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-gradient-to-r from-blue-600 to-blue-500 text-white py-6 px-6">
-        <div className="container mx-auto max-w-5xl">
-          <div className="flex items-center justify-between mb-3">
-            <h1 className="text-2xl md:text-3xl font-semibold">Property Research</h1>
-            <Navbar />
-          </div>
-        </div>
-      </header>
-      
-      <main className="container mx-auto py-8 px-4">
-        <div className="max-w-5xl mx-auto">
-          <div className="bg-card rounded-lg shadow-sm border p-6 mb-8">
-            <div className="flex items-center mb-4">
-              <Search className="h-5 w-5 mr-2 text-primary" />
-              <h2 className="text-xl font-semibold">Search Property Data</h2>
-            </div>
-            <p className="text-muted-foreground mb-4">
-              Enter an address to find nearby schools, zoning information, and building permits.
-            </p>
-            <SearchForm 
-              onSearch={handleSearch} 
-              isSearching={isSearching} 
-              searchType="property-research" 
-            />
-          </div>
+    <div className="min-h-screen bg-background flex flex-col">
+      <Navbar />
+      <main className="flex-1 container max-w-7xl mx-auto p-4 md:p-8">
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="text-xl md:text-2xl font-bold">Property Research</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <SearchForm onSearch={handleSearch} />
+          </CardContent>
+        </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="bg-card rounded-lg shadow-sm border p-6">
-              <h3 className="text-lg font-semibold mb-4">Nearby Schools</h3>
-              {schoolsStatus === SearchStatus.LOADING ? (
-                <LoadingState className="py-8" message="Loading schools data..." showSpinner={true} />
-              ) : schoolsStatus === SearchStatus.ERROR ? (
-                <div className="text-red-500 py-4">Error loading schools data</div>
-              ) : (
-                <SchoolsList 
-                  schools={schools} 
-                  isLoading={schoolsStatus === SearchStatus.LOADING} 
-                  searchedAddress={schoolsAddress} 
-                />
-              )}
-            </div>
-            
-            <div className="bg-card rounded-lg shadow-sm border p-6">
-              <h3 className="text-lg font-semibold mb-4">Zoning Information</h3>
-              {zoningStatus === SearchStatus.LOADING ? (
-                <LoadingState className="py-8" message="Loading zoning data..." showSpinner={true} />
-              ) : zoningStatus === SearchStatus.ERROR ? (
-                <div className="text-red-500 py-4">Error loading zoning data</div>
-              ) : (
-                <ZoningList 
-                  zoningData={zoningData} 
-                  isLoading={zoningStatus === SearchStatus.LOADING} 
-                  searchedAddress={zoningAddress} 
-                />
-              )}
-            </div>
-          </div>
-          
-          <div className="bg-card rounded-lg shadow-sm border p-6">
-            <h3 className="text-lg font-semibold mb-4">Building Permits</h3>
-            {permitsStatus === SearchStatus.LOADING ? (
-              <LoadingState className="py-8" message="Loading permit data..." showSpinner={true} />
-            ) : permitsStatus === SearchStatus.ERROR ? (
-              <div className="text-red-500 py-4">Error loading permit data</div>
-            ) : (
-              <PermitList 
-                permits={permits} 
-                isLoading={permitsStatus === SearchStatus.LOADING} 
-                searchedAddress={permitsAddress} 
-              />
+        {searchAddress && (
+          <div className="mb-6">
+            <h2 className="text-xl font-bold mb-2">Results for: {searchAddress}</h2>
+            {coordinates && (
+              <p className="text-sm text-gray-500 mb-4">
+                Coordinates: {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
+              </p>
             )}
           </div>
-        </div>
+        )}
+
+        {(permitsStatus === SearchStatus.LOADING || schoolsStatus === SearchStatus.LOADING || zoningStatus === SearchStatus.LOADING) && (
+          <Alert className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>Loading data, please wait...</AlertDescription>
+          </Alert>
+        )}
+
+        {searchAddress && (
+          <Tabs defaultValue="permits" className="mb-8">
+            <TabsList className="mb-4">
+              <TabsTrigger value="permits">Building Permits</TabsTrigger>
+              <TabsTrigger value="schools">Schools</TabsTrigger>
+              <TabsTrigger value="zoning">Zoning</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="permits">
+              {permitsStatus !== SearchStatus.LOADING && permitAddress && (
+                <PermitList permits={permits} searchAddress={permitAddress} />
+              )}
+            </TabsContent>
+            
+            <TabsContent value="schools">
+              {schoolsStatus !== SearchStatus.LOADING && schoolsAddress && (
+                <SchoolsList 
+                  schools={schools} 
+                  searchAddress={schoolsAddress} 
+                  radiusMiles={schoolsResponse?.radiusMiles || 5} 
+                />
+              )}
+            </TabsContent>
+            
+            <TabsContent value="zoning">
+              {zoningStatus !== SearchStatus.LOADING && zoningAddress && (
+                <ZoningList zoningData={zoningData} searchAddress={zoningAddress} />
+              )}
+            </TabsContent>
+          </Tabs>
+        )}
       </main>
     </div>
   );
-}
+};
+
+export default PropertyResearch;
