@@ -4,11 +4,12 @@ export interface Coordinates {
 }
 
 export interface PermitSearchParams {
-  top_right_lat: number;
-  top_right_lng: number;
-  bottom_left_lat: number;
-  bottom_left_lng: number;
+  top_right_lat?: number;
+  top_right_lng?: number;
+  bottom_left_lat?: number;
+  bottom_left_lng?: number;
   exact_address?: string;
+  address?: string;
 }
 
 export interface PermitLocation {

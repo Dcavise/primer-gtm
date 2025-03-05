@@ -40,21 +40,28 @@ const PropertyResearch: React.FC = () => {
     fetchZoningData,
   } = useZoningData();
 
-  const handleSearch = async (address: string, coords: { lat: number; lng: number }) => {
+  const handleSearch = async (params: any, address: string) => {
     setSearchAddress(address);
-    setCoordinates(coords);
     
-    // Fetch permits data
-    await fetchPermits({ address }, address);
-    
-    // Fetch schools data
-    await fetchSchoolsData({
-      top_right_lat: coords.lat,
-      top_right_lng: coords.lng,
-    }, address);
-    
-    // Fetch zoning data
-    await fetchZoningData(address);
+    // Extract coordinates from params
+    if (params.top_right_lat && params.top_right_lng) {
+      setCoordinates({
+        lat: params.top_right_lat,
+        lng: params.top_right_lng
+      });
+      
+      // Fetch permits data
+      await fetchPermits(params, address);
+      
+      // Fetch schools data
+      await fetchSchoolsData({
+        top_right_lat: params.top_right_lat,
+        top_right_lng: params.top_right_lng,
+      }, address);
+      
+      // Fetch zoning data
+      await fetchZoningData(address);
+    }
   };
 
   return (
@@ -66,7 +73,13 @@ const PropertyResearch: React.FC = () => {
             <CardTitle className="text-xl md:text-2xl font-bold">Property Research</CardTitle>
           </CardHeader>
           <CardContent>
-            <SearchForm onSearch={handleSearch} />
+            <SearchForm 
+              onSearch={handleSearch} 
+              isSearching={permitsStatus === SearchStatus.LOADING || 
+                          schoolsStatus === SearchStatus.LOADING || 
+                          zoningStatus === SearchStatus.LOADING}
+              searchType="property-research"
+            />
           </CardContent>
         </Card>
 
@@ -98,7 +111,11 @@ const PropertyResearch: React.FC = () => {
             
             <TabsContent value="permits">
               {permitsStatus !== SearchStatus.LOADING && permitAddress && (
-                <PermitList permits={permits} searchAddress={permitAddress} />
+                <PermitList 
+                  permits={permits} 
+                  searchedAddress={permitAddress}
+                  isLoading={permitsStatus === SearchStatus.LOADING}
+                />
               )}
             </TabsContent>
             
@@ -106,15 +123,20 @@ const PropertyResearch: React.FC = () => {
               {schoolsStatus !== SearchStatus.LOADING && schoolsAddress && (
                 <SchoolsList 
                   schools={schools} 
-                  searchAddress={schoolsAddress} 
-                  radiusMiles={schoolsResponse?.radiusMiles || 5} 
+                  searchedAddress={schoolsAddress} 
+                  radiusMiles={schoolsResponse?.radiusMiles || 5}
+                  isLoading={schoolsStatus === SearchStatus.LOADING}
                 />
               )}
             </TabsContent>
             
             <TabsContent value="zoning">
               {zoningStatus !== SearchStatus.LOADING && zoningAddress && (
-                <ZoningList zoningData={zoningData} searchAddress={zoningAddress} />
+                <ZoningList 
+                  zoningData={zoningData} 
+                  searchedAddress={zoningAddress}
+                  isLoading={zoningStatus === SearchStatus.LOADING}
+                />
               )}
             </TabsContent>
           </Tabs>
