@@ -116,7 +116,7 @@ const MarketExplorer = () => {
           if (!found) {
             try {
               // Format the address as "Campus Name, State"
-              const addressToGeocode = `${selectedCampus.campus_name}, ${selectedCampus.State?.trim() || ''}`;
+              const addressToGeocode = `${selectedCampus.campus_name}${selectedCampus.State ? `, ${selectedCampus.State.trim()}` : ''}`;
               console.log("Geocoding address:", addressToGeocode);
               
               const result = await geocodeAddress(addressToGeocode);

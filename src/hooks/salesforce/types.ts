@@ -26,6 +26,7 @@ export interface OpportunityStageCount {
 export interface Campus extends BaseCampus {
   campus_id: string;
   campus_name: string;
+  State?: string | null; // Add the State property to match Supabase schema
 }
 
 export interface SyncStatus {
