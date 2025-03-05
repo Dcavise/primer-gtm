@@ -75,6 +75,9 @@ export const PhaseSelector: React.FC<PhaseSelectorProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
 
+  // Make sure we display the current phase or "--None--" if not set
+  const displayValue = value || "--None--";
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -88,7 +91,7 @@ export const PhaseSelector: React.FC<PhaseSelectorProps> = ({
           )}
           disabled={disabled}
         >
-          {value || "--None--"}
+          {displayValue}
           <span className="ml-2 h-4 w-4 shrink-0 opacity-50">▼</span>
         </Button>
       </PopoverTrigger>

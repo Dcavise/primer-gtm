@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -54,7 +53,7 @@ const PropertyDetail: React.FC = () => {
   
   const [notesValue, setNotesValue] = useState('');
   const [propertyFormValues, setPropertyFormValues] = useState<Partial<RealEstateProperty>>({});
-  const [statusFormValues, setStatusFormValues] = useState<Partial<RealEstateProperty>>({});
+  const [statusFormValues, setStatusFormValues] = useState<Partial<RealEateProperty>>({});
   const [contactFormValues, setContactFormValues] = useState<Partial<RealEstateProperty>>({});
   const [leaseFormValues, setLeaseFormValues] = useState<Partial<RealEstateProperty>>({});
   
@@ -71,10 +70,12 @@ const PropertyDetail: React.FC = () => {
       
       console.log('Fetching property with id:', id);
       
+      const propertyId = isNaN(parseInt(id)) ? id : parseInt(id);
+      
       const { data, error } = await supabase
         .from('real_estate_pipeline')
         .select('*')
-        .eq('id', id)
+        .eq('id', propertyId)
         .maybeSingle();
       
       if (error) {
@@ -399,6 +400,21 @@ const PropertyDetail: React.FC = () => {
     }
   };
 
+  const renderPhaseSelector = () => {
+    if (isEditingPropertyInfo) {
+      return (
+        <PhaseSelector
+          value={propertyFormValues.phase}
+          onValueChange={handlePhaseChange}
+        />
+      );
+    } else {
+      return (
+        <p className="font-medium">{property?.phase || 'Not specified'}</p>
+      );
+    }
+  };
+
   if (isLoading) {
     return <LoadingState message="Loading property details..." />;
   }
@@ -527,14 +543,7 @@ const PropertyDetail: React.FC = () => {
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Phase</p>
-                  {isEditingPropertyInfo ? (
-                    <PhaseSelector
-                      value={propertyFormValues.phase}
-                      onValueChange={handlePhaseChange}
-                    />
-                  ) : (
-                    <p className="font-medium">{property.phase || 'Not specified'}</p>
-                  )}
+                  {renderPhaseSelector()}
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Available Space</p>
