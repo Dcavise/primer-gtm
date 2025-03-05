@@ -123,8 +123,7 @@ const PropertyResearch: React.FC = () => {
               {schoolsStatus !== SearchStatus.LOADING && schoolsAddress && (
                 <SchoolsList 
                   schools={schools} 
-                  searchedAddress={schoolsAddress} 
-                  radiusMiles={schoolsResponse?.radiusMiles || 5}
+                  searchedAddress={schoolsAddress}
                   isLoading={schoolsStatus === SearchStatus.LOADING}
                 />
               )}

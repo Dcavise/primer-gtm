@@ -12,9 +12,10 @@ interface SchoolsListProps {
   schools: School[];
   isLoading: boolean;
   searchedAddress: string;
+  radiusMiles?: number;
 }
 
-export const SchoolsList = ({ schools, isLoading, searchedAddress }: SchoolsListProps) => {
+export const SchoolsList = ({ schools, isLoading, searchedAddress, radiusMiles = 5 }: SchoolsListProps) => {
   const [activeLevel, setActiveLevel] = useState("All");
   const [sortBy, setSortBy] = useState<"distance" | "rating">("distance");
 
@@ -96,7 +97,7 @@ export const SchoolsList = ({ schools, isLoading, searchedAddress }: SchoolsList
       <div className="py-6 text-center">
         <h3 className="text-xl font-medium mb-2">No schools found</h3>
         <p className="text-muted-foreground">
-          We couldn't find any schools within 5 miles of this location. Try a different address or expand your search criteria.
+          We couldn't find any schools within {radiusMiles} miles of this location. Try a different address or expand your search criteria.
         </p>
       </div>
     );
@@ -117,7 +118,7 @@ export const SchoolsList = ({ schools, isLoading, searchedAddress }: SchoolsList
                 Found {schools.length} schools near your location
               </AlertTitle>
               <AlertDescription className="text-blue-700 dark:text-blue-400">
-                Showing schools within a 5-mile radius of "{searchedAddress}".
+                Showing schools within a {radiusMiles}-mile radius of "{searchedAddress}".
               </AlertDescription>
             </div>
           </div>
