@@ -146,11 +146,20 @@ const SalesforceLeadsPage: React.FC = () => {
     
     try {
       console.log("Invoking sync-salesforce-leads function");
+      toast.info("Starting Salesforce data sync...");
+      
       const response = await supabase.functions.invoke('sync-salesforce-leads');
+      
+      console.log("Edge function response:", response);
       
       if (response.error) {
         console.error("Edge function error:", response.error);
-        throw new Error(response.error.message || 'Unknown error occurred');
+        throw new Error(response.error.message || 'Unknown error occurred during sync');
+      }
+      
+      if (!response.data) {
+        console.error("No data returned from edge function");
+        throw new Error('No data returned from sync operation');
       }
       
       if (!response.data.success) {
@@ -176,6 +185,7 @@ const SalesforceLeadsPage: React.FC = () => {
         successMessage += `, cleaned ${response.data.cleaned} invalid campus references`;
       }
       
+      console.log("Sync completed successfully:", response.data);
       toast.success(successMessage);
       
       // Refresh the stats after sync
