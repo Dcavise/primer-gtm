@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +9,8 @@ import { Navbar } from '@/components/Navbar';
 import { LoadingState } from '@/components/LoadingState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { FileUpload } from '@/components/FileUpload';
+import { FileList } from '@/components/FileList';
 import { 
   ArrowLeft, 
   MapPin, 
@@ -22,12 +24,14 @@ import {
   Check,
   AlertCircle,
   Flame,
-  Wifi
+  Wifi,
+  FolderOpen
 } from 'lucide-react';
 
 const PropertyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [fileRefreshKey, setFileRefreshKey] = useState(0);
   
   const { data: property, isLoading, error } = useQuery({
     queryKey: ['property', id],
@@ -51,6 +55,10 @@ const PropertyDetail: React.FC = () => {
 
   const handleBackClick = () => {
     navigate('/real-estate-pipeline');
+  };
+
+  const handleFileUploadComplete = () => {
+    setFileRefreshKey(prev => prev + 1);
   };
 
   if (isLoading) {
@@ -223,9 +231,9 @@ const PropertyDetail: React.FC = () => {
             )}
           </div>
 
-          {/* Contact Information */}
-          <div>
-            <Card className="h-full">
+          <div className="space-y-6">
+            {/* Contact Information */}
+            <Card>
               <CardHeader>
                 <CardTitle className="text-xl">Contact Information</CardTitle>
               </CardHeader>
@@ -256,6 +264,31 @@ const PropertyDetail: React.FC = () => {
                 <div className="text-sm text-muted-foreground">
                   <p>Property ID: {property.id}</p>
                   <p>Added on: {new Date(property.created_at).toLocaleDateString()}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Document Repository */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl flex items-center">
+                  <FolderOpen className="h-5 w-5 mr-2" />
+                  Document Repository
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FileUpload 
+                  propertyId={property.id} 
+                  onUploadComplete={handleFileUploadComplete} 
+                />
+                
+                <div className="border-t pt-4">
+                  <h3 className="font-medium text-sm mb-3">Uploaded Documents</h3>
+                  <FileList 
+                    key={fileRefreshKey}
+                    propertyId={property.id} 
+                    onFileDeleted={handleFileUploadComplete}
+                  />
                 </div>
               </CardContent>
             </Card>
