@@ -11,6 +11,10 @@ import {
 } from '@/components/ui/dialog';
 import { Loader2, RefreshCw, Info } from 'lucide-react';
 
+// Google API constants (must match the ones in the edge function)
+const SPREADSHEET_ID = "1xOXQdZaZTJkAjnI1fHI4tSTCFnF9p0hhfAX05-MYyG8";
+const SHEET_RANGE = "Sheet1!A1:Z";
+
 interface RealEstatePipelineSyncProps {
   isOpen: boolean;
   onClose: () => void;
@@ -47,8 +51,8 @@ export const RealEstatePipelineSync: React.FC<RealEstatePipelineSyncProps> = ({
               <Info className="h-4 w-4 mr-1" />
               <span className="font-semibold">Info:</span>
             </div>
-            <p>Spreadsheet ID: <code className="bg-blue-100 px-1 rounded">1xOXQdZaZTJkAjnI1fHI4tSTCFnF9p0hhfAX05-MYyG8</code></p>
-            <p>Sheet Range: <code className="bg-blue-100 px-1 rounded">Pipeline!A1:Z</code></p>
+            <p>Spreadsheet ID: <code className="bg-blue-100 px-1 rounded">{SPREADSHEET_ID}</code></p>
+            <p>Sheet Range: <code className="bg-blue-100 px-1 rounded">{SHEET_RANGE}</code></p>
           </div>
           
           {isSyncing && (

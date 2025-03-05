@@ -9,13 +9,14 @@ const corsHeaders = {
 };
 
 // Google API constants
-// Changed the spreadsheet ID - this was causing the 404 error
-const SPREADSHEET_ID = "1xOXQdZaZTJkAjnI1fHI4tSTCFnF9p0hhfAX05-MYyG8"; // Using a valid spreadsheet ID
-const SHEET_RANGE = "Pipeline!A1:Z"; // Updated to include headers
+// Using a spreadsheet ID from the error logs for debugging
+const SPREADSHEET_ID = "1xOXQdZaZTJkAjnI1fHI4tSTCFnF9p0hhfAX05-MYyG8"; 
+const SHEET_RANGE = "Sheet1!A1:Z"; // Try a more generic sheet name to debug
 
 async function fetchWithGoogleAuth(url: string, credentials: any) {
   try {
     console.log("Starting Google Sheets API fetch with authentication");
+    console.log(`Fetching from URL: ${url}`);
 
     // Create a JWT for Google authentication
     const now = Math.floor(Date.now() / 1000);
@@ -130,6 +131,8 @@ async function fetchWithGoogleAuth(url: string, credentials: any) {
 async function fetchGoogleSheetData(credentialsStr: string) {
   try {
     console.log("Starting Google Sheets data fetch for real estate pipeline");
+    console.log(`Using spreadsheet ID: ${SPREADSHEET_ID}`);
+    console.log(`Using sheet range: ${SHEET_RANGE}`);
     
     // Parse credentials
     let credentials;
@@ -151,6 +154,23 @@ async function fetchGoogleSheetData(credentialsStr: string) {
     // Build request URL
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_RANGE}`;
     console.log(`Requesting data from: ${url}`);
+    
+    // Let's try to get the metadata of the spreadsheet first to see what sheets are available
+    try {
+      const metadataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?fields=sheets.properties.title`;
+      const metadataResult = await fetchWithGoogleAuth(metadataUrl, credentials);
+      console.log("Available sheets:", JSON.stringify(metadataResult));
+      
+      if (metadataResult.sheets && metadataResult.sheets.length > 0) {
+        console.log("Available sheet names:");
+        metadataResult.sheets.forEach((sheet: any, index: number) => {
+          console.log(`${index + 1}. ${sheet.properties.title}`);
+        });
+      }
+    } catch (metadataError) {
+      console.error("Error fetching spreadsheet metadata:", metadataError);
+      // Continue with the main request even if metadata fetch fails
+    }
     
     // Make authenticated request
     const result = await fetchWithGoogleAuth(url, credentials);

@@ -91,7 +91,7 @@ export const SyncStatusDisplay: React.FC<SyncStatusDisplayProps> = ({
         <div className="px-4 pb-4 pt-0">
           <div className="text-xs mb-2 flex items-center text-blue-700">
             <Info className="h-4 w-4 mr-1" />
-            <span>Using Google Sheet ID: <code className="bg-blue-50 px-1 rounded">1xOXQdZaZTJkAjnI1fHI4tSTCFnF9p0hhfAX05-MYyG8</code></span>
+            <span>Using Google Sheet ID: <code className="bg-blue-50 px-1 rounded">{SPREADSHEET_ID}</code></span>
           </div>
           <div className="bg-gray-100 p-3 rounded-md overflow-x-auto">
             <pre className="text-xs whitespace-pre-wrap">{syncDebugInfo}</pre>
