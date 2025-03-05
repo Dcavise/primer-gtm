@@ -120,15 +120,23 @@ export async function searchPermits(params: PermitSearchParams): Promise<PermitR
     const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
     
     try {
+      // Add more debugging
+      console.log(`Making permit API request to: ${API_BASE_URL}/zonePermits?${queryParams}`);
+      
       const response = await fetch(`${API_BASE_URL}/zonePermits?${queryParams}`, {
-        signal: controller.signal
+        signal: controller.signal,
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        }
       });
       
       clearTimeout(timeoutId);
       
       if (!response.ok) {
+        console.error(`Permit API error: ${response.status} - ${response.statusText}`);
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to fetch permits");
+        throw new Error(errorData.message || `Failed to fetch permits: ${response.status}`);
       }
       
       const data = await response.json();

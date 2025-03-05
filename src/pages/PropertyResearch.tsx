@@ -69,16 +69,21 @@ const PropertyResearch = () => {
       if (geocodingResult) {
         setCoordinates(geocodingResult.coordinates);
         
+        console.log(`Geocoded coordinates: ${JSON.stringify(geocodingResult.coordinates)}`);
+        
         // Start all API requests concurrently
         await Promise.all([
           fetchPermits({
-            ...params,
+            bottom_left_lat: geocodingResult.coordinates.lat - 0.0001,
+            bottom_left_lng: geocodingResult.coordinates.lng - 0.0001,
+            top_right_lat: geocodingResult.coordinates.lat + 0.0001,
+            top_right_lng: geocodingResult.coordinates.lng + 0.0001,
             exact_address: geocodingResult.address // Use the standardized address from geocoding
           }, geocodingResult.address),
           fetchZoningData(geocodingResult.address),
           fetchSchoolsData({
-            top_right_lat: geocodingResult.coordinates.lat,
-            top_right_lng: geocodingResult.coordinates.lng
+            lat: geocodingResult.coordinates.lat,  // Fix coordinate names
+            lon: geocodingResult.coordinates.lng  // Fix coordinate names
           }, geocodingResult.address)
         ]);
         

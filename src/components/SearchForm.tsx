@@ -55,8 +55,8 @@ export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProp
         } else {
           // Just for schools
           onSearch({
-            top_right_lat: coordinates.lat,
-            top_right_lng: coordinates.lng
+            lat: coordinates.lat,
+            lon: coordinates.lng
           }, geocodeResult.address);
         }
       } else {
