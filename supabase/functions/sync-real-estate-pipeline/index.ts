@@ -85,6 +85,8 @@ async function fetchWithGoogleAuth(url: string, credentials: any) {
     
     // Exchange JWT for access token
     console.log("Requesting access token from Google OAuth");
+    console.log(`JWT payload: ${JSON.stringify(jwtPayload)}`);
+    
     const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: {
