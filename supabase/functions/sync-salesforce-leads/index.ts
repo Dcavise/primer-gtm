@@ -127,7 +127,7 @@ async function fetchSalesforceLeads(token: string, instanceUrl: string): Promise
     FROM Lead
     WHERE Id != null
     ORDER BY CreatedDate DESC
-    LIMIT 100
+    LIMIT 1000
   `;
   
   console.log("SOQL Query:", query);
