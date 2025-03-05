@@ -4,23 +4,15 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw, Users, ArrowUpRight, CheckCircle, Clock } from 'lucide-react';
 
-interface SalesforceLead {
-  id: string;
-  lead_id: string;
-  first_name: string;
-  last_name: string;
-  created_date: string;
-  converted_date: string;
-  converted: boolean;
-  stage: string;
-  lead_source: string;
-  preferred_campus: string;
-  campus_id: string;
-  converted_opportunity_id: string;
-  updated_at: string;
+interface SummaryStats {
+  fellowsCount: number;
+  leadsCount: number;
+  activeOpportunitiesCount: number;
+  closedWonOpportunitiesCount: number;
 }
 
 interface Campus {
@@ -29,7 +21,12 @@ interface Campus {
 }
 
 const SalesforceLeadsPage: React.FC = () => {
-  const [leads, setLeads] = useState<SalesforceLead[]>([]);
+  const [stats, setStats] = useState<SummaryStats>({
+    fellowsCount: 0,
+    leadsCount: 0,
+    activeOpportunitiesCount: 0,
+    closedWonOpportunitiesCount: 0
+  });
   const [campuses, setCampuses] = useState<Campus[]>([]);
   const [selectedCampusId, setSelectedCampusId] = useState<string | null>(null);
   const [syncLoading, setSyncLoading] = useState(false);
@@ -38,8 +35,8 @@ const SalesforceLeadsPage: React.FC = () => {
 
   useEffect(() => {
     fetchCampuses();
-    fetchLeads();
-  }, []);
+    fetchStats();
+  }, [selectedCampusId]);
 
   const fetchCampuses = async () => {
     try {
@@ -56,44 +53,73 @@ const SalesforceLeadsPage: React.FC = () => {
     }
   };
 
-  const fetchLeads = async (campusId?: string) => {
+  const fetchStats = async () => {
     try {
-      let query = supabase
-        .from('salesforce_leads')
-        .select('*')
-        .order('created_date', { ascending: false });
-
-      if (campusId) {
-        query = query.eq('campus_id', campusId);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      setLeads(data || []);
-
-      // Log data for debugging
-      console.log("Leads with campus_id: ", data?.filter(lead => lead.campus_id));
-      
-      // Check opportunities with campus_id
-      const { data: opportunities } = await supabase
-        .from('salesforce_opportunities')
-        .select('opportunity_id, campus_id')
-        .not('campus_id', 'is', null);
-      
-      console.log("Opportunities with campus_id: ", opportunities || []);
-      
-      // Check fellows with campus_id
-      const { data: fellows } = await supabase
+      // Fetch fellows count
+      let fellowsQuery = supabase
         .from('fellows')
-        .select('fellow_id, campus_id')
-        .not('campus_id', 'is', null);
+        .select('fellow_id', { count: 'exact' });
       
-      console.log("Fellows with campus_id: ", fellows || []);
+      if (selectedCampusId) {
+        fellowsQuery = fellowsQuery.eq('campus_id', selectedCampusId);
+      }
+      
+      const { count: fellowsCount, error: fellowsError } = await fellowsQuery;
+      
+      if (fellowsError) throw fellowsError;
+      
+      // Fetch leads count
+      let leadsQuery = supabase
+        .from('salesforce_leads')
+        .select('lead_id', { count: 'exact' });
+      
+      if (selectedCampusId) {
+        leadsQuery = leadsQuery.eq('campus_id', selectedCampusId);
+      }
+      
+      const { count: leadsCount, error: leadsError } = await leadsQuery;
+      
+      if (leadsError) throw leadsError;
+      
+      // Fetch active opportunities count (not Closed Won or Closed Lost)
+      let activeOppsQuery = supabase
+        .from('salesforce_opportunities')
+        .select('opportunity_id', { count: 'exact' })
+        .not('stage', 'in', '("Closed Won","Closed Lost")');
+      
+      if (selectedCampusId) {
+        activeOppsQuery = activeOppsQuery.eq('campus_id', selectedCampusId);
+      }
+      
+      const { count: activeOppsCount, error: activeOppsError } = await activeOppsQuery;
+      
+      if (activeOppsError) throw activeOppsError;
+      
+      // Fetch closed won opportunities count
+      let closedWonOppsQuery = supabase
+        .from('salesforce_opportunities')
+        .select('opportunity_id', { count: 'exact' })
+        .eq('stage', 'Closed Won');
+      
+      if (selectedCampusId) {
+        closedWonOppsQuery = closedWonOppsQuery.eq('campus_id', selectedCampusId);
+      }
+      
+      const { count: closedWonOppsCount, error: closedWonOppsError } = await closedWonOppsQuery;
+      
+      if (closedWonOppsError) throw closedWonOppsError;
+      
+      // Update stats
+      setStats({
+        fellowsCount: fellowsCount || 0,
+        leadsCount: leadsCount || 0,
+        activeOpportunitiesCount: activeOppsCount || 0,
+        closedWonOpportunitiesCount: closedWonOppsCount || 0
+      });
       
     } catch (error) {
-      console.error('Error fetching leads:', error);
-      toast.error('Failed to load leads data');
+      console.error('Error fetching stats:', error);
+      toast.error('Failed to load analytics data');
     }
   };
 
@@ -136,7 +162,8 @@ const SalesforceLeadsPage: React.FC = () => {
       
       toast.success(successMessage);
       
-      fetchLeads(selectedCampusId || undefined);
+      // Refresh the stats after sync
+      fetchStats();
       fetchCampuses();
     } catch (error: any) {
       console.error('Error syncing Salesforce leads:', error);
@@ -151,7 +178,7 @@ const SalesforceLeadsPage: React.FC = () => {
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Salesforce Leads</h1>
+        <h1 className="text-2xl font-bold">Salesforce Analytics</h1>
         <Button 
           onClick={syncSalesforceLeads} 
           disabled={syncLoading}
@@ -195,7 +222,7 @@ const SalesforceLeadsPage: React.FC = () => {
             variant={selectedCampusId === null ? "default" : "outline"}
             onClick={() => {
               setSelectedCampusId(null);
-              fetchLeads();
+              fetchStats();
             }}
           >
             All Campuses
@@ -206,7 +233,7 @@ const SalesforceLeadsPage: React.FC = () => {
               variant={selectedCampusId === campus.campus_id ? "default" : "outline"}
               onClick={() => {
                 setSelectedCampusId(campus.campus_id);
-                fetchLeads(campus.campus_id);
+                fetchStats();
               }}
             >
               {campus.campus_name}
@@ -215,54 +242,78 @@ const SalesforceLeadsPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="border px-4 py-2 text-left">Name</th>
-              <th className="border px-4 py-2 text-left">Created</th>
-              <th className="border px-4 py-2 text-left">Stage</th>
-              <th className="border px-4 py-2 text-left">Source</th>
-              <th className="border px-4 py-2 text-left">Preferred Campus</th>
-              <th className="border px-4 py-2 text-left">Campus ID</th>
-              <th className="border px-4 py-2 text-left">Converted</th>
-              <th className="border px-4 py-2 text-left">Converted Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {leads.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="border px-4 py-8 text-center text-gray-500">
-                  No leads found. {selectedCampusId ? 'Try selecting a different campus or ' : ''}
-                  <button 
-                    onClick={syncSalesforceLeads} 
-                    className="text-blue-500 underline"
-                    disabled={syncLoading}
-                  >
-                    sync with Salesforce
-                  </button>
-                </td>
-              </tr>
-            ) : (
-              leads.map(lead => (
-                <tr key={lead.id} className="hover:bg-gray-50">
-                  <td className="border px-4 py-2">
-                    {lead.first_name} {lead.last_name}
-                  </td>
-                  <td className="border px-4 py-2">{lead.created_date}</td>
-                  <td className="border px-4 py-2">{lead.stage}</td>
-                  <td className="border px-4 py-2">{lead.lead_source}</td>
-                  <td className="border px-4 py-2">{lead.preferred_campus}</td>
-                  <td className="border px-4 py-2">{lead.campus_id}</td>
-                  <td className="border px-4 py-2">
-                    {lead.converted ? 'Yes' : 'No'}
-                  </td>
-                  <td className="border px-4 py-2">{lead.converted_date}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Fellows Card */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Fellows
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="text-2xl font-bold">{stats.fellowsCount}</div>
+              <Users className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {selectedCampusId ? 'Fellows at this campus' : 'Total Fellows'}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Leads Card */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Leads
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="text-2xl font-bold">{stats.leadsCount}</div>
+              <ArrowUpRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {selectedCampusId ? 'Leads for this campus' : 'Total Leads'}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Active Opportunities Card */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Active Opportunities
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="text-2xl font-bold">{stats.activeOpportunitiesCount}</div>
+              <Clock className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Not Closed Won/Lost
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Closed Won Opportunities Card */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Closed Won
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="text-2xl font-bold">{stats.closedWonOpportunitiesCount}</div>
+              <CheckCircle className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Successful opportunities
+            </p>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
