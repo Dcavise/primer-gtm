@@ -43,19 +43,22 @@ export const PipelineColumn: React.FC<PipelineColumnProps> = ({
   onPropertyClick
 }) => {
   const phaseColorClass = getPhaseColor(title);
+  
+  // Filter properties to only include those that match this column's phase
+  const filteredProperties = properties.filter(property => property.phase === title);
 
   return (
     <div className="flex flex-col h-full">
       <div className={`p-2 rounded-t-md ${phaseColorClass}`}>
         <h3 className="font-medium text-center">{title}</h3>
         <div className={`text-xs text-center ${title === '0. New Site' || title === '1. Initial Diligence' || title === '2. Survey' || title === '3. Test Fit' || title === '4. Plan Production' ? 'text-gray-600' : 'text-gray-200'}`}>
-          {properties.length} properties
+          {filteredProperties.length} properties
         </div>
       </div>
       <div className="flex-1 bg-secondary/20 p-2 rounded-b-md overflow-auto max-h-[calc(100vh-220px)]">
         <div className="space-y-3">
-          {properties.length > 0 ? (
-            properties.map(property => (
+          {filteredProperties.length > 0 ? (
+            filteredProperties.map(property => (
               <PropertyCard 
                 key={property.id} 
                 property={property}

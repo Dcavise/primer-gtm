@@ -17,6 +17,11 @@ export const useRealEstatePipeline = () => {
         throw new Error('Failed to fetch real estate pipeline data');
       }
       
+      // Log the first few properties to help with debugging
+      if (data && data.length > 0) {
+        console.log('Sample pipeline data:', data.slice(0, 3));
+      }
+      
       return data || [];
     }
   });
