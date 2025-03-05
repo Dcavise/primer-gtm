@@ -13,20 +13,32 @@ import { geocodeAddress } from "@/utils/geocoding";
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useQuery } from '@tanstack/react-query';
 
 const MarketExplorer = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const [mapboxToken, setMapboxToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [selectedMarket, setSelectedMarket] = useState<string>("default");
-  const { campuses, fetchCampuses } = useCampuses();
+  const { campuses } = useCampuses();
   const mapInitialized = useRef(false);
-  const [mapError, setMapError] = useState<string | null>(null);
-  const tokenFetchInProgress = useRef(false);
   
+  // Use React Query to fetch the Mapbox token once
+  const { 
+    data: mapboxToken, 
+    isLoading: isTokenLoading, 
+    error: tokenError 
+  } = useQuery({
+    queryKey: ['mapbox-token'],
+    queryFn: async () => {
+      console.log("Fetching Mapbox token (ONCE ONLY)");
+      return getApiKey('mapbox');
+    },
+    staleTime: Infinity, // Never consider this data stale
+    cacheTime: Infinity, // Keep in cache forever
+    retry: 1, // Only retry once on failure
+  });
+
   // Memoize createDemoMap to prevent unnecessary re-creation
-  // NOTE: This is now defined before it's used in the useEffect below
   const createDemoMap = useCallback((mapInstance: mapboxgl.Map) => {
     if (!mapInstance) return;
     
@@ -81,72 +93,6 @@ const MarketExplorer = () => {
       duration: 2000
     });
   }, []);
-  
-  // Fetch API key only once when component mounts
-  useEffect(() => {
-    // Stop multiple simultaneous fetch attempts
-    if (tokenFetchInProgress.current || mapboxToken) return;
-    
-    const fetchToken = async () => {
-      tokenFetchInProgress.current = true;
-      
-      try {
-        console.log("Fetching Mapbox token (ONCE ONLY)");
-        const token = await getApiKey('mapbox');
-        
-        if (!token) {
-          setMapError("Mapbox token is empty or invalid");
-          setIsLoading(false);
-          return;
-        }
-        
-        console.log("Successfully set Mapbox token");
-        setMapboxToken(token);
-      } catch (error) {
-        console.error("Error fetching Mapbox token:", error);
-        setMapError("Failed to fetch Mapbox token. Please check your connection and try again.");
-        setIsLoading(false);
-      } finally {
-        // Even if there's an error, we've completed the fetch attempt
-        tokenFetchInProgress.current = false;
-      }
-    };
-
-    fetchToken();
-    
-    // Cleanup function
-    return () => {
-      // If component unmounts during fetch, mark as not in progress
-      tokenFetchInProgress.current = false;
-    };
-  }, []); // Empty dependency array ensures this runs once on mount
-  
-  // Fetch campuses in a separate effect
-  useEffect(() => {
-    let isMounted = true;
-    
-    const loadCampuses = async () => {
-      try {
-        await fetchCampuses();
-        if (isMounted) {
-          console.log("Campuses loaded successfully");
-        }
-      } catch (error) {
-        if (isMounted) {
-          console.error("Error fetching campuses:", error);
-          toast.error("Failed to fetch campus data", {
-            description: "Please check your connection and try again"
-          });
-        }
-      }
-    };
-    
-    loadCampuses();
-    
-    return () => {
-      isMounted = false;
-    };
-  }, [fetchCampuses]);
 
   // Initialize map once we have the token - with strict checks to prevent multiple initializations
   useEffect(() => {
@@ -186,8 +132,6 @@ const MarketExplorer = () => {
       // Wait for map to load before updating state
       newMap.on('load', () => {
         console.log("✅ Map loaded successfully");
-        setIsLoading(false);
-        setMapError(null);
         toast.success("Map loaded successfully", {
           description: "Market explorer is ready to use"
         });
@@ -201,15 +145,13 @@ const MarketExplorer = () => {
       // Handle map load error
       newMap.on('error', (e) => {
         console.error("Mapbox error:", e);
-        setMapError(`Map failed to load correctly: ${e.error ? e.error.message : "Unknown error"}`);
-        setIsLoading(false);
+        toast.error(`Map failed to load correctly: ${e.error ? e.error.message : "Unknown error"}`);
       });
     } catch (error) {
       console.error("Error initializing map:", error);
-      setMapError(`Failed to load map: ${error instanceof Error ? error.message : "Unknown error"}`);
-      setIsLoading(false);
       // Reset the initialization flag if there was an error
       mapInitialized.current = false;
+      toast.error(`Failed to load map: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
 
     // Cleanup map instance when component unmounts
@@ -305,6 +247,14 @@ const MarketExplorer = () => {
     setSelectedMarket(marketId);
   };
 
+  // Determine if there's an error to display
+  const mapError = tokenError 
+    ? `Failed to fetch Mapbox token: ${tokenError instanceof Error ? tokenError.message : "Unknown error"}`
+    : null;
+
+  // Determine if we're in a loading state
+  const isLoading = isTokenLoading;
+
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-gradient-to-r from-slate-gray to-slate-gray-400 text-white py-8 px-6">
@@ -343,8 +293,7 @@ const MarketExplorer = () => {
               <div className="relative rounded-md overflow-hidden shadow-md mt-4">
                 <div 
                   ref={mapContainer} 
-                  className="w-full h-[600px] bg-gray-100"
-                  style={{ position: 'relative' }}
+                  className="w-full h-[600px] bg-gray-100 relative"
                   data-testid="map-container"
                 />
                 <div className="absolute bottom-5 right-5 flex gap-2">
