@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -67,12 +66,13 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
       const { data: allCampuses } = await supabase.from('campuses').select('campus_id, campus_name');
       console.log("Available campuses:", allCampuses);
       
-      // Fetch fellows count with modified employment status filtering
+      // Fetch fellows count with proper filtering
       let query = supabase
         .from('fellows')
         .select('*', { count: 'exact' });
       
-      // Only exclude "Exiting" and "Declined FTE Offer" statuses, but include NULL
+      // Only exclude specific statuses, keeping NULL values
+      // Using .not() with 'eq' will allow NULL values to pass through
       query = query.not('fte_employment_status', 'eq', 'Exiting')
                    .not('fte_employment_status', 'eq', 'Declined FTE Offer');
       
@@ -88,7 +88,7 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
         console.log(`Selected campus: ID=${selectedCampusId}, Name=${campusName}`);
         
         if (campusName) {
-          // Try different matching approaches for more reliable results
+          // Use OR filter with multiple conditions for more reliable campus matching
           query = query.or(`campus_id.eq.${selectedCampusId},campus.eq.${campusName},campus.ilike.%${campusName}%`);
           console.log(`Using enhanced campus filter: campus_id=${selectedCampusId} OR campus=${campusName} OR campus ILIKE %${campusName}%`);
         } else {
@@ -103,7 +103,18 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
       
       // Log fellows data for debugging
       console.log(`Found ${fellowsCount || 0} fellows matching criteria`);
-      console.log("Sample of fellows data:", fellowsData?.slice(0, 5));
+      if (fellowsData && fellowsData.length > 0) {
+        console.log("Sample of fellows data:", fellowsData.slice(0, 5));
+        
+        // Log employment status distribution for debugging
+        const statusCounts = fellowsData.reduce((acc, fellow) => {
+          const status = fellow.fte_employment_status || 'NULL';
+          acc[status] = (acc[status] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+        
+        console.log("Employment status distribution:", statusCounts);
+      }
       
       // Fetch leads count
       let leadsQuery = supabase
