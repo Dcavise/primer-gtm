@@ -1,12 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { 
-  LeadsMetricsData, 
-  OpportunityMetricsData, 
-  MetricData,
-  TimeSeriesData,
-  TimeSeriesPoint
-} from './types';
+import { LeadsMetricsData, OpportunityMetricsData, AttendanceMetricsData } from './types';
 
 export const useMetrics = (selectedCampusId: string | null) => {
   const [leadsMetrics, setLeadsMetrics] = useState<LeadsMetricsData>({
@@ -17,6 +10,51 @@ export const useMetrics = (selectedCampusId: string | null) => {
   const [opportunityMetrics, setOpportunityMetrics] = useState<OpportunityMetricsData>({
     metrics: [],
     timeSeriesData: []
+  });
+
+  const [attendanceMetrics, setAttendanceMetrics] = useState<AttendanceMetricsData>({
+    metrics: [
+      {
+        name: "Absenteeism Rate (10+ absences)",
+        currentValue: 12.5,
+        weekToDate: { value: 13.2, change: 5.6, positive: false },
+        last7Days: { value: 12.8, change: 2.4, positive: false },
+        last28Days: { value: 11.9, change: 5.0, positive: true }
+      },
+      {
+        name: "Average Daily Student Attendance",
+        currentValue: 94.3,
+        weekToDate: { value: 93.8, change: 0.5, positive: true },
+        last7Days: { value: 94.1, change: 0.2, positive: true },
+        last28Days: { value: 95.2, change: 0.9, positive: false }
+      }
+    ],
+    timeSeriesData: [
+      {
+        id: "absenteeism_rate",
+        name: "Absenteeism Rate",
+        data: [
+          { date: "2023-07-01", value: 10.2 },
+          { date: "2023-07-08", value: 10.8 },
+          { date: "2023-07-15", value: 11.3 },
+          { date: "2023-07-22", value: 12.1 },
+          { date: "2023-07-29", value: 11.7 },
+          { date: "2023-08-05", value: 12.5 }
+        ]
+      },
+      {
+        id: "average_attendance",
+        name: "Avg. Daily Attendance",
+        data: [
+          { date: "2023-07-01", value: 95.8 },
+          { date: "2023-07-08", value: 95.2 },
+          { date: "2023-07-15", value: 94.7 },
+          { date: "2023-07-22", value: 94.1 },
+          { date: "2023-07-29", value: 94.5 },
+          { date: "2023-08-05", value: 94.3 }
+        ]
+      }
+    ]
   });
 
   useEffect(() => {
@@ -161,8 +199,9 @@ export const useMetrics = (selectedCampusId: string | null) => {
     });
   };
 
-  return {
-    leadsMetrics,
-    opportunityMetrics
+  return { 
+    leadsMetrics, 
+    opportunityMetrics,
+    attendanceMetrics
   };
 };

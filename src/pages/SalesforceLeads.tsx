@@ -18,6 +18,7 @@ const SalesforceLeadsPage: React.FC = () => {
     opportunityStageCounts,
     leadsMetrics,
     opportunityMetrics,
+    attendanceMetrics,
     campuses,
     syncLoading,
     syncError,
@@ -59,6 +60,7 @@ const SalesforceLeadsPage: React.FC = () => {
       <MetricsDashboard
         leadsMetrics={leadsMetrics}
         opportunityMetrics={opportunityMetrics}
+        attendanceMetrics={attendanceMetrics}
         selectedCampusName={selectedCampusName}
       />
     </div>

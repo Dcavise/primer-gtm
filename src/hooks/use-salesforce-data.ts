@@ -12,7 +12,8 @@ import {
   WeeklyLeadCount, 
   OpportunityStageCount,
   LeadsMetricsData,
-  OpportunityMetricsData
+  OpportunityMetricsData,
+  AttendanceMetricsData
 } from './salesforce/types';
 
 export type { 
@@ -23,7 +24,8 @@ export type {
   WeeklyLeadCount, 
   OpportunityStageCount,
   LeadsMetricsData,
-  OpportunityMetricsData
+  OpportunityMetricsData,
+  AttendanceMetricsData
 };
 
 export const useSalesforceData = (selectedCampusId: string | null) => {
@@ -31,7 +33,7 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
   
   const { stats, employmentStatusCounts, weeklyLeadCounts, opportunityStageCounts, fetchStats } = useStats(selectedCampusId);
   const { campuses, fetchCampuses } = useCampuses();
-  const { leadsMetrics, opportunityMetrics } = useMetrics(selectedCampusId);
+  const { leadsMetrics, opportunityMetrics, attendanceMetrics } = useMetrics(selectedCampusId);
   const { syncLoading, syncError, syncStatus, syncSalesforceData } = useSyncSalesforce(() => {
     fetchStats();
     fetchCampuses();
@@ -45,6 +47,7 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
     opportunityStageCounts,
     leadsMetrics,
     opportunityMetrics,
+    attendanceMetrics,
     campuses,
     syncLoading,
     syncError,

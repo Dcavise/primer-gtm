@@ -1,3 +1,4 @@
+
 import { Campus as BaseCampus } from '@/types';
 
 export interface SummaryStats {
@@ -64,6 +65,11 @@ export interface LeadsMetricsData {
 }
 
 export interface OpportunityMetricsData {
+  metrics: MetricData[];
+  timeSeriesData: TimeSeriesData[];
+}
+
+export interface AttendanceMetricsData {
   metrics: MetricData[];
   timeSeriesData: TimeSeriesData[];
 }
