@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { SummaryStats, EmploymentStatusCount, WeeklyLeadCount } from './types';
+import { SummaryStats, EmploymentStatusCount, WeeklyLeadCount, OpportunityStageCount } from './types';
 
 export const useStats = (selectedCampusId: string | null) => {
   const [stats, setStats] = useState<SummaryStats>({
@@ -13,6 +12,7 @@ export const useStats = (selectedCampusId: string | null) => {
   });
   const [employmentStatusCounts, setEmploymentStatusCounts] = useState<EmploymentStatusCount[]>([]);
   const [weeklyLeadCounts, setWeeklyLeadCounts] = useState<WeeklyLeadCount[]>([]);
+  const [opportunityStageCounts, setOpportunityStageCounts] = useState<OpportunityStageCount[]>([]);
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -200,6 +200,49 @@ export const useStats = (selectedCampusId: string | null) => {
       
       if (activeOppsError) throw activeOppsError;
       
+      // Fetch opportunity stages counts
+      let stagesQuery = supabase
+        .from('salesforce_opportunities')
+        .select('stage, opportunity_id')
+        .not('stage', 'in', '("Closed Won","Closed Lost")');
+      
+      if (selectedCampusId) {
+        stagesQuery = stagesQuery.eq('campus_id', selectedCampusId);
+      }
+      
+      const { data: stagesData, error: stagesError } = await stagesQuery;
+      
+      if (stagesError) throw stagesError;
+      
+      if (stagesData) {
+        // Group by stage and count
+        const stageCounts: Record<string, number> = {};
+        
+        // Initialize with the required stages to ensure they appear in the result even if count is 0
+        const requiredStages = ["Family Interview", "Awaiting Documents", "Preparing Offer", "Admission Offered"];
+        requiredStages.forEach(stage => {
+          stageCounts[stage] = 0;
+        });
+        
+        // Count occurrences of each stage
+        stagesData.forEach(opportunity => {
+          if (opportunity.stage) {
+            stageCounts[opportunity.stage] = (stageCounts[opportunity.stage] || 0) + 1;
+          }
+        });
+        
+        // Convert to array and sort according to required order
+        const stageCountsArray = requiredStages
+          .filter(stage => stageCounts[stage] !== undefined)
+          .map(stage => ({
+            stage,
+            count: stageCounts[stage]
+          }));
+        
+        console.log("Opportunity stages counts:", stageCountsArray);
+        setOpportunityStageCounts(stageCountsArray);
+      }
+
       // Fetch closed won opportunities count - using campus_id directly
       let closedWonOppsQuery = supabase
         .from('salesforce_opportunities')
@@ -241,6 +284,7 @@ export const useStats = (selectedCampusId: string | null) => {
     stats,
     employmentStatusCounts,
     weeklyLeadCounts,
+    opportunityStageCounts,
     lastRefreshed,
     fetchStats
   };

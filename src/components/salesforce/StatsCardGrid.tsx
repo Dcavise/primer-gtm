@@ -3,14 +3,16 @@ import React, { useState } from 'react';
 import { StatsCard } from './StatsCard';
 import { EmploymentStatusDialog } from './EmploymentStatusDialog';
 import { LeadsChartDialog } from './LeadsChartDialog';
+import { PipelineChartDialog } from './PipelineChartDialog';
 import { Users, ArrowUpRight, Clock, CheckCircle } from 'lucide-react';
-import { SummaryStats, EmploymentStatusCount, WeeklyLeadCount } from '@/hooks/salesforce/types';
+import { SummaryStats, EmploymentStatusCount, WeeklyLeadCount, OpportunityStageCount } from '@/hooks/salesforce/types';
 import { formatNumber } from '@/utils/format';
 
 interface StatsCardGridProps {
   stats: SummaryStats;
   employmentStatusCounts: EmploymentStatusCount[];
   weeklyLeadCounts: WeeklyLeadCount[];
+  opportunityStageCounts: OpportunityStageCount[];
   selectedCampusId: string | null;
   selectedCampusName: string | null;
 }
@@ -19,11 +21,13 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = ({
   stats, 
   employmentStatusCounts,
   weeklyLeadCounts,
+  opportunityStageCounts,
   selectedCampusId,
   selectedCampusName
 }) => {
   const [showEmploymentStatus, setShowEmploymentStatus] = useState(false);
   const [showLeadsChart, setShowLeadsChart] = useState(false);
+  const [showPipelineChart, setShowPipelineChart] = useState(false);
 
   return (
     <>
@@ -43,10 +47,11 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = ({
           onClick={() => setShowLeadsChart(true)}
         />
         <StatsCard
-          title="Active Opportunities"
+          title="Pipeline"
           value={formatNumber(stats.activeOpportunitiesCount)}
           description="Not Closed Won/Lost"
           icon={Clock}
+          onClick={() => setShowPipelineChart(true)}
         />
         <StatsCard
           title="Closed Won"
@@ -67,6 +72,13 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = ({
         open={showLeadsChart}
         onOpenChange={setShowLeadsChart}
         weeklyLeadCounts={weeklyLeadCounts}
+        selectedCampusName={selectedCampusName}
+      />
+
+      <PipelineChartDialog
+        open={showPipelineChart}
+        onOpenChange={setShowPipelineChart}
+        opportunityStageCounts={opportunityStageCounts}
         selectedCampusName={selectedCampusName}
       />
     </>

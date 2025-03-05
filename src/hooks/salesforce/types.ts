@@ -18,6 +18,11 @@ export interface WeeklyLeadCount {
   count: number;
 }
 
+export interface OpportunityStageCount {
+  stage: string;
+  count: number;
+}
+
 export interface Campus extends BaseCampus {
   campus_id: string;
   campus_name: string;

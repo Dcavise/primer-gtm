@@ -14,6 +14,7 @@ const SalesforceLeadsPage: React.FC = () => {
     stats,
     employmentStatusCounts,
     weeklyLeadCounts,
+    opportunityStageCounts,
     campuses,
     syncLoading,
     syncError,
@@ -47,6 +48,7 @@ const SalesforceLeadsPage: React.FC = () => {
         stats={stats}
         employmentStatusCounts={employmentStatusCounts}
         weeklyLeadCounts={weeklyLeadCounts}
+        opportunityStageCounts={opportunityStageCounts}
         selectedCampusId={selectedCampusId}
         selectedCampusName={selectedCampusName}
       />
