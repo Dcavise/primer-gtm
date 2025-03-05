@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/LoadingState';
-import { RealEstateProperty } from '@/types/realEstate';
+import { RealEstateProperty, PropertyPhase } from '@/types/realEstate';
 import PhaseSelector from './PhaseSelector';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -19,7 +19,7 @@ interface PropertyBasicInfoProps {
   onCancel: () => void;
   onSave: () => Promise<void>;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onPhaseChange: (value: string) => void;
+  onPhaseChange: (value: PropertyPhase | '') => void;
 }
 
 const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
@@ -37,7 +37,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
   // Changed the type to Record<string, string | null> to handle properties that might be null
-  const [fieldValues, setFieldValues] = useState<Record<string, string | null>>({});
+  const [fieldValues, setFieldValues] = useState<Record<string, string | null | PropertyPhase>>({});
 
   // Initialize field values when property changes
   React.useEffect(() => {
@@ -69,8 +69,8 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
     setFieldValues(prev => ({ ...prev, [name]: value }));
   };
 
-  const handlePhaseFieldChange = (value: string) => {
-    setFieldValues(prev => ({ ...prev, phase: value }));
+  const handlePhaseFieldChange = (value: PropertyPhase | '') => {
+    setFieldValues(prev => ({ ...prev, phase: value || null }));
   };
 
   const handleSaveField = async (fieldName: string) => {
@@ -98,7 +98,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
         } as React.ChangeEvent<HTMLInputElement>;
         onInputChange(syntheticEvent);
       } else if (onPhaseChange && fieldName === 'phase') {
-        onPhaseChange(fieldValues.phase || '');
+        onPhaseChange(fieldValues.phase as PropertyPhase || '');
       }
       
     } catch (error) {
@@ -207,7 +207,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
         {isFieldEditing ? (
           <div className="space-y-2">
             <PhaseSelector
-              value={fieldValues.phase || null}
+              value={fieldValues.phase as PropertyPhase || null}
               onValueChange={handlePhaseFieldChange}
             />
             <div className="flex justify-end space-x-2">

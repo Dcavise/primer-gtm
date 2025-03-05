@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { RealEstateProperty } from '@/types/realEstate';
+import { RealEstateProperty, PropertyPhase } from '@/types/realEstate';
 import { Button } from '@/components/ui/button';
 import { LoadingState } from '@/components/LoadingState';
 import { ArrowLeft } from 'lucide-react';
@@ -51,10 +50,8 @@ const PropertyDetail: React.FC = () => {
       
       console.log('Fetching property with id:', id);
       
-      // Convert string ID to number for the database query
       const propertyId = parseInt(id);
       
-      // Check if propertyId is a valid number before proceeding
       if (isNaN(propertyId)) {
         console.error('Invalid property ID:', id);
         throw new Error(`Invalid property ID: ${id}`);
@@ -88,7 +85,7 @@ const PropertyDetail: React.FC = () => {
       }
       
       setPropertyFormValues({
-        phase: property.phase || '',
+        phase: property.phase || null,
         sf_available: property.sf_available || '',
         zoning: property.zoning || '',
         permitted_use: property.permitted_use || '',
@@ -121,31 +118,9 @@ const PropertyDetail: React.FC = () => {
     navigate('/real-estate-pipeline');
   };
 
-  const getProgressStages = (): Stage[] => {
-    if (!property || !property.phase) return [];
-    
-    const allPhases: string[] = [
-      '0. New Site',
-      '1. Initial Diligence',
-      '2. Survey',
-      '3. Test Fit',
-      '4. Plan Production',
-      '5. Permitting',
-      '6. Construction',
-      '7. Set Up'
-    ];
-    
-    const currentPhaseIndex = allPhases.findIndex(
-      phase => property.phase && property.phase.includes(phase)
-    );
-    
-    if (currentPhaseIndex === -1) return [];
-    
-    return allPhases.map((phase, index) => ({
-      name: phase.split('. ')[1] || phase,
-      isCompleted: index < currentPhaseIndex,
-      isCurrent: index === currentPhaseIndex
-    }));
+  const handlePhaseChange = (value: PropertyPhase | '') => {
+    const phaseValue = value === '' ? null : value;
+    setPropertyFormValues(prev => ({ ...prev, phase: phaseValue }));
   };
 
   const handleFileUploadComplete = () => {
@@ -155,10 +130,6 @@ const PropertyDetail: React.FC = () => {
   const handlePropertyInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setPropertyFormValues(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handlePhaseChange = (value: string) => {
-    setPropertyFormValues(prev => ({ ...prev, phase: value }));
   };
 
   const handleStatusInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -227,7 +198,7 @@ const PropertyDetail: React.FC = () => {
   const handleCancelEditPropertyInfo = () => {
     if (property) {
       setPropertyFormValues({
-        phase: property.phase || '',
+        phase: property.phase || null,
         sf_available: property.sf_available || '',
         zoning: property.zoning || '',
         permitted_use: property.permitted_use || '',

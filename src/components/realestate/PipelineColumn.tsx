@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { PropertyCard } from './PropertyCard';
-import { RealEstateProperty } from '@/types/realEstate';
+import { RealEstateProperty, PropertyPhase } from '@/types/realEstate';
 import { getPhaseColorClass } from './PhaseSelector';
 
 interface PipelineColumnProps {
@@ -13,7 +13,8 @@ export const PipelineColumn: React.FC<PipelineColumnProps> = ({
   title,
   properties
 }) => {
-  const phaseColorClass = getPhaseColorClass(title);
+  // Cast title to PropertyPhase for the color class function
+  const phaseColorClass = getPhaseColorClass(title as PropertyPhase);
   const textColorClass = title === '0. New Site' ? 'text-gray-800' : 'text-white';
 
   return (

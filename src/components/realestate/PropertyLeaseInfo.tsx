@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { Edit, Save, X, FileCheck } from 'lucide-react';
+import { Edit, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -93,14 +92,15 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
     }
   };
 
-  const renderField = (fieldName: string, label: string) => {
+  const renderLOIStatusField = () => {
+    const fieldName = 'loi_status';
     const isFieldEditing = editingFields[fieldName];
     const isFieldSaving = savingFields[fieldName];
     
     return (
       <div className="space-y-1">
         <div className="flex justify-between items-center">
-          <p className="text-sm text-muted-foreground">{label}</p>
+          <p className="text-sm text-muted-foreground">LOI Status</p>
           {!isEditing && !isFieldEditing && (
             <Button 
               variant="ghost" 
@@ -119,7 +119,7 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
               name={fieldName} 
               value={fieldValues[fieldName] || ''} 
               onChange={handleFieldChange}
-              placeholder={`Enter ${label.toLowerCase()}`}
+              placeholder="Enter LOI status"
             />
             <div className="flex justify-end space-x-2">
               <Button 
@@ -151,12 +151,82 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
         ) : isEditing ? (
           <Input 
             name={fieldName} 
-            value={formValues[fieldName as keyof RealEstateProperty] || ''} 
+            value={formValues.loi_status || ''} 
             onChange={onInputChange}
-            placeholder={`Enter ${label.toLowerCase()}`}
+            placeholder="Enter LOI status"
           />
         ) : (
-          <p className="font-medium">{property[fieldName as keyof RealEstateProperty] || 'Not specified'}</p>
+          <p className="font-medium">{property.loi_status || 'Not specified'}</p>
+        )}
+      </div>
+    );
+  };
+
+  const renderLeaseStatusField = () => {
+    const fieldName = 'lease_status';
+    const isFieldEditing = editingFields[fieldName];
+    const isFieldSaving = savingFields[fieldName];
+    
+    return (
+      <div className="space-y-1">
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-muted-foreground">Lease Status</p>
+          {!isEditing && !isFieldEditing && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => handleEditField(fieldName)}
+              className="h-6 px-2"
+            >
+              <Edit className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+        
+        {isFieldEditing ? (
+          <div className="space-y-2">
+            <Input 
+              name={fieldName} 
+              value={fieldValues[fieldName] || ''} 
+              onChange={handleFieldChange}
+              placeholder="Enter lease status"
+            />
+            <div className="flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handleCancelField(fieldName)}
+                disabled={isFieldSaving}
+                className="h-7 px-2 text-xs"
+              >
+                <X className="h-3 w-3 mr-1" /> Cancel
+              </Button>
+              <Button 
+                variant="default" 
+                size="sm" 
+                onClick={() => handleSaveField(fieldName)}
+                disabled={isFieldSaving}
+                className="h-7 px-2 text-xs"
+              >
+                {isFieldSaving ? (
+                  <LoadingState message="Saving..." showSpinner={true} />
+                ) : (
+                  <>
+                    <Save className="h-3 w-3 mr-1" /> Save
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        ) : isEditing ? (
+          <Input 
+            name={fieldName} 
+            value={formValues.lease_status || ''} 
+            onChange={onInputChange}
+            placeholder="Enter lease status"
+          />
+        ) : (
+          <p className="font-medium">{property.lease_status || 'Not specified'}</p>
         )}
       </div>
     );
@@ -166,10 +236,7 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
     <Card>
       <CardHeader>
         <CardTitle className="text-xl flex items-center justify-between">
-          <div className="flex items-center">
-            <FileCheck className="h-5 w-5 mr-2" />
-            Lease Information
-          </div>
+          <div>Lease Information</div>
           <div className="space-x-2">
             {isEditing ? (
               <>
@@ -211,10 +278,8 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-3">
-          {renderField('loi_status', 'LOI Status')}
-          {renderField('lease_status', 'Lease Status')}
-        </div>
+        {renderLOIStatusField()}
+        {renderLeaseStatusField()}
       </CardContent>
     </Card>
   );

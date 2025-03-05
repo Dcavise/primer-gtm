@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Dialog, 
@@ -11,90 +10,74 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { RealEstateProperty } from '@/types/realEstate';
+import { RealEstateProperty, PropertyPhase } from '@/types/realEstate';
 import { supabase } from '@/integrations/supabase/client';
 import { PhaseSelector } from './PhaseSelector';
 
 interface PropertyDetailDialogProps {
-  propertyId: number | null;
+  property: RealEstateProperty | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: () => void;
+  onSave: (property: Partial<RealEstateProperty>) => Promise<void>;
 }
 
 export const PropertyDetailDialog: React.FC<PropertyDetailDialogProps> = ({
-  propertyId,
+  property,
   isOpen,
   onClose,
   onSave
 }) => {
-  const [property, setProperty] = useState<RealEstateProperty | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [formValues, setFormValues] = useState<Partial<RealEstateProperty>>({});
-
+  const [isSaving, setIsSaving] = useState(false);
+  
   useEffect(() => {
-    if (isOpen && propertyId) {
-      fetchPropertyDetails();
-    } else {
-      setProperty(null);
-      setFormValues({});
+    if (property) {
+      setFormValues({
+        id: property.id,
+        site_name: property.site_name || '',
+        address: property.address || '',
+        market: property.market || '',
+        phase: property.phase || null,
+        sf_available: property.sf_available || '',
+        zoning: property.zoning || '',
+        permitted_use: property.permitted_use || '',
+        phase_group: property.phase_group || '',
+      });
     }
-  }, [isOpen, propertyId]);
-
-  const fetchPropertyDetails = async () => {
-    if (!propertyId) return;
-    
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('real_estate_pipeline')
-        .select('*')
-        .eq('id', propertyId)
-        .single();
-      
-      if (error) throw error;
-      
-      setProperty(data);
-      setFormValues(data);
-    } catch (error) {
-      console.error('Error fetching property details:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  }, [property]);
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormValues(prev => ({ ...prev, [name]: value }));
   };
-
-  const handlePhaseChange = (value: string) => {
-    setFormValues(prev => ({ ...prev, phase: value }));
+  
+  const handlePhaseChange = (value: PropertyPhase | '') => {
+    const phaseValue = value === '' ? null : value;
+    setFormValues(prev => ({ ...prev, phase: phaseValue }));
   };
-
+  
   const handleSave = async () => {
-    if (!propertyId) return;
+    if (!property) return;
     
-    setSaving(true);
+    setIsSaving(true);
     try {
       const { error } = await supabase
         .from('real_estate_pipeline')
         .update(formValues)
-        .eq('id', propertyId);
+        .eq('id', property.id);
       
       if (error) throw error;
       
-      onSave();
+      await onSave(formValues);
       onClose();
     } catch (error) {
       console.error('Error updating property:', error);
     } finally {
-      setSaving(false);
+      setIsSaving(false);
     }
   };
 
-  if (loading) {
+  if (!property) {
     return (
       <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
         <DialogContent>
@@ -125,7 +108,7 @@ export const PropertyDetailDialog: React.FC<PropertyDetailDialogProps> = ({
               id="site_name"
               name="site_name"
               value={formValues.site_name || ''}
-              onChange={handleChange}
+              onChange={handleInputChange}
               className="col-span-3"
             />
           </div>
@@ -138,7 +121,7 @@ export const PropertyDetailDialog: React.FC<PropertyDetailDialogProps> = ({
               id="address"
               name="address"
               value={formValues.address || ''}
-              onChange={handleChange}
+              onChange={handleInputChange}
               className="col-span-3"
             />
           </div>
@@ -151,7 +134,7 @@ export const PropertyDetailDialog: React.FC<PropertyDetailDialogProps> = ({
               id="market"
               name="market"
               value={formValues.market || ''}
-              onChange={handleChange}
+              onChange={handleInputChange}
               className="col-span-3"
             />
           </div>
@@ -176,7 +159,7 @@ export const PropertyDetailDialog: React.FC<PropertyDetailDialogProps> = ({
               id="sf_available"
               name="sf_available"
               value={formValues.sf_available || ''}
-              onChange={handleChange}
+              onChange={handleInputChange}
               className="col-span-3"
             />
           </div>
@@ -189,7 +172,7 @@ export const PropertyDetailDialog: React.FC<PropertyDetailDialogProps> = ({
               id="status_notes"
               name="status_notes"
               value={formValues.status_notes || ''}
-              onChange={handleChange}
+              onChange={handleInputChange}
               className="col-span-3"
               rows={4}
             />
@@ -200,8 +183,8 @@ export const PropertyDetailDialog: React.FC<PropertyDetailDialogProps> = ({
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving...' : 'Save Changes'}
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
       </DialogContent>
