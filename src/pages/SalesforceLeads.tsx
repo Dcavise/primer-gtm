@@ -35,9 +35,11 @@ export function SalesforceLeadsPage() {
   const fetchLeads = async () => {
     setLoading(true);
     try {
+      // Modified to only fetch leads that have a campus_id (matched campus)
       const { data, error } = await supabase
         .from('salesforce_leads')
         .select('*')
+        .not('campus_id', 'is', null)
         .order('created_date', { ascending: false });
       
       if (error) throw error;
@@ -108,9 +110,9 @@ export function SalesforceLeadsPage() {
     <div className="min-h-screen bg-background">
       <header className="bg-gradient-to-r from-blue-600 to-blue-500 text-white py-8 px-6">
         <div className="container mx-auto max-w-5xl">
-          <h1 className="text-2xl md:text-3xl font-semibold">Salesforce Leads</h1>
+          <h1 className="text-2xl md:text-3xl font-semibold">Matched Salesforce Leads</h1>
           <p className="text-white/80 mt-2">
-            View and synchronize leads from Salesforce
+            View matched leads from Salesforce that correspond to a campus
           </p>
           <div className="mt-4">
             <Button asChild variant="secondary" className="mr-2">
@@ -128,9 +130,9 @@ export function SalesforceLeadsPage() {
           <Card>
             <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle>Salesforce Leads</CardTitle>
+                <CardTitle>Matched Salesforce Leads</CardTitle>
                 <CardDescription>
-                  View and sync leads from Salesforce CRM
+                  Leads from Salesforce that have been matched to a campus
                   {lastUpdated && (
                     <span className="block text-sm mt-1">
                       Last updated: {lastUpdated}
@@ -141,7 +143,7 @@ export function SalesforceLeadsPage() {
             </CardHeader>
             <CardContent>
               {loading ? (
-                <LoadingState message="Loading leads data..." />
+                <LoadingState message="Loading matched leads data..." />
               ) : (
                 <>
                   {syncError && (
@@ -178,7 +180,7 @@ export function SalesforceLeadsPage() {
                   
                   <div className="rounded-md border overflow-auto max-h-[600px]">
                     <Table>
-                      <TableCaption>List of leads from Salesforce</TableCaption>
+                      <TableCaption>List of matched leads from Salesforce</TableCaption>
                       <TableHeader>
                         <TableRow>
                           <TableHead>Name</TableHead>
@@ -194,7 +196,7 @@ export function SalesforceLeadsPage() {
                         {leads.length === 0 ? (
                           <TableRow>
                             <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
-                              No leads data available
+                              No matched leads data available
                             </TableCell>
                           </TableRow>
                         ) : (
