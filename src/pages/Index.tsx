@@ -326,7 +326,7 @@ const Index = () => {
                 censusData={censusData}
                 isLoading={isSearchingCensus}
                 searchedAddress={censusAddress}
-                isMockData={censusResponse?.tractsIncluded === 0}
+                isMockData={censusResponse?.isMockData === true}
                 censusResponse={censusResponse}
                 onTryMockData={() => useCensusData().loadMockData()}
               />

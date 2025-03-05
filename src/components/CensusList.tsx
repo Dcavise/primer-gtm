@@ -1,3 +1,4 @@
+
 import { CensusData, CensusResponse } from "@/types";
 import { LoadingState } from "@/components/LoadingState";
 import { CensusHeader } from "./census/CensusHeader";
@@ -58,11 +59,8 @@ export const CensusList = ({
       distance: bg.distance ? `${bg.distance.toFixed(2)} miles` : 'unknown'
     })) : [];
 
-  // Determine if we're using mock data - check explicitly from the response if provided, 
-  // otherwise fall back to the prop or derive from data availability
-  const isUsingMockData = censusResponse?.isMockData === true || 
-                         (isMockData === true) || 
-                         (!blockGroupsInfo.length && !tractsInfo.length);
+  // Determine if we're using mock data - prioritize the response flag, then check other indicators
+  const isUsingMockData = censusResponse?.isMockData === true || isMockData === true;
 
   return (
     <div className="py-6 space-y-6">
