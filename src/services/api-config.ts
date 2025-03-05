@@ -32,9 +32,9 @@ export async function getApiKey(keyType: 'zoneomics' | 'census' | 'google_maps' 
       // Fall back to GET method if POST fails
       console.log(`Trying GET method for ${keyType} API key`);
       
-      // Use the invoke method with proper URL path parameter
-      // We need to add the key as a path parameter since query isn't supported
-      const { data, error } = await supabase.functions.invoke(`get-api-keys?key=${keyType}`, {
+      // Use URL concatenation to add the key parameter
+      const endpoint = `get-api-keys?key=${keyType}`;
+      const { data, error } = await supabase.functions.invoke(endpoint, {
         method: 'GET'
       });
       
