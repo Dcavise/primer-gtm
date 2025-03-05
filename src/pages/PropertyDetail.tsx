@@ -14,6 +14,7 @@ import { FileList } from '@/components/FileList';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import MapEmbed from '@/components/MapEmbed';
+import { Input } from '@/components/ui/input';
 import { 
   ArrowLeft, 
   MapPin, 
@@ -39,9 +40,24 @@ const PropertyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [fileRefreshKey, setFileRefreshKey] = useState(0);
+  
+  // Edit states for different sections
   const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [isEditingPropertyInfo, setIsEditingPropertyInfo] = useState(false);
+  const [isEditingStatusInfo, setIsEditingStatusInfo] = useState(false);
+  const [isEditingContactInfo, setIsEditingContactInfo] = useState(false);
+  
+  // Form values
   const [notesValue, setNotesValue] = useState('');
+  const [propertyFormValues, setPropertyFormValues] = useState<Partial<RealEstateProperty>>({});
+  const [statusFormValues, setStatusFormValues] = useState<Partial<RealEstateProperty>>({});
+  const [contactFormValues, setContactFormValues] = useState<Partial<RealEstateProperty>>({});
+  
+  // Saving states
   const [isSavingNotes, setIsSavingNotes] = useState(false);
+  const [isSavingPropertyInfo, setIsSavingPropertyInfo] = useState(false);
+  const [isSavingStatusInfo, setIsSavingStatusInfo] = useState(false);
+  const [isSavingContactInfo, setIsSavingContactInfo] = useState(false);
   
   const { data: property, isLoading, error, refetch } = useQuery({
     queryKey: ['property', id],
@@ -64,8 +80,36 @@ const PropertyDetail: React.FC = () => {
   });
 
   React.useEffect(() => {
-    if (property && property.status_notes) {
-      setNotesValue(property.status_notes);
+    if (property) {
+      // Initialize all form values when property data is loaded
+      if (property.status_notes) {
+        setNotesValue(property.status_notes);
+      }
+      
+      setPropertyFormValues({
+        phase: property.phase || '',
+        sf_available: property.sf_available || '',
+        zoning: property.zoning || '',
+        permitted_use: property.permitted_use || '',
+        parking: property.parking || '',
+        fire_sprinklers: property.fire_sprinklers || '',
+        fiber: property.fiber || '',
+      });
+      
+      setStatusFormValues({
+        ahj_zoning_confirmation: property.ahj_zoning_confirmation || '',
+        ahj_building_records: property.ahj_building_records || '',
+        survey_status: property.survey_status || '',
+        test_fit_status: property.test_fit_status || '',
+        loi_status: property.loi_status || '',
+        lease_status: property.lease_status || '',
+      });
+      
+      setContactFormValues({
+        ll_poc: property.ll_poc || '',
+        ll_phone: property.ll_phone || '',
+        ll_email: property.ll_email || '',
+      });
     }
   }, [property]);
 
@@ -77,6 +121,23 @@ const PropertyDetail: React.FC = () => {
     setFileRefreshKey(prev => prev + 1);
   };
 
+  // Handle form input changes
+  const handlePropertyInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPropertyFormValues(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleStatusInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setStatusFormValues(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleContactInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setContactFormValues(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Notes section
   const handleEditNotes = () => {
     setIsEditingNotes(true);
   };
@@ -114,6 +175,142 @@ const PropertyDetail: React.FC = () => {
       toast.error('Failed to save notes');
     } finally {
       setIsSavingNotes(false);
+    }
+  };
+
+  // Property info section
+  const handleEditPropertyInfo = () => {
+    setIsEditingPropertyInfo(true);
+  };
+
+  const handleCancelEditPropertyInfo = () => {
+    if (property) {
+      setPropertyFormValues({
+        phase: property.phase || '',
+        sf_available: property.sf_available || '',
+        zoning: property.zoning || '',
+        permitted_use: property.permitted_use || '',
+        parking: property.parking || '',
+        fire_sprinklers: property.fire_sprinklers || '',
+        fiber: property.fiber || '',
+      });
+    }
+    setIsEditingPropertyInfo(false);
+  };
+
+  const handleSavePropertyInfo = async () => {
+    if (!id) return;
+    
+    setIsSavingPropertyInfo(true);
+    try {
+      const { error } = await supabase
+        .from('real_estate_pipeline')
+        .update(propertyFormValues)
+        .eq('id', parseInt(id));
+      
+      if (error) {
+        console.error('Error saving property info:', error);
+        toast.error('Failed to save property information');
+        return;
+      }
+      
+      setIsEditingPropertyInfo(false);
+      toast.success('Property information saved successfully');
+      refetch();
+    } catch (error) {
+      console.error('Error saving property info:', error);
+      toast.error('Failed to save property information');
+    } finally {
+      setIsSavingPropertyInfo(false);
+    }
+  };
+
+  // Status info section
+  const handleEditStatusInfo = () => {
+    setIsEditingStatusInfo(true);
+  };
+
+  const handleCancelEditStatusInfo = () => {
+    if (property) {
+      setStatusFormValues({
+        ahj_zoning_confirmation: property.ahj_zoning_confirmation || '',
+        ahj_building_records: property.ahj_building_records || '',
+        survey_status: property.survey_status || '',
+        test_fit_status: property.test_fit_status || '',
+        loi_status: property.loi_status || '',
+        lease_status: property.lease_status || '',
+      });
+    }
+    setIsEditingStatusInfo(false);
+  };
+
+  const handleSaveStatusInfo = async () => {
+    if (!id) return;
+    
+    setIsSavingStatusInfo(true);
+    try {
+      const { error } = await supabase
+        .from('real_estate_pipeline')
+        .update(statusFormValues)
+        .eq('id', parseInt(id));
+      
+      if (error) {
+        console.error('Error saving status info:', error);
+        toast.error('Failed to save status information');
+        return;
+      }
+      
+      setIsEditingStatusInfo(false);
+      toast.success('Status information saved successfully');
+      refetch();
+    } catch (error) {
+      console.error('Error saving status info:', error);
+      toast.error('Failed to save status information');
+    } finally {
+      setIsSavingStatusInfo(false);
+    }
+  };
+
+  // Contact info section
+  const handleEditContactInfo = () => {
+    setIsEditingContactInfo(true);
+  };
+
+  const handleCancelEditContactInfo = () => {
+    if (property) {
+      setContactFormValues({
+        ll_poc: property.ll_poc || '',
+        ll_phone: property.ll_phone || '',
+        ll_email: property.ll_email || '',
+      });
+    }
+    setIsEditingContactInfo(false);
+  };
+
+  const handleSaveContactInfo = async () => {
+    if (!id) return;
+    
+    setIsSavingContactInfo(true);
+    try {
+      const { error } = await supabase
+        .from('real_estate_pipeline')
+        .update(contactFormValues)
+        .eq('id', parseInt(id));
+      
+      if (error) {
+        console.error('Error saving contact info:', error);
+        toast.error('Failed to save contact information');
+        return;
+      }
+      
+      setIsEditingContactInfo(false);
+      toast.success('Contact information saved successfully');
+      refetch();
+    } catch (error) {
+      console.error('Error saving contact info:', error);
+      toast.error('Failed to save contact information');
+    } finally {
+      setIsSavingContactInfo(false);
     }
   };
 
@@ -189,101 +386,272 @@ const PropertyDetail: React.FC = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="text-xl flex items-center justify-between">
-                  Property Information
-                  {property.market && (
-                    <Badge variant="outline" className="ml-2">
+                  <div>Property Information</div>
+                  <div className="space-x-2">
+                    {isEditingPropertyInfo ? (
+                      <>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={handleCancelEditPropertyInfo}
+                          disabled={isSavingPropertyInfo}
+                        >
+                          <X className="h-4 w-4 mr-1" /> Cancel
+                        </Button>
+                        <Button 
+                          variant="default" 
+                          size="sm" 
+                          onClick={handleSavePropertyInfo}
+                          disabled={isSavingPropertyInfo}
+                        >
+                          {isSavingPropertyInfo ? (
+                            <span className="flex items-center">
+                              <LoadingState message="Saving..." showSpinner={true} />
+                            </span>
+                          ) : (
+                            <>
+                              <Save className="h-4 w-4 mr-1" /> Save
+                            </>
+                          )}
+                        </Button>
+                      </>
+                    ) : (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleEditPropertyInfo}
+                      >
+                        <Edit className="h-4 w-4 mr-1" /> Edit
+                      </Button>
+                    )}
+                  </div>
+                </CardTitle>
+                {property.market && (
+                  <div className="mt-2">
+                    <Badge variant="outline">
                       {property.market}
                     </Badge>
-                  )}
-                </CardTitle>
+                  </div>
+                )}
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {property.phase && (
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Phase</p>
-                    <p className="font-medium">{property.phase}</p>
-                  </div>
-                )}
-                {property.sf_available && (
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Available Space</p>
-                    <p className="font-medium">{property.sf_available} sq ft</p>
-                  </div>
-                )}
-                {property.zoning && (
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Zoning</p>
-                    <p className="font-medium">{property.zoning}</p>
-                  </div>
-                )}
-                {property.permitted_use && (
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Permitted Use</p>
-                    <p className="font-medium">{property.permitted_use}</p>
-                  </div>
-                )}
-                {property.parking && (
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Parking</p>
-                    <p className="font-medium">{property.parking}</p>
-                  </div>
-                )}
-                {property.fire_sprinklers && (
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Fire Sprinklers</p>
-                    <p className="font-medium">{property.fire_sprinklers}</p>
-                  </div>
-                )}
-                {property.fiber && (
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Fiber</p>
-                    <p className="font-medium">{property.fiber}</p>
-                  </div>
-                )}
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Phase</p>
+                  {isEditingPropertyInfo ? (
+                    <Input 
+                      name="phase" 
+                      value={propertyFormValues.phase} 
+                      onChange={handlePropertyInputChange}
+                      placeholder="Enter phase"
+                    />
+                  ) : (
+                    <p className="font-medium">{property.phase || 'Not specified'}</p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Available Space</p>
+                  {isEditingPropertyInfo ? (
+                    <Input 
+                      name="sf_available" 
+                      value={propertyFormValues.sf_available} 
+                      onChange={handlePropertyInputChange}
+                      placeholder="Enter available square footage"
+                    />
+                  ) : (
+                    <p className="font-medium">{property.sf_available ? `${property.sf_available} sq ft` : 'Not specified'}</p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Zoning</p>
+                  {isEditingPropertyInfo ? (
+                    <Input 
+                      name="zoning" 
+                      value={propertyFormValues.zoning} 
+                      onChange={handlePropertyInputChange}
+                      placeholder="Enter zoning"
+                    />
+                  ) : (
+                    <p className="font-medium">{property.zoning || 'Not specified'}</p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Permitted Use</p>
+                  {isEditingPropertyInfo ? (
+                    <Input 
+                      name="permitted_use" 
+                      value={propertyFormValues.permitted_use} 
+                      onChange={handlePropertyInputChange}
+                      placeholder="Enter permitted use"
+                    />
+                  ) : (
+                    <p className="font-medium">{property.permitted_use || 'Not specified'}</p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Parking</p>
+                  {isEditingPropertyInfo ? (
+                    <Input 
+                      name="parking" 
+                      value={propertyFormValues.parking} 
+                      onChange={handlePropertyInputChange}
+                      placeholder="Enter parking details"
+                    />
+                  ) : (
+                    <p className="font-medium">{property.parking || 'Not specified'}</p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Fire Sprinklers</p>
+                  {isEditingPropertyInfo ? (
+                    <Input 
+                      name="fire_sprinklers" 
+                      value={propertyFormValues.fire_sprinklers} 
+                      onChange={handlePropertyInputChange}
+                      placeholder="Enter fire sprinkler details"
+                    />
+                  ) : (
+                    <p className="font-medium">{property.fire_sprinklers || 'Not specified'}</p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Fiber</p>
+                  {isEditingPropertyInfo ? (
+                    <Input 
+                      name="fiber" 
+                      value={propertyFormValues.fiber} 
+                      onChange={handlePropertyInputChange}
+                      placeholder="Enter fiber details"
+                    />
+                  ) : (
+                    <p className="font-medium">{property.fiber || 'Not specified'}</p>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-xl">Status Information</CardTitle>
+                <CardTitle className="text-xl flex items-center justify-between">
+                  <div>Status Information</div>
+                  <div className="space-x-2">
+                    {isEditingStatusInfo ? (
+                      <>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={handleCancelEditStatusInfo}
+                          disabled={isSavingStatusInfo}
+                        >
+                          <X className="h-4 w-4 mr-1" /> Cancel
+                        </Button>
+                        <Button 
+                          variant="default" 
+                          size="sm" 
+                          onClick={handleSaveStatusInfo}
+                          disabled={isSavingStatusInfo}
+                        >
+                          {isSavingStatusInfo ? (
+                            <span className="flex items-center">
+                              <LoadingState message="Saving..." showSpinner={true} />
+                            </span>
+                          ) : (
+                            <>
+                              <Save className="h-4 w-4 mr-1" /> Save
+                            </>
+                          )}
+                        </Button>
+                      </>
+                    ) : (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleEditStatusInfo}
+                      >
+                        <Edit className="h-4 w-4 mr-1" /> Edit
+                      </Button>
+                    )}
+                  </div>
+                </CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {property.ahj_zoning_confirmation && (
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">AHJ Zoning Confirmation</p>
-                    <p className="font-medium">{property.ahj_zoning_confirmation}</p>
-                  </div>
-                )}
-                {property.ahj_building_records && (
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">AHJ Building Records</p>
-                    <p className="font-medium">{property.ahj_building_records}</p>
-                  </div>
-                )}
-                {property.survey_status && (
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Survey Status</p>
-                    <p className="font-medium">{property.survey_status}</p>
-                  </div>
-                )}
-                {property.test_fit_status && (
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Test Fit Status</p>
-                    <p className="font-medium">{property.test_fit_status}</p>
-                  </div>
-                )}
-                {property.loi_status && (
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">LOI Status</p>
-                    <p className="font-medium">{property.loi_status}</p>
-                  </div>
-                )}
-                {property.lease_status && (
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Lease Status</p>
-                    <p className="font-medium">{property.lease_status}</p>
-                  </div>
-                )}
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">AHJ Zoning Confirmation</p>
+                  {isEditingStatusInfo ? (
+                    <Input 
+                      name="ahj_zoning_confirmation" 
+                      value={statusFormValues.ahj_zoning_confirmation} 
+                      onChange={handleStatusInputChange}
+                      placeholder="Enter AHJ zoning confirmation"
+                    />
+                  ) : (
+                    <p className="font-medium">{property.ahj_zoning_confirmation || 'Not specified'}</p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">AHJ Building Records</p>
+                  {isEditingStatusInfo ? (
+                    <Input 
+                      name="ahj_building_records" 
+                      value={statusFormValues.ahj_building_records} 
+                      onChange={handleStatusInputChange}
+                      placeholder="Enter AHJ building records"
+                    />
+                  ) : (
+                    <p className="font-medium">{property.ahj_building_records || 'Not specified'}</p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Survey Status</p>
+                  {isEditingStatusInfo ? (
+                    <Input 
+                      name="survey_status" 
+                      value={statusFormValues.survey_status} 
+                      onChange={handleStatusInputChange}
+                      placeholder="Enter survey status"
+                    />
+                  ) : (
+                    <p className="font-medium">{property.survey_status || 'Not specified'}</p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Test Fit Status</p>
+                  {isEditingStatusInfo ? (
+                    <Input 
+                      name="test_fit_status" 
+                      value={statusFormValues.test_fit_status} 
+                      onChange={handleStatusInputChange}
+                      placeholder="Enter test fit status"
+                    />
+                  ) : (
+                    <p className="font-medium">{property.test_fit_status || 'Not specified'}</p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">LOI Status</p>
+                  {isEditingStatusInfo ? (
+                    <Input 
+                      name="loi_status" 
+                      value={statusFormValues.loi_status} 
+                      onChange={handleStatusInputChange}
+                      placeholder="Enter LOI status"
+                    />
+                  ) : (
+                    <p className="font-medium">{property.loi_status || 'Not specified'}</p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Lease Status</p>
+                  {isEditingStatusInfo ? (
+                    <Input 
+                      name="lease_status" 
+                      value={statusFormValues.lease_status} 
+                      onChange={handleStatusInputChange}
+                      placeholder="Enter lease status"
+                    />
+                  ) : (
+                    <p className="font-medium">{property.lease_status || 'Not specified'}</p>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -349,31 +717,115 @@ const PropertyDetail: React.FC = () => {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-xl">Contact Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {property.ll_poc && (
-                  <div className="border-b pb-4">
-                    <h3 className="font-medium text-lg mb-2">Landlord Contact</h3>
-                    <p className="mb-2">{property.ll_poc}</p>
-                    {property.ll_phone && (
-                      <div className="flex items-center mb-1">
-                        <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <a href={`tel:${property.ll_phone}`} className="text-primary hover:underline">
-                          {property.ll_phone}
-                        </a>
-                      </div>
-                    )}
-                    {property.ll_email && (
-                      <div className="flex items-center">
-                        <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <a href={`mailto:${property.ll_email}`} className="text-primary hover:underline truncate">
-                          {property.ll_email}
-                        </a>
-                      </div>
+                <CardTitle className="text-xl flex items-center justify-between">
+                  <div>Contact Information</div>
+                  <div className="space-x-2">
+                    {isEditingContactInfo ? (
+                      <>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={handleCancelEditContactInfo}
+                          disabled={isSavingContactInfo}
+                        >
+                          <X className="h-4 w-4 mr-1" /> Cancel
+                        </Button>
+                        <Button 
+                          variant="default" 
+                          size="sm" 
+                          onClick={handleSaveContactInfo}
+                          disabled={isSavingContactInfo}
+                        >
+                          {isSavingContactInfo ? (
+                            <span className="flex items-center">
+                              <LoadingState message="Saving..." showSpinner={true} />
+                            </span>
+                          ) : (
+                            <>
+                              <Save className="h-4 w-4 mr-1" /> Save
+                            </>
+                          )}
+                        </Button>
+                      </>
+                    ) : (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleEditContactInfo}
+                      >
+                        <Edit className="h-4 w-4 mr-1" /> Edit
+                      </Button>
                     )}
                   </div>
-                )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="border-b pb-4">
+                  <h3 className="font-medium text-lg mb-3">Landlord Contact</h3>
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Contact Person</p>
+                      {isEditingContactInfo ? (
+                        <Input 
+                          name="ll_poc" 
+                          value={contactFormValues.ll_poc} 
+                          onChange={handleContactInputChange}
+                          placeholder="Enter contact name"
+                        />
+                      ) : (
+                        <p className="font-medium">{property.ll_poc || 'Not specified'}</p>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Phone Number</p>
+                      {isEditingContactInfo ? (
+                        <Input 
+                          name="ll_phone" 
+                          value={contactFormValues.ll_phone} 
+                          onChange={handleContactInputChange}
+                          placeholder="Enter phone number"
+                          type="tel"
+                        />
+                      ) : (
+                        property.ll_phone ? (
+                          <div className="flex items-center">
+                            <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
+                            <a href={`tel:${property.ll_phone}`} className="text-primary hover:underline">
+                              {property.ll_phone}
+                            </a>
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground italic">No phone provided</p>
+                        )
+                      )}
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Email Address</p>
+                      {isEditingContactInfo ? (
+                        <Input 
+                          name="ll_email" 
+                          value={contactFormValues.ll_email} 
+                          onChange={handleContactInputChange}
+                          placeholder="Enter email address"
+                          type="email"
+                        />
+                      ) : (
+                        property.ll_email ? (
+                          <div className="flex items-center">
+                            <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
+                            <a href={`mailto:${property.ll_email}`} className="text-primary hover:underline truncate">
+                              {property.ll_email}
+                            </a>
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground italic">No email provided</p>
+                        )
+                      )}
+                    </div>
+                  </div>
+                </div>
                 
                 <div className="text-sm text-muted-foreground">
                   <p>Property ID: {property.id}</p>
