@@ -45,7 +45,18 @@ export const PipelineColumn: React.FC<PipelineColumnProps> = ({
   const phaseColorClass = getPhaseColor(title);
   
   // Filter properties to only include those that match this column's phase
-  const filteredProperties = properties.filter(property => property.phase === title);
+  // Use trim() to handle potential spaces in the database values
+  const filteredProperties = properties.filter(property => {
+    const propertyPhase = property.phase?.trim() || '';
+    const columnTitle = title.trim();
+    
+    // Debug the matching to see why properties aren't showing up
+    if (propertyPhase.includes(columnTitle) || columnTitle.includes(propertyPhase)) {
+      console.log(`Phase match - Property: "${propertyPhase}" Column: "${columnTitle}"`);
+    }
+    
+    return propertyPhase === columnTitle;
+  });
 
   return (
     <div className="flex flex-col h-full">

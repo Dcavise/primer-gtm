@@ -20,6 +20,14 @@ export const useRealEstatePipeline = () => {
       // Log the first few properties to help with debugging
       if (data && data.length > 0) {
         console.log('Sample pipeline data:', data.slice(0, 3));
+        
+        // Count properties by phase to help diagnose the issue
+        const phaseCount: Record<string, number> = {};
+        data.forEach(property => {
+          const phase = property.phase || 'Unspecified';
+          phaseCount[phase] = (phaseCount[phase] || 0) + 1;
+        });
+        console.log('Properties by phase:', phaseCount);
       }
       
       return data || [];
