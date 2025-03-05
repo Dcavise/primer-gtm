@@ -22,22 +22,6 @@ const MarketExplorer = () => {
   const { campuses } = useCampuses();
   const mapInitialized = useRef(false);
   
-  // Use React Query to fetch the Mapbox token once
-  const { 
-    data: mapboxToken, 
-    isLoading: isTokenLoading, 
-    error: tokenError 
-  } = useQuery({
-    queryKey: ['mapbox-token'],
-    queryFn: async () => {
-      console.log("Fetching Mapbox token (ONCE ONLY)");
-      return getApiKey('mapbox');
-    },
-    staleTime: Infinity, // Never consider this data stale
-    cacheTime: Infinity, // Keep in cache forever
-    retry: 1, // Only retry once on failure
-  });
-
   // Memoize createDemoMap to prevent unnecessary re-creation
   const createDemoMap = useCallback((mapInstance: mapboxgl.Map) => {
     if (!mapInstance) return;
@@ -93,6 +77,22 @@ const MarketExplorer = () => {
       duration: 2000
     });
   }, []);
+  
+  // Use React Query to fetch the Mapbox token once
+  const { 
+    data: mapboxToken, 
+    isLoading: isTokenLoading, 
+    error: tokenError 
+  } = useQuery({
+    queryKey: ['mapbox-token'],
+    queryFn: async () => {
+      console.log("Fetching Mapbox token (ONCE ONLY)");
+      return getApiKey('mapbox');
+    },
+    staleTime: Infinity, // Never consider this data stale
+    gcTime: Infinity, // Keep in cache forever (formerly cacheTime)
+    retry: 1, // Only retry once on failure
+  });
 
   // Initialize map once we have the token - with strict checks to prevent multiple initializations
   useEffect(() => {
