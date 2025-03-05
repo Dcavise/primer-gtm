@@ -53,20 +53,33 @@ export const FileUpload: React.FC<FileUploadProps> = ({ propertyId, onUploadComp
         uploadedAt: new Date().toISOString(),
       };
       
-      const { error } = await supabase.storage
+      // Upload the file with metadata
+      const { error: uploadError } = await supabase.storage
         .from('property_documents')
         .upload(filePath, file, {
           metadata
         });
       
-      if (error) {
-        throw error;
+      if (uploadError) {
+        throw uploadError;
+      }
+      
+      // Make sure metadata is also updated separately (as some storage providers might not handle it correctly during upload)
+      const { error: metadataError } = await supabase.storage
+        .from('property_documents')
+        .updateMetadata(filePath, metadata);
+        
+      if (metadataError) {
+        console.warn('Error updating metadata:', metadataError);
+        // We'll continue even if metadata update fails, as the file was uploaded successfully
       }
       
       toast.success('File uploaded successfully');
       setFile(null);
       setDisplayName('');
       setDescription('');
+      
+      // Call onUploadComplete to refresh the file list
       onUploadComplete();
     } catch (error) {
       console.error('Error uploading file:', error);

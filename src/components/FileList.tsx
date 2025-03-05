@@ -42,7 +42,24 @@ export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted })
         throw error;
       }
 
-      setFiles(data || []);
+      // Fetch the metadata for each file
+      const filesWithMetadata = await Promise.all((data || []).map(async (file) => {
+        try {
+          const { data: metadata } = await supabase.storage
+            .from('property_documents')
+            .getMetadata(`property_${propertyId}/${file.name}`);
+          
+          return {
+            ...file,
+            metadata: metadata || {}
+          };
+        } catch (err) {
+          console.error(`Error fetching metadata for ${file.name}:`, err);
+          return file;
+        }
+      }));
+
+      setFiles(filesWithMetadata);
     } catch (error) {
       console.error('Error fetching files:', error);
       toast.error('Failed to load files');
