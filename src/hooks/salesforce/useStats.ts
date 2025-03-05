@@ -96,9 +96,12 @@ export const useStats = (selectedCampusId: string | null) => {
       const fourWeeksAgo = new Date();
       fourWeeksAgo.setDate(today.getDate() - 28); // 4 weeks = 28 days
 
+      console.log("Fetching weekly lead counts from", fourWeeksAgo.toISOString(), "to", today.toISOString());
+      console.log("Campus filter:", selectedCampusId || "none (all campuses)");
+
       // Call the custom SQL function to get weekly lead counts
       const { data: weeklyLeadData, error: weeklyLeadError } = await supabase.rpc(
-        'get_weekly_lead_counts',  // Fixed: Use the correctly named function
+        'get_weekly_lead_counts',
         {
           start_date: fourWeeksAgo.toISOString().split('T')[0],
           end_date: today.toISOString().split('T')[0],
@@ -126,6 +129,8 @@ export const useStats = (selectedCampusId: string | null) => {
         if (manualLeadError) throw manualLeadError;
         
         if (leadsData) {
+          console.log(`Got ${leadsData.length} leads for manual counting`);
+          
           // Group by week and count
           const weeklyData: Record<string, number> = {};
           
@@ -161,16 +166,19 @@ export const useStats = (selectedCampusId: string | null) => {
           
           // Sort by week
           weeklyCountsArray.sort((a, b) => new Date(a.week).getTime() - new Date(b.week).getTime());
+          console.log("Manual weekly counts:", weeklyCountsArray);
           setWeeklyLeadCounts(weeklyCountsArray);
         }
       } else {
         // Use the results from the RPC - fix to handle possibly null data
         if (weeklyLeadData) {
+          console.log("Weekly lead data from RPC:", weeklyLeadData);
           const formattedWeeklyData = weeklyLeadData.map(item => ({
             week: item.week,
             count: Number(item.lead_count)
           }));
           
+          console.log("Formatted weekly data:", formattedWeeklyData);
           setWeeklyLeadCounts(formattedWeeklyData);
         } else {
           // If no data is returned, set empty array

@@ -34,9 +34,12 @@ export const LeadsChartDialog: React.FC<LeadsChartDialogProps> = ({
       }))
     : [];
 
+  console.log("Weekly lead counts data:", weeklyLeadCounts);
+  console.log("Formatted chart data:", chartData);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[800px] md:max-w-[900px]">
         <DialogHeader>
           <DialogTitle className="flex justify-between items-center">
             <span>Weekly Lead Generation {selectedCampusName ? `for ${selectedCampusName}` : '(All Campuses)'}</span>
@@ -48,7 +51,7 @@ export const LeadsChartDialog: React.FC<LeadsChartDialogProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="h-[300px] mt-4">
+        <div className="h-[400px] mt-4">
           {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
@@ -60,6 +63,7 @@ export const LeadsChartDialog: React.FC<LeadsChartDialogProps> = ({
                 <YAxis 
                   allowDecimals={false}
                   tickMargin={10}
+                  domain={[0, 'auto']}
                 />
                 <Tooltip 
                   formatter={(value) => [`${value} leads`, 'Count']}
@@ -82,6 +86,20 @@ export const LeadsChartDialog: React.FC<LeadsChartDialogProps> = ({
             </div>
           )}
         </div>
+        
+        {chartData.length > 0 && (
+          <div className="mt-4 p-4 bg-gray-50 rounded-md">
+            <h3 className="text-sm font-medium mb-2">Weekly Lead Counts</h3>
+            <div className="grid grid-cols-4 gap-4">
+              {chartData.map((item, index) => (
+                <div key={index} className="bg-white p-2 rounded border">
+                  <div className="text-xs text-gray-500">Week of {item.formattedWeek}</div>
+                  <div className="text-lg font-semibold">{item.count} leads</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
