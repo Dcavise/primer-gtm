@@ -80,6 +80,36 @@ export type Database = {
           },
         ]
       }
+      property_file_metadata: {
+        Row: {
+          description: string | null
+          display_name: string | null
+          file_name: string
+          file_path: string
+          id: number
+          property_id: number
+          uploaded_at: string | null
+        }
+        Insert: {
+          description?: string | null
+          display_name?: string | null
+          file_name: string
+          file_path: string
+          id?: number
+          property_id: number
+          uploaded_at?: string | null
+        }
+        Update: {
+          description?: string | null
+          display_name?: string | null
+          file_name?: string
+          file_path?: string
+          id?: number
+          property_id?: number
+          uploaded_at?: string | null
+        }
+        Relationships: []
+      }
       real_estate_pipeline: {
         Row: {
           address: string | null
