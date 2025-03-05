@@ -1,3 +1,4 @@
+
 export interface Coordinates {
   lat: number;
   lng: number;
@@ -71,53 +72,5 @@ export interface AddressSearchResult {
 }
 
 export type SearchStatus = 'idle' | 'loading' | 'success' | 'error';
-
-export interface CensusLocation {
-  lat: number;
-  lng: number;
-}
-
-export interface CensusTract {
-  state: string;
-  county: string;
-  tract: string;
-  distance: number; // distance in miles from the search point
-}
-
-export interface CensusDataItem {
-  name: string;
-  value: string | number;
-  description?: string;
-}
-
-export interface CensusData {
-  totalPopulation?: number;
-  medianHouseholdIncome?: number;
-  medianHomeValue?: number;
-  educationLevelHS?: number;
-  educationLevelBachelor?: number;
-  unemploymentRate?: number;
-  povertyRate?: number;
-  medianAge?: number;
-  housingUnits?: number;
-  homeownershipRate?: number;
-  rawData: Record<string, any>;
-  categories: {
-    demographic: CensusDataItem[];
-    economic: CensusDataItem[];
-    housing: CensusDataItem[];
-    education: CensusDataItem[];
-  };
-}
-
-export interface CensusResponse {
-  data: CensusData;
-  tractsIncluded: number;
-  blockGroupsIncluded?: number;
-  radiusMiles: number;
-  searchedAddress?: string;
-  isMockData?: boolean;
-  error?: string;
-}
 
 export * from './schools';

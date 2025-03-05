@@ -2,17 +2,15 @@ import { useState, useEffect } from "react";
 import { SearchForm } from "@/components/SearchForm";
 import { PermitList } from "@/components/PermitList";
 import { ZoningList } from "@/components/ZoningList";
-import { CensusList } from "@/components/CensusList";
 import { SchoolsList } from "@/components/SchoolsList";
 import { PropertySummary } from "@/components/PropertySummary";
 import { usePermits } from "@/hooks/use-permits";
 import { useZoningData } from "@/hooks/use-zoning-data";
-import { useCensusData } from "@/hooks/use-census-data";
 import { useSchoolsData } from "@/hooks/use-schools-data";
 import { usePropertySummary } from "@/hooks/use-property-summary";
 import { motion } from "framer-motion";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { FileTextIcon, MapIcon, BarChart3Icon, School, SearchIcon, ClipboardIcon } from "lucide-react";
+import { FileTextIcon, MapIcon, School, SearchIcon, ClipboardIcon } from "lucide-react";
 import { Permit } from "@/types";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
@@ -31,10 +29,6 @@ const Index = () => {
   const { zoningData, status: zoningStatus, searchedAddress: zoningAddress, fetchZoningData, reset: resetZoning } = useZoningData();
   const isSearchingZoning = zoningStatus === "loading";
 
-  // Census data
-  const { censusData, censusResponse, status: censusStatus, searchedAddress: censusAddress, fetchCensusData, reset: resetCensus } = useCensusData();
-  const isSearchingCensus = censusStatus === "loading";
-
   // Schools data
   const { schools, status: schoolsStatus, searchedAddress: schoolsAddress, fetchSchoolsData, reset: resetSchools } = useSchoolsData();
   const isSearchingSchools = schoolsStatus === "loading";
@@ -49,23 +43,21 @@ const Index = () => {
   // Consolidated state
   const [userAddress, setUserAddress] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [activeSection, setActiveSection] = useState<"summary" | "permits" | "zoning" | "census" | "schools" | "property-research">("summary");
+  const [activeSection, setActiveSection] = useState<"summary" | "permits" | "zoning" | "schools" | "property-research">("summary");
   
   // Determine if any data is loading
-  const isAnyDataLoading = isSearchingPermits || isSearchingZoning || isSearchingCensus || isSearchingSchools || isGeneratingSummary;
+  const isAnyDataLoading = isSearchingPermits || isSearchingZoning || isSearchingSchools || isGeneratingSummary;
   
   // Determine the current displayed address (prioritize the active section's address)
   const displayedAddress = activeSection === "permits" ? permitAddress : 
                           activeSection === "zoning" ? zoningAddress :
-                          activeSection === "census" ? censusAddress : 
-                          activeSection === "summary" ? summaryAddress || userAddress :
-                          schoolsAddress || userAddress;
+                          activeSection === "schools" ? schoolsAddress : 
+                          summaryAddress || userAddress;
 
   // Keep track of API call completion
   const [apiCallsStatus, setApiCallsStatus] = useState({
     permits: false,
     zoning: false,
-    census: false,
     schools: false
   });
 
@@ -73,16 +65,15 @@ const Index = () => {
   useEffect(() => {
     const allComplete = apiCallsStatus.permits && 
                         apiCallsStatus.zoning && 
-                        apiCallsStatus.census && 
                         apiCallsStatus.schools;
 
     // Generate summary only when all data is fetched AND we have an address
     if (allComplete && userAddress && !summary && summaryStatus !== "loading") {
       console.log("All API calls complete, generating summary for:", userAddress);
       console.log("Using current zoning data:", zoningData);
-      generateSummary(userAddress, permits, zoningData, censusData, schools);
+      generateSummary(userAddress, permits, zoningData, null, schools);
     }
-  }, [apiCallsStatus, userAddress, permits, zoningData, censusData, schools, summary, summaryStatus, generateSummary]);
+  }, [apiCallsStatus, userAddress, permits, zoningData, schools, summary, summaryStatus, generateSummary]);
 
   // Reset API call status when starting a new search
   useEffect(() => {
@@ -90,7 +81,6 @@ const Index = () => {
       setApiCallsStatus({
         permits: false,
         zoning: false,
-        census: false,
         schools: false
       });
       
@@ -113,12 +103,6 @@ const Index = () => {
   }, [zoningStatus]);
 
   useEffect(() => {
-    if (censusStatus === "success" || censusStatus === "error") {
-      setApiCallsStatus(prev => ({ ...prev, census: true }));
-    }
-  }, [censusStatus]);
-
-  useEffect(() => {
     if (schoolsStatus === "success" || schoolsStatus === "error") {
       setApiCallsStatus(prev => ({ ...prev, schools: true }));
     }
@@ -130,7 +114,6 @@ const Index = () => {
     setTestResults(null);
     resetPermits();
     resetZoning();
-    resetCensus();
     resetSchools();
     resetSummary();
     setCoordinates(null);
@@ -154,7 +137,6 @@ const Index = () => {
       await Promise.all([
         fetchPermits(params, address),
         fetchZoningData(address),
-        fetchCensusData(address),
         fetchSchoolsData(params, address)
       ]);
       
@@ -181,7 +163,7 @@ const Index = () => {
   const handleGenerateSummary = () => {
     if (displayedAddress) {
       resetSummary();
-      generateSummary(displayedAddress, permits, zoningData, censusData, schools);
+      generateSummary(displayedAddress, permits, zoningData, null, schools);
     }
   };
 
@@ -218,7 +200,7 @@ const Index = () => {
             <TabsContent value="property-research" className="mt-4">
               <p className="text-white/90 mb-8 text-balance max-w-2xl">
                 Search for property data to support your due diligence. Get comprehensive information on building permits, 
-                zoning regulations, demographic statistics, and nearby schools - all from a single address search.
+                zoning regulations, and nearby schools - all from a single address search.
               </p>
             </TabsContent>
           </Tabs>
@@ -258,7 +240,6 @@ const Index = () => {
             <ul className="mt-4 text-muted-foreground max-w-lg mx-auto text-left list-disc pl-8">
               <li className="mb-2">Building permits and code compliance history</li>
               <li className="mb-2">Zoning regulations and land use requirements</li>
-              <li className="mb-2">Demographic and economic statistics</li>
               <li className="mb-2">Nearby schools with ratings and details</li>
             </ul>
           </motion.div>
@@ -283,10 +264,6 @@ const Index = () => {
               <TabsTrigger value="zoning" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
                 <MapIcon className="h-4 w-4 mr-2" />
                 Zoning
-              </TabsTrigger>
-              <TabsTrigger value="census" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                <BarChart3Icon className="h-4 w-4 mr-2" />
-                Census
               </TabsTrigger>
               <TabsTrigger value="schools" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
                 <School className="h-4 w-4 mr-2" />
@@ -321,17 +298,6 @@ const Index = () => {
               />
             </TabsContent>
             
-            <TabsContent value="census" className="py-6 animate-in fade-in-50">
-              <CensusList
-                censusData={censusData}
-                isLoading={isSearchingCensus}
-                searchedAddress={censusAddress}
-                isMockData={censusResponse?.isMockData === true}
-                censusResponse={censusResponse}
-                onTryMockData={() => useCensusData().loadMockData()}
-              />
-            </TabsContent>
-            
             <TabsContent value="schools" className="py-6 animate-in fade-in-50">
               <SchoolsList
                 schools={schools}
@@ -347,7 +313,7 @@ const Index = () => {
         <div className="container mx-auto max-w-5xl">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-sm text-slate-500 dark:text-slate-400">
-              <p>Powered by Zoneomics API, U.S. Census Bureau & GreatSchools API</p>
+              <p>Powered by Zoneomics API & GreatSchools API</p>
             </div>
             <div className="text-sm text-slate-500 dark:text-slate-400">
               <p>© {new Date().getFullYear()} Primer Property Explorer</p>
