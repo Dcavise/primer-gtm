@@ -1,5 +1,7 @@
 
 import { CampusesManagement } from "@/components/CampusesManagement";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const Campuses = () => {
   return (
@@ -10,6 +12,11 @@ const Campuses = () => {
           <p className="text-white/80 mt-2">
             View and manage campus information
           </p>
+          <div className="mt-4">
+            <Button asChild variant="secondary">
+              <Link to="/fellows">Back to Fellows</Link>
+            </Button>
+          </div>
         </div>
       </header>
 

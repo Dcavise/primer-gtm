@@ -7,6 +7,7 @@ import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, Tabl
 import { toast } from "sonner";
 import { RefreshCw, AlertCircle, Info } from "lucide-react";
 import { LoadingState } from "@/components/LoadingState";
+import { Link } from "react-router-dom";
 
 interface Campus {
   id: string;
@@ -16,15 +17,15 @@ interface Campus {
 
 interface Fellow {
   id: number;
-  fellow_id: number;
+  fellow_id: number | null;
   fellow_name: string;
   campus: string | null;
-  campus_id: string | null; // New field to store the campus_id reference
+  campus_id: string | null; // Added campus_id field
   campus_name: string | null; // For display purposes
   cohort: number | null;
   grade_band: string | null;
   fte_employment_status: string | null;
-  updated_at: string;
+  updated_at: string | null;
 }
 
 export function FellowsDataSync() {
@@ -204,16 +205,23 @@ export function FellowsDataSync() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle>Fellows Data</CardTitle>
-          <CardDescription>
-            View and sync fellows data from Google Sheets
-            {lastUpdated && (
-              <span className="block text-sm mt-1">
-                Last updated: {lastUpdated}
-              </span>
-            )}
-          </CardDescription>
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <CardTitle>Fellows Data</CardTitle>
+            <CardDescription>
+              View and sync fellows data from Google Sheets
+              {lastUpdated && (
+                <span className="block text-sm mt-1">
+                  Last updated: {lastUpdated}
+                </span>
+              )}
+            </CardDescription>
+          </div>
+          <div className="mt-4 sm:mt-0">
+            <Button asChild variant="outline" className="mr-2">
+              <Link to="/campuses">Manage Campuses</Link>
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (

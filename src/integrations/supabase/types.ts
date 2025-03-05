@@ -36,6 +36,7 @@ export type Database = {
       fellows: {
         Row: {
           campus: string | null
+          campus_id: string | null
           cohort: number | null
           fellow_id: number | null
           fellow_name: string
@@ -46,6 +47,7 @@ export type Database = {
         }
         Insert: {
           campus?: string | null
+          campus_id?: string | null
           cohort?: number | null
           fellow_id?: number | null
           fellow_name: string
@@ -56,6 +58,7 @@ export type Database = {
         }
         Update: {
           campus?: string | null
+          campus_id?: string | null
           cohort?: number | null
           fellow_id?: number | null
           fellow_name?: string
@@ -64,7 +67,15 @@ export type Database = {
           id?: number
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fellows_campus_id_fkey"
+            columns: ["campus_id"]
+            isOneToOne: false
+            referencedRelation: "campuses"
+            referencedColumns: ["campus_id"]
+          },
+        ]
       }
       salesforce_leads: {
         Row: {
