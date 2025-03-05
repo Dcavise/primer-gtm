@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RealEstateProperty } from '@/types/realEstate';
 import { Badge } from '@/components/ui/badge';
@@ -7,14 +8,19 @@ import { MapPin, Building, Phone, Mail, FileText } from 'lucide-react';
 
 interface PropertyCardProps {
   property: RealEstateProperty;
-  onClick?: () => void;
 }
 
-export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onClick }) => {
+export const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
+  const navigate = useNavigate();
+
+  const handlePropertyClick = () => {
+    navigate(`/real-estate-pipeline/property/${property.id}`);
+  };
+
   return (
     <Card 
       className="h-full hover:shadow-md transition-shadow cursor-pointer" 
-      onClick={onClick}
+      onClick={handlePropertyClick}
     >
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium flex items-start justify-between">

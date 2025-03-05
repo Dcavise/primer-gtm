@@ -7,6 +7,7 @@ import './index.css'
 import SalesforceLeadsPage from './pages/SalesforceLeads.tsx'
 import FindContactsPage from './pages/FindContacts.tsx'
 import RealEstatePipeline from './pages/RealEstatePipeline.tsx'
+import PropertyDetail from './pages/PropertyDetail.tsx'
 import Index from './pages/Index.tsx'
 import NotFound from './pages/NotFound.tsx'
 
@@ -30,6 +31,10 @@ const router = createBrowserRouter([
       {
         path: "real-estate-pipeline",
         element: <RealEstatePipeline />
+      },
+      {
+        path: "real-estate-pipeline/property/:id",
+        element: <PropertyDetail />
       }
     ],
     errorElement: <NotFound />

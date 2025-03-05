@@ -1,8 +1,8 @@
+
 import React, { useState, useMemo } from 'react';
 import { useRealEstatePipeline } from '@/hooks/useRealEstatePipeline';
 import { useCampuses } from '@/hooks/useCampuses';
 import { PipelineColumn } from '@/components/realestate/PipelineColumn';
-import { PropertyDetailDialog } from '@/components/realestate/PropertyDetailDialog';
 import { RealEstateProperty, PropertyPhase } from '@/types/realEstate';
 import { LoadingState } from '@/components/LoadingState';
 import { Navbar } from '@/components/Navbar';
@@ -48,8 +48,6 @@ const RealEstatePipeline: React.FC = () => {
   const [selectedCampusName, setSelectedCampusName] = useState<string | null>(null);
   const { data: properties, isLoading, error } = useRealEstatePipeline({ campusId: selectedCampusId });
   const { data: campuses, isLoading: isLoadingCampuses } = useCampuses();
-  const [selectedProperty, setSelectedProperty] = useState<RealEstateProperty | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
   
   const [defaultAccordionValue, setDefaultAccordionValue] = useState<string[]>(PHASE_GROUPS);
 
@@ -98,11 +96,6 @@ const RealEstatePipeline: React.FC = () => {
     
     return grouped;
   }, [properties]);
-
-  const handlePropertyClick = (property: RealEstateProperty) => {
-    setSelectedProperty(property);
-    setDialogOpen(true);
-  };
 
   const handleCampusSelect = (campusId: string | null, campusName: string | null) => {
     setSelectedCampusId(campusId);
@@ -195,7 +188,6 @@ const RealEstatePipeline: React.FC = () => {
                         key={phase}
                         title={phase}
                         properties={groupedProperties[phaseGroup]?.[phase] || []}
-                        onPropertyClick={handlePropertyClick}
                       />
                     ))}
                   </div>
@@ -204,12 +196,6 @@ const RealEstatePipeline: React.FC = () => {
             );
           })}
         </Accordion>
-
-        <PropertyDetailDialog 
-          property={selectedProperty}
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
-        />
       </main>
     </div>
   );

@@ -6,7 +6,6 @@ import { RealEstateProperty, PropertyPhase } from '@/types/realEstate';
 interface PipelineColumnProps {
   title: string;
   properties: RealEstateProperty[];
-  onPropertyClick: (property: RealEstateProperty) => void;
 }
 
 // Function to get the appropriate background color based on the phase
@@ -39,8 +38,7 @@ const getPhaseColor = (phase: string): string => {
 
 export const PipelineColumn: React.FC<PipelineColumnProps> = ({
   title,
-  properties,
-  onPropertyClick
+  properties
 }) => {
   const phaseColorClass = getPhaseColor(title);
 
@@ -59,7 +57,6 @@ export const PipelineColumn: React.FC<PipelineColumnProps> = ({
               <PropertyCard 
                 key={property.id} 
                 property={property}
-                onClick={() => onPropertyClick(property)} 
               />
             ))
           ) : (
