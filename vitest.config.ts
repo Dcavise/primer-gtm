@@ -15,7 +15,15 @@ export default defineConfig({
         'src/hooks/salesforce/useFellowsStats.ts',
         'src/hooks/salesforce/useLeadsStats.ts',
         'src/hooks/salesforce/useOpportunitiesStats.ts',
-        'src/hooks/salesforce/useStats.ts'
+        'src/hooks/salesforce/useStats.ts',
+        'src/hooks/salesforce/useSyncSalesforce.ts',
+        'src/hooks/use-salesforce-data.ts',
+        'src/hooks/useRealEstatePipelineSync.ts',
+        'src/services/api-config.ts',
+        'src/hooks/use-census-data.tsx',
+        'src/hooks/use-permits.tsx',
+        'src/hooks/use-schools-data.tsx',
+        'src/hooks/use-zoning-data.tsx'
       ],
     },
   },

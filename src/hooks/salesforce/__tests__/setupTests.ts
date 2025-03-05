@@ -1,35 +1,24 @@
 
 import { vi } from 'vitest';
 
-// Create a mock for the Supabase client
-const mockSupabase = {
-  from: vi.fn().mockReturnThis(),
-  select: vi.fn().mockReturnThis(),
-  eq: vi.fn().mockReturnThis(),
-  not: vi.fn().mockReturnThis(),
-  or: vi.fn().mockReturnThis(),
-  in: vi.fn().mockReturnThis(),
-  gte: vi.fn().mockReturnThis(),
-  rpc: vi.fn().mockReturnThis(),
+// Create a mock for Supabase client
+export const mockSupabase = {
+  from: vi.fn(() => mockSupabase),
+  select: vi.fn(() => mockSupabase),
+  eq: vi.fn(() => mockSupabase),
+  not: vi.fn(() => mockSupabase),
+  or: vi.fn(() => mockSupabase),
+  count: vi.fn(() => mockSupabase),
+  order: vi.fn(() => mockSupabase),
+  limit: vi.fn(() => mockSupabase),
+  gte: vi.fn(() => mockSupabase),
+  rpc: vi.fn(() => mockSupabase),
   functions: {
     invoke: vi.fn()
   }
 };
 
-// Mock the toast function
-const mockToast = {
-  error: vi.fn(),
-  success: vi.fn()
-};
-
-// Export mocks
-export { mockSupabase, mockToast };
-
-// Mock the modules
+// Mock the Supabase client
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: mockSupabase
-}));
-
-vi.mock('sonner', () => ({
-  toast: mockToast
 }));
