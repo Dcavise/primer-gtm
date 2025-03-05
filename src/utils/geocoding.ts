@@ -16,7 +16,7 @@ export const geocodeAddress = async (address: string): Promise<{
     console.log(`Geocoding address: ${address}`);
     
     // Make API request to our supabase function that wraps Google Maps API
-    const response = await fetch(`https://nwyyfupafwpjapozjqmz.supabase.co/functions/v1/geocode-address`, {
+    const response = await fetch(`https://pudncilureqpzxrxfupr.supabase.co/functions/v1/geocode-address`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

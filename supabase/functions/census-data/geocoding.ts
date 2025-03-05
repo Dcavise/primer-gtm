@@ -23,7 +23,13 @@ export async function geocodeAddress(address: string): Promise<GeocodingResult |
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${GOOGLE_API_KEY}`;
     
     console.log(`Making geocoding request to Google Maps API`);
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache'
+      }
+    });
     
     if (!response.ok) {
       const errorText = await response.text();
