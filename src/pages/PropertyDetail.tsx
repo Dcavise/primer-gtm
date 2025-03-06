@@ -442,7 +442,7 @@ const PropertyDetail: React.FC = () => {
           }
         } 
         else {
-          validated[key] = value as any;
+          validated[key as keyof RealEstateProperty] = value;
         }
       }
     }

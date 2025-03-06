@@ -23,6 +23,8 @@ export interface RealEstateProperty {
   status_notes: string | null;
   fire_sprinklers: BooleanStatus;
   fiber: BooleanStatus;
+  // Add an index signature to allow for dynamic properties
+  [key: string]: any;
 }
 
 // This precisely matches the enum defined in Supabase
