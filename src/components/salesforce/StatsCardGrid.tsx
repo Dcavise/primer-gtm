@@ -4,9 +4,9 @@ import { StatsCard } from './StatsCard';
 import { EmploymentStatusDialog } from './EmploymentStatusDialog';
 import { LeadsChartDialog } from './LeadsChartDialog';
 import { PipelineChartDialog } from './PipelineChartDialog';
-import { Users, ArrowUpRight, Clock, CheckCircle } from 'lucide-react';
 import { SummaryStats, EmploymentStatusCount, WeeklyLeadCount, OpportunityStageCount } from '@/hooks/salesforce/types';
-import { formatNumber } from '@/utils/format';
+import { WeeklyLeadTrendsByCampus } from './WeeklyLeadTrendsByCampus';
+import { Campus } from '@/hooks/salesforce/types';
 
 interface StatsCardGridProps {
   stats: SummaryStats;
@@ -15,69 +15,77 @@ interface StatsCardGridProps {
   opportunityStageCounts: OpportunityStageCount[];
   selectedCampusId: string | null;
   selectedCampusName: string | null;
+  campuses?: Campus[];
 }
 
 export const StatsCardGrid: React.FC<StatsCardGridProps> = ({ 
-  stats, 
+  stats,
   employmentStatusCounts,
   weeklyLeadCounts,
   opportunityStageCounts,
   selectedCampusId,
-  selectedCampusName
+  selectedCampusName,
+  campuses = []
 }) => {
-  const [showEmploymentStatus, setShowEmploymentStatus] = useState(false);
-  const [showLeadsChart, setShowLeadsChart] = useState(false);
-  const [showPipelineChart, setShowPipelineChart] = useState(false);
+  const [isEmploymentDialogOpen, setIsEmploymentDialogOpen] = useState(false);
+  const [isLeadsDialogOpen, setIsLeadsDialogOpen] = useState(false);
+  const [isPipelineDialogOpen, setIsPipelineDialogOpen] = useState(false);
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatsCard
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <StatsCard 
           title="Fellows"
-          value={formatNumber(stats.fellowsCount)}
-          description={selectedCampusId ? 'Fellows at this campus' : 'Total Fellows'}
-          icon={Users}
-          onClick={() => setShowEmploymentStatus(true)}
+          value={stats.fellowsCount}
+          description="Total fellows"
+          onClick={() => setIsEmploymentDialogOpen(true)}
         />
-        <StatsCard
+        
+        <StatsCard 
           title="Leads"
-          value={formatNumber(stats.leadsCount)}
-          description={selectedCampusId ? 'Leads for this campus' : 'Total Leads'}
-          icon={ArrowUpRight}
-          onClick={() => setShowLeadsChart(true)}
+          value={stats.leadsCount}
+          description="Total leads"
+          onClick={() => setIsLeadsDialogOpen(true)}
         />
-        <StatsCard
-          title="Pipeline"
-          value={formatNumber(stats.activeOpportunitiesCount)}
-          description="Not Closed Won/Lost"
-          icon={Clock}
-          onClick={() => setShowPipelineChart(true)}
+        
+        <StatsCard 
+          title="Active Opportunities"
+          value={stats.activeOpportunitiesCount}
+          description="In progress"
+          onClick={() => setIsPipelineDialogOpen(true)}
         />
-        <StatsCard
+        
+        <StatsCard 
           title="Closed Won"
-          value={formatNumber(stats.closedWonOpportunitiesCount)}
-          description="Successful opportunities"
-          icon={CheckCircle}
+          value={stats.closedWonOpportunitiesCount}
+          description="Converted opportunities"
         />
       </div>
-
-      <EmploymentStatusDialog
-        open={showEmploymentStatus}
-        onOpenChange={setShowEmploymentStatus}
-        data={employmentStatusCounts}
-        campusName={selectedCampusName}
+      
+      {/* Add the Weekly Lead Trends component */}
+      <WeeklyLeadTrendsByCampus 
+        weeklyLeadCounts={weeklyLeadCounts}
+        campuses={campuses || []} 
+        selectedCampusName={selectedCampusName}
       />
-
+      
+      <EmploymentStatusDialog
+        open={isEmploymentDialogOpen}
+        onOpenChange={setIsEmploymentDialogOpen}
+        employmentStatusCounts={employmentStatusCounts}
+        selectedCampusName={selectedCampusName}
+      />
+      
       <LeadsChartDialog
-        open={showLeadsChart}
-        onOpenChange={setShowLeadsChart}
+        open={isLeadsDialogOpen}
+        onOpenChange={setIsLeadsDialogOpen}
         weeklyLeadCounts={weeklyLeadCounts}
         selectedCampusName={selectedCampusName}
       />
-
+      
       <PipelineChartDialog
-        open={showPipelineChart}
-        onOpenChange={setShowPipelineChart}
+        open={isPipelineDialogOpen}
+        onOpenChange={setIsPipelineDialogOpen}
         opportunityStageCounts={opportunityStageCounts}
         selectedCampusName={selectedCampusName}
       />

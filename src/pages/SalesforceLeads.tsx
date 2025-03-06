@@ -109,6 +109,7 @@ const SalesforceLeadsPage: React.FC = () => {
           opportunityStageCounts={opportunityStageCounts}
           selectedCampusId={selectedCampusId}
           selectedCampusName={selectedCampusName}
+          campuses={campuses}
         />
         
         <MetricsDashboard

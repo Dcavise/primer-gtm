@@ -474,7 +474,22 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      campus_distribution: {
+        Row: {
+          campus_name: string | null
+          lead_count: number | null
+        }
+        Relationships: []
+      }
+      conversion_by_campus: {
+        Row: {
+          campus_name: string | null
+          conversion_rate: number | null
+          converted_leads: number | null
+          total_leads: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       airtable_fdw_handler: {
@@ -610,6 +625,19 @@ export type Database = {
         Returns: {
           week: string
           lead_count: number
+        }[]
+      }
+      get_weekly_lead_trends: {
+        Args: {
+          start_date: string
+          end_date: string
+        }
+        Returns: {
+          week_start: string
+          campus_name: string
+          lead_count: number
+          conversion_count: number
+          conversion_rate: number
         }[]
       }
       hello_world_fdw_handler: {
