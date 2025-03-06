@@ -8,17 +8,15 @@ import {
   MonthlyOpportunityTrend,
   SalesCycleMetric,
   StageProgressionMetric,
-  LeadToWinConversion
+  LeadToWinConversion,
+  MetricData,
+  TimeSeriesData
 } from './types';
 
 export const useMetrics = (selectedCampusId: string | null) => {
   const [leadsMetrics, setLeadsMetrics] = useState<LeadsMetricsData>({
-    isLoading: true,
-    conversionRate: 0,
-    totalLeads: 0,
-    leadsBySource: [],
-    leadsByStatus: [],
-    monthlyTrends: []
+    metrics: [],
+    timeSeriesData: []
   });
   
   const [opportunityMetrics, setOpportunityMetrics] = useState<OpportunityMetricsData>({
@@ -30,10 +28,8 @@ export const useMetrics = (selectedCampusId: string | null) => {
   });
   
   const [attendanceMetrics, setAttendanceMetrics] = useState<AttendanceMetricsData>({
-    isLoading: true,
-    averageAttendance: 0,
-    attendanceByGrade: [],
-    monthlyAttendance: []
+    metrics: [],
+    timeSeriesData: []
   });
   
   const handleError = (error: any, message?: string) => {
@@ -169,3 +165,4 @@ export const useMetrics = (selectedCampusId: string | null) => {
     fetchAttendanceMetrics
   };
 };
+
