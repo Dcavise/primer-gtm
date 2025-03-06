@@ -7,9 +7,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { AlertTriangle } from 'lucide-react';
 
 const LoginForm = () => {
-  const { signIn } = useAuth();
+  const { signIn, databaseConnected, schemaStatus } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -53,6 +54,21 @@ const LoginForm = () => {
             <AlertDescription>{loginError}</AlertDescription>
           </Alert>
         )}
+        
+        {!databaseConnected && (
+          <Alert variant="warning" className="bg-amber-50 border-amber-200">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-700">
+              <p className="font-medium">Database access issue detected</p>
+              <div className="mt-1 text-sm">
+                <p>Public schema: {schemaStatus.public ? 'Connected' : 'Not connected'}</p>
+                <p>Salesforce schema: {schemaStatus.salesforce ? 'Connected' : 'Not connected'}</p>
+                <p className="mt-1">Some data may be unavailable after login.</p>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input 

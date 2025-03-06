@@ -27,23 +27,32 @@ export const supabase = createClient<Database>(
   }
 );
 
-// Helper function to check database connectivity
+// Helper function to check database connectivity to both public and salesforce schemas
 export const checkDatabaseConnection = async () => {
   try {
-    // Try to access a simple public table that we know exists
-    const { data, error } = await supabase
+    // First check public schema access
+    const publicCheck = await supabase
       .from('campuses')
       .select('count')
       .limit(1);
     
-    if (error) {
-      console.error("Database connectivity check failed:", error);
-      return false;
+    if (publicCheck.error) {
+      console.error("Public schema connectivity check failed:", publicCheck.error);
+      return { connected: false, schemas: { public: false, salesforce: false }};
     }
     
-    return true;
+    // Then check salesforce schema access
+    const salesforceCheck = await supabase.rpc('get_campuses_with_lead_counts', {}).limit(1);
+    
+    if (salesforceCheck.error) {
+      console.error("Salesforce schema connectivity check failed:", salesforceCheck.error);
+      return { connected: false, schemas: { public: true, salesforce: false }};
+    }
+    
+    // Both checks passed
+    return { connected: true, schemas: { public: true, salesforce: true }};
   } catch (error) {
     console.error("Unexpected error during database connectivity check:", error);
-    return false;
+    return { connected: false, schemas: { public: false, salesforce: false }};
   }
 };

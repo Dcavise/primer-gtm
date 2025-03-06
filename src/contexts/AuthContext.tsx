@@ -1,8 +1,9 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, checkDatabaseConnection } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface AuthContextProps {
   session: Session | null;
@@ -12,6 +13,8 @@ interface AuthContextProps {
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any | null }>;
   signOut: () => Promise<void>;
   loading: boolean;
+  databaseConnected: boolean;
+  schemaStatus: { public: boolean, salesforce: boolean };
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -21,6 +24,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [databaseConnected, setDatabaseConnected] = useState(false);
+  const [schemaStatus, setSchemaStatus] = useState<{ public: boolean, salesforce: boolean }>({ 
+    public: false, 
+    salesforce: false 
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -33,6 +41,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (data.session?.user) {
           await fetchProfile(data.session.user.id);
+          
+          // Check database connection after authentication
+          checkDatabaseAccess();
         } else {
           setLoading(false);
         }
@@ -46,9 +57,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             
             if (newSession?.user) {
               await fetchProfile(newSession.user.id);
+              
+              // Check database access on sign in
+              if (event === 'SIGNED_IN') {
+                checkDatabaseAccess();
+                toast.success('Signed in successfully');
+              }
             } else {
               setProfile(null);
+              setDatabaseConnected(false);
+              setSchemaStatus({ public: false, salesforce: false });
               setLoading(false);
+              
+              if (event === 'SIGNED_OUT') {
+                toast.info('Signed out');
+              }
             }
           }
         );
@@ -64,6 +87,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     initializeAuth();
   }, []);
+
+  const checkDatabaseAccess = async () => {
+    try {
+      const connectionStatus = await checkDatabaseConnection();
+      setDatabaseConnected(connectionStatus.connected);
+      setSchemaStatus(connectionStatus.schemas);
+      
+      if (!connectionStatus.connected) {
+        if (!connectionStatus.schemas.public && !connectionStatus.schemas.salesforce) {
+          toast.error('Database connection failed', { 
+            description: 'Unable to connect to any database schemas' 
+          });
+        } else if (connectionStatus.schemas.public && !connectionStatus.schemas.salesforce) {
+          toast.warning('Limited data access', { 
+            description: 'Connected to public schema but not salesforce schema' 
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error checking database access:', error);
+      setDatabaseConnected(false);
+      setSchemaStatus({ public: false, salesforce: false });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -153,7 +202,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signIn,
     signUp,
     signOut,
-    loading
+    loading,
+    databaseConnected,
+    schemaStatus
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

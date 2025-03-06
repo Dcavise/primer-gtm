@@ -4,7 +4,7 @@ import { useStats } from './salesforce/useStats';
 import { useCampuses } from './salesforce/useCampuses';
 import { useSyncSalesforce } from './salesforce/useSyncSalesforce';
 import { useMetrics } from './salesforce/useMetrics';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, checkDatabaseConnection } from '@/integrations/supabase/client';
 import { SUPABASE_URL } from '@/services/api-config';
 import { 
   SummaryStats, 
@@ -33,31 +33,57 @@ export type {
 export const useSalesforceData = (selectedCampusIds: string[]) => {
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
   const [databaseConnection, setDatabaseConnection] = useState<'checking' | 'connected' | 'error'>('checking');
+  const [schemaStatus, setSchemaStatus] = useState<{ public: boolean, salesforce: boolean }>({ public: false, salesforce: false });
   
   // Check database connection on mount
   useEffect(() => {
-    const checkDatabaseConnection = async () => {
+    const checkConnection = async () => {
       try {
-        console.log("Checking Supabase database connection...");
+        console.log("Checking Supabase database connection to both schemas...");
         console.log("Supabase URL:", SUPABASE_URL);
         
-        // Use an RPC function instead of direct table access
-        const { data, error } = await supabase.rpc('get_campuses_with_lead_counts', {}).limit(1);
+        const connectionStatus = await checkDatabaseConnection();
         
-        if (error) {
-          console.error("Database connection error:", error);
+        if (!connectionStatus.connected) {
+          console.error("Database connection issue detected:", connectionStatus);
           setDatabaseConnection('error');
+          setSchemaStatus(connectionStatus.schemas);
         } else {
-          console.log("Successfully connected to Supabase database");
+          console.log("Successfully connected to Supabase database and schemas:", connectionStatus);
           setDatabaseConnection('connected');
+          setSchemaStatus(connectionStatus.schemas);
         }
       } catch (error) {
         console.error("Error checking database connection:", error);
         setDatabaseConnection('error');
+        setSchemaStatus({ public: false, salesforce: false });
       }
     };
     
-    checkDatabaseConnection();
+    checkConnection();
+  }, []);
+  
+  // Reset connection check when user auth changes
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN') {
+        console.log("User signed in, rechecking database connection...");
+        setDatabaseConnection('checking');
+        checkDatabaseConnection().then(connectionStatus => {
+          if (!connectionStatus.connected) {
+            setDatabaseConnection('error');
+            setSchemaStatus(connectionStatus.schemas);
+          } else {
+            setDatabaseConnection('connected');
+            setSchemaStatus(connectionStatus.schemas);
+          }
+        });
+      }
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
   
   const { stats, employmentStatusCounts, weeklyLeadCounts, opportunityStageCounts, fetchStats } = useStats(selectedCampusIds);
@@ -73,12 +99,32 @@ export const useSalesforceData = (selectedCampusIds: string[]) => {
   useEffect(() => {
     if (databaseConnection === 'error') {
       console.error("Database connection issue detected - this may affect data retrieval");
+      if (schemaStatus.public && !schemaStatus.salesforce) {
+        console.warn("Connected to public schema but not salesforce schema - this indicates a permission issue");
+      } else if (!schemaStatus.public && !schemaStatus.salesforce) {
+        console.error("Unable to connect to any database schemas - check authentication and network");
+      }
     }
     
     if (!campuses || campuses.length === 0) {
       console.warn("No campuses data available - this may indicate a database connection issue");
     }
-  }, [databaseConnection, campuses]);
+  }, [databaseConnection, schemaStatus, campuses]);
+  
+  // Allow user to retry connection
+  const retryConnection = async () => {
+    setDatabaseConnection('checking');
+    const connectionStatus = await checkDatabaseConnection();
+    if (!connectionStatus.connected) {
+      setDatabaseConnection('error');
+      setSchemaStatus(connectionStatus.schemas);
+    } else {
+      setDatabaseConnection('connected');
+      setSchemaStatus(connectionStatus.schemas);
+      fetchStats();
+      fetchCampuses();
+    }
+  };
 
   return {
     stats,
@@ -94,8 +140,10 @@ export const useSalesforceData = (selectedCampusIds: string[]) => {
     syncStatus,
     lastRefreshed,
     databaseConnection,
+    schemaStatus,
     fetchStats,
     fetchCampuses,
-    syncSalesforceData
+    syncSalesforceData,
+    retryConnection
   };
 };

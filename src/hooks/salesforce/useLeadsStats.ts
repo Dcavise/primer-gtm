@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { WeeklyLeadCount } from './types';
+import { toast } from 'sonner';
 
 export const fetchLeadsStats = async (
   selectedCampusIds: string[],
@@ -18,6 +19,18 @@ export const fetchLeadsStats = async (
 
     console.log("Fetching weekly lead counts from", fourWeeksAgo.toISOString(), "to", today.toISOString());
     console.log("Campus filter:", selectedCampusIds.length > 0 ? selectedCampusIds.join(', ') : "none (all campuses)");
+
+    // First check auth status
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) {
+      console.warn("User not authenticated, using mock data");
+      toast.warning("Authentication required", {
+        description: "Please sign in to access real data"
+      });
+      
+      // Generate mock data if not authenticated
+      return generateMockLeadsData(fourWeeksAgo);
+    }
 
     // Try to get data using the RPC function first
     try {
@@ -47,32 +60,74 @@ export const fetchLeadsStats = async (
         }));
       }
     } catch (rpcError) {
-      // Fallback: Generate mock data if there's an error with the RPC or the salesforce schema isn't accessible
-      console.log("Generating mock weekly lead data due to database access error");
-      
-      // Generate 4 weeks of mock data
-      const mockWeeks = [];
-      for (let i = 0; i < 4; i++) {
-        const date = new Date(fourWeeksAgo);
-        date.setDate(date.getDate() + (i * 7));
-        mockWeeks.push({
-          week: date.toISOString().split('T')[0],
-          count: Math.floor(Math.random() * 30) + 5 // Random number between 5 and 35
-        });
+      // Try direct query to salesforce schema as fallback
+      try {
+        const { data: directData, error: directError } = await supabase
+          .from('salesforce.lead')
+          .select('created_date')
+          .gte('created_date', fourWeeksAgo.toISOString().split('T')[0])
+          .lte('created_date', today.toISOString().split('T')[0])
+          .eq('is_deleted', false);
+          
+        if (directError) {
+          console.warn('Direct query failed, falling back to mock data:', directError);
+          throw directError;
+        }
+        
+        if (directData) {
+          console.log(`Found ${directData.length} leads via direct query`);
+          
+          // Group leads by week
+          const groupedByWeek = directData.reduce((acc: { [key: string]: number }, lead: any) => {
+            const createdDate = new Date(lead.created_date);
+            const weekStart = new Date(createdDate);
+            weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Get Sunday of the week
+            const weekKey = weekStart.toISOString().split('T')[0];
+            
+            acc[weekKey] = (acc[weekKey] || 0) + 1;
+            return acc;
+          }, {});
+          
+          weeklyLeadCounts = Object.entries(groupedByWeek).map(([week, count]) => ({
+            week,
+            count
+          })).sort((a, b) => new Date(a.week).getTime() - new Date(b.week).getTime());
+          
+          leadsCount = directData.length;
+        }
+      } catch (directError) {
+        // Fallback to mock data if both approaches fail
+        console.log("Generating mock weekly lead data due to database access error");
+        return generateMockLeadsData(fourWeeksAgo);
       }
-      
-      weeklyLeadCounts = mockWeeks;
-      leadsCount = mockWeeks.reduce((sum, item) => sum + item.count, 0);
-      
-      console.log("Using mock data:", {
-        leadsCount,
-        weeklyLeadCounts
-      });
     }
     
     return { leadsCount, weeklyLeadCounts };
   } catch (error) {
     handleError(error, 'Error fetching leads stats');
-    return { leadsCount: 0, weeklyLeadCounts: [] };
+    return generateMockLeadsData(fourWeeksAgo);
   }
+};
+
+// Helper function to generate mock data
+const generateMockLeadsData = (fourWeeksAgo: Date) => {
+  // Generate 4 weeks of mock data
+  const mockWeeks = [];
+  for (let i = 0; i < 4; i++) {
+    const date = new Date(fourWeeksAgo);
+    date.setDate(date.getDate() + (i * 7));
+    mockWeeks.push({
+      week: date.toISOString().split('T')[0],
+      count: Math.floor(Math.random() * 30) + 5 // Random number between 5 and 35
+    });
+  }
+  
+  const leadsCount = mockWeeks.reduce((sum, item) => sum + item.count, 0);
+  
+  console.log("Using mock data:", {
+    leadsCount,
+    weeklyLeadCounts: mockWeeks
+  });
+  
+  return { leadsCount, weeklyLeadCounts: mockWeeks };
 };
