@@ -32,8 +32,8 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
   // Individual field edit states
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
-  // Update type to accommodate enum values
-  const [fieldValues, setFieldValues] = useState<Record<string, BooleanStatus | SurveyStatus | TestFitStatus | string>>({});
+  // Update type to accommodate enum values with proper nullable types
+  const [fieldValues, setFieldValues] = useState<Record<string, BooleanStatus | SurveyStatus | TestFitStatus | string | null>>({});
 
   // Initialize field values when property changes
   React.useEffect(() => {
@@ -51,7 +51,7 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
     setEditingFields(prev => ({ ...prev, [fieldName]: true }));
     setFieldValues(prev => ({ 
       ...prev, 
-      [fieldName]: property[fieldName as keyof RealEstateProperty] as BooleanStatus | SurveyStatus | TestFitStatus | string
+      [fieldName]: property[fieldName as keyof RealEstateProperty] as BooleanStatus | SurveyStatus | TestFitStatus | string | null
     }));
   };
 
@@ -59,7 +59,7 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
     setEditingFields(prev => ({ ...prev, [fieldName]: false }));
     setFieldValues(prev => ({ 
       ...prev, 
-      [fieldName]: property[fieldName as keyof RealEstateProperty] as BooleanStatus | SurveyStatus | TestFitStatus | string
+      [fieldName]: property[fieldName as keyof RealEstateProperty] as BooleanStatus | SurveyStatus | TestFitStatus | string | null
     }));
   };
 
@@ -75,7 +75,7 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
     
     try {
       // Ensure the value matches enum type for specific fields
-      let valueToSave: BooleanStatus | SurveyStatus | TestFitStatus | string = null;
+      let valueToSave: BooleanStatus | SurveyStatus | TestFitStatus | string | null = null;
       const currentValue = fieldValues[fieldName];
       
       // For enum fields, make sure the value is valid

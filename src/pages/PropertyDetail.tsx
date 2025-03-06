@@ -427,8 +427,22 @@ const PropertyDetail: React.FC = () => {
           validated[key] = (value === 'pending' || value === 'sent' || value === 'signed') ? 
             value as LeaseStatus : null;
         } 
+        else if (key === 'phase') {
+          if (typeof value === 'string' && value.length > 0) {
+            const propertyPhases: PropertyPhase[] = [
+              '0. New Site', '1. Initial Diligence', '2. Survey', '3. Test Fit', 
+              '4. Plan Production', '5. Permitting', '6. Construction', '7. Set Up', 
+              'Hold', 'Deprioritize'
+            ];
+            
+            validated[key] = propertyPhases.includes(value as PropertyPhase) ? 
+              value as PropertyPhase : null;
+          } else {
+            validated[key] = null;
+          }
+        } 
         else {
-          validated[key] = value;
+          validated[key] = value as any;
         }
       }
     }

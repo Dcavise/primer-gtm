@@ -33,7 +33,7 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
   // Update type to match our form inputs
-  const [fieldValues, setFieldValues] = useState<Record<string, LeaseStatus | string>>({});
+  const [fieldValues, setFieldValues] = useState<Record<string, LeaseStatus | string | null>>({});
 
   // Initialize field values when property changes
   React.useEffect(() => {
@@ -49,7 +49,7 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
     setEditingFields(prev => ({ ...prev, [fieldName]: true }));
     setFieldValues(prev => ({ 
       ...prev, 
-      [fieldName]: property[fieldName as keyof RealEstateProperty] as LeaseStatus
+      [fieldName]: property[fieldName as keyof RealEstateProperty] as LeaseStatus | null 
     }));
   };
 
@@ -57,7 +57,7 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
     setEditingFields(prev => ({ ...prev, [fieldName]: false }));
     setFieldValues(prev => ({ 
       ...prev, 
-      [fieldName]: property[fieldName as keyof RealEstateProperty] as LeaseStatus
+      [fieldName]: property[fieldName as keyof RealEstateProperty] as LeaseStatus | null
     }));
   };
 
