@@ -1,21 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  RealEstateProperty, 
-  PropertyPhase, 
-  BooleanStatus, 
-  SurveyStatus, 
-  TestFitStatus, 
-  LeaseStatus,
-  PropertyUIState,
-  PropertyFormValues,
-  StatusFormValues,
-  ContactFormValues,
-  LeaseFormValues
-} from '@/types/realEstate';
+import { RealEstateProperty, PropertyPhase, BooleanStatus, SurveyStatus, TestFitStatus, LeaseStatus } from '@/types/realEstate';
 import { Button } from '@/components/ui/button';
 import { LoadingState } from '@/components/LoadingState';
 import { ArrowLeft } from 'lucide-react';
@@ -36,58 +23,26 @@ import { mapPhaseToProgressStages } from '@/components/PropertyProgressStages';
 const PropertyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [fileRefreshKey, setFileRefreshKey] = useState(0);
   
-  // Initialize UI state with default values
-  const [uiState, setUIState] = useState<PropertyUIState>({
-    fileRefreshKey: 0,
-    isEditingNotes: false,
-    isEditingPropertyInfo: false,
-    isEditingStatusInfo: false,
-    isEditingContactInfo: false,
-    isEditingLeaseInfo: false,
-    notesValue: '',
-    isSavingNotes: false,
-    isSavingPropertyInfo: false,
-    isSavingStatusInfo: false,
-    isSavingContactInfo: false,
-    isSavingLeaseInfo: false
-  });
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [isEditingPropertyInfo, setIsEditingPropertyInfo] = useState(false);
+  const [isEditingStatusInfo, setIsEditingStatusInfo] = useState(false);
+  const [isEditingContactInfo, setIsEditingContactInfo] = useState(false);
+  const [isEditingLeaseInfo, setIsEditingLeaseInfo] = useState(false);
   
-  // Initialize form values for different sections
-  const [propertyFormValues, setPropertyFormValues] = useState<PropertyFormValues>({
-    phase: null,
-    sf_available: null,
-    zoning: null,
-    permitted_use: null,
-    parking: null,
-    fire_sprinklers: null,
-    fiber: null
-  });
+  const [notesValue, setNotesValue] = useState('');
+  const [propertyFormValues, setPropertyFormValues] = useState<Partial<RealEstateProperty>>({});
+  const [statusFormValues, setStatusFormValues] = useState<Partial<RealEstateProperty>>({});
+  const [contactFormValues, setContactFormValues] = useState<Partial<RealEstateProperty>>({});
+  const [leaseFormValues, setLeaseFormValues] = useState<Partial<RealEstateProperty>>({});
   
-  const [statusFormValues, setStatusFormValues] = useState<StatusFormValues>({
-    ahj_zoning_confirmation: null,
-    ahj_building_records: null,
-    survey_status: null,
-    test_fit_status: null
-  });
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
+  const [isSavingPropertyInfo, setIsSavingPropertyInfo] = useState(false);
+  const [isSavingStatusInfo, setIsSavingStatusInfo] = useState(false);
+  const [isSavingContactInfo, setIsSavingContactInfo] = useState(false);
+  const [isSavingLeaseInfo, setIsSavingLeaseInfo] = useState(false);
   
-  const [contactFormValues, setContactFormValues] = useState<ContactFormValues>({
-    ll_poc: null,
-    ll_phone: null,
-    ll_email: null
-  });
-  
-  const [leaseFormValues, setLeaseFormValues] = useState<LeaseFormValues>({
-    loi_status: null,
-    lease_status: null
-  });
-  
-  // Update a specific UI state field
-  const updateUIState = (key: keyof PropertyUIState, value: any) => {
-    setUIState(prev => ({ ...prev, [key]: value }));
-  };
-
-  // Fetch property data from database
   const { data: property, isLoading, error, refetch } = useQuery({
     queryKey: ['property', id],
     queryFn: async (): Promise<RealEstateProperty | null> => {
@@ -128,10 +83,11 @@ const PropertyDetail: React.FC = () => {
     }
   });
 
-  // Update form values when property data changes
   useEffect(() => {
     if (property) {
-      updateUIState('notesValue', property.status_notes || '');
+      if (property.status_notes) {
+        setNotesValue(property.status_notes);
+      }
       
       setPropertyFormValues({
         phase: property.phase || null,
@@ -173,10 +129,9 @@ const PropertyDetail: React.FC = () => {
   };
 
   const handleFileUploadComplete = () => {
-    updateUIState('fileRefreshKey', uiState.fileRefreshKey + 1);
+    setFileRefreshKey(prev => prev + 1);
   };
 
-  // Input handlers for form sections
   const handlePropertyInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     
@@ -222,32 +177,30 @@ const PropertyDetail: React.FC = () => {
   };
 
   const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    updateUIState('notesValue', e.target.value);
+    setNotesValue(e.target.value);
   };
 
-  // Edit/Save handlers
   const handleEditNotes = () => {
-    updateUIState('isEditingNotes', true);
+    setIsEditingNotes(true);
   };
 
   const handleCancelEditNotes = () => {
     if (property && property.status_notes) {
-      updateUIState('notesValue', property.status_notes);
+      setNotesValue(property.status_notes);
     } else {
-      updateUIState('notesValue', '');
+      setNotesValue('');
     }
-    updateUIState('isEditingNotes', false);
+    setIsEditingNotes(false);
   };
 
   const handleSaveNotes = async () => {
     if (!id) return;
     
-    updateUIState('isSavingNotes', true);
+    setIsSavingNotes(true);
     try {
-      // Only update the database field status_notes
       const { error } = await supabase
         .from('real_estate_pipeline')
-        .update({ status_notes: uiState.notesValue })
+        .update({ status_notes: notesValue })
         .eq('id', parseInt(id));
       
       if (error) {
@@ -256,19 +209,19 @@ const PropertyDetail: React.FC = () => {
         return;
       }
       
-      updateUIState('isEditingNotes', false);
+      setIsEditingNotes(false);
       toast.success('Notes saved successfully');
       refetch();
     } catch (error) {
       console.error('Error saving notes:', error);
       toast.error('Failed to save notes');
     } finally {
-      updateUIState('isSavingNotes', false);
+      setIsSavingNotes(false);
     }
   };
 
   const handleEditPropertyInfo = () => {
-    updateUIState('isEditingPropertyInfo', true);
+    setIsEditingPropertyInfo(true);
   };
 
   const handleCancelEditPropertyInfo = () => {
@@ -283,22 +236,21 @@ const PropertyDetail: React.FC = () => {
         fiber: property.fiber || null,
       });
     }
-    updateUIState('isEditingPropertyInfo', false);
+    setIsEditingPropertyInfo(false);
   };
 
   const handleSavePropertyInfo = async () => {
     if (!id) return;
     
-    updateUIState('isSavingPropertyInfo', true);
+    setIsSavingPropertyInfo(true);
     try {
-      // Extract database fields only
-      const dbFields = extractDatabaseFields(propertyFormValues, [
+      const validatedValues = validateFormValues(propertyFormValues, [
         'phase', 'sf_available', 'zoning', 'permitted_use', 'parking', 'fire_sprinklers', 'fiber'
       ]);
       
       const { error } = await supabase
         .from('real_estate_pipeline')
-        .update(dbFields)
+        .update(validatedValues)
         .eq('id', parseInt(id));
       
       if (error) {
@@ -307,19 +259,19 @@ const PropertyDetail: React.FC = () => {
         return;
       }
       
-      updateUIState('isEditingPropertyInfo', false);
+      setIsEditingPropertyInfo(false);
       toast.success('Property information saved successfully');
       refetch();
     } catch (error) {
       console.error('Error saving property info:', error);
       toast.error('Failed to save property information');
     } finally {
-      updateUIState('isSavingPropertyInfo', false);
+      setIsSavingPropertyInfo(false);
     }
   };
 
   const handleEditStatusInfo = () => {
-    updateUIState('isEditingStatusInfo', true);
+    setIsEditingStatusInfo(true);
   };
 
   const handleCancelEditStatusInfo = () => {
@@ -331,22 +283,21 @@ const PropertyDetail: React.FC = () => {
         test_fit_status: property.test_fit_status || null,
       });
     }
-    updateUIState('isEditingStatusInfo', false);
+    setIsEditingStatusInfo(false);
   };
 
   const handleSaveStatusInfo = async () => {
     if (!id) return;
     
-    updateUIState('isSavingStatusInfo', true);
+    setIsSavingStatusInfo(true);
     try {
-      // Extract database fields only
-      const dbFields = extractDatabaseFields(statusFormValues, [
+      const validatedValues = validateFormValues(statusFormValues, [
         'ahj_zoning_confirmation', 'ahj_building_records', 'survey_status', 'test_fit_status'
       ]);
       
       const { error } = await supabase
         .from('real_estate_pipeline')
-        .update(dbFields)
+        .update(validatedValues)
         .eq('id', parseInt(id));
       
       if (error) {
@@ -355,19 +306,19 @@ const PropertyDetail: React.FC = () => {
         return;
       }
       
-      updateUIState('isEditingStatusInfo', false);
+      setIsEditingStatusInfo(false);
       toast.success('Status information saved successfully');
       refetch();
     } catch (error) {
       console.error('Error saving status info:', error);
       toast.error('Failed to save status information');
     } finally {
-      updateUIState('isSavingStatusInfo', false);
+      setIsSavingStatusInfo(false);
     }
   };
 
   const handleEditContactInfo = () => {
-    updateUIState('isEditingContactInfo', true);
+    setIsEditingContactInfo(true);
   };
 
   const handleCancelEditContactInfo = () => {
@@ -378,15 +329,14 @@ const PropertyDetail: React.FC = () => {
         ll_email: property.ll_email || null,
       });
     }
-    updateUIState('isEditingContactInfo', false);
+    setIsEditingContactInfo(false);
   };
 
   const handleSaveContactInfo = async () => {
     if (!id) return;
     
-    updateUIState('isSavingContactInfo', true);
+    setIsSavingContactInfo(true);
     try {
-      // For contact info, all fields go to the database
       const { error } = await supabase
         .from('real_estate_pipeline')
         .update(contactFormValues)
@@ -398,19 +348,19 @@ const PropertyDetail: React.FC = () => {
         return;
       }
       
-      updateUIState('isEditingContactInfo', false);
+      setIsEditingContactInfo(false);
       toast.success('Contact information saved successfully');
       refetch();
     } catch (error) {
       console.error('Error saving contact info:', error);
       toast.error('Failed to save contact information');
     } finally {
-      updateUIState('isSavingContactInfo', false);
+      setIsSavingContactInfo(false);
     }
   };
 
   const handleEditLeaseInfo = () => {
-    updateUIState('isEditingLeaseInfo', true);
+    setIsEditingLeaseInfo(true);
   };
 
   const handleCancelEditLeaseInfo = () => {
@@ -420,22 +370,21 @@ const PropertyDetail: React.FC = () => {
         lease_status: property.lease_status || null,
       });
     }
-    updateUIState('isEditingLeaseInfo', false);
+    setIsEditingLeaseInfo(false);
   };
 
   const handleSaveLeaseInfo = async () => {
     if (!id) return;
     
-    updateUIState('isSavingLeaseInfo', true);
+    setIsSavingLeaseInfo(true);
     try {
-      // Extract database fields only
-      const dbFields = extractDatabaseFields(leaseFormValues, [
+      const validatedValues = validateFormValues(leaseFormValues, [
         'loi_status', 'lease_status'
       ]);
       
       const { error } = await supabase
         .from('real_estate_pipeline')
-        .update(dbFields)
+        .update(validatedValues)
         .eq('id', parseInt(id));
       
       if (error) {
@@ -444,39 +393,38 @@ const PropertyDetail: React.FC = () => {
         return;
       }
       
-      updateUIState('isEditingLeaseInfo', false);
+      setIsEditingLeaseInfo(false);
       toast.success('Lease information saved successfully');
       refetch();
     } catch (error) {
       console.error('Error saving lease info:', error);
       toast.error('Failed to save lease information');
     } finally {
-      updateUIState('isSavingLeaseInfo', false);
+      setIsSavingLeaseInfo(false);
     }
   };
 
-  // Helper function to extract and validate database fields from form values
-  const extractDatabaseFields = <T extends Record<string, any>>(values: T, fields: string[]): Record<string, any> => {
-    const dbFields: Record<string, any> = {};
+  const validateFormValues = (values: Partial<RealEstateProperty>, fields: (keyof RealEstateProperty)[]): Partial<RealEstateProperty> => {
+    const validated: Partial<RealEstateProperty> = {};
     
     for (const key of fields) {
       if (key in values) {
-        const value = values[key as keyof T];
+        const value = values[key];
         
         if (key === 'ahj_zoning_confirmation' || key === 'fire_sprinklers' || key === 'fiber') {
-          dbFields[key] = (value === 'true' || value === 'false' || value === 'unknown') ? 
+          validated[key] = (value === 'true' || value === 'false' || value === 'unknown') ? 
             value as BooleanStatus : null;
         } 
         else if (key === 'survey_status') {
-          dbFields[key] = (value === 'complete' || value === 'pending' || value === 'unknown') ? 
+          validated[key] = (value === 'complete' || value === 'pending' || value === 'unknown') ? 
             value as SurveyStatus : null;
         } 
         else if (key === 'test_fit_status') {
-          dbFields[key] = (value === 'unknown' || value === 'pending' || value === 'complete') ? 
+          validated[key] = (value === 'unknown' || value === 'pending' || value === 'complete') ? 
             value as TestFitStatus : null;
         } 
         else if (key === 'loi_status' || key === 'lease_status') {
-          dbFields[key] = (value === 'pending' || value === 'sent' || value === 'signed') ? 
+          validated[key] = (value === 'pending' || value === 'sent' || value === 'signed') ? 
             value as LeaseStatus : null;
         } 
         else if (key === 'phase') {
@@ -487,19 +435,19 @@ const PropertyDetail: React.FC = () => {
               'Hold', 'Deprioritize'
             ];
             
-            dbFields[key] = propertyPhases.includes(value as PropertyPhase) ? 
+            validated[key] = propertyPhases.includes(value as PropertyPhase) ? 
               value as PropertyPhase : null;
           } else {
-            dbFields[key] = null;
+            validated[key] = null;
           }
         } 
         else {
-          dbFields[key] = value;
+          validated[key as keyof RealEstateProperty] = value;
         }
       }
     }
     
-    return dbFields;
+    return validated;
   };
 
   if (isLoading) {
@@ -533,8 +481,8 @@ const PropertyDetail: React.FC = () => {
 
             <PropertyBasicInfo 
               property={property}
-              isEditing={uiState.isEditingPropertyInfo}
-              isSaving={uiState.isSavingPropertyInfo}
+              isEditing={isEditingPropertyInfo}
+              isSaving={isSavingPropertyInfo}
               formValues={propertyFormValues}
               onEdit={handleEditPropertyInfo}
               onCancel={handleCancelEditPropertyInfo}
@@ -545,8 +493,8 @@ const PropertyDetail: React.FC = () => {
 
             <PropertyStatusInfo 
               property={property}
-              isEditing={uiState.isEditingStatusInfo}
-              isSaving={uiState.isSavingStatusInfo}
+              isEditing={isEditingStatusInfo}
+              isSaving={isSavingStatusInfo}
               formValues={statusFormValues}
               onEdit={handleEditStatusInfo}
               onCancel={handleCancelEditStatusInfo}
@@ -556,9 +504,9 @@ const PropertyDetail: React.FC = () => {
 
             <PropertyNotes 
               property={property}
-              isEditing={uiState.isEditingNotes}
-              isSaving={uiState.isSavingNotes}
-              notesValue={uiState.notesValue}
+              isEditing={isEditingNotes}
+              isSaving={isSavingNotes}
+              notesValue={notesValue}
               onEdit={handleEditNotes}
               onCancel={handleCancelEditNotes}
               onSave={handleSaveNotes}
@@ -571,8 +519,8 @@ const PropertyDetail: React.FC = () => {
           <div className="space-y-6">
             <PropertyContactInfo 
               property={property}
-              isEditing={uiState.isEditingContactInfo}
-              isSaving={uiState.isSavingContactInfo}
+              isEditing={isEditingContactInfo}
+              isSaving={isSavingContactInfo}
               formValues={contactFormValues}
               onEdit={handleEditContactInfo}
               onCancel={handleCancelEditContactInfo}
@@ -582,14 +530,14 @@ const PropertyDetail: React.FC = () => {
 
             <PropertyDocuments 
               propertyId={property.id}
-              fileRefreshKey={uiState.fileRefreshKey}
+              fileRefreshKey={fileRefreshKey}
               onUploadComplete={handleFileUploadComplete}
             />
 
             <PropertyLeaseInfo 
               property={property}
-              isEditing={uiState.isEditingLeaseInfo}
-              isSaving={uiState.isSavingLeaseInfo}
+              isEditing={isEditingLeaseInfo}
+              isSaving={isSavingLeaseInfo}
               formValues={leaseFormValues}
               onEdit={handleEditLeaseInfo}
               onCancel={handleCancelEditLeaseInfo}
