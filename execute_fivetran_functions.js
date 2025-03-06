@@ -1,19 +1,14 @@
 // Script to execute the Fivetran-compatible SQL functions
 import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
-import 'dotenv/config';
+// import 'dotenv/config';
 
 // Get the SQL script content
 const sqlScript = fs.readFileSync('./create_fivetran_compatible_functions.sql', 'utf8');
 
-// Create a Supabase client with admin privileges using environment variables
-const supabaseUrl = process.env.SUPABASE_URL || 'https://pudncilureqpzxrxfupr.supabase.co';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!supabaseKey) {
-  console.error('SUPABASE_SERVICE_ROLE_KEY environment variable is required');
-  process.exit(1);
-}
+// Create a Supabase client with admin privileges
+const supabaseUrl = 'https://pudncilureqpzxrxfupr.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1ZG5jaWx1cmVxcHp4cnhmdXByIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MTEyMzU1NSwiZXhwIjoyMDU2Njk5NTU1fQ.iqKJG8oVO_APMtp2B9gLZ8wIf7Xc4LuM_Qmfz5_WiZs';
 
 const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {

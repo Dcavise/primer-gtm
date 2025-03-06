@@ -1,7 +1,7 @@
 // Script to execute the Fivetran views SQL using Supabase admin client
 import fs from 'fs';
 import { createClient } from '@supabase/supabase-js';
-import 'dotenv/config';
+// import 'dotenv/config';
 
 // Get the SQL script content
 const sqlScript = fs.readFileSync('./create_fivetran_views.sql', 'utf8');
