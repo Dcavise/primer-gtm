@@ -33,7 +33,10 @@ const PropertyDetail: React.FC = () => {
   const { data: property, isLoading, error, refetch } = useQuery({
     queryKey: ['property', id],
     queryFn: async (): Promise<RealEstateProperty | null> => {
-      if (!id) return null;
+      if (!id) {
+        console.error('No property ID provided');
+        return null;
+      }
       
       console.log('Fetching property with id:', id);
       
@@ -63,11 +66,14 @@ const PropertyDetail: React.FC = () => {
         
         console.log('Found property:', data);
         return data;
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error during property fetch:', error);
+        toast.error(`Error loading property: ${error.message}`);
         return null;
       }
-    }
+    },
+    retry: 1, // Only retry once to avoid too many requests
+    retryDelay: 1000 // Wait 1 second before retrying
   });
 
   useEffect(() => {

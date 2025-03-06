@@ -27,8 +27,11 @@ const PropertyNotFound: React.FC = () => {
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Pipeline
         </Button>
         <div className="flex flex-col items-center justify-center h-[50vh]">
-          <div className="text-destructive mb-2">Error loading property details</div>
-          <div className="text-sm text-muted-foreground">The property could not be found</div>
+          <div className="text-destructive mb-4 text-xl">Property Not Found</div>
+          <div className="text-sm text-muted-foreground mb-6">The requested property could not be found or may have been deleted</div>
+          <Button variant="default" onClick={handleBackClick}>
+            Return to Pipeline
+          </Button>
         </div>
       </main>
     </div>
