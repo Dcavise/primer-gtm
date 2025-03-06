@@ -14,15 +14,15 @@ export interface RealEstateProperty {
   ll_poc: string | null; // Landlord point of contact
   ll_phone: string | null;
   ll_email: string | null;
-  ahj_zoning_confirmation: string | null;
+  ahj_zoning_confirmation: "true" | "false" | "unknown" | null;
   ahj_building_records: string | null;
-  survey_status: string | null;
-  test_fit_status: string | null;
-  loi_status: string | null;
-  lease_status: string | null;
+  survey_status: "complete" | "pending" | "unknown" | null;
+  test_fit_status: "unknown" | "pending" | "complete" | null;
+  loi_status: "pending" | "sent" | "signed" | null;
+  lease_status: "pending" | "sent" | "signed" | null;
   status_notes: string | null;
-  fire_sprinklers: string | null;
-  fiber: string | null;
+  fire_sprinklers: "true" | "false" | "unknown" | null;
+  fiber: "true" | "false" | "unknown" | null;
 }
 
 // This precisely matches the enum defined in Supabase

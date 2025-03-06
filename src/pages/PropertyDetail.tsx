@@ -134,12 +134,30 @@ const PropertyDetail: React.FC = () => {
 
   const handlePropertyInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setPropertyFormValues(prev => ({ ...prev, [name]: value }));
+    
+    if (name === 'fire_sprinklers' || name === 'fiber') {
+      const validValue = (value === 'true' || value === 'false' || value === 'unknown') ? value : null;
+      setPropertyFormValues(prev => ({ ...prev, [name]: validValue }));
+    } else {
+      setPropertyFormValues(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleStatusInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setStatusFormValues(prev => ({ ...prev, [name]: value }));
+    
+    if (name === 'ahj_zoning_confirmation') {
+      const validValue = (value === 'true' || value === 'false' || value === 'unknown') ? value : null;
+      setStatusFormValues(prev => ({ ...prev, [name]: validValue }));
+    } else if (name === 'survey_status') {
+      const validValue = (value === 'complete' || value === 'pending' || value === 'unknown') ? value : null;
+      setStatusFormValues(prev => ({ ...prev, [name]: validValue }));
+    } else if (name === 'test_fit_status') {
+      const validValue = (value === 'unknown' || value === 'pending' || value === 'complete') ? value : null;
+      setStatusFormValues(prev => ({ ...prev, [name]: validValue }));
+    } else {
+      setStatusFormValues(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleContactInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -149,7 +167,13 @@ const PropertyDetail: React.FC = () => {
 
   const handleLeaseInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setLeaseFormValues(prev => ({ ...prev, [name]: value }));
+    
+    if (name === 'loi_status' || name === 'lease_status') {
+      const validValue = (value === 'pending' || value === 'sent' || value === 'signed') ? value : null;
+      setLeaseFormValues(prev => ({ ...prev, [name]: validValue }));
+    } else {
+      setLeaseFormValues(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -220,9 +244,13 @@ const PropertyDetail: React.FC = () => {
     
     setIsSavingPropertyInfo(true);
     try {
+      const validatedValues = validateFormValues(propertyFormValues, [
+        'phase', 'sf_available', 'zoning', 'permitted_use', 'parking', 'fire_sprinklers', 'fiber'
+      ]);
+      
       const { error } = await supabase
         .from('real_estate_pipeline')
-        .update(propertyFormValues)
+        .update(validatedValues)
         .eq('id', parseInt(id));
       
       if (error) {
@@ -263,9 +291,13 @@ const PropertyDetail: React.FC = () => {
     
     setIsSavingStatusInfo(true);
     try {
+      const validatedValues = validateFormValues(statusFormValues, [
+        'ahj_zoning_confirmation', 'ahj_building_records', 'survey_status', 'test_fit_status'
+      ]);
+      
       const { error } = await supabase
         .from('real_estate_pipeline')
-        .update(statusFormValues)
+        .update(validatedValues)
         .eq('id', parseInt(id));
       
       if (error) {
@@ -346,9 +378,13 @@ const PropertyDetail: React.FC = () => {
     
     setIsSavingLeaseInfo(true);
     try {
+      const validatedValues = validateFormValues(leaseFormValues, [
+        'loi_status', 'lease_status'
+      ]);
+      
       const { error } = await supabase
         .from('real_estate_pipeline')
-        .update(leaseFormValues)
+        .update(validatedValues)
         .eq('id', parseInt(id));
       
       if (error) {
@@ -366,6 +402,31 @@ const PropertyDetail: React.FC = () => {
     } finally {
       setIsSavingLeaseInfo(false);
     }
+  };
+
+  const validateFormValues = (values: Partial<RealEstateProperty>, fields: string[]): Partial<RealEstateProperty> => {
+    const validated: Partial<RealEstateProperty> = {};
+    
+    for (const key of fields) {
+      if (key in values) {
+        const value = values[key as keyof Partial<RealEstateProperty>];
+        
+        if (key === 'ahj_zoning_confirmation' || key === 'fire_sprinklers' || key === 'fiber') {
+          validated[key as keyof Partial<RealEstateProperty>] = 
+            (value === 'true' || value === 'false' || value === 'unknown') ? value : null;
+        } else if (key === 'survey_status' || key === 'test_fit_status') {
+          validated[key as keyof Partial<RealEstateProperty>] = 
+            (value === 'complete' || value === 'pending' || value === 'unknown') ? value : null;
+        } else if (key === 'loi_status' || key === 'lease_status') {
+          validated[key as keyof Partial<RealEstateProperty>] = 
+            (value === 'pending' || value === 'sent' || value === 'signed') ? value : null;
+        } else {
+          validated[key as keyof Partial<RealEstateProperty>] = value;
+        }
+      }
+    }
+    
+    return validated;
   };
 
   if (isLoading) {

@@ -32,8 +32,8 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
   // Individual field edit states
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
-  // Update type to include string, null, and number
-  const [fieldValues, setFieldValues] = useState<Record<string, string | null | number>>({});
+  // Update type to string | null to match our form inputs
+  const [fieldValues, setFieldValues] = useState<Record<string, string | null>>({});
 
   // Initialize field values when property changes
   React.useEffect(() => {
@@ -72,9 +72,19 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
     setSavingFields(prev => ({ ...prev, [fieldName]: true }));
     
     try {
+      // Ensure the value matches enum type for specific fields
+      let valueToSave = fieldValues[fieldName];
+      
+      // For enum fields, make sure the value is valid
+      if (fieldName === 'loi_status' || fieldName === 'lease_status') {
+        valueToSave = (valueToSave === 'pending' || valueToSave === 'sent' || valueToSave === 'signed') 
+          ? valueToSave 
+          : null;
+      }
+      
       const { error } = await supabase
         .from('real_estate_pipeline')
-        .update({ [fieldName]: fieldValues[fieldName] })
+        .update({ [fieldName]: valueToSave })
         .eq('id', property.id);
       
       if (error) {
@@ -87,7 +97,7 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
       // Also update the main form values so they stay in sync
       if (onInputChange) {
         const syntheticEvent = {
-          target: { name: fieldName, value: fieldValues[fieldName] }
+          target: { name: fieldName, value: valueToSave }
         } as React.ChangeEvent<HTMLInputElement>;
         onInputChange(syntheticEvent);
       }

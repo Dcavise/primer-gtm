@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Edit, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,8 +32,8 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
   // Individual field edit states
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
-  // Update type to include number and null
-  const [fieldValues, setFieldValues] = useState<Record<string, string | null | number>>({});
+  // Update type to accommodate enum values
+  const [fieldValues, setFieldValues] = useState<Record<string, string | null>>({});
 
   // Initialize field values when property changes
   React.useEffect(() => {
@@ -73,9 +74,27 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
     setSavingFields(prev => ({ ...prev, [fieldName]: true }));
     
     try {
+      // Ensure the value matches enum type for specific fields
+      let valueToSave = fieldValues[fieldName];
+      
+      // For enum fields, make sure the value is valid
+      if (fieldName === 'ahj_zoning_confirmation') {
+        valueToSave = (valueToSave === 'true' || valueToSave === 'false' || valueToSave === 'unknown') 
+          ? valueToSave 
+          : null;
+      } else if (fieldName === 'survey_status') {
+        valueToSave = (valueToSave === 'complete' || valueToSave === 'pending' || valueToSave === 'unknown')
+          ? valueToSave
+          : null;
+      } else if (fieldName === 'test_fit_status') {
+        valueToSave = (valueToSave === 'unknown' || valueToSave === 'pending' || valueToSave === 'complete')
+          ? valueToSave
+          : null;
+      }
+      
       const { error } = await supabase
         .from('real_estate_pipeline')
-        .update({ [fieldName]: fieldValues[fieldName] })
+        .update({ [fieldName]: valueToSave })
         .eq('id', property.id);
       
       if (error) {
@@ -88,7 +107,7 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
       // Also update the main form values so they stay in sync
       if (onInputChange) {
         const syntheticEvent = {
-          target: { name: fieldName, value: fieldValues[fieldName] }
+          target: { name: fieldName, value: valueToSave }
         } as React.ChangeEvent<HTMLInputElement>;
         onInputChange(syntheticEvent);
       }
