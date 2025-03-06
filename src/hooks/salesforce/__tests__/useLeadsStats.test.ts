@@ -39,9 +39,14 @@ describe('fetchLeadsStats', () => {
       { week: '2023-01-22', lead_count: 7 }
     ];
     
-    mockSupabase.rpc.mockResolvedValueOnce({
-      data: mockWeeklyData,
-      error: null
+    mockSupabase.rpc.mockImplementationOnce(() => {
+      return {
+        ...mockSupabase,
+        then: (callback: any) => Promise.resolve(callback({ 
+          data: mockWeeklyData, 
+          error: null 
+        }))
+      };
     });
     
     const result = await fetchLeadsStats([], mockHandleError);
@@ -62,14 +67,19 @@ describe('fetchLeadsStats', () => {
     });
     
     // Mock RPC call
-    mockSupabase.rpc.mockResolvedValueOnce({
-      data: [
-        { week: '2023-01-01', lead_count: 3 },
-        { week: '2023-01-08', lead_count: 4 },
-        { week: '2023-01-15', lead_count: 5 },
-        { week: '2023-01-22', lead_count: 3 }
-      ],
-      error: null
+    mockSupabase.rpc.mockImplementationOnce(() => {
+      return {
+        ...mockSupabase,
+        then: (callback: any) => Promise.resolve(callback({ 
+          data: [
+            { week: '2023-01-01', lead_count: 3 },
+            { week: '2023-01-08', lead_count: 4 },
+            { week: '2023-01-15', lead_count: 5 },
+            { week: '2023-01-22', lead_count: 3 }
+          ], 
+          error: null 
+        }))
+      };
     });
     
     const result = await fetchLeadsStats(campusIds, mockHandleError);
@@ -91,9 +101,14 @@ describe('fetchLeadsStats', () => {
     });
     
     // Mock RPC error for the first call
-    mockSupabase.rpc.mockResolvedValueOnce({
-      data: null,
-      error: new Error('RPC error')
+    mockSupabase.rpc.mockImplementationOnce(() => {
+      return {
+        ...mockSupabase,
+        then: (callback: any) => Promise.resolve(callback({ 
+          data: null, 
+          error: new Error('RPC error') 
+        }))
+      };
     });
     
     // Mock direct query success via second RPC call
@@ -103,16 +118,21 @@ describe('fetchLeadsStats', () => {
       { created_date: '2023-01-15T00:00:00Z' }
     ];
     
-    mockSupabase.rpc.mockResolvedValueOnce({
-      data: mockFallbackData,
-      error: null
+    mockSupabase.rpc.mockImplementationOnce(() => {
+      return {
+        ...mockSupabase,
+        then: (callback: any) => Promise.resolve(callback({ 
+          data: mockFallbackData, 
+          error: null 
+        }))
+      };
     });
     
     const result = await fetchLeadsStats([], mockHandleError);
     
-    // The second RPC call should be for execute_sql_query
+    // The second RPC call should be for query_salesforce_lead
     expect(mockSupabase.rpc).toHaveBeenCalledTimes(2);
-    expect(mockSupabase.rpc).toHaveBeenNthCalledWith(2, 'execute_sql_query', expect.anything());
+    expect(mockSupabase.rpc).toHaveBeenNthCalledWith(2, 'query_salesforce_lead', expect.anything());
     
     // Should have weekly data
     expect(result.weeklyLeadCounts.length).toBeGreaterThan(0);
@@ -128,15 +148,25 @@ describe('fetchLeadsStats', () => {
     const mockError = new Error('API error');
     
     // First RPC call fails
-    mockSupabase.rpc.mockResolvedValueOnce({
-      data: null,
-      error: mockError
+    mockSupabase.rpc.mockImplementationOnce(() => {
+      return {
+        ...mockSupabase,
+        then: (callback: any) => Promise.resolve(callback({ 
+          data: null, 
+          error: mockError 
+        }))
+      };
     });
     
     // Second RPC call also fails
-    mockSupabase.rpc.mockResolvedValueOnce({
-      data: null,
-      error: new Error('Second API error')
+    mockSupabase.rpc.mockImplementationOnce(() => {
+      return {
+        ...mockSupabase,
+        then: (callback: any) => Promise.resolve(callback({ 
+          data: null, 
+          error: new Error('Second API error') 
+        }))
+      };
     });
     
     await fetchLeadsStats([], mockHandleError);
@@ -154,15 +184,25 @@ describe('fetchLeadsStats', () => {
     const mockError = new Error('API error');
     
     // First RPC call fails
-    mockSupabase.rpc.mockResolvedValueOnce({
-      data: null,
-      error: mockError
+    mockSupabase.rpc.mockImplementationOnce(() => {
+      return {
+        ...mockSupabase,
+        then: (callback: any) => Promise.resolve(callback({ 
+          data: null, 
+          error: mockError 
+        }))
+      };
     });
     
     // Second RPC call also fails
-    mockSupabase.rpc.mockResolvedValueOnce({
-      data: null,
-      error: new Error('Second API error')
+    mockSupabase.rpc.mockImplementationOnce(() => {
+      return {
+        ...mockSupabase,
+        then: (callback: any) => Promise.resolve(callback({ 
+          data: null, 
+          error: new Error('Second API error') 
+        }))
+      };
     });
     
     const result = await fetchLeadsStats([], mockHandleError);

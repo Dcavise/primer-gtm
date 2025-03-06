@@ -74,8 +74,9 @@ export const fetchLeadsStats = async (
           AND is_deleted = false
         `;
         
+        // Using custom query_salesforce_lead RPC function which has permission to access salesforce schema
         const { data: directData, error: directError } = await supabase.rpc(
-          'execute_sql_query',
+          'query_salesforce_lead',
           { sql_query: sqlQuery }
         );
           
