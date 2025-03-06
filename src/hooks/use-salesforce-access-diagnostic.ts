@@ -73,7 +73,7 @@ export const useSalesforceAccessDiagnostic = () => {
       
       const diagnosticResults: DiagnosticResult = {
         connectionSuccess: schemaResults.success || simpleQueryResults.success,
-        salesforceAccess: schemaResults.salesforceAccessible,
+        salesforceAccess: schemaResults.salesforceTablesAccessible, // Updated to check for salesforce tables in public schema
         publicAccess: schemaResults.schemas?.public?.accessible || simpleQueryResults.success,
         availableSchemas,
         availableFunctions,

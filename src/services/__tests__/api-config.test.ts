@@ -1,6 +1,5 @@
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getApiKey } from '@/services/api-config';
+import { getApiKey } from '@/lib/serverComms';
 
 // Mock the Supabase client
 vi.mock('@/integrations/supabase/client', () => ({

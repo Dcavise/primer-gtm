@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Navbar } from "@/components/Navbar";
 import { 
@@ -24,12 +23,13 @@ import {
   LinkedinIcon,
   Twitter
 } from "lucide-react";
-import { 
-  searchContactsByDomain, 
-  findEmailByName,
-  HunterContact, 
-  EmailFinderResponse 
-} from "@/services/contacts-api";
+import {
+  HunterContact,
+  HunterDomainResponse,
+  EmailFinderResponse,
+  searchContactsByDomain,
+  findEmailByName
+} from "@/lib/serverComms";
 import { LoadingState } from "@/components/LoadingState";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";

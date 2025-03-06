@@ -1,8 +1,8 @@
-
 import React, { useEffect, useState } from 'react';
-import { getApiKey } from '@/services/api-config';
+import { getApiKey } from '@/lib/serverComms';
 import { LoadingState } from './LoadingState';
 import { MapPin, AlertCircle } from 'lucide-react';
+import { getGoogleMapsUrl, getGoogleMapsEmbedUrl } from '@/utils/mapUtils';
 
 interface MapEmbedProps {
   address: string;
@@ -51,7 +51,7 @@ const MapEmbed: React.FC<MapEmbedProps> = ({ address }) => {
         <div className="mt-2 flex items-center justify-center text-primary">
           <MapPin className="h-5 w-5 mr-2" />
           <a 
-            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`} 
+            href={getGoogleMapsUrl(address)} 
             target="_blank" 
             rel="noopener noreferrer"
             className="text-primary hover:underline"
@@ -64,8 +64,7 @@ const MapEmbed: React.FC<MapEmbedProps> = ({ address }) => {
   }
 
   // Create the Google Maps embed URL with the address
-  const encodedAddress = encodeURIComponent(address);
-  const mapUrl = `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodedAddress}&zoom=14`;
+  const mapUrl = getGoogleMapsEmbedUrl(address, apiKey);
 
   return (
     <>
@@ -81,7 +80,7 @@ const MapEmbed: React.FC<MapEmbedProps> = ({ address }) => {
       ></iframe>
       <div className="mt-2 text-sm text-slate-500 flex justify-end">
         <a 
-          href={`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`} 
+          href={getGoogleMapsUrl(address)}
           target="_blank" 
           rel="noopener noreferrer"
           className="hover:underline flex items-center"

@@ -1,4 +1,3 @@
-
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
@@ -13,6 +12,7 @@ import PropertyDetail from './pages/PropertyDetail.tsx'
 import NotFound from './pages/NotFound.tsx'
 import Auth from './pages/Auth.tsx'
 import ProtectedRoute from './components/ProtectedRoute.tsx'
+import SalesforceMetrics from './pages/SalesforceMetrics'
 
 const router = createBrowserRouter([
   {
@@ -34,6 +34,10 @@ const router = createBrowserRouter([
       {
         path: "salesforce-leads",
         element: <ProtectedRoute><SalesforceLeadsPage /></ProtectedRoute>
+      },
+      {
+        path: "salesforce-metrics",
+        element: <ProtectedRoute><SalesforceMetrics /></ProtectedRoute>
       },
       {
         path: "find-contacts",

@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from 'react';
 import { useStats } from './salesforce/useStats';
 import { useCampuses } from './salesforce/useCampuses';
 import { useSyncSalesforce } from './salesforce/useSyncSalesforce';
 import { useMetrics } from './salesforce/useMetrics';
-import { supabase, checkDatabaseConnection } from '@/integrations/supabase/client';
-import { SUPABASE_URL } from '@/services/api-config';
+import { supabase } from '@/integrations/supabase/client';
+import { SUPABASE_URL, checkDatabaseConnection } from '@/lib/serverComms';
 import { 
   SummaryStats, 
   Campus, 

@@ -1,5 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
+import { supabaseAdmin, checkSalesforceAccess } from '@/integrations/supabase/admin-client';
 import { logger } from '@/utils/logger';
 
 // =============================================
@@ -8,18 +8,34 @@ import { logger } from '@/utils/logger';
 export const testConnection = async () => {
   try {
     logger.info('Testing connection to Salesforce schema');
-    const { data, error } = await supabase.rpc('test_salesforce_connection');
     
-    if (error) {
-      logger.error('Connection test failed:', error);
-      return { success: false, error };
+    // First try with regular client
+    const regularTest = await supabase.rpc('test_salesforce_connection');
+    
+    // If regular access fails, try with admin client
+    if (regularTest.error) {
+      logger.info('Regular client access failed, trying with admin client');
+      const adminTest = await checkSalesforceAccess();
+      
+      if (!adminTest.success) {
+        logger.error('Admin client access also failed:', adminTest.error);
+        return { success: false, error: adminTest.error };
+      }
+      
+      return { 
+        success: true, 
+        data: { salesforce_schema_access: adminTest.salesforceAccess },
+        canAccessSalesforce: adminTest.salesforceAccess,
+        usingAdminClient: true
+      };
     }
     
-    logger.info('Connection test results:', data);
+    logger.info('Connection test results:', regularTest.data);
     return { 
       success: true, 
-      data,
-      canAccessSalesforce: data?.salesforce_schema_access 
+      data: regularTest.data,
+      canAccessSalesforce: regularTest.data?.salesforce_schema_access,
+      usingAdminClient: false
     };
   } catch (err) {
     logger.error('Error testing connection:', err);
@@ -116,18 +132,18 @@ export const getWeekOverWeekComparison = async (campusId = null) => {
 };
 
 // =============================================
-// 3. Access Salesforce Tables Directly (Via RPC Functions)
+// 3. Access Salesforce Tables Directly (now in public schema)
 // =============================================
 
-// Use RPC functions instead of direct table access
+// Access salesforce tables (now in public schema)
 export const getSalesforceContacts = async (limit = 10) => {
   try {
     logger.info(`Fetching salesforce contacts with limit: ${limit}`);
-    // Using an RPC function to access salesforce data
-    const { data, error } = await supabase.rpc('query_salesforce_table', {
-      table_name: 'contact',
-      limit_count: limit
-    });
+    // Direct access to contact table in public schema
+    const { data, error } = await supabase
+      .from('contact')
+      .select('*')
+      .limit(limit);
     
     if (error) {
       logger.error('Error fetching salesforce contacts:', error);
@@ -142,20 +158,20 @@ export const getSalesforceContacts = async (limit = 10) => {
 };
 
 // =============================================
-// 4. Use helper functions for raw salesforce table access
+// 4. Access Salesforce tables in public schema
 // =============================================
 
 export const querySalesforceTable = async (tableName, limit = 100) => {
   try {
     logger.info(`Querying salesforce table ${tableName} with limit ${limit}`);
-    // Using the helper function to access salesforce data
-    const { data, error } = await supabase.rpc('query_salesforce_table', { 
-      table_name: tableName,
-      limit_count: limit
-    });
+    // Direct access to tables in public schema
+    const { data, error } = await supabase
+      .from(tableName)
+      .select('*')
+      .limit(limit);
     
     if (error) {
-      logger.error(`Error querying salesforce.${tableName}:`, error);
+      logger.error(`Error querying table ${tableName}:`, error);
       return { success: false, error };
     }
     
@@ -189,9 +205,10 @@ interface SchemaResults {
 interface TroubleshootResult {
   success: boolean;
   schemas?: SchemaResults;
-  salesforceAccessible?: boolean;
+  salesforceTablesAccessible?: boolean; // Changed to check for tables in public schema
   step?: string;
   error?: any;
+  usingAdminClient: boolean;
 }
 
 export const troubleshootSchemaAccess = async (): Promise<TroubleshootResult> => {
@@ -203,17 +220,20 @@ export const troubleshootSchemaAccess = async (): Promise<TroubleshootResult> =>
 
   if (!connectionTest.success) {
     logger.error("Basic connection failed. Check your Supabase URL and key.");
-    return { success: false, step: 'connection', error: connectionTest.error };
+    return { success: false, step: 'connection', error: connectionTest.error, usingAdminClient: connectionTest.usingAdminClient };
   }
 
-  // 2. Check schema access
+  // 2. Check schema access using the appropriate client
   try {
-    const { data, error } = await supabase.rpc('check_schema_access');
+    // Use admin client if we discovered we need it
+    const client = connectionTest.usingAdminClient ? supabaseAdmin : supabase;
+    
+    const { data, error } = await client.rpc('check_schema_access');
     logger.info("2. Schema access check:", { data, error });
     
     if (error) {
       logger.error("Schema access check failed:", error);
-      return { success: false, step: 'schema_access', error };
+      return { success: false, step: 'schema_access', error, usingAdminClient: connectionTest.usingAdminClient };
     } else {
       // Analyze which schemas and tables we can access
       const schemaResults: SchemaResults = {};
@@ -228,15 +248,24 @@ export const troubleshootSchemaAccess = async (): Promise<TroubleshootResult> =>
         });
       }
       
+      // Check for salesforce tables in public schema
+      const publicTables = schemaResults?.public?.tables || [];
+      const salesforceTables = ['lead', 'contact', 'opportunity'].filter(table => 
+        publicTables.includes(table)
+      );
+      
+      logger.info(`Salesforce tables in public schema: ${salesforceTables.join(', ')}`);
+      
       return { 
         success: true, 
         schemas: schemaResults,
-        salesforceAccessible: schemaResults?.salesforce?.accessible || false
+        salesforceTablesAccessible: salesforceTables.length > 0,
+        usingAdminClient: connectionTest.usingAdminClient
       };
     }
   } catch (err) {
     logger.error("Error checking schema access:", err);
-    return { success: false, step: 'schema_access', error: err };
+    return { success: false, step: 'schema_access', error: err, usingAdminClient: connectionTest.usingAdminClient };
   }
 };
 
