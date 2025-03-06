@@ -616,6 +616,12 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_campus_id_from_name: {
+        Args: {
+          p_preferred_campus: string
+        }
+        Returns: string
+      }
       get_weekly_lead_counts: {
         Args: {
           start_date: string
