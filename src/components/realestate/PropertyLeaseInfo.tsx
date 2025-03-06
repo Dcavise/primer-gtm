@@ -44,6 +44,7 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
       loi_status: property.loi_status || null,
       lease_status: property.lease_status || null,
     },
+    tableName: 'real_estate_pipeline',
     onFieldSaved: (fieldName, value) => {
       // Sync the value with the parent component's form state
       const event = {

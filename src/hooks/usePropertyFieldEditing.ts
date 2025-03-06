@@ -23,13 +23,15 @@ interface UsePropertyFieldEditingProps {
   initialValues: FieldValues;
   onFieldSaved?: (fieldName: string, value: any) => void;
   validateField?: (fieldName: string, value: any) => any;
+  tableName?: string;
 }
 
 export const usePropertyFieldEditing = ({
   property,
   initialValues,
   onFieldSaved,
-  validateField
+  validateField,
+  tableName = 'real_estate_pipeline'
 }: UsePropertyFieldEditingProps): FieldEditingState => {
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
@@ -78,9 +80,9 @@ export const usePropertyFieldEditing = ({
         valueToSave = validateField(fieldName, valueToSave);
       }
       
-      // Use "real_estate_pipeline" as a literal string instead of the tableName parameter
+      // Cast tableName as a literal type to satisfy TypeScript
       const { error } = await supabase
-        .from("real_estate_pipeline")
+        .from(tableName as 'real_estate_pipeline')
         .update({ [fieldName]: valueToSave })
         .eq('id', property.id);
       

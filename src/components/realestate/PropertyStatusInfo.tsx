@@ -51,6 +51,7 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
       survey_status: property.survey_status,
       test_fit_status: property.test_fit_status,
     },
+    tableName: 'real_estate_pipeline',
     onFieldSaved: (fieldName, value) => {
       // Sync the value with the parent component's form state
       const event = {
