@@ -23,6 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { supabaseAdmin } from '@/integrations/supabase/admin-client';
 import { testSalesforceConnection } from '@/utils/test-salesforce';
 import { toast } from '@/hooks/use-toast';
+import { logger } from '@/utils/logger';
 
 interface Lead {
   id: string;
@@ -108,40 +109,98 @@ export const LeadsDataTable: React.FC<LeadsDataTableProps> = ({ selectedCampus }
       setUsingAdminClient(testResults.usingAdminClient);
       const client = testResults.usingAdminClient ? supabaseAdmin : supabase;
       
-      // Query leads from Salesforce
-      const { data, error } = await client.rpc('query_salesforce_table', {
-        table_name: 'lead',
-        limit_count: 100 // Get more leads for client-side filtering
-      });
-      
-      if (error) {
-        console.error('Error fetching leads:', error);
-        setError(`Error fetching leads: ${error.message}`);
-        setLoading(false);
-        toast({
-          title: "Data Error",
-          description: "Could not fetch leads data",
-          variant: "destructive"
+      // Try to query leads from Salesforce using RPC
+      try {
+        const { data, error } = await client.rpc('query_salesforce_table', {
+          table_name: 'lead',
+          limit_count: 100 // Get more leads for client-side filtering
         });
-        return;
-      }
-      
-      if (Array.isArray(data)) {
-        setLeads(data);
-        setFilteredLeads(data);
-        setTotalPages(Math.max(1, Math.ceil(data.length / itemsPerPage)));
         
-        toast({
-          title: "Data Loaded",
-          description: `Successfully loaded ${data.length} leads`,
-          variant: "default"
-        });
-      } else {
-        setLeads([]);
-        setFilteredLeads([]);
-        setTotalPages(1);
-        setError('No leads data returned');
+        if (error) {
+          throw error;
+        }
+        
+        if (Array.isArray(data)) {
+          setLeads(data);
+          setFilteredLeads(data);
+          setTotalPages(Math.max(1, Math.ceil(data.length / itemsPerPage)));
+          
+          toast({
+            title: "Data Loaded",
+            description: `Successfully loaded ${data.length} leads`,
+            variant: "default"
+          });
+          return;
+        } else {
+          throw new Error('No leads data returned');
+        }
+      } catch (rpcError) {
+        // If RPC call fails, try a direct query if we're using admin client
+        if (testResults.usingAdminClient) {
+          logger.warn('RPC method failed, trying direct SQL query:', rpcError);
+          
+          try {
+            // First try fivetran_views schema
+            const { data: fivetranData, error: fivetranError } = await supabaseAdmin.rpc('execute_sql_query', {
+              query_text: 'SELECT * FROM fivetran_views.lead LIMIT 100',
+              query_params: []
+            });
+            
+            if (!fivetranError && Array.isArray(fivetranData)) {
+              logger.info('Successfully loaded leads from fivetran_views schema');
+              setLeads(fivetranData);
+              setFilteredLeads(fivetranData);
+              setTotalPages(Math.max(1, Math.ceil(fivetranData.length / itemsPerPage)));
+              
+              toast({
+                title: "Data Loaded",
+                description: `Successfully loaded ${fivetranData.length} leads from fivetran_views`,
+                variant: "default"
+              });
+              return;
+            }
+            
+            // If fivetran_views fails, try public schema
+            logger.warn('Failed to load from fivetran_views, trying public schema:', fivetranError);
+            const { data: publicData, error: publicError } = await supabaseAdmin.rpc('execute_sql_query', {
+              query_text: 'SELECT * FROM public.lead LIMIT 100',
+              query_params: []
+            });
+            
+            if (publicError) {
+              throw publicError;
+            }
+            
+            if (Array.isArray(publicData)) {
+              logger.info('Successfully loaded leads from public schema');
+              setLeads(publicData);
+              setFilteredLeads(publicData);
+              setTotalPages(Math.max(1, Math.ceil(publicData.length / itemsPerPage)));
+              
+              toast({
+                title: "Data Loaded",
+                description: `Successfully loaded ${publicData.length} leads from public schema`,
+                variant: "default"
+              });
+              return;
+            }
+          } catch (sqlError) {
+            // Both methods failed, show error
+            logger.error('All query methods failed:', sqlError);
+            throw sqlError;
+          }
+        } else {
+          // Not using admin client, show original error
+          throw rpcError;
+        }
       }
+      
+      // If we reach here, both methods failed or returned no data
+      setLeads([]);
+      setFilteredLeads([]);
+      setTotalPages(1);
+      setError('No leads data available');
+      
     } catch (error) {
       console.error('Error in fetchLeads:', error);
       setError(`Error fetching leads: ${error instanceof Error ? error.message : String(error)}`);

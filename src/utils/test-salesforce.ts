@@ -18,115 +18,144 @@ export const testSalesforceConnection = async () => {
   
   try {
     logger.info('Testing Salesforce connection with admin client using direct SQL...');
-    toast({
-      title: "Salesforce Connection",
-      description: "Testing Salesforce connection...",
-      variant: "default"
-    });
     
-    // Check if we can access the salesforce tables in public schema
-    const { data: tableData, error: tableError } = await supabaseAdmin.rpc('execute_sql_query', {
-      query_text: 'SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema = \'public\' AND table_name = \'lead\')',
-      query_params: []
-    });
-    
-    const leadTableExists = tableData && tableData[0] && tableData[0].exists;
-    
-    if (tableError || !leadTableExists) {
-      logger.error('Admin client cannot access lead table in public schema:', tableError || 'Table does not exist');
-      results.adminClient = { 
-        success: false, 
-        error: tableError || new Error('Lead table does not exist in public schema'), 
-        data: null 
+    // First check if the admin client has a valid service key
+    if (!supabaseAdmin.auth.getSession) {
+      logger.error('Admin client is not properly configured. Missing service key.');
+      return {
+        ...results,
+        error: new Error('Admin client is not properly configured')
       };
-    } else {
-      // Lead table exists in public schema
-      const { data: contactData, error: contactError } = await supabaseAdmin.rpc('execute_sql_query', {
-        query_text: 'SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema = \'public\' AND table_name = \'contact\')',
-        query_params: []
+    }
+    
+    // Try a simpler method first - test with a standard RPC function that should exist
+    try {
+      const { data: queryData, error: queryError } = await supabaseAdmin.rpc('query_salesforce_table', {
+        table_name: 'lead',
+        limit_count: 1
       });
       
-      const contactTableExists = contactData && contactData[0] && contactData[0].exists;
-      
-      if (contactError || !contactTableExists) {
-        logger.error('Admin client cannot access contact table in public schema:', contactError || 'Table does not exist');
-        results.adminClient = {
-          success: true,  // Lead table exists but contact table might not
-          error: contactError || new Error('Contact table does not exist in public schema'),
-          data: { leadTableExists: true, contactTableExists: false }
-        };
-      } else {
-        // Successfully accessed lead and contact tables in public schema
-        logger.info('Admin client can access lead and contact tables in public schema');
+      if (!queryError && Array.isArray(queryData)) {
+        // Successfully queried lead table directly via RPC
+        logger.info('Successfully accessed lead table via RPC function');
         results.adminClient = {
           success: true,
           error: null,
-          data: { leadTableExists: true, contactTableExists: true }
+          data: { leadTableAccess: true }
         };
         
         results.salesforceAccess = true;
         results.usingAdminClient = true;
+        results.tables = ['lead']; // At minimum we know lead exists
+        
+        return results;
       }
+    } catch (rpcError) {
+      logger.warn('RPC query_salesforce_table failed, trying alternative methods:', rpcError);
+      // Continue to try other methods
     }
     
-    // 2. Also test the regular client for connection health
-    const { data: publicData, error: publicError } = await supabase
-      .from('campuses')
-      .select('*')
-      .limit(1);
-    
-    if (publicError) {
-      logger.error('Regular client connection failed:', publicError);
-      results.regularClient = { 
-        success: false, 
-        error: publicError, 
-        data: null 
-      };
-    } else {
-      logger.info('Regular client connection successful');
-      results.regularClient = {
-        success: true,
-        error: null,
-        data: publicData
-      };
-    }
-    
-    // 3. If we have access, try to list available salesforce tables in the public schema
-    if (results.salesforceAccess) {
-      // Get salesforce tables in public schema
-      const { data: tablesData, error: tablesError } = await supabaseAdmin.rpc('execute_sql_query', {
-        query_text: 'SELECT table_name FROM information_schema.tables WHERE table_schema = \'public\' AND table_name IN (\'lead\', \'contact\', \'opportunity\', \'account\', \'campaign\') ORDER BY table_name',
+    // Check if we can access the lead table in fivetran_views schema
+    try {
+      const { data: tableData, error: tableError } = await supabaseAdmin.rpc('execute_sql_query', {
+        query_text: 'SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema = \'fivetran_views\' AND table_name = \'lead\')',
         query_params: []
       });
       
-      if (!tablesError && Array.isArray(tablesData)) {
-        results.tables = tablesData.map(row => row.table_name);
-        logger.info(`Found ${results.tables.length} Salesforce tables`);
-      } else {
-        logger.warn('Could not list Salesforce tables:', tablesError);
-      }
+      const leadTableExists = tableData && tableData[0] && tableData[0].exists;
       
-      toast({
-        title: "Salesforce Data Connection",
-        description: "Connection to Salesforce data tables established!",
-        variant: "default"
-      });
-    } else {
-      toast({
-        title: "Salesforce Data Connection",
-        description: "Could not access Salesforce data tables",
-        variant: "destructive"
-      });
+      if (tableError || !leadTableExists) {
+        logger.error('Admin client cannot access lead table in fivetran_views schema:', tableError || 'Table does not exist');
+        
+        // Try public schema as a fallback
+        try {
+          const { data: publicData, error: publicError } = await supabaseAdmin.rpc('execute_sql_query', {
+            query_text: 'SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema = \'public\' AND table_name = \'lead\')',
+            query_params: []
+          });
+          
+          const publicLeadTableExists = publicData && publicData[0] && publicData[0].exists;
+          
+          if (publicError || !publicLeadTableExists) {
+            logger.error('Admin client cannot access lead table in public schema either:', publicError || 'Table does not exist');
+            results.adminClient = { 
+              success: false, 
+              error: tableError || new Error('Lead table does not exist in fivetran_views or public schema'), 
+              data: null 
+            };
+          } else {
+            // Lead table exists in public schema
+            logger.info('Lead table found in public schema');
+            results.adminClient = {
+              success: true,
+              error: null,
+              data: { leadTableExists: true, schema: 'public' }
+            };
+            
+            results.salesforceAccess = true;
+            results.usingAdminClient = true;
+            results.tables = ['lead']; // At minimum we know lead exists
+          }
+        } catch (publicSchemaError) {
+          logger.error('Error checking public schema:', publicSchemaError);
+          results.adminClient = { 
+            success: false, 
+            error: publicSchemaError || new Error('Error checking for lead table in both schemas'), 
+            data: null 
+          };
+        }
+      } else {
+        // Lead table exists in fivetran_views schema
+        logger.info('Lead table found in fivetran_views schema');
+        results.adminClient = {
+          success: true,
+          error: null,
+          data: { leadTableExists: true, schema: 'fivetran_views' }
+        };
+        
+        results.salesforceAccess = true;
+        results.usingAdminClient = true;
+        results.tables = ['lead']; // At minimum we know lead exists
+      }
+    } catch (sqlError) {
+      logger.error('SQL query via execute_sql_query failed:', sqlError);
+      // Continue with regular client test
+    }
+    
+    // 2. Also test the regular client for connection health
+    try {
+      const { data: publicData, error: publicError } = await supabase
+        .from('campuses')
+        .select('*')
+        .limit(1);
+      
+      if (publicError) {
+        logger.error('Regular client connection failed:', publicError);
+        results.regularClient = { 
+          success: false, 
+          error: publicError, 
+          data: null 
+        };
+      } else {
+        logger.info('Regular client connection successful');
+        results.regularClient = {
+          success: true,
+          error: null,
+          data: publicData
+        };
+      }
+    } catch (clientError) {
+      logger.error('Error testing regular client:', clientError);
+      results.regularClient = {
+        success: false,
+        error: clientError,
+        data: null
+      };
     }
     
     return results;
   } catch (error) {
     logger.error('Error testing Salesforce connection:', error);
-    toast({
-      title: "Salesforce Connection",
-      description: "Error testing Salesforce connection",
-      variant: "destructive"
-    });
     return {
       ...results,
       error

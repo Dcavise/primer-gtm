@@ -35,16 +35,16 @@ const SimpleDatabaseTest = () => {
         setPublicTables(publicResult?.tables || []);
       }
 
-      // Check salesforce schema
+      // Check fivetran_views schema
       const { data: salesforceResult, error: salesforceError } = await supabase.rpc('test_schema_exists', {
-        schema_name: 'salesforce'
+        schema_name: 'fivetran_views'
       });
 
       if (salesforceError) {
-        console.error("Salesforce schema check failed:", salesforceError);
+        console.error("Fivetran_views schema check failed:", salesforceError);
         setSalesforceSchemaExists(false);
         if (!publicError) {
-          setError(`Error checking salesforce schema: ${salesforceError.message}`);
+          setError(`Error checking fivetran_views schema: ${salesforceError.message}`);
         }
       } else {
         setSalesforceSchemaExists(salesforceResult?.exists || false);
@@ -267,7 +267,7 @@ const SimpleDatabaseTest = () => {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex justify-between items-center">
-                  <span>Salesforce Schema</span>
+                  <span>Fivetran Views Schema</span>
                   {salesforceSchemaExists === null ? (
                     <AlertCircle className="h-4 w-4 text-muted-foreground" />
                   ) : salesforceSchemaExists ? (
@@ -282,7 +282,7 @@ const SimpleDatabaseTest = () => {
                   <p className="text-muted-foreground">Not checked yet</p>
                 ) : salesforceSchemaExists ? (
                   <div>
-                    <p className="text-green-600 font-medium">Salesforce schema exists</p>
+                    <p className="text-green-600 font-medium">Fivetran Views schema exists</p>
                     {salesforceTables.length > 0 ? (
                       <div className="mt-2">
                         <p className="text-sm font-medium mb-1">Tables ({salesforceTables.length}):</p>
@@ -298,7 +298,7 @@ const SimpleDatabaseTest = () => {
                     )}
                   </div>
                 ) : (
-                  <p className="text-red-600">Salesforce schema not found</p>
+                  <p className="text-red-600">Fivetran Views schema not found</p>
                 )}
               </CardContent>
             </Card>
