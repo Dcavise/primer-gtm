@@ -91,11 +91,22 @@ BEGIN
     RETURN QUERY SELECT * FROM public.get_lead_count_by_week_campus_fivetran(weeks_back);
     RETURN;
   EXCEPTION WHEN OTHERS THEN
-    -- If an error occurs, try the original function
-    RETURN QUERY SELECT * FROM public.get_lead_count_by_week_campus(weeks_back);
+    -- Then try the underscore version
+    BEGIN
+      RETURN QUERY SELECT * FROM public.get_lead_count_by_week_campus(weeks_back);
+      RETURN;
+    EXCEPTION WHEN OTHERS THEN
+      -- Finally try the original function with "and" in the name
+      BEGIN 
+        RETURN QUERY SELECT * FROM public.get_lead_count_by_week_and_campus(weeks_back);
+      EXCEPTION WHEN OTHERS THEN
+        -- If all functions fail, try the simple lead count function
+        RETURN QUERY SELECT * FROM public.get_simple_lead_count_by_week(weeks_back);
+      END;
+    END;
   END;
 END;
-$$;
+$$$;
 
 -- Revoke public access and grant to authenticated and service_role
 REVOKE ALL ON FUNCTION public.get_fallback_lead_count_by_week_campus FROM PUBLIC;
