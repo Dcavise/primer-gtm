@@ -336,106 +336,6 @@ export type Database = {
           },
         ]
       }
-      salesforce_leads: {
-        Row: {
-          campus_id: string | null
-          converted: boolean | null
-          converted_date: string | null
-          converted_opportunity_id: string | null
-          created_date: string | null
-          first_name: string | null
-          id: string
-          last_name: string
-          lead_id: string
-          lead_source: string | null
-          preferred_campus: string | null
-          stage: string | null
-          updated_at: string
-        }
-        Insert: {
-          campus_id?: string | null
-          converted?: boolean | null
-          converted_date?: string | null
-          converted_opportunity_id?: string | null
-          created_date?: string | null
-          first_name?: string | null
-          id?: string
-          last_name: string
-          lead_id: string
-          lead_source?: string | null
-          preferred_campus?: string | null
-          stage?: string | null
-          updated_at?: string
-        }
-        Update: {
-          campus_id?: string | null
-          converted?: boolean | null
-          converted_date?: string | null
-          converted_opportunity_id?: string | null
-          created_date?: string | null
-          first_name?: string | null
-          id?: string
-          last_name?: string
-          lead_id?: string
-          lead_source?: string | null
-          preferred_campus?: string | null
-          stage?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_salesforce_leads_campus"
-            columns: ["campus_id"]
-            isOneToOne: false
-            referencedRelation: "campuses"
-            referencedColumns: ["campus_id"]
-          },
-        ]
-      }
-      salesforce_opportunities: {
-        Row: {
-          campus_id: string | null
-          close_date: string | null
-          created_at: string
-          id: string
-          opportunity_id: string
-          opportunity_name: string | null
-          preferred_campus: string | null
-          stage: string | null
-          updated_at: string
-        }
-        Insert: {
-          campus_id?: string | null
-          close_date?: string | null
-          created_at?: string
-          id?: string
-          opportunity_id: string
-          opportunity_name?: string | null
-          preferred_campus?: string | null
-          stage?: string | null
-          updated_at?: string
-        }
-        Update: {
-          campus_id?: string | null
-          close_date?: string | null
-          created_at?: string
-          id?: string
-          opportunity_id?: string
-          opportunity_name?: string | null
-          preferred_campus?: string | null
-          stage?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_salesforce_opportunities_campus"
-            columns: ["campus_id"]
-            isOneToOne: false
-            referencedRelation: "campuses"
-            referencedColumns: ["campus_id"]
-          },
-        ]
-      }
       wrappers_fdw_stats: {
         Row: {
           bytes_in: number | null
@@ -474,14 +374,6 @@ export type Database = {
       }
     }
     Views: {
-      campus_distribution: {
-        Row: {
-          campus_name: string | null
-          lead_count: number | null
-          percentage: number | null
-        }
-        Relationships: []
-      }
       conversion_by_campus: {
         Row: {
           campus_name: string | null
@@ -623,6 +515,69 @@ export type Database = {
         }
         Returns: string
       }
+      get_campuses_with_lead_counts: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          campus_id: string
+          campus_name: string
+          state: string
+          lead_count: number
+        }[]
+      }
+      get_closed_won_by_campus: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          campus_name: string
+          state: string
+          closed_won_count: number
+          total_opportunities: number
+          win_rate: number
+        }[]
+      }
+      get_daily_lead_count: {
+        Args: {
+          p_days?: number
+          p_campus_id?: string
+        }
+        Returns: {
+          date: string
+          count: number
+        }[]
+      }
+      get_monthly_lead_trends: {
+        Args: {
+          start_date: string
+          end_date: string
+          p_campus_id?: string
+        }
+        Returns: {
+          month: string
+          lead_count: number
+          conversion_count: number
+          conversion_rate: number
+        }[]
+      }
+      get_opportunities_by_stage_campus: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          stage_name: string
+          campus_name: string
+          state: string
+          count: number
+          percentage: number
+        }[]
+      }
+      get_week_over_week_comparison: {
+        Args: {
+          p_campus_id?: string
+        }
+        Returns: {
+          metric: string
+          current_week: number
+          previous_week: number
+          change_percentage: number
+        }[]
+      }
       get_weekly_lead_counts: {
         Args: {
           start_date: string
@@ -634,19 +589,34 @@ export type Database = {
           lead_count: number
         }[]
       }
-      get_weekly_lead_trends: {
-        Args: {
-          start_date: string
-          end_date: string
-        }
-        Returns: {
-          week_start: string
-          campus_name: string
-          lead_count: number
-          conversion_count: number
-          conversion_rate: number
-        }[]
-      }
+      get_weekly_lead_trends:
+        | {
+            Args: {
+              p_weeks?: number
+              p_campus_id?: string
+            }
+            Returns: {
+              week_start: string
+              lead_count: number
+              conversion_count: number
+              conversion_rate: number
+              previous_week_count: number
+              weekly_growth_percentage: number
+            }[]
+          }
+        | {
+            Args: {
+              start_date: string
+              end_date: string
+            }
+            Returns: {
+              week_start: string
+              campus_name: string
+              lead_count: number
+              conversion_count: number
+              conversion_rate: number
+            }[]
+          }
       hello_world_fdw_handler: {
         Args: Record<PropertyKey, never>
         Returns: unknown
