@@ -36,12 +36,46 @@ export interface HunterDomainResponse {
   webmail: boolean;
 }
 
+export interface EmailFinderResponse {
+  data: {
+    email: string;
+    score: number;
+    domain: string;
+    company: string;
+    first_name: string;
+    last_name: string;
+    position: string | null;
+    twitter: string | null;
+    linkedin: string | null;
+    phone_number: string | null;
+    verification: {
+      date: string;
+      status: string;
+    } | null;
+    sources: {
+      domain: string;
+      uri: string;
+      extracted_on: string;
+      last_seen_on: string;
+      still_on_page: boolean;
+    }[];
+  };
+}
+
 export type ContactsSearchParams = {
   domain: string;
   limit?: number;
   department?: string;
   seniority?: string;
   type?: "personal" | "generic" | "any";
+};
+
+export type EmailFinderParams = {
+  domain: string;
+  company?: string;
+  first_name: string;
+  last_name: string;
+  max_duration?: number;
 };
 
 export async function searchContactsByDomain(params: ContactsSearchParams): Promise<HunterDomainResponse | null> {
@@ -72,6 +106,34 @@ export async function searchContactsByDomain(params: ContactsSearchParams): Prom
     return data.data as HunterDomainResponse;
   } catch (error) {
     console.error('Error in searchContactsByDomain:', error);
+    throw error;
+  }
+}
+
+export async function findEmailByName(params: EmailFinderParams): Promise<EmailFinderResponse | null> {
+  try {
+    const { domain, company, first_name, last_name, max_duration } = params;
+    
+    console.log('Calling email-finder edge function with params:', { domain, company, first_name, last_name, max_duration });
+    
+    const { data, error } = await supabase.functions.invoke('email-finder', {
+      body: { domain, company, first_name, last_name, max_duration }
+    });
+
+    if (error) {
+      console.error('Error calling email-finder edge function:', error);
+      throw new Error(`Failed to find email: ${error.message}`);
+    }
+
+    if (!data) {
+      console.error('No data returned from email-finder edge function');
+      return null;
+    }
+
+    console.log('Successfully found email for', first_name, last_name, 'at', domain);
+    return data as EmailFinderResponse;
+  } catch (error) {
+    console.error('Error in findEmailByName:', error);
     throw error;
   }
 }
