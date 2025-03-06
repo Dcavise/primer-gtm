@@ -161,12 +161,11 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
       if (error) {
         console.error(`Error saving ${fieldName}:`, error);
         toast.error(`Failed to save ${fieldName}`);
-        return;
+      } else {
+        setEditingFields(prev => ({ ...prev, [fieldName]: false }));
+        toast.success(`${fieldName} updated successfully`);
+        onPropertyUpdated();
       }
-      
-      setEditingFields(prev => ({ ...prev, [fieldName]: false }));
-      toast.success(`${fieldName} updated successfully`);
-      onPropertyUpdated();
     } catch (error) {
       console.error(`Error saving ${fieldName}:`, error);
       toast.error(`Failed to save ${fieldName}`);
@@ -275,6 +274,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
               <SafeSimplePhaseSelector
                 value={fieldValues.phase as PropertyPhase | null}
                 onValueChange={handlePhaseFieldChange}
+                disabled={isFieldSaving}
               />
             </ErrorBoundary>
             {hasError && (
