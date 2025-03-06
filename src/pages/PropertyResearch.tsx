@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { SearchForm } from "@/components/SearchForm";
 import { PermitList } from "@/components/PermitList";
@@ -115,7 +116,7 @@ const PropertyResearch = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <motion.header 
-        className="bg-gradient-to-r from-blue-600 to-blue-500 text-white py-12 px-6 md:py-16 md:px-8"
+        className="bg-gradient-to-r from-slate-700 to-slate-600 text-white py-12 px-6 md:py-16 md:px-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6 }}

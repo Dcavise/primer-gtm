@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { useRealEstatePipeline } from '@/hooks/useRealEstatePipeline';
 import { useCampuses } from '@/hooks/useCampuses';
@@ -142,7 +143,7 @@ const RealEstatePipeline: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-gradient-to-r from-blue-600 to-blue-500 text-white py-8 px-6">
+      <header className="bg-gradient-to-r from-slate-700 to-slate-600 text-white py-8 px-6">
         <div className="container mx-auto max-w-5xl">
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-2xl md:text-3xl font-semibold">Real Estate Pipeline</h1>
