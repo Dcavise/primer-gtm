@@ -58,7 +58,7 @@ describe('fetchOpportunitiesStats', () => {
       return { ...mockSupabase, then: (callback: any) => mockClosedWonPromise.then(callback) };
     });
     
-    const result = await fetchOpportunitiesStats(null, mockHandleError);
+    const result = await fetchOpportunitiesStats([], mockHandleError);
     
     expect(result.activeOpportunitiesCount).toBe(10);
     expect(result.closedWonOpportunitiesCount).toBe(5);
@@ -72,7 +72,7 @@ describe('fetchOpportunitiesStats', () => {
   });
   
   it('should filter by campus ID when provided', async () => {
-    const campusId = 'campus-123';
+    const campusIds = ['campus-123'];
     
     // Mock active opportunities count with campus filter
     const mockActiveOppsPromise = Promise.resolve({
@@ -107,7 +107,7 @@ describe('fetchOpportunitiesStats', () => {
       return { ...mockSupabase, then: (callback: any) => mockClosedWonPromise.then(callback) };
     });
     
-    const result = await fetchOpportunitiesStats(campusId, mockHandleError);
+    const result = await fetchOpportunitiesStats(campusIds, mockHandleError);
     
     expect(result.activeOpportunitiesCount).toBe(5);
     expect(result.closedWonOpportunitiesCount).toBe(3);
@@ -127,7 +127,7 @@ describe('fetchOpportunitiesStats', () => {
       return { ...mockSupabase, then: (callback: any) => mockErrorPromise.then(callback) };
     });
     
-    await fetchOpportunitiesStats(null, mockHandleError);
+    await fetchOpportunitiesStats([], mockHandleError);
     
     expect(mockHandleError).toHaveBeenCalledWith(mockError, 'Error fetching opportunities stats');
   });
@@ -146,7 +146,7 @@ describe('fetchOpportunitiesStats', () => {
       return { ...mockSupabase, then: (callback: any) => mockErrorPromise.then(callback) };
     });
     
-    const result = await fetchOpportunitiesStats(null, mockHandleError);
+    const result = await fetchOpportunitiesStats([], mockHandleError);
     
     expect(result).toEqual({
       activeOpportunitiesCount: 0,

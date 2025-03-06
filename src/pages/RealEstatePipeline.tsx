@@ -1,5 +1,4 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRealEstatePipeline } from '@/hooks/useRealEstatePipeline';
 import { useCampuses } from '@/hooks/useCampuses';
 import { PipelineColumn } from '@/components/realestate/PipelineColumn';
@@ -48,9 +47,9 @@ const PHASE_TO_GROUP: Record<PropertyPhase, string> = {
 };
 
 const RealEstatePipeline: React.FC = () => {
-  const [selectedCampusId, setSelectedCampusId] = useState<string | null>(null);
-  const [selectedCampusName, setSelectedCampusName] = useState<string | null>(null);
-  const { data: properties, isLoading, error, refetch } = useRealEstatePipeline({ campusId: selectedCampusId });
+  const [selectedCampusIds, setSelectedCampusIds] = useState<string[]>([]);
+  const [selectedCampusNames, setSelectedCampusNames] = useState<string[]>([]);
+  const { data: properties, isLoading, error, refetch } = useRealEstatePipeline({ campusId: selectedCampusIds });
   const { data: campuses, isLoading: isLoadingCampuses } = useCampuses();
   const { isRefreshing, refreshRealEstateData } = useRealEstateSync();
   const queryClient = useQueryClient();
@@ -103,15 +102,21 @@ const RealEstatePipeline: React.FC = () => {
     return grouped;
   }, [properties]);
 
-  const handleCampusSelect = (campusId: string | null, campusName: string | null) => {
-    setSelectedCampusId(campusId);
-    setSelectedCampusName(campusName);
+  const handleSelectCampuses = (campusIds: string[], campusNames: string[]) => {
+    setSelectedCampusIds(campusIds);
+    setSelectedCampusNames(campusNames);
   };
 
   const handleRefresh = async () => {
     await refreshRealEstateData();
     refetch();
   };
+
+  useEffect(() => {
+    if (selectedCampusIds.length > 0) {
+      handleSelectCampuses(selectedCampusIds, selectedCampusNames);
+    }
+  }, [selectedCampusIds, selectedCampusNames]);
 
   if (isLoading || isLoadingCampuses) {
     return <LoadingState message="Loading pipeline data..." />;
@@ -142,7 +147,7 @@ const RealEstatePipeline: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-slate-50">
       <header className="bg-gradient-to-r from-slate-700 to-slate-600 text-white py-8 px-6">
         <div className="container mx-auto max-w-5xl">
           <div className="flex items-center justify-between mb-3">
@@ -155,20 +160,20 @@ const RealEstatePipeline: React.FC = () => {
         </div>
       </header>
 
-      <main className="container mx-auto py-6">
+      <main className="container px-4 py-8 mx-auto max-w-7xl">
         <div className="flex justify-between items-center mb-6">
           <div className="flex-1">
             {campuses && campuses.length > 0 && (
               <div>
                 <CampusSelector 
                   campuses={campuses}
-                  selectedCampusId={selectedCampusId}
-                  onSelectCampus={handleCampusSelect}
+                  selectedCampusIds={selectedCampusIds}
+                  onSelectCampuses={handleSelectCampuses}
                 />
                 
                 <div className="mt-2 text-sm text-muted-foreground">
-                  {selectedCampusName 
-                    ? `Showing ${getTotalPropertyCount()} properties for ${selectedCampusName}` 
+                  {selectedCampusNames 
+                    ? `Showing ${getTotalPropertyCount()} properties for ${selectedCampusNames.join(', ')}` 
                     : `Showing all ${getTotalPropertyCount()} properties across all campuses`}
                 </div>
               </div>
@@ -193,7 +198,7 @@ const RealEstatePipeline: React.FC = () => {
             
             const propertyCount = getGroupPropertyCount(phaseGroup);
             
-            if (propertyCount === 0 && selectedCampusId) return null;
+            if (propertyCount === 0 && selectedCampusIds) return null;
             
             return (
               <AccordionItem key={phaseGroup} value={phaseGroup} className="border rounded-lg overflow-hidden">

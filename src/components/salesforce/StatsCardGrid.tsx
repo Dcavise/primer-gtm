@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { SummaryStats, EmploymentStatusCount, WeeklyLeadCount, OpportunityStageCount } from '@/hooks/salesforce/types';
@@ -53,7 +54,7 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = ({
           .rpc('get_weekly_lead_counts', { 
             start_date: startDate.toISOString().split('T')[0],
             end_date: new Date().toISOString().split('T')[0],
-            campus_ids: selectedCampusIds.length > 0 ? selectedCampusIds : null
+            campus_filter: selectedCampusIds.length === 1 ? selectedCampusIds[0] : null
           });
           
         if (weeklyError) throw weeklyError;

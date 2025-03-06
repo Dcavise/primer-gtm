@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { 
   Card, 
@@ -75,7 +76,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
         // Fetch week-over-week comparison data
         const { data: wowData, error: wowError } = await supabase
           .rpc('get_week_over_week_comparison', { 
-            p_campus_ids: selectedCampusIds.length > 0 ? selectedCampusIds : null 
+            p_campus_id: selectedCampusIds.length === 1 ? selectedCampusIds[0] : null 
           });
           
         if (wowError) throw wowError;

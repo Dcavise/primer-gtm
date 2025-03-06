@@ -75,13 +75,13 @@ export const useMetrics = (selectedCampusIds: string[]) => {
       const startDate = new Date(today);
       startDate.setMonth(today.getMonth() - 12);
       
-      // 1. Get monthly opportunity trends - now accepting an array of campus IDs
+      // 1. Get monthly opportunity trends - now accepting a single campus_id
       const { data: trendData, error: trendError } = await supabase.rpc(
         'get_monthly_opportunity_trends',
         {
           start_date: startDate.toISOString().split('T')[0],
           end_date: today.toISOString().split('T')[0],
-          p_campus_ids: selectedCampusIds.length > 0 ? selectedCampusIds : null
+          p_campus_id: selectedCampusIds.length === 1 ? selectedCampusIds[0] : null
         }
       );
       
@@ -100,7 +100,7 @@ export const useMetrics = (selectedCampusIds: string[]) => {
         {
           start_date: startDate.toISOString().split('T')[0],
           end_date: today.toISOString().split('T')[0],
-          p_campus_ids: selectedCampusIds.length > 0 ? selectedCampusIds : null
+          p_campus_id: selectedCampusIds.length === 1 ? selectedCampusIds[0] : null
         }
       );
       
@@ -110,7 +110,7 @@ export const useMetrics = (selectedCampusIds: string[]) => {
       const { data: conversionData, error: conversionError } = await supabase.rpc(
         'get_lead_to_win_conversion',
         {
-          p_campus_ids: selectedCampusIds.length > 0 ? selectedCampusIds : null,
+          p_campus_id: selectedCampusIds.length === 1 ? selectedCampusIds[0] : null,
           p_months: 12
         }
       );

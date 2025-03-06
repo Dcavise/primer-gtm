@@ -25,7 +25,7 @@ export const fetchLeadsStats = async (
       {
         start_date: fourWeeksAgo.toISOString().split('T')[0],
         end_date: today.toISOString().split('T')[0],
-        campus_ids: selectedCampusIds.length > 0 ? selectedCampusIds : null
+        campus_filter: selectedCampusIds.length === 1 ? selectedCampusIds[0] : null
       }
     );
 

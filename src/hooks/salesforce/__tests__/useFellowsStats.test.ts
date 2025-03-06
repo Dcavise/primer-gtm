@@ -37,7 +37,7 @@ describe('fetchFellowsStats', () => {
       return { ...mockSupabase, then: (callback: any) => mockResponse.then(callback) };
     });
     
-    const result = await fetchFellowsStats(null, mockHandleError);
+    const result = await fetchFellowsStats([], mockHandleError);
     
     expect(result.fellowsCount).toBe(3);
     expect(result.employmentStatusCounts.length).toBe(2); // Active and Open statuses
@@ -48,7 +48,7 @@ describe('fetchFellowsStats', () => {
   });
   
   it('should filter by campus ID when provided', async () => {
-    const campusId = 'campus-123';
+    const campusIds = ['campus-123'];
     
     // Setup the promise to be returned at the end of the chain
     const mockResponse = Promise.resolve({
@@ -65,7 +65,7 @@ describe('fetchFellowsStats', () => {
       return { ...mockSupabase, then: (callback: any) => mockResponse.then(callback) };
     });
     
-    const result = await fetchFellowsStats(campusId, mockHandleError);
+    const result = await fetchFellowsStats(campusIds, mockHandleError);
     
     expect(result.fellowsCount).toBe(2);
   });
@@ -85,7 +85,7 @@ describe('fetchFellowsStats', () => {
       return { ...mockSupabase, then: (callback: any) => mockResponse.then(callback) };
     });
     
-    await fetchFellowsStats(null, mockHandleError);
+    await fetchFellowsStats([], mockHandleError);
     
     expect(mockHandleError).toHaveBeenCalledWith(mockError, 'Error fetching fellows stats');
   });
@@ -105,7 +105,7 @@ describe('fetchFellowsStats', () => {
       return { ...mockSupabase, then: (callback: any) => mockResponse.then(callback) };
     });
     
-    const result = await fetchFellowsStats(null, mockHandleError);
+    const result = await fetchFellowsStats([], mockHandleError);
     
     expect(result).toEqual({
       fellowsCount: 0,

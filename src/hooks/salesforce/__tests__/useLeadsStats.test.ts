@@ -47,7 +47,7 @@ describe('fetchLeadsStats', () => {
       return { ...mockSupabase, then: (callback: any) => mockWeeklyPromise.then(callback) };
     });
     
-    const result = await fetchLeadsStats(null, mockHandleError);
+    const result = await fetchLeadsStats([], mockHandleError);
     
     expect(result.leadsCount).toBe(25);
     expect(result.weeklyLeadCounts).toHaveLength(4);
@@ -56,7 +56,7 @@ describe('fetchLeadsStats', () => {
   });
   
   it('should filter by campus ID when provided', async () => {
-    const campusId = 'campus-123';
+    const campusIds = ['campus-123'];
     
     // Mock leads count response
     const mockLeadsPromise = Promise.resolve({
@@ -80,7 +80,7 @@ describe('fetchLeadsStats', () => {
       return { ...mockSupabase, then: (callback: any) => mockWeeklyPromise.then(callback) };
     });
     
-    const result = await fetchLeadsStats(campusId, mockHandleError);
+    const result = await fetchLeadsStats(campusIds, mockHandleError);
     
     expect(result.leadsCount).toBe(15);
   });
@@ -125,7 +125,7 @@ describe('fetchLeadsStats', () => {
       return { ...mockSupabase, then: (callback: any) => mockFallbackPromise.then(callback) };
     });
     
-    const result = await fetchLeadsStats(null, mockHandleError);
+    const result = await fetchLeadsStats([], mockHandleError);
     
     expect(result.leadsCount).toBe(25);
     // Fallback method will create some weeks of data
@@ -146,7 +146,7 @@ describe('fetchLeadsStats', () => {
       return { ...mockSupabase, then: (callback: any) => mockLeadsPromise.then(callback) };
     });
     
-    await fetchLeadsStats(null, mockHandleError);
+    await fetchLeadsStats([], mockHandleError);
     
     expect(mockHandleError).toHaveBeenCalledWith(mockError, 'Error fetching leads stats');
   });
@@ -165,7 +165,7 @@ describe('fetchLeadsStats', () => {
       return { ...mockSupabase, then: (callback: any) => mockLeadsPromise.then(callback) };
     });
     
-    const result = await fetchLeadsStats(null, mockHandleError);
+    const result = await fetchLeadsStats([], mockHandleError);
     
     expect(result).toEqual({
       leadsCount: 0,
