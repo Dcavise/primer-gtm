@@ -170,7 +170,31 @@ export const querySalesforceTable = async (tableName, limit = 100) => {
 // 5. Troubleshooting functions
 // =============================================
 
-export const troubleshootSchemaAccess = async () => {
+// Define interface for schema access results
+interface SchemaAccessResult {
+  schema_name: string;
+  can_access: boolean;
+  tables?: string[];
+}
+
+// Define interface for schema results
+interface SchemaResults {
+  [key: string]: {
+    accessible: boolean;
+    tables: string[];
+  };
+}
+
+// Define interface for troubleshooting results
+interface TroubleshootResult {
+  success: boolean;
+  schemas?: SchemaResults;
+  salesforceAccessible?: boolean;
+  step?: string;
+  error?: any;
+}
+
+export const troubleshootSchemaAccess = async (): Promise<TroubleshootResult> => {
   logger.info("Running schema access diagnostics...");
 
   // 1. Test basic connection
@@ -192,9 +216,10 @@ export const troubleshootSchemaAccess = async () => {
       return { success: false, step: 'schema_access', error };
     } else {
       // Analyze which schemas and tables we can access
-      const schemaResults = {};
+      const schemaResults: SchemaResults = {};
+      
       if (Array.isArray(data)) {
-        data.forEach(schema => {
+        (data as SchemaAccessResult[]).forEach(schema => {
           logger.info(`Schema ${schema.schema_name}: ${schema.can_access ? 'Accessible' : 'Not accessible'}`);
           schemaResults[schema.schema_name] = {
             accessible: schema.can_access,
@@ -215,7 +240,18 @@ export const troubleshootSchemaAccess = async () => {
   }
 };
 
-export const testCrossSchemaMethods = async () => {
+interface FunctionTestResult {
+  [key: string]: {
+    success: boolean;
+    error?: string;
+    dataReceived?: boolean;
+  };
+}
+
+export const testCrossSchemaMethods = async (): Promise<{
+  success: boolean;
+  results: FunctionTestResult;
+}> => {
   // Test each cross-schema function
   const functions = [
     'get_daily_lead_count',
@@ -227,7 +263,7 @@ export const testCrossSchemaMethods = async () => {
   ];
 
   logger.info("Testing cross-schema functions...");
-  const results = {};
+  const results: FunctionTestResult = {};
   
   for (const func of functions) {
     try {
@@ -240,10 +276,11 @@ export const testCrossSchemaMethods = async () => {
       };
       logger.info(`Function ${func}:`, results[func]);
     } catch (err) {
-      logger.error(`Error calling function ${func}:`, err);
+      const error = err as Error;
+      logger.error(`Error calling function ${func}:`, error);
       results[func] = { 
         success: false, 
-        error: err.message 
+        error: error.message 
       };
     }
   }
@@ -254,4 +291,3 @@ export const testCrossSchemaMethods = async () => {
     results
   };
 };
-

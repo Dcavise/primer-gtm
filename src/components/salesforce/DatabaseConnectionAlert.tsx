@@ -1,8 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, Database, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, Database, CheckCircle2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useSalesforceAccessDiagnostic } from '@/hooks/use-salesforce-access-diagnostic';
+import { logger } from '@/utils/logger';
 
 interface SchemaStatus {
   public: boolean;
@@ -20,6 +22,14 @@ export const DatabaseConnectionAlert: React.FC<DatabaseConnectionAlertProps> = (
   schemaStatus = { public: false, salesforce: false },
   onRetry 
 }) => {
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const { status: diagStatus, results, runDiagnostics, isRunning } = useSalesforceAccessDiagnostic();
+  
+  const handleRunDiagnostics = async () => {
+    setShowDiagnostics(true);
+    await runDiagnostics();
+  };
+  
   if (status === 'connected') {
     return null;
   }
@@ -43,6 +53,80 @@ export const DatabaseConnectionAlert: React.FC<DatabaseConnectionAlertProps> = (
         </p>
       </div>
     );
+  };
+  
+  const renderDiagnosticResults = () => {
+    if (!showDiagnostics) return null;
+    
+    if (isRunning) {
+      return (
+        <div className="mt-3 p-3 bg-gray-50 rounded">
+          <div className="flex items-center text-sm">
+            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+            Running diagnostics...
+          </div>
+        </div>
+      );
+    }
+    
+    if (diagStatus === 'complete') {
+      return (
+        <div className="mt-3 p-3 bg-gray-50 rounded text-sm">
+          <h4 className="font-medium mb-2">Diagnostic Results:</h4>
+          <p className="flex items-center mb-1">
+            {results.connectionSuccess ? 
+              <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" /> : 
+              <AlertTriangle className="h-4 w-4 mr-2 text-red-500" />}
+            Database connection: {results.connectionSuccess ? 'Successful' : 'Failed'}
+          </p>
+          <p className="flex items-center mb-1">
+            {results.publicAccess ? 
+              <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" /> : 
+              <AlertTriangle className="h-4 w-4 mr-2 text-red-500" />}
+            Public schema: {results.publicAccess ? 'Accessible' : 'Not accessible'}
+          </p>
+          <p className="flex items-center mb-1">
+            {results.salesforceAccess ? 
+              <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" /> : 
+              <AlertTriangle className="h-4 w-4 mr-2 text-red-500" />}
+            Salesforce schema: {results.salesforceAccess ? 'Accessible' : 'Not accessible'}
+          </p>
+          
+          {results.availableSchemas?.length > 0 && (
+            <div className="mt-2">
+              <p className="font-medium">Available schemas:</p>
+              <ul className="list-disc pl-5 text-xs">
+                {results.availableSchemas.map(schema => (
+                  <li key={schema}>{schema}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          {results.availableFunctions?.length > 0 && (
+            <div className="mt-2">
+              <p className="font-medium">Available functions:</p>
+              <ul className="list-disc pl-5 text-xs">
+                {results.availableFunctions.map(func => (
+                  <li key={func}>{func}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      );
+    }
+    
+    if (diagStatus === 'error') {
+      return (
+        <div className="mt-3 p-3 bg-red-50 rounded text-sm">
+          <h4 className="font-medium text-red-700 mb-1">Diagnostic Error:</h4>
+          <p className="text-red-600">{results.error}</p>
+        </div>
+      );
+    }
+    
+    return null;
   };
 
   return (
@@ -74,16 +158,27 @@ export const DatabaseConnectionAlert: React.FC<DatabaseConnectionAlertProps> = (
                 <p className="mb-3 text-sm">
                   The application will display mock data where possible. If you need to see actual data, please contact your administrator.
                 </p>
-                {onRetry && (
+                <div className="flex flex-wrap gap-2">
+                  {onRetry && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={onRetry}
+                    >
+                      Retry Connection
+                    </Button>
+                  )}
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    onClick={onRetry}
-                    className="mt-1"
+                    onClick={handleRunDiagnostics}
+                    disabled={isRunning}
                   >
-                    Retry Connection
+                    {isRunning ? 'Running...' : 'Run Diagnostics'}
                   </Button>
-                )}
+                </div>
+                
+                {renderDiagnosticResults()}
               </div>
             )}
           </AlertDescription>

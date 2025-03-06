@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSalesforceData } from '@/hooks/use-salesforce-data';
 import { DashboardHeader } from '@/components/salesforce/DashboardHeader';
@@ -9,11 +10,13 @@ import { Navbar } from '@/components/Navbar';
 import { DatabaseConnectionAlert } from '@/components/salesforce/DatabaseConnectionAlert';
 import { checkDatabaseConnection } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
+import { troubleshootSchemaAccess } from '@/utils/salesforce-access';
 
 const SalesforceLeadsPage: React.FC = () => {
   const [selectedCampusIds, setSelectedCampusIds] = useState<string[]>([]);
   const [selectedCampusNames, setSelectedCampusNames] = useState<string[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
+  const [schemaStatus, setSchemaStatus] = useState<{ public: boolean, salesforce: boolean }>({ public: false, salesforce: false });
   
   logger.info('SalesforceLeadsPage rendering');
   
@@ -35,12 +38,30 @@ const SalesforceLeadsPage: React.FC = () => {
     try {
       logger.info('Checking database connection');
       setConnectionStatus('checking');
+      
+      // First try the standard connection check
       const connectionResult = await checkDatabaseConnection();
       logger.debug('Database connection result:', connectionResult);
+      
+      // If that fails, try the more detailed troubleshooting
+      if (!connectionResult.connected) {
+        logger.info('Standard connection check failed, running detailed diagnostics');
+        const diagnosticResult = await troubleshootSchemaAccess();
+        logger.debug('Diagnostic result:', diagnosticResult);
+        
+        setSchemaStatus({
+          public: diagnosticResult.schemas?.public?.accessible || false,
+          salesforce: diagnosticResult.salesforceAccessible || false
+        });
+      } else {
+        setSchemaStatus(connectionResult.schemas);
+      }
+      
       setConnectionStatus(connectionResult.connected ? 'connected' : 'error');
     } catch (error) {
       logger.error("Error checking database connection:", error);
       setConnectionStatus('error');
+      setSchemaStatus({ public: false, salesforce: false });
     }
   }, []);
 
@@ -74,6 +95,7 @@ const SalesforceLeadsPage: React.FC = () => {
         {connectionStatus !== 'connected' && (
           <DatabaseConnectionAlert 
             status={connectionStatus} 
+            schemaStatus={schemaStatus}
             onRetry={checkConnection}
           />
         )}
