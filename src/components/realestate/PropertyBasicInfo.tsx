@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/LoadingState';
 import { RealEstateProperty, PropertyPhase } from '@/types/realEstate';
-import { SafePhaseSelector } from './SafePhaseSelector';
+import { SafeSimplePhaseSelector } from './SafeSimplePhaseSelector';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { fieldValidators } from '@/schemas/propertySchema';
@@ -272,7 +272,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
         {isFieldEditing ? (
           <div className="space-y-2">
             <ErrorBoundary>
-              <SafePhaseSelector
+              <SafeSimplePhaseSelector
                 value={fieldValues.phase as PropertyPhase | null}
                 onValueChange={handlePhaseFieldChange}
               />
