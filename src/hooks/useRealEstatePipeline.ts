@@ -30,9 +30,9 @@ export const useRealEstatePipeline = (options: UseRealEstatePipelineOptions = {}
         throw new Error('Failed to fetch real estate pipeline data');
       }
       
-      // Log the first few properties to help with debugging
+      // Log some information for debugging purposes
       if (data && data.length > 0) {
-        console.log('Sample pipeline data:', data.slice(0, 3));
+        console.log(`Fetched ${data.length} real estate properties`);
         
         // Count properties by phase to help diagnose the issue
         const phaseCount: Record<string, number> = {};

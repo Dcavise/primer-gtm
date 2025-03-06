@@ -51,7 +51,7 @@ const RealEstatePipeline: React.FC = () => {
   const [selectedCampusName, setSelectedCampusName] = useState<string | null>(null);
   const { data: properties, isLoading, error, refetch } = useRealEstatePipeline({ campusId: selectedCampusId });
   const { data: campuses, isLoading: isLoadingCampuses } = useCampuses();
-  const { isSyncing, syncRealEstateData } = useRealEstateSync();
+  const { isRefreshing, refreshRealEstateData } = useRealEstateSync();
   const queryClient = useQueryClient();
   
   const [defaultAccordionValue, setDefaultAccordionValue] = useState<string[]>(PHASE_GROUPS);
@@ -107,9 +107,8 @@ const RealEstatePipeline: React.FC = () => {
     setSelectedCampusName(campusName);
   };
 
-  const handleSync = async () => {
-    await syncRealEstateData();
-    queryClient.invalidateQueries({ queryKey: ['real-estate-pipeline'] });
+  const handleRefresh = async () => {
+    await refreshRealEstateData();
     refetch();
   };
 
@@ -175,13 +174,13 @@ const RealEstatePipeline: React.FC = () => {
             )}
           </div>
           <Button 
-            onClick={handleSync} 
+            onClick={handleRefresh} 
             variant="outline" 
-            disabled={isSyncing}
+            disabled={isRefreshing}
             className="gap-2"
           >
-            <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-            {isSyncing ? 'Syncing...' : 'Resync Data'}
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh Data'}
           </Button>
         </div>
 
