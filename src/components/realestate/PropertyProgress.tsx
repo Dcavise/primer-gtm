@@ -12,8 +12,6 @@ const PropertyProgress: React.FC<PropertyProgressProps> = ({ phase }) => {
   // Map the property phase to progress stages
   const stages = mapPhaseToProgressStages(phase);
   
-  if (stages.length === 0) return null;
-  
   return (
     <div className="w-full mb-6">
       <StageProgressBar stages={stages} />

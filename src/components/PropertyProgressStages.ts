@@ -6,7 +6,17 @@ import { PropertyPhase } from '@/types/realEstate';
 export const getProgressStages = (): Stage[] => {
   return [
     {
-      name: 'Diligence',
+      name: 'New Site',
+      isCompleted: false,
+      isCurrent: false
+    },
+    {
+      name: 'Initial Diligence',
+      isCompleted: false,
+      isCurrent: false
+    },
+    {
+      name: 'Survey',
       isCompleted: false,
       isCurrent: false
     },
@@ -53,44 +63,28 @@ export const mapPhaseToProgressStages = (phase: PropertyPhase | null): Stage[] =
   // Determine which stages should be marked as completed or current based on the phase
   switch (phase) {
     case '0. New Site':
-      // In initial phase
       stages[0].isCurrent = true;
       return stages;
     
     case '1. Initial Diligence':
-      // In diligence phase
-      stages[0].isCurrent = true;
-      return stages;
-      
-    case '2. Survey':
-      // Survey phase - Diligence is completed, Test Fit is current
-      stages[0].isCompleted = true; 
-      stages[1].isCurrent = true;
-      return stages;
-    
-    case '3. Test Fit':
-      // Test fit phase
       stages[0].isCompleted = true;
       stages[1].isCurrent = true;
       return stages;
       
-    case '4. Plan Production':
-      // Plan production phase
+    case '2. Survey':
       stages[0].isCompleted = true;
       stages[1].isCompleted = true;
       stages[2].isCurrent = true;
       return stages;
-      
-    case '5. Permitting':
-      // Permitting phase
+    
+    case '3. Test Fit':
       stages[0].isCompleted = true;
       stages[1].isCompleted = true;
       stages[2].isCompleted = true;
       stages[3].isCurrent = true;
       return stages;
       
-    case '6. Construction':
-      // Construction phase
+    case '4. Plan Production':
       stages[0].isCompleted = true;
       stages[1].isCompleted = true;
       stages[2].isCompleted = true;
@@ -98,8 +92,7 @@ export const mapPhaseToProgressStages = (phase: PropertyPhase | null): Stage[] =
       stages[4].isCurrent = true;
       return stages;
       
-    case '7. Set Up':
-      // Set up phase
+    case '5. Permitting':
       stages[0].isCompleted = true;
       stages[1].isCompleted = true;
       stages[2].isCompleted = true;
@@ -108,10 +101,30 @@ export const mapPhaseToProgressStages = (phase: PropertyPhase | null): Stage[] =
       stages[5].isCurrent = true;
       return stages;
       
+    case '6. Construction':
+      stages[0].isCompleted = true;
+      stages[1].isCompleted = true;
+      stages[2].isCompleted = true;
+      stages[3].isCompleted = true;
+      stages[4].isCompleted = true;
+      stages[5].isCompleted = true;
+      stages[6].isCurrent = true;
+      return stages;
+      
+    case '7. Set Up':
+      stages[0].isCompleted = true;
+      stages[1].isCompleted = true;
+      stages[2].isCompleted = true;
+      stages[3].isCompleted = true;
+      stages[4].isCompleted = true;
+      stages[5].isCompleted = true;
+      stages[6].isCompleted = true;
+      stages[7].isCurrent = true;
+      return stages;
+      
     case 'Hold':
     case 'Deprioritize':
-      // Other phases - just show diligence as current
-      stages[0].isCurrent = true;
+      // For special statuses, don't highlight any specific stage
       return stages;
       
     default:
