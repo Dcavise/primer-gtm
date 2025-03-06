@@ -1,10 +1,12 @@
 
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { SummaryStats, EmploymentStatusCount, WeeklyLeadCount, OpportunityStageCount } from './types';
 import { useBaseStats } from './useBaseStats';
 import { fetchFellowsStats } from './useFellowsStats';
 import { fetchLeadsStats } from './useLeadsStats';
 import { fetchOpportunitiesStats } from './useOpportunitiesStats';
+import { logger } from '@/utils/logger';
 
 export const useStats = (selectedCampusIds: string[]) => {
   const { stats, setStats, lastRefreshed, setLastRefreshed, handleError } = useBaseStats();
@@ -13,34 +15,45 @@ export const useStats = (selectedCampusIds: string[]) => {
   const [opportunityStageCounts, setOpportunityStageCounts] = useState<OpportunityStageCount[]>([]);
 
   useEffect(() => {
+    logger.info(`useStats effect triggered with ${selectedCampusIds.length} campus IDs`);
     fetchStats();
     setLastRefreshed(new Date());
   }, [selectedCampusIds]);
 
   const fetchStats = async () => {
     try {
-      console.log("Fetching stats for campuses:", selectedCampusIds.length > 0 ? selectedCampusIds.join(', ') : "all campuses");
+      logger.timeStart('fetchAllStats');
+      logger.info(`Fetching stats for campuses: ${selectedCampusIds.length > 0 ? selectedCampusIds.join(', ') : "all campuses"}`);
       
       // Log available campuses for debugging
       const { data: allCampuses, error: campusesError } = await 
         supabase.from('campuses').select('campus_id, campus_name');
       
       if (campusesError) {
-        console.error("Error fetching campuses:", campusesError);
+        logger.error("Error fetching campuses:", campusesError);
       } else {
-        console.log("Available campuses:", allCampuses);
+        logger.debug("Available campuses:", allCampuses);
       }
       
       // Fetch fellows stats
+      logger.timeStart('fetchFellowsStats');
       const fellowsResult = await fetchFellowsStats(selectedCampusIds, handleError);
+      logger.timeEnd('fetchFellowsStats');
+      logger.debug('Fellows stats result:', fellowsResult);
       setEmploymentStatusCounts(fellowsResult.employmentStatusCounts);
       
       // Fetch leads stats
+      logger.timeStart('fetchLeadsStats-fromUseStats');
       const leadsResult = await fetchLeadsStats(selectedCampusIds, handleError);
+      logger.timeEnd('fetchLeadsStats-fromUseStats');
+      logger.debug('Leads stats result:', leadsResult);
       setWeeklyLeadCounts(leadsResult.weeklyLeadCounts);
       
       // Fetch opportunities stats
+      logger.timeStart('fetchOpportunitiesStats-fromUseStats');
       const opportunitiesResult = await fetchOpportunitiesStats(selectedCampusIds, handleError);
+      logger.timeEnd('fetchOpportunitiesStats-fromUseStats');
+      logger.debug('Opportunities stats result:', opportunitiesResult);
       setOpportunityStageCounts(opportunitiesResult.opportunityStageCounts);
       
       // Update combined stats
@@ -51,13 +64,15 @@ export const useStats = (selectedCampusIds: string[]) => {
         closedWonOpportunitiesCount: opportunitiesResult.closedWonOpportunitiesCount
       };
       
-      console.log("Stats fetched successfully:", updatedStats);
+      logger.info("Stats fetched successfully:", updatedStats);
       
       // Update stats
       setStats(updatedStats);
       setLastRefreshed(new Date());
+      logger.timeEnd('fetchAllStats');
       
     } catch (error) {
+      logger.error('Error in fetchStats', error);
       handleError(error);
     }
   };
@@ -71,6 +86,3 @@ export const useStats = (selectedCampusIds: string[]) => {
     fetchStats
   };
 };
-
-// Add missing import that was used in the code
-import { supabase } from '@/integrations/supabase/client';

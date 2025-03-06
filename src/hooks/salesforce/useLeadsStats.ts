@@ -2,12 +2,14 @@
 import { supabase } from '@/integrations/supabase/client';
 import { WeeklyLeadCount } from './types';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 export const fetchLeadsStats = async (
   selectedCampusIds: string[],
   handleError: (error: any, message?: string) => void
 ) => {
   try {
+    logger.timeStart('fetchLeadsStats');
     // Initialize default values
     let leadsCount = 0;
     let weeklyLeadCounts: WeeklyLeadCount[] = [];
@@ -17,13 +19,13 @@ export const fetchLeadsStats = async (
     const fourWeeksAgo = new Date();
     fourWeeksAgo.setDate(today.getDate() - 28); // 4 weeks = 28 days
 
-    console.log("Fetching weekly lead counts from", fourWeeksAgo.toISOString(), "to", today.toISOString());
-    console.log("Campus filter:", selectedCampusIds.length > 0 ? selectedCampusIds.join(', ') : "none (all campuses)");
+    logger.info(`Fetching weekly lead counts from ${fourWeeksAgo.toISOString()} to ${today.toISOString()}`);
+    logger.info(`Campus filter: ${selectedCampusIds.length > 0 ? selectedCampusIds.join(', ') : "none (all campuses)"}`);
 
     // First check auth status
     const { data: session } = await supabase.auth.getSession();
     if (!session.session) {
-      console.warn("User not authenticated, using mock data");
+      logger.warn("User not authenticated, using mock data");
       toast.warning("Authentication required", {
         description: "Please sign in to access real data"
       });
@@ -34,6 +36,7 @@ export const fetchLeadsStats = async (
 
     // Try to get data using the RPC function first
     try {
+      logger.debug('Attempting to fetch data using get_weekly_lead_counts RPC');
       const { data: weeklyLeadData, error: weeklyLeadError } = await supabase.rpc(
         'get_weekly_lead_counts',
         {
@@ -44,12 +47,12 @@ export const fetchLeadsStats = async (
       );
 
       if (weeklyLeadError) {
-        console.warn('RPC function failed, falling back to direct query:', weeklyLeadError);
+        logger.warn('RPC function failed, falling back to direct query:', weeklyLeadError);
         throw weeklyLeadError; // Will be caught by the outer try-catch and trigger the fallback
       }
       
       if (weeklyLeadData) {
-        console.log("Weekly lead data from RPC:", weeklyLeadData);
+        logger.debug("Weekly lead data from RPC:", weeklyLeadData);
         
         // Use type assertion to help TypeScript understand the data structure
         const typedWeeklyData = weeklyLeadData as { week: string; lead_count: number }[];
@@ -61,10 +64,13 @@ export const fetchLeadsStats = async (
           week: item.week,
           count: Number(item.lead_count)
         }));
+        
+        logger.info(`Successfully retrieved ${leadsCount} leads across ${weeklyLeadCounts.length} weeks`);
       }
     } catch (rpcError) {
       // Try direct query as fallback using a custom SQL query
       try {
+        logger.debug('Attempting fallback with execute_sql_query RPC');
         // Define SQL query for cross-schema access
         const sqlQuery = `
           SELECT created_date 
@@ -74,6 +80,8 @@ export const fetchLeadsStats = async (
           AND is_deleted = false
         `;
         
+        logger.debug('Executing SQL query:', sqlQuery);
+        
         // Using a generic RPC function which has permission to execute SQL
         const { data: directData, error: directError } = await supabase.rpc(
           'execute_sql_query',
@@ -81,12 +89,12 @@ export const fetchLeadsStats = async (
         );
           
         if (directError) {
-          console.warn('Direct query failed, falling back to mock data:', directError);
+          logger.warn('Direct query failed, falling back to mock data:', directError);
           throw directError;
         }
         
         if (directData && Array.isArray(directData) && directData.length > 0) {
-          console.log(`Found ${directData.length} leads via direct query`);
+          logger.debug(`Found ${directData.length} leads via direct query`);
           
           // Type assertion for direct query results
           const typedDirectData = directData as { created_date: string }[];
@@ -102,22 +110,27 @@ export const fetchLeadsStats = async (
             return acc;
           }, {});
           
+          logger.debug('Grouped leads by week:', groupedByWeek);
+          
           weeklyLeadCounts = Object.entries(groupedByWeek).map(([week, count]) => ({
             week,
             count: count as number
           })).sort((a, b) => new Date(a.week).getTime() - new Date(b.week).getTime());
           
           leadsCount = directData.length;
+          logger.info(`Successfully processed ${leadsCount} leads from direct query`);
         }
       } catch (directError) {
         // Fallback to mock data if both approaches fail
-        console.log("Generating mock weekly lead data due to database access error");
+        logger.error("Both data retrieval methods failed, falling back to mock data", directError);
         return generateMockLeadsData(fourWeeksAgo);
       }
     }
     
+    logger.timeEnd('fetchLeadsStats');
     return { leadsCount, weeklyLeadCounts };
   } catch (error) {
+    logger.error('Error fetching leads stats', error);
     handleError(error, 'Error fetching leads stats');
     return generateMockLeadsData(fourWeeksAgo);
   }
@@ -125,6 +138,7 @@ export const fetchLeadsStats = async (
 
 // Helper function to generate mock data
 const generateMockLeadsData = (fourWeeksAgo: Date) => {
+  logger.info("Generating mock leads data");
   // Generate 4 weeks of mock data
   const mockWeeks = [];
   for (let i = 0; i < 4; i++) {
@@ -138,7 +152,7 @@ const generateMockLeadsData = (fourWeeksAgo: Date) => {
   
   const leadsCount = mockWeeks.reduce((sum, item) => sum + item.count, 0);
   
-  console.log("Using mock data:", {
+  logger.debug("Mock data generated:", {
     leadsCount,
     weeklyLeadCounts: mockWeeks
   });

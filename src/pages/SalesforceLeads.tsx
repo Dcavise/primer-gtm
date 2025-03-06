@@ -9,11 +9,15 @@ import { MetricsDashboard } from '@/components/salesforce/MetricsDashboard';
 import { Navbar } from '@/components/Navbar';
 import { DatabaseConnectionAlert } from '@/components/salesforce/DatabaseConnectionAlert';
 import { checkDatabaseConnection } from '@/integrations/supabase/client';
+import { DebugModeToggle } from '@/components/salesforce/DebugModeToggle';
+import { logger } from '@/utils/logger';
 
 const SalesforceLeadsPage: React.FC = () => {
   const [selectedCampusIds, setSelectedCampusIds] = useState<string[]>([]);
   const [selectedCampusNames, setSelectedCampusNames] = useState<string[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
+  
+  logger.info('SalesforceLeadsPage rendering');
   
   const {
     stats,
@@ -31,20 +35,25 @@ const SalesforceLeadsPage: React.FC = () => {
 
   const checkConnection = useCallback(async () => {
     try {
+      logger.info('Checking database connection');
       setConnectionStatus('checking');
-      const isConnected = await checkDatabaseConnection();
-      setConnectionStatus(isConnected ? 'connected' : 'error');
+      const connectionResult = await checkDatabaseConnection();
+      logger.debug('Database connection result:', connectionResult);
+      setConnectionStatus(connectionResult.connected ? 'connected' : 'error');
     } catch (error) {
-      console.error("Error checking database connection:", error);
+      logger.error("Error checking database connection:", error);
       setConnectionStatus('error');
     }
   }, []);
 
   useEffect(() => {
+    logger.timeStart('initial-connection-check');
     checkConnection();
+    logger.timeEnd('initial-connection-check');
   }, [checkConnection]);
 
   const handleSelectCampuses = (campusIds: string[], campusNames: string[]) => {
+    logger.debug('Campus selection changed:', { campusIds, campusNames });
     setSelectedCampusIds(campusIds);
     setSelectedCampusNames(campusNames);
   };
@@ -55,7 +64,10 @@ const SalesforceLeadsPage: React.FC = () => {
         <div className="container mx-auto max-w-5xl">
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-2xl md:text-3xl font-semibold">Salesforce Analytics</h1>
-            <Navbar />
+            <div className="flex items-center gap-4">
+              <DebugModeToggle />
+              <Navbar />
+            </div>
           </div>
           <p className="text-white/80 mt-2">
             View and analyze Salesforce data across all campuses
