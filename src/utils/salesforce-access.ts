@@ -126,17 +126,18 @@ export const getSalesCycleByCampus = async () => {
 };
 
 // =============================================
-// 3. Access Salesforce Tables Directly (Via Views)
+// 3. Access Salesforce Tables Directly (Via RPC Functions)
 // =============================================
 
+// Use RPC functions instead of direct table access
 export const getSalesforceContacts = async (limit = 10) => {
   try {
     logger.info(`Fetching salesforce contacts with limit: ${limit}`);
-    // Using the public view (if it exists)
-    const { data, error } = await supabase
-      .from('salesforce_contacts')
-      .select('*')
-      .limit(limit);
+    // Using an RPC function to access salesforce data
+    const { data, error } = await supabase.rpc('query_salesforce_table', {
+      table_name: 'contact',
+      limit_count: limit
+    });
     
     if (error) {
       logger.error('Error fetching salesforce contacts:', error);
@@ -174,7 +175,7 @@ export const querySalesforceTable = async (tableName: string) => {
 };
 
 // =============================================
-// 6. Troubleshooting functions
+// 5. Troubleshooting functions
 // =============================================
 
 export const troubleshootSchemaAccess = async () => {
