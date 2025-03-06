@@ -21,7 +21,6 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
     }
     
     console.log('Navigating to property detail page with ID:', property.id);
-    // Use the correct path format
     navigate(`/real-estate-pipeline/property/${property.id}`);
   };
   

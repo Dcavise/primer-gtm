@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -144,7 +143,6 @@ const PropertyDetail: React.FC = () => {
     return <PropertyNotFound />;
   }
 
-  // Add a safety check to make sure we have a valid property phase before mapping
   const progressStages = property.phase 
     ? mapPhaseToProgressStages(property.phase) 
     : [];
@@ -154,7 +152,7 @@ const PropertyDetail: React.FC = () => {
       <PropertyHeader property={property} />
 
       <main className="container mx-auto py-8 px-4">
-        <Button variant="outline" onClick={handleBackClick} className="mb-6">
+        <Button variant="outline" onClick={() => navigate('/real-estate-pipeline')} className="mb-6">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Pipeline
         </Button>
         
@@ -183,10 +181,42 @@ const PropertyDetail: React.FC = () => {
               isEditing={isEditingNotes}
               isSaving={isSavingNotes}
               notesValue={notesValue}
-              onEdit={handleEditNotes}
-              onCancel={handleCancelEditNotes}
-              onSave={handleSaveNotes}
-              onNotesChange={handleNotesChange}
+              onEdit={() => setIsEditingNotes(true)}
+              onCancel={() => {
+                if (property.status_notes) {
+                  setNotesValue(property.status_notes);
+                } else {
+                  setNotesValue('');
+                }
+                setIsEditingNotes(false);
+              }}
+              onSave={async () => {
+                if (!id) return;
+                
+                setIsSavingNotes(true);
+                try {
+                  const { error } = await supabase
+                    .from('real_estate_pipeline')
+                    .update({ status_notes: notesValue })
+                    .eq('id', parseInt(id));
+                  
+                  if (error) {
+                    console.error('Error saving notes:', error);
+                    toast.error('Failed to save notes');
+                    return;
+                  }
+                  
+                  setIsEditingNotes(false);
+                  toast.success('Notes saved successfully');
+                  refetch();
+                } catch (error) {
+                  console.error('Error saving notes:', error);
+                  toast.error('Failed to save notes');
+                } finally {
+                  setIsSavingNotes(false);
+                }
+              }}
+              onNotesChange={(e) => setNotesValue(e.target.value)}
             />
 
             <PropertyDiscussion propertyId={property.id} />
@@ -201,7 +231,7 @@ const PropertyDetail: React.FC = () => {
             <PropertyDocuments 
               propertyId={property.id}
               fileRefreshKey={fileRefreshKey}
-              onUploadComplete={handleFileUploadComplete}
+              onUploadComplete={() => setFileRefreshKey(prev => prev + 1)}
             />
 
             <PropertyLeaseInfo 
