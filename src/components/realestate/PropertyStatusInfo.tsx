@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/LoadingState';
-import { RealEstateProperty } from '@/types/realEstate';
+import { RealEstateProperty, BooleanStatus, SurveyStatus, TestFitStatus } from '@/types/realEstate';
 import { supabase } from '@/integrations/supabase/client';
 
 interface PropertyStatusInfoProps {
@@ -39,10 +39,10 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
   React.useEffect(() => {
     if (property) {
       setFieldValues({
-        ahj_zoning_confirmation: property.ahj_zoning_confirmation || '',
-        ahj_building_records: property.ahj_building_records || '',
-        survey_status: property.survey_status || '',
-        test_fit_status: property.test_fit_status || '',
+        ahj_zoning_confirmation: property.ahj_zoning_confirmation || null,
+        ahj_building_records: property.ahj_building_records || null,
+        survey_status: property.survey_status || null,
+        test_fit_status: property.test_fit_status || null,
       });
     }
   }, [property]);
@@ -51,7 +51,7 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
     setEditingFields(prev => ({ ...prev, [fieldName]: true }));
     setFieldValues(prev => ({ 
       ...prev, 
-      [fieldName]: property[fieldName as keyof RealEstateProperty] || '' 
+      [fieldName]: property[fieldName as keyof RealEstateProperty] as string | null 
     }));
   };
 
@@ -59,13 +59,13 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
     setEditingFields(prev => ({ ...prev, [fieldName]: false }));
     setFieldValues(prev => ({ 
       ...prev, 
-      [fieldName]: property[fieldName as keyof RealEstateProperty] || '' 
+      [fieldName]: property[fieldName as keyof RealEstateProperty] as string | null 
     }));
   };
 
   const handleFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFieldValues(prev => ({ ...prev, [name]: value }));
+    setFieldValues(prev => ({ ...prev, [name]: value || null }));
   };
 
   const handleSaveField = async (fieldName: string) => {
@@ -75,21 +75,24 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
     
     try {
       // Ensure the value matches enum type for specific fields
-      let valueToSave = fieldValues[fieldName];
+      let valueToSave: string | BooleanStatus | SurveyStatus | TestFitStatus = null;
+      const currentValue = fieldValues[fieldName];
       
       // For enum fields, make sure the value is valid
       if (fieldName === 'ahj_zoning_confirmation') {
-        valueToSave = (valueToSave === 'true' || valueToSave === 'false' || valueToSave === 'unknown') 
-          ? valueToSave 
+        valueToSave = (currentValue === 'true' || currentValue === 'false' || currentValue === 'unknown') 
+          ? currentValue as BooleanStatus
           : null;
       } else if (fieldName === 'survey_status') {
-        valueToSave = (valueToSave === 'complete' || valueToSave === 'pending' || valueToSave === 'unknown')
-          ? valueToSave
+        valueToSave = (currentValue === 'complete' || currentValue === 'pending' || currentValue === 'unknown')
+          ? currentValue as SurveyStatus
           : null;
       } else if (fieldName === 'test_fit_status') {
-        valueToSave = (valueToSave === 'unknown' || valueToSave === 'pending' || valueToSave === 'complete')
-          ? valueToSave
+        valueToSave = (currentValue === 'unknown' || currentValue === 'pending' || currentValue === 'complete')
+          ? currentValue as TestFitStatus
           : null;
+      } else {
+        valueToSave = currentValue;
       }
       
       const { error } = await supabase
@@ -177,7 +180,7 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
         ) : isEditing ? (
           <Input 
             name={fieldName} 
-            value={formValues[fieldName as keyof RealEstateProperty] || ''} 
+            value={formValues[fieldName as keyof RealEstateProperty] as string || ''} 
             onChange={onInputChange}
             placeholder={`Enter ${label.toLowerCase()}`}
           />

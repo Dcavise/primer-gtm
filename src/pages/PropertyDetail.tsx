@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { RealEstateProperty, PropertyPhase } from '@/types/realEstate';
+import { RealEstateProperty, PropertyPhase, BooleanStatus, SurveyStatus, TestFitStatus, LeaseStatus } from '@/types/realEstate';
 import { Button } from '@/components/ui/button';
 import { LoadingState } from '@/components/LoadingState';
 import { ArrowLeft } from 'lucide-react';
@@ -91,30 +92,30 @@ const PropertyDetail: React.FC = () => {
       
       setPropertyFormValues({
         phase: property.phase || null,
-        sf_available: property.sf_available || '',
-        zoning: property.zoning || '',
-        permitted_use: property.permitted_use || '',
-        parking: property.parking || '',
-        fire_sprinklers: property.fire_sprinklers || '',
-        fiber: property.fiber || '',
+        sf_available: property.sf_available || null,
+        zoning: property.zoning || null,
+        permitted_use: property.permitted_use || null,
+        parking: property.parking || null,
+        fire_sprinklers: property.fire_sprinklers || null,
+        fiber: property.fiber || null,
       });
       
       setStatusFormValues({
-        ahj_zoning_confirmation: property.ahj_zoning_confirmation || '',
-        ahj_building_records: property.ahj_building_records || '',
-        survey_status: property.survey_status || '',
-        test_fit_status: property.test_fit_status || '',
+        ahj_zoning_confirmation: property.ahj_zoning_confirmation || null,
+        ahj_building_records: property.ahj_building_records || null,
+        survey_status: property.survey_status || null,
+        test_fit_status: property.test_fit_status || null,
       });
       
       setContactFormValues({
-        ll_poc: property.ll_poc || '',
-        ll_phone: property.ll_phone || '',
-        ll_email: property.ll_email || '',
+        ll_poc: property.ll_poc || null,
+        ll_phone: property.ll_phone || null,
+        ll_email: property.ll_email || null,
       });
       
       setLeaseFormValues({
-        loi_status: property.loi_status || '',
-        lease_status: property.lease_status || '',
+        loi_status: property.loi_status || null,
+        lease_status: property.lease_status || null,
       });
     }
   }, [property]);
@@ -136,10 +137,10 @@ const PropertyDetail: React.FC = () => {
     const { name, value } = e.target;
     
     if (name === 'fire_sprinklers' || name === 'fiber') {
-      const validValue = (value === 'true' || value === 'false' || value === 'unknown') ? value : null;
+      const validValue: BooleanStatus = (value === 'true' || value === 'false' || value === 'unknown') ? value : null;
       setPropertyFormValues(prev => ({ ...prev, [name]: validValue }));
     } else {
-      setPropertyFormValues(prev => ({ ...prev, [name]: value }));
+      setPropertyFormValues(prev => ({ ...prev, [name]: value || null }));
     }
   };
 
@@ -147,32 +148,32 @@ const PropertyDetail: React.FC = () => {
     const { name, value } = e.target;
     
     if (name === 'ahj_zoning_confirmation') {
-      const validValue = (value === 'true' || value === 'false' || value === 'unknown') ? value : null;
+      const validValue: BooleanStatus = (value === 'true' || value === 'false' || value === 'unknown') ? value : null;
       setStatusFormValues(prev => ({ ...prev, [name]: validValue }));
     } else if (name === 'survey_status') {
-      const validValue = (value === 'complete' || value === 'pending' || value === 'unknown') ? value : null;
+      const validValue: SurveyStatus = (value === 'complete' || value === 'pending' || value === 'unknown') ? value : null;
       setStatusFormValues(prev => ({ ...prev, [name]: validValue }));
     } else if (name === 'test_fit_status') {
-      const validValue = (value === 'unknown' || value === 'pending' || value === 'complete') ? value : null;
+      const validValue: TestFitStatus = (value === 'unknown' || value === 'pending' || value === 'complete') ? value : null;
       setStatusFormValues(prev => ({ ...prev, [name]: validValue }));
     } else {
-      setStatusFormValues(prev => ({ ...prev, [name]: value }));
+      setStatusFormValues(prev => ({ ...prev, [name]: value || null }));
     }
   };
 
   const handleContactInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setContactFormValues(prev => ({ ...prev, [name]: value }));
+    setContactFormValues(prev => ({ ...prev, [name]: value || null }));
   };
 
   const handleLeaseInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     
     if (name === 'loi_status' || name === 'lease_status') {
-      const validValue = (value === 'pending' || value === 'sent' || value === 'signed') ? value : null;
+      const validValue: LeaseStatus = (value === 'pending' || value === 'sent' || value === 'signed') ? value : null;
       setLeaseFormValues(prev => ({ ...prev, [name]: validValue }));
     } else {
-      setLeaseFormValues(prev => ({ ...prev, [name]: value }));
+      setLeaseFormValues(prev => ({ ...prev, [name]: value || null }));
     }
   };
 
@@ -228,12 +229,12 @@ const PropertyDetail: React.FC = () => {
     if (property) {
       setPropertyFormValues({
         phase: property.phase || null,
-        sf_available: property.sf_available || '',
-        zoning: property.zoning || '',
-        permitted_use: property.permitted_use || '',
-        parking: property.parking || '',
-        fire_sprinklers: property.fire_sprinklers || '',
-        fiber: property.fiber || '',
+        sf_available: property.sf_available || null,
+        zoning: property.zoning || null,
+        permitted_use: property.permitted_use || null,
+        parking: property.parking || null,
+        fire_sprinklers: property.fire_sprinklers || null,
+        fiber: property.fiber || null,
       });
     }
     setIsEditingPropertyInfo(false);
@@ -277,10 +278,10 @@ const PropertyDetail: React.FC = () => {
   const handleCancelEditStatusInfo = () => {
     if (property) {
       setStatusFormValues({
-        ahj_zoning_confirmation: property.ahj_zoning_confirmation || '',
-        ahj_building_records: property.ahj_building_records || '',
-        survey_status: property.survey_status || '',
-        test_fit_status: property.test_fit_status || '',
+        ahj_zoning_confirmation: property.ahj_zoning_confirmation || null,
+        ahj_building_records: property.ahj_building_records || null,
+        survey_status: property.survey_status || null,
+        test_fit_status: property.test_fit_status || null,
       });
     }
     setIsEditingStatusInfo(false);
@@ -324,9 +325,9 @@ const PropertyDetail: React.FC = () => {
   const handleCancelEditContactInfo = () => {
     if (property) {
       setContactFormValues({
-        ll_poc: property.ll_poc || '',
-        ll_phone: property.ll_phone || '',
-        ll_email: property.ll_email || '',
+        ll_poc: property.ll_poc || null,
+        ll_phone: property.ll_phone || null,
+        ll_email: property.ll_email || null,
       });
     }
     setIsEditingContactInfo(false);
@@ -366,8 +367,8 @@ const PropertyDetail: React.FC = () => {
   const handleCancelEditLeaseInfo = () => {
     if (property) {
       setLeaseFormValues({
-        loi_status: property.loi_status || '',
-        lease_status: property.lease_status || '',
+        loi_status: property.loi_status || null,
+        lease_status: property.lease_status || null,
       });
     }
     setIsEditingLeaseInfo(false);
@@ -404,24 +405,27 @@ const PropertyDetail: React.FC = () => {
     }
   };
 
-  const validateFormValues = (values: Partial<RealEstateProperty>, fields: string[]): Partial<RealEstateProperty> => {
+  const validateFormValues = (values: Partial<RealEstateProperty>, fields: (keyof RealEstateProperty)[]): Partial<RealEstateProperty> => {
     const validated: Partial<RealEstateProperty> = {};
     
     for (const key of fields) {
       if (key in values) {
-        const value = values[key as keyof Partial<RealEstateProperty>];
+        const value = values[key];
         
         if (key === 'ahj_zoning_confirmation' || key === 'fire_sprinklers' || key === 'fiber') {
-          validated[key as keyof Partial<RealEstateProperty>] = 
-            (value === 'true' || value === 'false' || value === 'unknown') ? value : null;
-        } else if (key === 'survey_status' || key === 'test_fit_status') {
-          validated[key as keyof Partial<RealEstateProperty>] = 
-            (value === 'complete' || value === 'pending' || value === 'unknown') ? value : null;
+          validated[key] = (value === 'true' || value === 'false' || value === 'unknown') ? 
+            value as BooleanStatus : null;
+        } else if (key === 'survey_status') {
+          validated[key] = (value === 'complete' || value === 'pending' || value === 'unknown') ? 
+            value as SurveyStatus : null;
+        } else if (key === 'test_fit_status') {
+          validated[key] = (value === 'unknown' || value === 'pending' || value === 'complete') ? 
+            value as TestFitStatus : null;
         } else if (key === 'loi_status' || key === 'lease_status') {
-          validated[key as keyof Partial<RealEstateProperty>] = 
-            (value === 'pending' || value === 'sent' || value === 'signed') ? value : null;
+          validated[key] = (value === 'pending' || value === 'sent' || value === 'signed') ? 
+            value as LeaseStatus : null;
         } else {
-          validated[key as keyof Partial<RealEstateProperty>] = value;
+          validated[key] = value;
         }
       }
     }

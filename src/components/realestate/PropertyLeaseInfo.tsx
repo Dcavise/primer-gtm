@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/LoadingState';
-import { RealEstateProperty } from '@/types/realEstate';
+import { RealEstateProperty, LeaseStatus } from '@/types/realEstate';
 import { supabase } from '@/integrations/supabase/client';
 
 interface PropertyLeaseInfoProps {
@@ -39,8 +39,8 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
   React.useEffect(() => {
     if (property) {
       setFieldValues({
-        loi_status: property.loi_status || '',
-        lease_status: property.lease_status || '',
+        loi_status: property.loi_status || null,
+        lease_status: property.lease_status || null,
       });
     }
   }, [property]);
@@ -49,7 +49,7 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
     setEditingFields(prev => ({ ...prev, [fieldName]: true }));
     setFieldValues(prev => ({ 
       ...prev, 
-      [fieldName]: property[fieldName as keyof RealEstateProperty] || '' 
+      [fieldName]: property[fieldName as keyof RealEstateProperty] as string | null 
     }));
   };
 
@@ -57,13 +57,13 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
     setEditingFields(prev => ({ ...prev, [fieldName]: false }));
     setFieldValues(prev => ({ 
       ...prev, 
-      [fieldName]: property[fieldName as keyof RealEstateProperty] || '' 
+      [fieldName]: property[fieldName as keyof RealEstateProperty] as string | null 
     }));
   };
 
   const handleFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFieldValues(prev => ({ ...prev, [name]: value }));
+    setFieldValues(prev => ({ ...prev, [name]: value || null }));
   };
 
   const handleSaveField = async (fieldName: string) => {
@@ -73,12 +73,13 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
     
     try {
       // Ensure the value matches enum type for specific fields
-      let valueToSave = fieldValues[fieldName];
+      let valueToSave: LeaseStatus = null;
       
       // For enum fields, make sure the value is valid
       if (fieldName === 'loi_status' || fieldName === 'lease_status') {
-        valueToSave = (valueToSave === 'pending' || valueToSave === 'sent' || valueToSave === 'signed') 
-          ? valueToSave 
+        const currentValue = fieldValues[fieldName];
+        valueToSave = (currentValue === 'pending' || currentValue === 'sent' || currentValue === 'signed') 
+          ? currentValue 
           : null;
       }
       
@@ -167,7 +168,7 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
         ) : isEditing ? (
           <Input 
             name={fieldName} 
-            value={formValues[fieldName as keyof RealEstateProperty] || ''} 
+            value={formValues[fieldName as keyof RealEstateProperty] as string || ''} 
             onChange={onInputChange}
             placeholder={`Enter ${label.toLowerCase()}`}
           />

@@ -37,3 +37,9 @@ export type PropertyPhase =
   | '7. Set Up'
   | 'Hold'
   | 'Deprioritize';
+
+// Define type aliases for the enum values to improve code readability
+export type BooleanStatus = "true" | "false" | "unknown" | null;
+export type SurveyStatus = "complete" | "pending" | "unknown" | null;
+export type TestFitStatus = "unknown" | "pending" | "complete" | null;
+export type LeaseStatus = "pending" | "sent" | "signed" | null;
