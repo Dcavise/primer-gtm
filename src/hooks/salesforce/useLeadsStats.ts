@@ -132,7 +132,10 @@ export const fetchLeadsStats = async (
   } catch (error) {
     logger.error('Error fetching leads stats', error);
     handleError(error, 'Error fetching leads stats');
-    return generateMockLeadsData(fourWeeksAgo);
+    // Make sure to use the fourWeeksAgo variable that's defined within this function's scope
+    const localFourWeeksAgo = new Date();
+    localFourWeeksAgo.setDate(localFourWeeksAgo.getDate() - 28);
+    return generateMockLeadsData(localFourWeeksAgo);
   }
 };
 

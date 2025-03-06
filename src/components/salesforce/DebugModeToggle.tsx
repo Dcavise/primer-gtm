@@ -24,7 +24,7 @@ export const DebugModeToggle: React.FC = () => {
         id="debug-mode" 
         checked={isDebugMode}
         onCheckedChange={handleToggleDebugMode}
-        size="sm"
+        className="data-[state=checked]:bg-green-500"
       />
       <Label htmlFor="debug-mode" className="text-white text-xs font-mono">
         Debug Mode
