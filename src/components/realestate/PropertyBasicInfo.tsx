@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Edit, Save, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -6,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/LoadingState';
-import { RealEstateProperty, PropertyPhase } from '@/types/realEstate';
+import { RealEstateProperty, PropertyPhase, BooleanStatus } from '@/types/realEstate';
 import { SafeSimplePhaseSelector } from './SafeSimplePhaseSelector';
+import { BooleanStatusSelector } from './BooleanStatusSelector';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { fieldValidators } from '@/schemas/propertySchema';
@@ -26,7 +26,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
   // Fix the type definition to include PropertyPhase, string, null, and number
-  const [fieldValues, setFieldValues] = useState<Record<string, string | null | PropertyPhase | number>>({});
+  const [fieldValues, setFieldValues] = useState<Record<string, string | null | PropertyPhase | number | BooleanStatus>>({});
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // Initialize field values when property changes
@@ -84,6 +84,11 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
         ...prev, 
         [fieldName]: property.phase || '' as PropertyPhase | ''
       }));
+    } else if (fieldName === 'fire_sprinklers' || fieldName === 'fiber') {
+      setFieldValues(prev => ({ 
+        ...prev, 
+        [fieldName]: property[fieldName as keyof RealEstateProperty] as BooleanStatus || '' 
+      }));
     } else {
       setFieldValues(prev => ({ 
         ...prev, 
@@ -107,6 +112,11 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
         ...prev, 
         [fieldName]: property.phase || '' as PropertyPhase | ''
       }));
+    } else if (fieldName === 'fire_sprinklers' || fieldName === 'fiber') {
+      setFieldValues(prev => ({ 
+        ...prev, 
+        [fieldName]: property[fieldName as keyof RealEstateProperty] as BooleanStatus || '' 
+      }));
     } else {
       setFieldValues(prev => ({ 
         ...prev, 
@@ -125,6 +135,12 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
     console.log("Selected phase:", value);
     setFieldValues(prev => ({ ...prev, phase: value || null }));
     validateField('phase', value === '' ? null : value);
+  };
+
+  const handleBooleanStatusFieldChange = (fieldName: 'fire_sprinklers' | 'fiber', value: BooleanStatus | '') => {
+    console.log(`Selected ${fieldName}:`, value);
+    setFieldValues(prev => ({ ...prev, [fieldName]: value || null }));
+    validateField(fieldName, value === '' ? null : value);
   };
 
   const handleSaveField = async (fieldName: string) => {
@@ -314,6 +330,73 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
     );
   };
 
+  const renderBooleanStatusField = (fieldName: 'fire_sprinklers' | 'fiber', label: string) => {
+    const isFieldEditing = editingFields[fieldName];
+    const isFieldSaving = savingFields[fieldName];
+    const hasError = validationErrors[fieldName];
+    
+    return (
+      <div className="space-y-1">
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-muted-foreground">{label}</p>
+          {!isFieldEditing && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => handleEditField(fieldName)}
+              className="h-6 px-2"
+            >
+              <Edit className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+        
+        {isFieldEditing ? (
+          <div className="space-y-2">
+            <ErrorBoundary>
+              <BooleanStatusSelector
+                value={fieldValues[fieldName] as BooleanStatus | null}
+                onValueChange={(value) => handleBooleanStatusFieldChange(fieldName, value)}
+                disabled={isFieldSaving}
+              />
+            </ErrorBoundary>
+            {hasError && (
+              <p className="text-xs text-red-500">{hasError}</p>
+            )}
+            <div className="flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handleCancelField(fieldName)}
+                disabled={isFieldSaving}
+                className="h-7 px-2 text-xs"
+              >
+                <X className="h-3 w-3 mr-1" /> Cancel
+              </Button>
+              <Button 
+                variant="default" 
+                size="sm" 
+                onClick={() => handleSaveField(fieldName)}
+                disabled={isFieldSaving || Boolean(hasError)}
+                className="h-7 px-2 text-xs"
+              >
+                {isFieldSaving ? (
+                  <LoadingState message="Saving..." showSpinner={true} />
+                ) : (
+                  <>
+                    <Save className="h-3 w-3 mr-1" /> Save
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <p className="font-medium">{property[fieldName] || 'Not specified'}</p>
+        )}
+      </div>
+    );
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -336,8 +419,8 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
         {renderField('zoning', 'Zoning')}
         {renderField('permitted_use', 'Permitted Use')}
         {renderField('parking', 'Parking')}
-        {renderField('fire_sprinklers', 'Fire Sprinklers')}
-        {renderField('fiber', 'Fiber')}
+        {renderBooleanStatusField('fire_sprinklers', 'Fire Sprinklers')}
+        {renderBooleanStatusField('fiber', 'Fiber')}
       </CardContent>
     </Card>
   );

@@ -2,12 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { Edit, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/LoadingState';
 import { RealEstateProperty, LeaseStatus } from '@/types/realEstate';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { LeaseStatusSelector } from './LeaseStatusSelector';
+import { ErrorBoundary } from '@/components/error-boundary';
 
 interface PropertyLeaseInfoProps {
   property: RealEstateProperty;
@@ -22,7 +23,7 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
   // Update type to match our form inputs
-  const [fieldValues, setFieldValues] = useState<Record<string, LeaseStatus | string | null>>({
+  const [fieldValues, setFieldValues] = useState<Record<string, LeaseStatus | null>>({
     loi_status: null,
     lease_status: null,
   });
@@ -53,9 +54,11 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
     }));
   };
 
-  const handleFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFieldValues(prev => ({ ...prev, [name]: value }));
+  const handleFieldChange = (fieldName: string, value: LeaseStatus | '') => {
+    setFieldValues(prev => ({ 
+      ...prev, 
+      [fieldName]: value === '' ? null : value 
+    }));
   };
 
   const handleSaveField = async (fieldName: string) => {
@@ -64,16 +67,8 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
     setSavingFields(prev => ({ ...prev, [fieldName]: true }));
     
     try {
-      // Ensure the value matches enum type for specific fields
-      let valueToSave: LeaseStatus = null;
-      
-      // For enum fields, make sure the value is valid
-      if (fieldName === 'loi_status' || fieldName === 'lease_status') {
-        const currentValue = fieldValues[fieldName];
-        valueToSave = (currentValue === 'pending' || currentValue === 'sent' || currentValue === 'signed') 
-          ? currentValue as LeaseStatus
-          : null;
-      }
+      // Use the current field value
+      const valueToSave = fieldValues[fieldName];
       
       const { error } = await supabase
         .from('real_estate_pipeline')
@@ -83,12 +78,11 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
       if (error) {
         console.error(`Error saving ${fieldName}:`, error);
         toast.error(`Failed to save ${fieldName}`);
-        return;
+      } else {
+        setEditingFields(prev => ({ ...prev, [fieldName]: false }));
+        toast.success(`${fieldName} updated successfully`);
+        onPropertyUpdated();
       }
-      
-      setEditingFields(prev => ({ ...prev, [fieldName]: false }));
-      toast.success(`${fieldName} updated successfully`);
-      onPropertyUpdated();
     } catch (error) {
       console.error(`Error saving ${fieldName}:`, error);
       toast.error(`Failed to save ${fieldName}`);
@@ -97,7 +91,7 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
     }
   };
 
-  const renderField = (fieldName: string, label: string) => {
+  const renderLeaseStatusField = (fieldName: 'loi_status' | 'lease_status', label: string) => {
     const isFieldEditing = editingFields[fieldName] || false;
     const isFieldSaving = savingFields[fieldName] || false;
     
@@ -119,12 +113,13 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
         
         {isFieldEditing ? (
           <div className="space-y-2">
-            <Input 
-              name={fieldName} 
-              value={fieldValues[fieldName] || ''} 
-              onChange={handleFieldChange}
-              placeholder={`Enter ${label.toLowerCase()}`}
-            />
+            <ErrorBoundary>
+              <LeaseStatusSelector
+                value={fieldValues[fieldName]}
+                onValueChange={(value) => handleFieldChange(fieldName, value)}
+                disabled={isFieldSaving}
+              />
+            </ErrorBoundary>
             <div className="flex justify-end space-x-2">
               <Button 
                 variant="outline" 
@@ -167,8 +162,8 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {renderField('loi_status', 'LOI Status')}
-        {renderField('lease_status', 'Lease Status')}
+        {renderLeaseStatusField('loi_status', 'LOI Status')}
+        {renderLeaseStatusField('lease_status', 'Lease Status')}
       </CardContent>
     </Card>
   );

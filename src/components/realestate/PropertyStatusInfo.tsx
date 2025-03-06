@@ -8,6 +8,10 @@ import { LoadingState } from '@/components/LoadingState';
 import { RealEstateProperty, BooleanStatus, SurveyStatus, TestFitStatus } from '@/types/realEstate';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { BooleanStatusSelector } from './BooleanStatusSelector';
+import { SurveyStatusSelector } from './SurveyStatusSelector';
+import { TestFitStatusSelector } from './TestFitStatusSelector';
+import { ErrorBoundary } from '@/components/error-boundary';
 
 interface PropertyStatusInfoProps {
   property: RealEstateProperty;
@@ -57,32 +61,21 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
     setFieldValues(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleEnumFieldChange = (fieldName: string, value: BooleanStatus | SurveyStatus | TestFitStatus | '') => {
+    setFieldValues(prev => ({ 
+      ...prev, 
+      [fieldName]: value === '' ? null : value 
+    }));
+  };
+
   const handleSaveField = async (fieldName: string) => {
     if (!property.id) return;
     
     setSavingFields(prev => ({ ...prev, [fieldName]: true }));
     
     try {
-      // Ensure the value matches enum type for specific fields
-      let valueToSave: BooleanStatus | SurveyStatus | TestFitStatus | string | null = null;
-      const currentValue = fieldValues[fieldName];
-      
-      // For enum fields, make sure the value is valid
-      if (fieldName === 'ahj_zoning_confirmation') {
-        valueToSave = (currentValue === 'true' || currentValue === 'false' || currentValue === 'unknown') 
-          ? currentValue as BooleanStatus
-          : null;
-      } else if (fieldName === 'survey_status') {
-        valueToSave = (currentValue === 'complete' || currentValue === 'pending' || currentValue === 'unknown')
-          ? currentValue as SurveyStatus
-          : null;
-      } else if (fieldName === 'test_fit_status') {
-        valueToSave = (currentValue === 'unknown' || currentValue === 'pending' || currentValue === 'complete')
-          ? currentValue as TestFitStatus
-          : null;
-      } else {
-        valueToSave = currentValue as string;
-      }
+      // Use the current field value
+      const valueToSave = fieldValues[fieldName];
       
       const { error } = await supabase
         .from('real_estate_pipeline')
@@ -92,12 +85,11 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
       if (error) {
         console.error(`Error saving ${fieldName}:`, error);
         toast.error(`Failed to save ${fieldName}`);
-        return;
+      } else {
+        setEditingFields(prev => ({ ...prev, [fieldName]: false }));
+        toast.success(`${fieldName} updated successfully`);
+        onPropertyUpdated();
       }
-      
-      setEditingFields(prev => ({ ...prev, [fieldName]: false }));
-      toast.success(`${fieldName} updated successfully`);
-      onPropertyUpdated();
     } catch (error) {
       console.error(`Error saving ${fieldName}:`, error);
       toast.error(`Failed to save ${fieldName}`);
@@ -168,6 +160,195 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
     );
   };
 
+  const renderBooleanStatusField = (fieldName: 'ahj_zoning_confirmation', label: string) => {
+    const isFieldEditing = editingFields[fieldName];
+    const isFieldSaving = savingFields[fieldName];
+    
+    return (
+      <div className="space-y-1">
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-muted-foreground">{label}</p>
+          {!isFieldEditing && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => handleEditField(fieldName)}
+              className="h-6 px-2"
+            >
+              <Edit className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+        
+        {isFieldEditing ? (
+          <div className="space-y-2">
+            <ErrorBoundary>
+              <BooleanStatusSelector
+                value={fieldValues[fieldName] as BooleanStatus | null}
+                onValueChange={(value) => handleEnumFieldChange(fieldName, value)}
+                disabled={isFieldSaving}
+              />
+            </ErrorBoundary>
+            <div className="flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handleCancelField(fieldName)}
+                disabled={isFieldSaving}
+                className="h-7 px-2 text-xs"
+              >
+                <X className="h-3 w-3 mr-1" /> Cancel
+              </Button>
+              <Button 
+                variant="default" 
+                size="sm" 
+                onClick={() => handleSaveField(fieldName)}
+                disabled={isFieldSaving}
+                className="h-7 px-2 text-xs"
+              >
+                {isFieldSaving ? (
+                  <LoadingState message="Saving..." showSpinner={true} />
+                ) : (
+                  <>
+                    <Save className="h-3 w-3 mr-1" /> Save
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <p className="font-medium">{property[fieldName] || 'Not specified'}</p>
+        )}
+      </div>
+    );
+  };
+
+  const renderSurveyStatusField = (fieldName: 'survey_status', label: string) => {
+    const isFieldEditing = editingFields[fieldName];
+    const isFieldSaving = savingFields[fieldName];
+    
+    return (
+      <div className="space-y-1">
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-muted-foreground">{label}</p>
+          {!isFieldEditing && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => handleEditField(fieldName)}
+              className="h-6 px-2"
+            >
+              <Edit className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+        
+        {isFieldEditing ? (
+          <div className="space-y-2">
+            <ErrorBoundary>
+              <SurveyStatusSelector
+                value={fieldValues[fieldName] as SurveyStatus | null}
+                onValueChange={(value) => handleEnumFieldChange(fieldName, value)}
+                disabled={isFieldSaving}
+              />
+            </ErrorBoundary>
+            <div className="flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handleCancelField(fieldName)}
+                disabled={isFieldSaving}
+                className="h-7 px-2 text-xs"
+              >
+                <X className="h-3 w-3 mr-1" /> Cancel
+              </Button>
+              <Button 
+                variant="default" 
+                size="sm" 
+                onClick={() => handleSaveField(fieldName)}
+                disabled={isFieldSaving}
+                className="h-7 px-2 text-xs"
+              >
+                {isFieldSaving ? (
+                  <LoadingState message="Saving..." showSpinner={true} />
+                ) : (
+                  <>
+                    <Save className="h-3 w-3 mr-1" /> Save
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <p className="font-medium">{property[fieldName] || 'Not specified'}</p>
+        )}
+      </div>
+    );
+  };
+
+  const renderTestFitStatusField = (fieldName: 'test_fit_status', label: string) => {
+    const isFieldEditing = editingFields[fieldName];
+    const isFieldSaving = savingFields[fieldName];
+    
+    return (
+      <div className="space-y-1">
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-muted-foreground">{label}</p>
+          {!isFieldEditing && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => handleEditField(fieldName)}
+              className="h-6 px-2"
+            >
+              <Edit className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+        
+        {isFieldEditing ? (
+          <div className="space-y-2">
+            <ErrorBoundary>
+              <TestFitStatusSelector
+                value={fieldValues[fieldName] as TestFitStatus | null}
+                onValueChange={(value) => handleEnumFieldChange(fieldName, value)}
+                disabled={isFieldSaving}
+              />
+            </ErrorBoundary>
+            <div className="flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handleCancelField(fieldName)}
+                disabled={isFieldSaving}
+                className="h-7 px-2 text-xs"
+              >
+                <X className="h-3 w-3 mr-1" /> Cancel
+              </Button>
+              <Button 
+                variant="default" 
+                size="sm" 
+                onClick={() => handleSaveField(fieldName)}
+                disabled={isFieldSaving}
+                className="h-7 px-2 text-xs"
+              >
+                {isFieldSaving ? (
+                  <LoadingState message="Saving..." showSpinner={true} />
+                ) : (
+                  <>
+                    <Save className="h-3 w-3 mr-1" /> Save
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <p className="font-medium">{property[fieldName] || 'Not specified'}</p>
+        )}
+      </div>
+    );
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -176,10 +357,10 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {renderField('ahj_zoning_confirmation', 'AHJ Zoning Confirmation')}
+        {renderBooleanStatusField('ahj_zoning_confirmation', 'AHJ Zoning Confirmation')}
         {renderField('ahj_building_records', 'AHJ Building Records')}
-        {renderField('survey_status', 'Survey Status')}
-        {renderField('test_fit_status', 'Test Fit Status')}
+        {renderSurveyStatusField('survey_status', 'Survey Status')}
+        {renderTestFitStatusField('test_fit_status', 'Test Fit Status')}
       </CardContent>
     </Card>
   );
