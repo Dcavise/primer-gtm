@@ -79,6 +79,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
   };
 
   const handlePhaseFieldChange = (value: PropertyPhase | '') => {
+    console.log("Selected phase:", value);
     setFieldValues(prev => ({ ...prev, phase: value || null }));
   };
 
@@ -88,6 +89,8 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
     setSavingFields(prev => ({ ...prev, [fieldName]: true }));
     
     try {
+      console.log(`Saving ${fieldName} with value:`, fieldValues[fieldName]);
+      
       const { error } = await supabase
         .from('real_estate_pipeline')
         .update({ [fieldName]: fieldValues[fieldName] })

@@ -82,6 +82,8 @@ export const PhaseSelector: React.FC<PhaseSelectorProps> = ({
   // The colorClass for the button should reflect the current phase
   const colorClass = value ? getPhaseColorClass(value) : '';
 
+  console.log("PhaseSelector rendering with value:", value);
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -109,6 +111,7 @@ export const PhaseSelector: React.FC<PhaseSelectorProps> = ({
               key="none"
               value="none"
               onSelect={() => {
+                console.log("Selecting: none");
                 onValueChange('');
                 setOpen(false);
               }}
@@ -126,6 +129,7 @@ export const PhaseSelector: React.FC<PhaseSelectorProps> = ({
                 key={phase}
                 value={phase}
                 onSelect={() => {
+                  console.log("Selecting phase:", phase);
                   onValueChange(phase);
                   setOpen(false);
                 }}
