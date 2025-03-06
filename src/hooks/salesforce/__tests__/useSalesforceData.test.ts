@@ -1,10 +1,10 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { useSalesforceData } from '../use-salesforce-data';
+import { useSalesforceData } from '../../use-salesforce-data';
 
 // Mock the hooks we import
-vi.mock('../salesforce/useStats', () => ({
+vi.mock('../../salesforce/useStats', () => ({
   useStats: vi.fn().mockImplementation(() => ({
     stats: { fellowsCount: 10, leadsCount: 20 },
     employmentStatusCounts: [{ status: 'Active', count: 5 }],
@@ -90,7 +90,7 @@ describe('useSalesforceData', () => {
   });
 
   it('should pass selectedCampusIds to useStats', async () => {
-    const { useStats } = await import('../salesforce/useStats');
+    const { useStats } = await import('../../salesforce/useStats');
     
     renderHook(() => useSalesforceData(['campus-1']));
     

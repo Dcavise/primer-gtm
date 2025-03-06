@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRealEstatePipeline } from '@/hooks/useRealEstatePipeline';
 import { useCampuses } from '@/hooks/useCampuses';
 import { PipelineColumn } from '@/components/realestate/PipelineColumn';
@@ -49,7 +50,7 @@ const PHASE_TO_GROUP: Record<PropertyPhase, string> = {
 const RealEstatePipeline: React.FC = () => {
   const [selectedCampusIds, setSelectedCampusIds] = useState<string[]>([]);
   const [selectedCampusNames, setSelectedCampusNames] = useState<string[]>([]);
-  const { data: properties, isLoading, error, refetch } = useRealEstatePipeline({ campusId: selectedCampusIds });
+  const { data: properties, isLoading, error, refetch } = useRealEstatePipeline({ campusId: selectedCampusIds.length === 1 ? selectedCampusIds[0] : null });
   const { data: campuses, isLoading: isLoadingCampuses } = useCampuses();
   const { isRefreshing, refreshRealEstateData } = useRealEstateSync();
   const queryClient = useQueryClient();
@@ -172,7 +173,7 @@ const RealEstatePipeline: React.FC = () => {
                 />
                 
                 <div className="mt-2 text-sm text-muted-foreground">
-                  {selectedCampusNames 
+                  {selectedCampusNames.length > 0
                     ? `Showing ${getTotalPropertyCount()} properties for ${selectedCampusNames.join(', ')}` 
                     : `Showing all ${getTotalPropertyCount()} properties across all campuses`}
                 </div>
