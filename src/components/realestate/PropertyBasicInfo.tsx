@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Edit, Save, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -10,34 +9,12 @@ import { RealEstateProperty, PropertyPhase } from '@/types/realEstate';
 import PhaseSelector from './PhaseSelector';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { z } from 'zod';
+import { fieldValidators } from '@/schemas/propertySchema';
 
 interface PropertyBasicInfoProps {
   property: RealEstateProperty;
   onPropertyUpdated: () => void;
 }
-
-// Define validation schemas using Zod
-const propertyFieldSchema = {
-  phase: z.union([z.null(), z.enum([
-    '0. New Site',
-    '1. Initial Diligence',
-    '2. Survey',
-    '3. Test Fit',
-    '4. Plan Production',
-    '5. Permitting',
-    '6. Construction',
-    '7. Set Up',
-    'Hold',
-    'Deprioritize'
-  ])]),
-  sf_available: z.union([z.null(), z.string()]),
-  zoning: z.union([z.null(), z.string()]),
-  permitted_use: z.union([z.null(), z.string()]),
-  parking: z.union([z.null(), z.string()]),
-  fire_sprinklers: z.union([z.null(), z.enum(['true', 'false', 'unknown'])]),
-  fiber: z.union([z.null(), z.enum(['true', 'false', 'unknown'])])
-};
 
 const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
   property,
@@ -66,13 +43,13 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
   }, [property]);
 
   const validateField = (fieldName: string, value: any): boolean => {
-    // Get the schema for this field
-    const schema = propertyFieldSchema[fieldName as keyof typeof propertyFieldSchema];
-    if (!schema) return true; // No schema defined for this field
+    // Get the validator for this field from our schema
+    const validator = fieldValidators[fieldName as keyof typeof fieldValidators];
+    if (!validator) return true; // No validator defined for this field
     
     try {
       // Validate the value against the schema
-      schema.parse(value);
+      validator.parse(value);
       // Clear any existing validation error for this field
       setValidationErrors(prev => {
         const updated = { ...prev };
@@ -82,10 +59,17 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
       return true;
     } catch (error) {
       console.error(`Validation error for ${fieldName}:`, error);
-      setValidationErrors(prev => ({
-        ...prev,
-        [fieldName]: error instanceof Error ? error.message : 'Invalid value'
-      }));
+      if (error instanceof Error) {
+        setValidationErrors(prev => ({
+          ...prev,
+          [fieldName]: error.message
+        }));
+      } else {
+        setValidationErrors(prev => ({
+          ...prev,
+          [fieldName]: 'Invalid value'
+        }));
+      }
       return false;
     }
   };
