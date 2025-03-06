@@ -478,6 +478,7 @@ export type Database = {
         Row: {
           campus_name: string | null
           lead_count: number | null
+          percentage: number | null
         }
         Relationships: []
       }
