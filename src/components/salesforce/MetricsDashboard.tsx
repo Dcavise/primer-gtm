@@ -7,12 +7,13 @@ import {
   CardTitle 
 } from '@/components/ui/card';
 import { LeadsMetricsData, OpportunityMetricsData, AttendanceMetricsData } from '@/hooks/salesforce/types';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend, BarChart, Bar } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend, BarChart, Bar, Cell } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { TrendIndicator } from './TrendIndicator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface MetricsDashboardProps {
   leadsMetrics: LeadsMetricsData;
@@ -23,6 +24,7 @@ interface MetricsDashboardProps {
 }
 
 export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
+  opportunityMetrics,
   selectedCampusName,
   selectedCampusId
 }) => {
@@ -34,9 +36,11 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
   // Chart colors based on the design system
   const chartColors = {
     leads: "#1F77B4",
-    conversions: "#FF7F0E",
-    wonOpportunities: "#2CA02C",
-    lostOpportunities: "#D62728"
+    newOpportunities: "#FF7F0E",
+    closedWon: "#2CA02C",
+    closedLost: "#D62728",
+    winRate: "#9467BD",
+    daysToClose: "#8C564B"
   };
   
   useEffect(() => {
@@ -61,9 +65,9 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
         
         // Filter closed won data if campus is selected
         let filteredClosedWonData = closedWonByData;
-        if (selectedCampusId && selectedCampusName) {
+        if (selectedCampusId) {
           filteredClosedWonData = closedWonByData.filter((item: any) => 
-            item.campus_name === selectedCampusName
+            item.campus_id === selectedCampusId
           );
         }
         
@@ -103,6 +107,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
               <div className="flex items-center">
                 <TrendIndicator 
                   value={metric.change_percentage} 
+                  format="percent"
                   showValue={true} 
                   hideIcon={false} 
                 />
@@ -137,8 +142,171 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
               formatter={(value: number) => [`${value}%`, 'Win Rate']}
               labelFormatter={(label) => `Campus: ${label}`}
             />
-            <Bar dataKey="win_rate" fill={chartColors.wonOpportunities} name="Win Rate" />
+            <Bar dataKey="win_rate" fill={chartColors.closedWon} name="Win Rate" />
           </BarChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  };
+
+  const renderOpportunityTrends = () => {
+    if (opportunityMetrics.isLoading || !opportunityMetrics.monthlyTrends.length) {
+      return <div className="text-center text-gray-500 p-4">Loading opportunity trends...</div>;
+    }
+
+    return (
+      <div className="mt-4">
+        <h3 className="text-lg font-medium mb-3">Monthly Opportunity Trends</h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={opportunityMetrics.monthlyTrends}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="month" />
+            <YAxis yAxisId="left" />
+            <YAxis yAxisId="right" orientation="right" domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
+            <Tooltip />
+            <Legend />
+            <Line 
+              yAxisId="left" 
+              type="monotone" 
+              dataKey="new_opportunities" 
+              name="New Opportunities" 
+              stroke={chartColors.newOpportunities} 
+              activeDot={{ r: 8 }} 
+            />
+            <Line 
+              yAxisId="left" 
+              type="monotone" 
+              dataKey="closed_won" 
+              name="Closed Won" 
+              stroke={chartColors.closedWon} 
+            />
+            <Line 
+              yAxisId="left" 
+              type="monotone" 
+              dataKey="closed_lost" 
+              name="Closed Lost" 
+              stroke={chartColors.closedLost} 
+            />
+            <Line 
+              yAxisId="right" 
+              type="monotone" 
+              dataKey="win_rate" 
+              name="Win Rate (%)" 
+              stroke={chartColors.winRate} 
+              strokeDasharray="3 3" 
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  };
+
+  const renderSalesCycles = () => {
+    if (opportunityMetrics.isLoading || !opportunityMetrics.salesCycles.length) {
+      return <div className="text-center text-gray-500 p-4">Loading sales cycle data...</div>;
+    }
+
+    return (
+      <div className="mt-6">
+        <h3 className="text-lg font-medium mb-3">Sales Cycle by Campus</h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={opportunityMetrics.salesCycles} layout="vertical">
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis type="number" label={{ value: 'Days', position: 'insideBottom', offset: -5 }} />
+            <YAxis type="category" dataKey="campus_name" width={120} />
+            <Tooltip formatter={(value: number) => [`${value} days`, '']} />
+            <Legend />
+            <Bar dataKey="avg_days_to_win" name="Days to Win" fill={chartColors.closedWon} />
+            <Bar dataKey="avg_days_to_lose" name="Days to Lose" fill={chartColors.closedLost} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  };
+
+  const renderStageProgression = () => {
+    if (opportunityMetrics.isLoading || !opportunityMetrics.stageProgression.length) {
+      return <div className="text-center text-gray-500 p-4">Loading stage progression data...</div>;
+    }
+
+    return (
+      <div className="mt-6">
+        <h3 className="text-lg font-medium mb-3">Stage Progression Analysis</h3>
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white border rounded-lg">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stage</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Count</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Conversion %</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Days</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Win Rate %</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {opportunityMetrics.stageProgression.map((stage, index) => (
+                <tr key={index} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{stage.stage_name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stage.opportunity_count}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stage.conversion_to_next_stage}%</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stage.avg_days_in_stage}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stage.win_rate_from_stage}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  const renderLeadToWinConversion = () => {
+    if (opportunityMetrics.isLoading || !opportunityMetrics.leadToWinConversion.length) {
+      return <div className="text-center text-gray-500 p-4">Loading lead conversion data...</div>;
+    }
+
+    return (
+      <div className="mt-6">
+        <h3 className="text-lg font-medium mb-3">Lead to Win Conversion</h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={opportunityMetrics.leadToWinConversion}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="month" />
+            <YAxis yAxisId="left" />
+            <YAxis yAxisId="right" orientation="right" domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
+            <Tooltip />
+            <Legend />
+            <Line 
+              yAxisId="left"
+              type="monotone" 
+              dataKey="new_leads" 
+              name="New Leads" 
+              stroke={chartColors.leads} 
+            />
+            <Line 
+              yAxisId="left"
+              type="monotone" 
+              dataKey="new_opportunities" 
+              name="New Opportunities" 
+              stroke={chartColors.newOpportunities} 
+            />
+            <Line 
+              yAxisId="right"
+              type="monotone" 
+              dataKey="lead_to_opp_rate" 
+              name="Lead→Opp (%)" 
+              stroke={chartColors.winRate} 
+              strokeDasharray="3 3" 
+            />
+            <Line 
+              yAxisId="right"
+              type="monotone" 
+              dataKey="opp_to_win_rate" 
+              name="Opp→Win (%)" 
+              stroke={chartColors.closedWon} 
+              strokeDasharray="3 3" 
+            />
+          </LineChart>
         </ResponsiveContainer>
       </div>
     );
@@ -171,19 +339,41 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
+        {isLoading && opportunityMetrics.isLoading ? (
           <div className="space-y-4">
             <Skeleton className="h-[120px] w-full" />
             <Skeleton className="h-[300px] w-full" />
           </div>
         ) : (
-          <>
-            <div className="mb-6">
-              <h3 className="text-lg font-medium mb-3">Week-over-Week Comparison</h3>
-              {renderWeekOverWeekMetrics()}
-            </div>
-            {renderWinRateChart()}
-          </>
+          <Tabs defaultValue="weekly">
+            <TabsList className="mb-4">
+              <TabsTrigger value="weekly">Weekly Overview</TabsTrigger>
+              <TabsTrigger value="opportunities">Opportunity Trends</TabsTrigger>
+              <TabsTrigger value="sales-cycle">Sales Cycle</TabsTrigger>
+              <TabsTrigger value="conversion">Lead Conversion</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="weekly">
+              <div className="mb-6">
+                <h3 className="text-lg font-medium mb-3">Week-over-Week Comparison</h3>
+                {renderWeekOverWeekMetrics()}
+              </div>
+              {renderWinRateChart()}
+            </TabsContent>
+            
+            <TabsContent value="opportunities">
+              {renderOpportunityTrends()}
+              {renderStageProgression()}
+            </TabsContent>
+            
+            <TabsContent value="sales-cycle">
+              {renderSalesCycles()}
+            </TabsContent>
+            
+            <TabsContent value="conversion">
+              {renderLeadToWinConversion()}
+            </TabsContent>
+          </Tabs>
         )}
       </CardContent>
     </Card>

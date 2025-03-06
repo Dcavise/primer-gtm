@@ -544,6 +544,21 @@ export type Database = {
           count: number
         }[]
       }
+      get_lead_to_win_conversion: {
+        Args: {
+          p_campus_id?: string
+          p_months?: number
+        }
+        Returns: {
+          month: string
+          new_leads: number
+          new_opportunities: number
+          closed_won: number
+          lead_to_opp_rate: number
+          opp_to_win_rate: number
+          lead_to_win_rate: number
+        }[]
+      }
       get_monthly_lead_trends: {
         Args: {
           start_date: string
@@ -557,6 +572,21 @@ export type Database = {
           conversion_rate: number
         }[]
       }
+      get_monthly_opportunity_trends: {
+        Args: {
+          start_date: string
+          end_date: string
+          p_campus_id?: string
+        }
+        Returns: {
+          month: string
+          new_opportunities: number
+          closed_won: number
+          closed_lost: number
+          win_rate: number
+          average_days_to_close: number
+        }[]
+      }
       get_opportunities_by_stage_campus: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -565,6 +595,30 @@ export type Database = {
           state: string
           count: number
           percentage: number
+        }[]
+      }
+      get_sales_cycle_by_campus: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          campus_name: string
+          state: string
+          avg_days_to_close: number
+          avg_days_to_win: number
+          avg_days_to_lose: number
+        }[]
+      }
+      get_stage_progression_analysis: {
+        Args: {
+          start_date?: string
+          end_date?: string
+          p_campus_id?: string
+        }
+        Returns: {
+          stage_name: string
+          opportunity_count: number
+          conversion_to_next_stage: number
+          avg_days_in_stage: number
+          win_rate_from_stage: number
         }[]
       }
       get_week_over_week_comparison: {
