@@ -38,5 +38,7 @@ smithery*
 SMITHERY.md
 
 # Other unnecessary files
-*.md
-browser-tools-mcp/ 
+browser-tools-mcp/
+
+# Don't ignore README.md as it might be needed for Vercel
+# *.md 
