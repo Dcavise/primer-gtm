@@ -1,12 +1,17 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Edit, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/LoadingState';
-import { RealEstateProperty, BooleanStatus, SurveyStatus, TestFitStatus } from '@/types/realEstate';
-import { supabase } from '@/integrations/supabase/client';
+import { 
+  RealEstateProperty, 
+  BooleanStatus, 
+  SurveyStatus, 
+  TestFitStatus 
+} from '@/types/realEstate';
+import PropertyFieldEditor from './PropertyFieldEditor';
+import { usePropertyFieldEditing } from '@/hooks/usePropertyFieldEditing';
 
 interface PropertyStatusInfoProps {
   property: RealEstateProperty;
@@ -29,167 +34,48 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
   onSave,
   onInputChange
 }) => {
-  // Individual field edit states
-  const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
-  const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
-  // Update type to accommodate enum values with proper nullable types
-  const [fieldValues, setFieldValues] = useState<Record<string, BooleanStatus | SurveyStatus | TestFitStatus | string | null>>({});
-
-  // Initialize field values when property changes
-  React.useEffect(() => {
-    if (property) {
-      setFieldValues({
-        ahj_zoning_confirmation: property.ahj_zoning_confirmation,
-        ahj_building_records: property.ahj_building_records,
-        survey_status: property.survey_status,
-        test_fit_status: property.test_fit_status,
-      });
-    }
-  }, [property]);
-
-  const handleEditField = (fieldName: string) => {
-    setEditingFields(prev => ({ ...prev, [fieldName]: true }));
-    setFieldValues(prev => ({ 
-      ...prev, 
-      [fieldName]: property[fieldName as keyof RealEstateProperty] as BooleanStatus | SurveyStatus | TestFitStatus | string | null
-    }));
-  };
-
-  const handleCancelField = (fieldName: string) => {
-    setEditingFields(prev => ({ ...prev, [fieldName]: false }));
-    setFieldValues(prev => ({ 
-      ...prev, 
-      [fieldName]: property[fieldName as keyof RealEstateProperty] as BooleanStatus | SurveyStatus | TestFitStatus | string | null
-    }));
-  };
-
-  const handleFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFieldValues(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSaveField = async (fieldName: string) => {
-    if (!property.id) return;
-    
-    setSavingFields(prev => ({ ...prev, [fieldName]: true }));
-    
-    try {
-      // Ensure the value matches enum type for specific fields
-      let valueToSave: BooleanStatus | SurveyStatus | TestFitStatus | string | null = null;
-      const currentValue = fieldValues[fieldName];
-      
-      // For enum fields, make sure the value is valid
+  // Use our custom hook for field editing
+  const { 
+    editingFields, 
+    savingFields, 
+    fieldValues, 
+    handleEditField, 
+    handleCancelField, 
+    handleFieldChange, 
+    handleSaveField 
+  } = usePropertyFieldEditing({
+    property,
+    initialValues: {
+      ahj_zoning_confirmation: property.ahj_zoning_confirmation,
+      ahj_building_records: property.ahj_building_records,
+      survey_status: property.survey_status,
+      test_fit_status: property.test_fit_status,
+    },
+    onFieldSaved: (fieldName, value) => {
+      // Sync the value with the parent component's form state
+      const event = {
+        target: { name: fieldName, value }
+      } as React.ChangeEvent<HTMLInputElement>;
+      onInputChange(event);
+    },
+    validateField: (fieldName, value) => {
+      // Validate specific field types
       if (fieldName === 'ahj_zoning_confirmation') {
-        valueToSave = (currentValue === 'true' || currentValue === 'false' || currentValue === 'unknown') 
-          ? currentValue as BooleanStatus
+        return (value === 'true' || value === 'false' || value === 'unknown') 
+          ? value as BooleanStatus
           : null;
       } else if (fieldName === 'survey_status') {
-        valueToSave = (currentValue === 'complete' || currentValue === 'pending' || currentValue === 'unknown')
-          ? currentValue as SurveyStatus
+        return (value === 'complete' || value === 'pending' || value === 'unknown')
+          ? value as SurveyStatus
           : null;
       } else if (fieldName === 'test_fit_status') {
-        valueToSave = (currentValue === 'unknown' || currentValue === 'pending' || currentValue === 'complete')
-          ? currentValue as TestFitStatus
+        return (value === 'unknown' || value === 'pending' || value === 'complete')
+          ? value as TestFitStatus
           : null;
-      } else {
-        valueToSave = currentValue as string;
       }
-      
-      const { error } = await supabase
-        .from('real_estate_pipeline')
-        .update({ [fieldName]: valueToSave })
-        .eq('id', property.id);
-      
-      if (error) {
-        console.error(`Error saving ${fieldName}:`, error);
-        return;
-      }
-      
-      setEditingFields(prev => ({ ...prev, [fieldName]: false }));
-      
-      // Also update the main form values so they stay in sync
-      if (onInputChange) {
-        const syntheticEvent = {
-          target: { name: fieldName, value: valueToSave }
-        } as React.ChangeEvent<HTMLInputElement>;
-        onInputChange(syntheticEvent);
-      }
-      
-    } catch (error) {
-      console.error(`Error saving ${fieldName}:`, error);
-    } finally {
-      setSavingFields(prev => ({ ...prev, [fieldName]: false }));
+      return value;
     }
-  };
-
-  const renderField = (fieldName: string, label: string) => {
-    const isFieldEditing = editingFields[fieldName];
-    const isFieldSaving = savingFields[fieldName];
-    
-    return (
-      <div className="space-y-1">
-        <div className="flex justify-between items-center">
-          <p className="text-sm text-muted-foreground">{label}</p>
-          {!isEditing && !isFieldEditing && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => handleEditField(fieldName)}
-              className="h-6 px-2"
-            >
-              <Edit className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
-        
-        {isFieldEditing ? (
-          <div className="space-y-2">
-            <Input 
-              name={fieldName} 
-              value={fieldValues[fieldName] || ''} 
-              onChange={handleFieldChange}
-              placeholder={`Enter ${label.toLowerCase()}`}
-            />
-            <div className="flex justify-end space-x-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => handleCancelField(fieldName)}
-                disabled={isFieldSaving}
-                className="h-7 px-2 text-xs"
-              >
-                <X className="h-3 w-3 mr-1" /> Cancel
-              </Button>
-              <Button 
-                variant="default" 
-                size="sm" 
-                onClick={() => handleSaveField(fieldName)}
-                disabled={isFieldSaving}
-                className="h-7 px-2 text-xs"
-              >
-                {isFieldSaving ? (
-                  <LoadingState message="Saving..." showSpinner={true} />
-                ) : (
-                  <>
-                    <Save className="h-3 w-3 mr-1" /> Save
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        ) : isEditing ? (
-          <Input 
-            name={fieldName} 
-            value={formValues[fieldName as keyof RealEstateProperty] as string || ''} 
-            onChange={onInputChange}
-            placeholder={`Enter ${label.toLowerCase()}`}
-          />
-        ) : (
-          <p className="font-medium">{property[fieldName as keyof RealEstateProperty] || 'Not specified'}</p>
-        )}
-      </div>
-    );
-  };
+  });
 
   return (
     <Card>
@@ -237,10 +123,68 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {renderField('ahj_zoning_confirmation', 'AHJ Zoning Confirmation')}
-        {renderField('ahj_building_records', 'AHJ Building Records')}
-        {renderField('survey_status', 'Survey Status')}
-        {renderField('test_fit_status', 'Test Fit Status')}
+        <PropertyFieldEditor
+          fieldName="ahj_zoning_confirmation"
+          label="AHJ Zoning Confirmation"
+          value={fieldValues.ahj_zoning_confirmation}
+          isEditing={editingFields.ahj_zoning_confirmation}
+          isSaving={savingFields.ahj_zoning_confirmation}
+          onEdit={handleEditField}
+          onCancel={handleCancelField}
+          onSave={handleSaveField}
+          onChange={handleFieldChange}
+          globalEditMode={isEditing}
+          globalFormValue={formValues.ahj_zoning_confirmation as string}
+          globalOnChange={onInputChange}
+          placeholder="true, false, or unknown"
+        />
+        
+        <PropertyFieldEditor
+          fieldName="ahj_building_records"
+          label="AHJ Building Records"
+          value={fieldValues.ahj_building_records}
+          isEditing={editingFields.ahj_building_records}
+          isSaving={savingFields.ahj_building_records}
+          onEdit={handleEditField}
+          onCancel={handleCancelField}
+          onSave={handleSaveField}
+          onChange={handleFieldChange}
+          globalEditMode={isEditing}
+          globalFormValue={formValues.ahj_building_records as string}
+          globalOnChange={onInputChange}
+        />
+        
+        <PropertyFieldEditor
+          fieldName="survey_status"
+          label="Survey Status"
+          value={fieldValues.survey_status}
+          isEditing={editingFields.survey_status}
+          isSaving={savingFields.survey_status}
+          onEdit={handleEditField}
+          onCancel={handleCancelField}
+          onSave={handleSaveField}
+          onChange={handleFieldChange}
+          globalEditMode={isEditing}
+          globalFormValue={formValues.survey_status as string}
+          globalOnChange={onInputChange}
+          placeholder="complete, pending, or unknown"
+        />
+        
+        <PropertyFieldEditor
+          fieldName="test_fit_status"
+          label="Test Fit Status"
+          value={fieldValues.test_fit_status}
+          isEditing={editingFields.test_fit_status}
+          isSaving={savingFields.test_fit_status}
+          onEdit={handleEditField}
+          onCancel={handleCancelField}
+          onSave={handleSaveField}
+          onChange={handleFieldChange}
+          globalEditMode={isEditing}
+          globalFormValue={formValues.test_fit_status as string}
+          globalOnChange={onInputChange}
+          placeholder="complete, pending, or unknown"
+        />
       </CardContent>
     </Card>
   );
