@@ -520,18 +520,51 @@ export async function findEmailByName(params: EmailFinderParams): Promise<EmailF
 }
 
 /**
- * Helper function to check database connectivity to both public and salesforce schemas
+ * Check database connection status
+ * @returns Object with connection status and schema availability
  */
 export const checkDatabaseConnection = async () => {
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY = 1000; // 1 second
+  
+  // Helper function to add delay
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+  
+  // Helper function for retry logic
+  const retryOperation = async (operation, retries) => {
+    try {
+      return await operation();
+    } catch (error) {
+      if (retries <= 0) {
+        throw error;
+      }
+      
+      await delay(RETRY_DELAY);
+      return retryOperation(operation, retries - 1);
+    }
+  };
+  
   try {
-    // First check public schema access
-    const publicCheck = await supabase
-      .from('campuses')
-      .select('count')
-      .limit(1);
+    // First check public schema access with retry
+    const publicCheckOperation = async () => {
+      const publicCheck = await supabase
+        .from('campuses')
+        .select('count')
+        .limit(1);
+      
+      if (publicCheck.error) {
+        console.error("Public schema connectivity check failed:", publicCheck.error);
+        throw publicCheck.error;
+      }
+      
+      return true;
+    };
     
-    if (publicCheck.error) {
-      console.error("Public schema connectivity check failed:", publicCheck.error);
+    let publicSchemaAccess = false;
+    try {
+      publicSchemaAccess = await retryOperation(publicCheckOperation, MAX_RETRIES);
+    } catch (error) {
+      console.error("Public schema access failed after retries:", error);
       return { connected: false, schemas: { public: false, salesforce: false }};
     }
     
@@ -539,18 +572,28 @@ export const checkDatabaseConnection = async () => {
     let salesforceAccess = false;
     try {
       // Use an RPC function that attempts to access the salesforce schema
-      const salesforceCheck = await supabase.rpc('test_salesforce_connection');
-      salesforceAccess = !salesforceCheck.error && salesforceCheck.data?.salesforce_schema_access === true;
+      const salesforceCheckOperation = async () => {
+        const salesforceCheck = await supabase.rpc('test_salesforce_connection');
+        
+        if (salesforceCheck.error) {
+          console.error("Salesforce schema connectivity check failed:", salesforceCheck.error);
+          throw salesforceCheck.error;
+        }
+        
+        return salesforceCheck.data?.salesforce_schema_access === true;
+      };
+      
+      salesforceAccess = await retryOperation(salesforceCheckOperation, MAX_RETRIES);
     } catch (schemaError) {
-      console.error("Salesforce schema access check failed:", schemaError);
+      console.error("Salesforce schema access check failed after retries:", schemaError);
       // Continue even if this fails - we still have public schema access
     }
     
     // Return results
     return { 
-      connected: true, 
+      connected: publicSchemaAccess, 
       schemas: { 
-        public: true, 
+        public: publicSchemaAccess, 
         salesforce: salesforceAccess 
       }
     };

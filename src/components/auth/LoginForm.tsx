@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,14 +6,16 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 const LoginForm = () => {
-  const { signIn, databaseConnected, schemaStatus } = useAuth();
+  const { signIn, databaseConnected, schemaStatus, refreshSession } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,8 +23,10 @@ const LoginForm = () => {
     setIsLoggingIn(true);
     
     try {
+      logger.auth('Attempting login from login form');
       const { error } = await signIn(email, password);
       if (error) {
+        logger.auth('Login error from form:', error);
         setLoginError(error.message);
         toast.error('Login failed', {
           description: error.message
@@ -31,12 +34,31 @@ const LoginForm = () => {
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      logger.auth('Unexpected login error from form:', error);
       setLoginError(errorMessage);
       toast.error('Login failed', {
         description: errorMessage
       });
     } finally {
       setIsLoggingIn(false);
+    }
+  };
+
+  const handleRefreshSession = async () => {
+    setIsRefreshing(true);
+    try {
+      logger.auth('Manually refreshing session from login form');
+      await refreshSession();
+      toast.success('Session refresh attempted', {
+        description: 'Please try logging in again'
+      });
+    } catch (error) {
+      logger.auth('Error during manual session refresh from form:', error);
+      toast.error('Session refresh failed', {
+        description: 'Please try again or clear your browser cache'
+      });
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -51,7 +73,21 @@ const LoginForm = () => {
       <CardContent className="space-y-4">
         {loginError && (
           <Alert variant="destructive">
-            <AlertDescription>{loginError}</AlertDescription>
+            <AlertDescription>
+              {loginError}
+              <div className="mt-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRefreshSession}
+                  disabled={isRefreshing}
+                  className="flex items-center gap-1"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  {isRefreshing ? 'Refreshing...' : 'Refresh Session'}
+                </Button>
+              </div>
+            </AlertDescription>
           </Alert>
         )}
         
@@ -93,13 +129,24 @@ const LoginForm = () => {
           />
         </div>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="flex flex-col space-y-2">
         <Button 
           type="submit" 
           className="w-full" 
           disabled={isLoggingIn}
         >
           {isLoggingIn ? 'Signing in...' : 'Sign In'}
+        </Button>
+        
+        <Button 
+          type="button"
+          variant="outline"
+          className="w-full flex items-center gap-2"
+          onClick={handleRefreshSession}
+          disabled={isRefreshing}
+        >
+          <RefreshCw className="h-4 w-4" />
+          {isRefreshing ? 'Refreshing Session...' : 'Refresh Session'}
         </Button>
       </CardFooter>
     </form>

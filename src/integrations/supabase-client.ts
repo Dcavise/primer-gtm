@@ -5,15 +5,21 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from './supabase/types';
 import { logger } from '@/utils/logger';
 
+// Ensure environment variables are properly loaded with fallbacks
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://pudncilureqpzxrxfupr.supabase.co";
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 const SUPABASE_SERVICE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_KEY || "";
+
+// Log configuration for debugging
+logger.info(`Supabase URL: ${SUPABASE_URL}`);
+logger.info(`Supabase Anon Key configured: ${SUPABASE_ANON_KEY ? 'Yes' : 'No'}`);
+logger.info(`Supabase Service Key configured: ${SUPABASE_SERVICE_KEY ? 'Yes' : 'No'}`);
 
 // Type augmentation for the RPC functions
 declare module '@supabase/supabase-js' {
   interface SupabaseClient<Database> {
     rpc(
-      fn: 'execute_sql_query' | 'get_weekly_lead_counts' | 'query_salesforce_table' | string,
+      fn: 'execute_sql_query' | 'get_weekly_lead_counts' | 'query_salesforce_table' | 'test_salesforce_connection' | string,
       params?: Record<string, any>
     ): any;
   }
@@ -29,47 +35,54 @@ class SupabaseUnifiedClient {
 
   constructor() {
     // Initialize regular client with anonymous key
-    this.regular = createClient<Database>(
-      SUPABASE_URL, 
-      SUPABASE_ANON_KEY,
-      {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-        },
-        global: {
-          headers: {
-            'x-client-info': 'primer-analytics-dashboard'
+    try {
+      this.regular = createClient<Database>(
+        SUPABASE_URL, 
+        SUPABASE_ANON_KEY,
+        {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            storageKey: 'primer-supabase-auth',
+            detectSessionInUrl: true,
           },
-        },
-        db: {
-          schema: 'public',
-        },
-      }
-    );
-
-    // Initialize admin client with service role key
-    this.isAdminConfigured = !!SUPABASE_SERVICE_KEY;
-    this.admin = createClient<Database>(
-      SUPABASE_URL,
-      SUPABASE_SERVICE_KEY,
-      {
-        auth: {
-          persistSession: false,
-          autoRefreshToken: false,
-        },
-        global: {
-          headers: {
-            'x-client-info': 'primer-analytics-dashboard-admin'
+          global: {
+            headers: {
+              'x-client-info': 'primer-analytics-dashboard'
+            },
           },
-        },
-        db: {
-          schema: 'public',
-        },
-      }
-    );
+          db: {
+            schema: 'public',
+          },
+        }
+      );
+      
+      // Initialize admin client with service role key
+      this.isAdminConfigured = !!SUPABASE_SERVICE_KEY;
+      this.admin = createClient<Database>(
+        SUPABASE_URL,
+        SUPABASE_SERVICE_KEY,
+        {
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+          },
+          global: {
+            headers: {
+              'x-client-info': 'primer-analytics-dashboard-admin'
+            },
+          },
+          db: {
+            schema: 'public',
+          },
+        }
+      );
 
-    logger.info(`Supabase client initialized. Admin access: ${this.isAdminConfigured ? 'Configured' : 'Not configured'}`);
+      logger.info(`Supabase client initialized. Admin access: ${this.isAdminConfigured ? 'Configured' : 'Not configured'}`);
+    } catch (error) {
+      logger.error('Error initializing Supabase client:', error);
+      throw new Error('Failed to initialize Supabase client. Check your environment variables.');
+    }
   }
 
   /**
@@ -91,6 +104,20 @@ class SupabaseUnifiedClient {
    */
   public get auth() {
     return this.regular.auth;
+  }
+
+  /**
+   * Proxy functions property to access the regular client's functions property
+   */
+  public get functions() {
+    return this.regular.functions;
+  }
+
+  /**
+   * Proxy rpc method to access the regular client's rpc method
+   */
+  public rpc(fn: string, params?: Record<string, any>) {
+    return this.regular.rpc(fn, params);
   }
 }
 
