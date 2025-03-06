@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Check } from 'lucide-react';
+import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,6 +16,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { PropertyPhase } from '@/types/realEstate';
+import { fieldValidators } from '@/schemas/propertySchema';
 
 // Define the valid phases based on the enum type in the database
 export const VALID_PHASES: PropertyPhase[] = [
@@ -97,7 +98,7 @@ export const PhaseSelector: React.FC<PhaseSelectorProps> = ({
           disabled={disabled}
         >
           {displayValue}
-          <span className="ml-2 h-4 w-4 shrink-0 opacity-50">▼</span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="p-0 w-full min-w-[200px]" align="start">
