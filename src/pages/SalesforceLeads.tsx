@@ -11,12 +11,16 @@ import { DatabaseConnectionAlert } from '@/components/salesforce/DatabaseConnect
 import { checkDatabaseConnection } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 import { troubleshootSchemaAccess } from '@/utils/salesforce-access';
+import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, AlertTriangle } from 'lucide-react';
 
 const SalesforceLeadsPage: React.FC = () => {
   const [selectedCampusIds, setSelectedCampusIds] = useState<string[]>([]);
   const [selectedCampusNames, setSelectedCampusNames] = useState<string[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
   const [schemaStatus, setSchemaStatus] = useState<{ public: boolean, salesforce: boolean }>({ public: false, salesforce: false });
+  const [errorDetails, setErrorDetails] = useState<Record<string, any> | undefined>(undefined);
   
   logger.info('SalesforceLeadsPage rendering');
   
@@ -53,8 +57,15 @@ const SalesforceLeadsPage: React.FC = () => {
           public: diagnosticResult.schemas?.public?.accessible || false,
           salesforce: diagnosticResult.salesforceAccessible || false
         });
+        
+        // Store detailed error information
+        setErrorDetails({
+          diagnosticResults: diagnosticResult,
+          connectionResults: connectionResult
+        });
       } else {
         setSchemaStatus(connectionResult.schemas);
+        setErrorDetails(undefined);
       }
       
       setConnectionStatus(connectionResult.connected ? 'connected' : 'error');
@@ -62,6 +73,7 @@ const SalesforceLeadsPage: React.FC = () => {
       logger.error("Error checking database connection:", error);
       setConnectionStatus('error');
       setSchemaStatus({ public: false, salesforce: false });
+      setErrorDetails({ error: String(error) });
     }
   }, []);
 
@@ -75,6 +87,34 @@ const SalesforceLeadsPage: React.FC = () => {
     logger.debug('Campus selection changed:', { campusIds, campusNames });
     setSelectedCampusIds(campusIds);
     setSelectedCampusNames(campusNames);
+  };
+
+  const renderDataLoadingError = () => {
+    if (connectionStatus !== 'error' && !syncError) return null;
+    
+    return (
+      <Card className="mb-6">
+        <CardContent className="p-6">
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="flex items-center">
+              <AlertCircle className="h-4 w-4 mr-2" />
+              Failed to load dashboard data. Please try again later.
+            </AlertDescription>
+          </Alert>
+          
+          <div className="mt-4 text-sm text-slate-600">
+            <p>Possible causes:</p>
+            <ul className="list-disc pl-5 mt-2 space-y-1">
+              <li>Database connection issues</li>
+              <li>Schema permission problems</li>
+              <li>Missing or invalid SQL functions</li>
+              <li>Network connectivity problems</li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
+    );
   };
 
   return (
@@ -100,7 +140,7 @@ const SalesforceLeadsPage: React.FC = () => {
           />
         )}
         
-        {syncError && <SyncErrorAlert error={syncError} />}
+        {syncError && <SyncErrorAlert error={syncError} details={errorDetails} />}
 
         <div className="mb-6">
           <DashboardHeader 
@@ -115,19 +155,7 @@ const SalesforceLeadsPage: React.FC = () => {
           onSelectCampuses={handleSelectCampuses}
         />
 
-        {connectionStatus === 'error' && (
-          <div className="mt-8 p-6 bg-slate-100 rounded-lg text-center">
-            <h2 className="text-xl font-medium mb-4">Database Connection Issues</h2>
-            <p className="mb-2">
-              The application is currently showing limited or mock data due to database connection issues.
-            </p>
-            <p className="text-sm text-slate-500 mb-3">
-              {selectedCampusIds.length === 0 
-                ? 'No campuses selected' 
-                : `Selected Campuses: ${selectedCampusNames.join(', ')}`}
-            </p>
-          </div>
-        )}
+        {connectionStatus === 'error' && renderDataLoadingError()}
         
         <StatsCardGrid 
           stats={stats}
