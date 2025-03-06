@@ -29,7 +29,7 @@ export const CampusSelector: React.FC<CampusSelectorProps> = ({
       try {
         const { data, error } = await supabase
           .from('campuses')
-          .select('campus_id, campus_name, State');
+          .select('campus_id, campus_name');
         
         if (error) {
           console.error('Error fetching valid campuses:', error);
@@ -43,15 +43,23 @@ export const CampusSelector: React.FC<CampusSelectorProps> = ({
         );
         
         // If no matching campuses were found in the props, use the data from the database
-        const finalCampuses = filteredCampuses.length > 0 ? filteredCampuses : 
-          data.map((c: any) => ({
+        // but ensure we properly map to the Campus type
+        if (filteredCampuses.length > 0) {
+          setValidCampuses(filteredCampuses);
+        } else {
+          // Create properly typed Campus objects
+          const formattedCampuses: Campus[] = data.map((c: any) => ({
+            id: c.campus_id, // Use campus_id as id to satisfy the Campus type
             campus_id: c.campus_id,
             campus_name: c.campus_name,
-            State: c.State
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           }));
+          
+          setValidCampuses(formattedCampuses);
+        }
         
-        console.log('Valid campuses for selector:', finalCampuses);
-        setValidCampuses(finalCampuses);
+        console.log('Valid campuses for selector:', validCampuses);
       } catch (err) {
         console.error('Error processing campus data:', err);
       }
