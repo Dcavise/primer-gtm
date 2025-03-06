@@ -45,3 +45,48 @@ export type BooleanStatus = "true" | "false" | "unknown" | null;
 export type SurveyStatus = "complete" | "pending" | "unknown" | null;
 export type TestFitStatus = "unknown" | "pending" | "complete" | null;
 export type LeaseStatus = "pending" | "sent" | "signed" | null;
+
+// Define UI-specific state interface
+export interface PropertyUIState {
+  isEditingNotes: boolean;
+  isEditingPropertyInfo: boolean;
+  isEditingStatusInfo: boolean;
+  isEditingContactInfo: boolean;
+  isEditingLeaseInfo: boolean;
+  isSavingNotes: boolean;
+  isSavingPropertyInfo: boolean;
+  isSavingStatusInfo: boolean;
+  isSavingContactInfo: boolean;
+  isSavingLeaseInfo: boolean;
+  notesValue: string;
+  fileRefreshKey: number;
+}
+
+// Define form values interfaces for different sections
+export interface PropertyFormValues {
+  phase: PropertyPhase | null;
+  sf_available: string | null;
+  zoning: string | null;
+  permitted_use: string | null;
+  parking: string | null;
+  fire_sprinklers: BooleanStatus;
+  fiber: BooleanStatus;
+}
+
+export interface StatusFormValues {
+  ahj_zoning_confirmation: BooleanStatus;
+  ahj_building_records: string | null;
+  survey_status: SurveyStatus;
+  test_fit_status: TestFitStatus;
+}
+
+export interface ContactFormValues {
+  ll_poc: string | null;
+  ll_phone: string | null;
+  ll_email: string | null;
+}
+
+export interface LeaseFormValues {
+  loi_status: LeaseStatus;
+  lease_status: LeaseStatus;
+}
