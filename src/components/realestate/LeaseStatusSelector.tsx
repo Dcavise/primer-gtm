@@ -26,11 +26,9 @@ function SelectorFallback({ error, resetError }: { error: Error; resetError: () 
 
 export function LeaseStatusSelector(props: LeaseStatusSelectorProps) {
   return (
-    <ErrorBoundary
-      fallback={(error, resetError) => (
-        <SelectorFallback error={error} resetError={resetError} />
-      )}
-    >
+    <ErrorBoundary fallback={(error, resetError) => (
+      <SelectorFallback error={error} resetError={resetError} />
+    )}>
       <EnumSelector<LeaseStatus>
         {...props}
         options={LEASE_STATUS_OPTIONS}
