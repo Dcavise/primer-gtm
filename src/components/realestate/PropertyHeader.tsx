@@ -10,11 +10,11 @@ interface PropertyHeaderProps {
 
 const PropertyHeader: React.FC<PropertyHeaderProps> = ({ property }) => {
   return (
-    <header className="bg-gradient-to-r from-blue-600 to-blue-500 text-white py-6 px-6">
+    <header className="bg-gradient-to-r from-slate-700 to-slate-600 text-white py-6 px-6">
       <div className="container mx-auto max-w-5xl">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-2xl md:text-3xl font-semibold truncate">
-            {property.site_name || 'Unnamed Property'}
+          <h1 className="text-2xl md:text-3xl font-semibold">
+            Property Details
           </h1>
           <Navbar />
         </div>
