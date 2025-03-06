@@ -20,7 +20,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { supabaseAdmin } from '@/integrations/supabase/admin-client';
 import { testSalesforceConnection } from '@/utils/test-salesforce';
 import { toast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
@@ -107,7 +106,7 @@ export const LeadsDataTable: React.FC<LeadsDataTableProps> = ({ selectedCampus }
       }
       
       setUsingAdminClient(testResults.usingAdminClient);
-      const client = testResults.usingAdminClient ? supabaseAdmin : supabase;
+      const client = testResults.usingAdminClient ? supabase.admin : supabase.regular;
       
       // Try to query leads from Salesforce using RPC
       try {
@@ -141,7 +140,7 @@ export const LeadsDataTable: React.FC<LeadsDataTableProps> = ({ selectedCampus }
           
           try {
             // First try fivetran_views schema
-            const { data: fivetranData, error: fivetranError } = await supabaseAdmin.rpc('execute_sql_query', {
+            const { data: fivetranData, error: fivetranError } = await supabase.admin.rpc('execute_sql_query', {
               query_text: 'SELECT * FROM fivetran_views.lead LIMIT 100',
               query_params: []
             });
@@ -162,7 +161,7 @@ export const LeadsDataTable: React.FC<LeadsDataTableProps> = ({ selectedCampus }
             
             // If fivetran_views fails, try public schema
             logger.warn('Failed to load from fivetran_views, trying public schema:', fivetranError);
-            const { data: publicData, error: publicError } = await supabaseAdmin.rpc('execute_sql_query', {
+            const { data: publicData, error: publicError } = await supabase.admin.rpc('execute_sql_query', {
               query_text: 'SELECT * FROM public.lead LIMIT 100',
               query_params: []
             });

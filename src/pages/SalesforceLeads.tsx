@@ -15,7 +15,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { supabaseAdmin } from '@/integrations/supabase/admin-client';
 import { testSalesforceConnection } from '@/utils/test-salesforce';
 import SimpleDatabaseTest from "@/components/salesforce/SimpleDatabaseTest";
 import { logger } from '@/utils/logger';
@@ -57,7 +56,7 @@ const SalesforceLeadsPage: React.FC = () => {
         return;
       }
       
-      const client = testResults.usingAdminClient ? supabaseAdmin : supabase;
+      const client = testResults.usingAdminClient ? supabase.admin : supabase.regular;
       
       // Try to query leads using RPC first
       try {
@@ -78,7 +77,7 @@ const SalesforceLeadsPage: React.FC = () => {
         if (testResults.usingAdminClient) {
           try {
             // First try fivetran_views schema
-            const { data: fivetranData, error: fivetranError } = await supabaseAdmin.rpc('execute_sql_query', {
+            const { data: fivetranData, error: fivetranError } = await supabase.admin.rpc('execute_sql_query', {
               query_text: 'SELECT * FROM fivetran_views.lead LIMIT 1000',
               query_params: []
             });
@@ -93,7 +92,7 @@ const SalesforceLeadsPage: React.FC = () => {
             
             // If fivetran_views fails, try public schema
             logger.warn('Failed to load stats from fivetran_views, trying public schema');
-            const { data: publicData, error: publicError } = await supabaseAdmin.rpc('execute_sql_query', {
+            const { data: publicData, error: publicError } = await supabase.admin.rpc('execute_sql_query', {
               query_text: 'SELECT * FROM public.lead LIMIT 1000',
               query_params: []
             });
