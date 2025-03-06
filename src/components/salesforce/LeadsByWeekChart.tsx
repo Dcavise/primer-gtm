@@ -68,10 +68,10 @@ const LeadsByWeekChart = () => {
 
       console.log("Fetching lead data with lookback of", lookbackWeeks, "weeks");
       
-      // Try the main function first - Updated to use existing function
+      // Try the main function first
       const { data: leadData, error: fetchError } = await supabase.rpc(
-        "get_lead_count_by_week_and_campus", // Updated function name
-        { lookback_weeks: lookbackWeeks }
+        "get_fallback_lead_count_by_week_campus",
+        { weeks_back: lookbackWeeks }
       );
 
       if (fetchError) {
