@@ -25,7 +25,7 @@ export const fetchOpportunitiesStats = async (
       let filteredData = stagesData;
       if (selectedCampusId) {
         filteredData = stagesData.filter((item: any) => 
-          item.campus_id === selectedCampusId || item.campus_name === selectedCampusName
+          item.campus_id === selectedCampusId
         );
       }
       
@@ -71,9 +71,9 @@ export const fetchOpportunitiesStats = async (
       
       if (!closedWonError && closedWonData) {
         let filteredClosedWonData = closedWonData;
-        if (selectedCampusId && selectedCampusName) {
+        if (selectedCampusId) {
           filteredClosedWonData = closedWonData.filter((item: any) => 
-            item.campus_name === selectedCampusName
+            item.campus_id === selectedCampusId
           );
         }
         
