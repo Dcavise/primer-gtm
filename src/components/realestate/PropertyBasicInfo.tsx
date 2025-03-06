@@ -10,11 +10,34 @@ import { RealEstateProperty, PropertyPhase } from '@/types/realEstate';
 import PhaseSelector from './PhaseSelector';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { s } from 'supastruct';
 
 interface PropertyBasicInfoProps {
   property: RealEstateProperty;
   onPropertyUpdated: () => void;
 }
+
+// Define validation schemas using Supastruct
+const propertyFieldSchema = {
+  phase: s.union([s.literal(null), s.enum([
+    '0. New Site',
+    '1. Initial Diligence',
+    '2. Survey',
+    '3. Test Fit',
+    '4. Plan Production',
+    '5. Permitting',
+    '6. Construction',
+    '7. Set Up',
+    'Hold',
+    'Deprioritize'
+  ])]),
+  sf_available: s.union([s.literal(null), s.string()]),
+  zoning: s.union([s.literal(null), s.string()]),
+  permitted_use: s.union([s.literal(null), s.string()]),
+  parking: s.union([s.literal(null), s.string()]),
+  fire_sprinklers: s.union([s.literal(null), s.enum(['true', 'false', 'unknown'])]),
+  fiber: s.union([s.literal(null), s.enum(['true', 'false', 'unknown'])])
+};
 
 const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
   property,
@@ -25,6 +48,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
   // Fix the type definition to include PropertyPhase, string, null, and number
   const [fieldValues, setFieldValues] = useState<Record<string, string | null | PropertyPhase | number>>({});
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // Initialize field values when property changes
   useEffect(() => {
@@ -40,6 +64,31 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
       });
     }
   }, [property]);
+
+  const validateField = (fieldName: string, value: any): boolean => {
+    // Get the schema for this field
+    const schema = propertyFieldSchema[fieldName as keyof typeof propertyFieldSchema];
+    if (!schema) return true; // No schema defined for this field
+    
+    try {
+      // Validate the value against the schema
+      s.validate(value, schema);
+      // Clear any existing validation error for this field
+      setValidationErrors(prev => {
+        const updated = { ...prev };
+        delete updated[fieldName];
+        return updated;
+      });
+      return true;
+    } catch (error) {
+      console.error(`Validation error for ${fieldName}:`, error);
+      setValidationErrors(prev => ({
+        ...prev,
+        [fieldName]: error instanceof Error ? error.message : 'Invalid value'
+      }));
+      return false;
+    }
+  };
 
   const handleEditField = (fieldName: string) => {
     setEditingFields(prev => ({ ...prev, [fieldName]: true }));
@@ -59,6 +108,13 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
 
   const handleCancelField = (fieldName: string) => {
     setEditingFields(prev => ({ ...prev, [fieldName]: false }));
+    // Clear any validation errors for this field
+    setValidationErrors(prev => {
+      const updated = { ...prev };
+      delete updated[fieldName];
+      return updated;
+    });
+    
     // Type assertion for phase field
     if (fieldName === 'phase') {
       setFieldValues(prev => ({ 
@@ -76,15 +132,30 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
   const handleFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFieldValues(prev => ({ ...prev, [name]: value }));
+    validateField(name, value === '' ? null : value);
   };
 
   const handlePhaseFieldChange = (value: PropertyPhase | '') => {
     console.log("Selected phase:", value);
     setFieldValues(prev => ({ ...prev, phase: value || null }));
+    validateField('phase', value === '' ? null : value);
   };
 
   const handleSaveField = async (fieldName: string) => {
     if (!property.id) return;
+    
+    // Get the value to validate
+    const valueToValidate = fieldName === 'phase' && fieldValues[fieldName] === '' 
+      ? null 
+      : fieldValues[fieldName];
+    
+    // Validate the field value before saving
+    const isValid = validateField(fieldName, valueToValidate);
+    
+    if (!isValid) {
+      toast.error(`Invalid ${fieldName}: ${validationErrors[fieldName]}`);
+      return;
+    }
     
     setSavingFields(prev => ({ ...prev, [fieldName]: true }));
     
@@ -121,6 +192,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
   const renderField = (fieldName: string, label: string, type: string = 'text') => {
     const isFieldEditing = editingFields[fieldName];
     const isFieldSaving = savingFields[fieldName];
+    const hasError = validationErrors[fieldName];
     
     return (
       <div className="space-y-1">
@@ -146,7 +218,11 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
               onChange={handleFieldChange}
               placeholder={`Enter ${label.toLowerCase()}`}
               type={type}
+              className={hasError ? "border-red-500" : ""}
             />
+            {hasError && (
+              <p className="text-xs text-red-500">{hasError}</p>
+            )}
             <div className="flex justify-end space-x-2">
               <Button 
                 variant="outline" 
@@ -161,7 +237,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
                 variant="default" 
                 size="sm" 
                 onClick={() => handleSaveField(fieldName)}
-                disabled={isFieldSaving}
+                disabled={isFieldSaving || hasError}
                 className="h-7 px-2 text-xs"
               >
                 {isFieldSaving ? (
@@ -189,6 +265,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
     const fieldName = 'phase';
     const isFieldEditing = editingFields[fieldName];
     const isFieldSaving = savingFields[fieldName];
+    const hasError = validationErrors[fieldName];
     
     return (
       <div className="space-y-1">
@@ -212,6 +289,9 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
               value={fieldValues.phase as PropertyPhase | null}
               onValueChange={handlePhaseFieldChange}
             />
+            {hasError && (
+              <p className="text-xs text-red-500">{hasError}</p>
+            )}
             <div className="flex justify-end space-x-2">
               <Button 
                 variant="outline" 
@@ -226,7 +306,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
                 variant="default" 
                 size="sm" 
                 onClick={() => handleSaveField(fieldName)}
-                disabled={isFieldSaving}
+                disabled={isFieldSaving || hasError}
                 className="h-7 px-2 text-xs"
               >
                 {isFieldSaving ? (
