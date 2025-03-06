@@ -1,15 +1,6 @@
 
-// Debug mode flag - can be enabled via localStorage or environment variable
-let isDebugMode = false;
-
-// Initialize debug mode from localStorage if available
-try {
-  isDebugMode = localStorage.getItem('debug_mode') === 'true' || 
-                process.env.NODE_ENV === 'development';
-} catch (e) {
-  // Fallback if localStorage is not available (e.g., SSR)
-  isDebugMode = process.env.NODE_ENV === 'development';
-}
+// Set debug mode based on environment
+const isDebugMode = process.env.NODE_ENV === 'development';
 
 /**
  * Logger utility for consistent debugging across the application
@@ -19,42 +10,6 @@ export const logger = {
    * Check if debug mode is enabled
    */
   isDebugMode: () => isDebugMode,
-  
-  /**
-   * Enable debug mode
-   */
-  enableDebugMode: () => {
-    isDebugMode = true;
-    try {
-      localStorage.setItem('debug_mode', 'true');
-    } catch (e) {
-      console.warn('Could not save debug mode to localStorage');
-    }
-  },
-  
-  /**
-   * Disable debug mode
-   */
-  disableDebugMode: () => {
-    isDebugMode = false;
-    try {
-      localStorage.setItem('debug_mode', 'false');
-    } catch (e) {
-      console.warn('Could not save debug mode to localStorage');
-    }
-  },
-  
-  /**
-   * Toggle debug mode
-   */
-  toggleDebugMode: () => {
-    if (isDebugMode) {
-      logger.disableDebugMode();
-    } else {
-      logger.enableDebugMode();
-    }
-    return isDebugMode;
-  },
   
   /**
    * Log info messages (only in debug mode)

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSalesforceData } from '@/hooks/use-salesforce-data';
 import { DashboardHeader } from '@/components/salesforce/DashboardHeader';
@@ -9,7 +8,6 @@ import { MetricsDashboard } from '@/components/salesforce/MetricsDashboard';
 import { Navbar } from '@/components/Navbar';
 import { DatabaseConnectionAlert } from '@/components/salesforce/DatabaseConnectionAlert';
 import { checkDatabaseConnection } from '@/integrations/supabase/client';
-import { DebugModeToggle } from '@/components/salesforce/DebugModeToggle';
 import { logger } from '@/utils/logger';
 
 const SalesforceLeadsPage: React.FC = () => {
@@ -64,10 +62,7 @@ const SalesforceLeadsPage: React.FC = () => {
         <div className="container mx-auto max-w-5xl">
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-2xl md:text-3xl font-semibold">Salesforce Analytics</h1>
-            <div className="flex items-center gap-4">
-              <DebugModeToggle />
-              <Navbar />
-            </div>
+            <Navbar />
           </div>
           <p className="text-white/80 mt-2">
             View and analyze Salesforce data across all campuses
