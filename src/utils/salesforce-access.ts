@@ -193,18 +193,20 @@ export const troubleshootSchemaAccess = async () => {
     } else {
       // Analyze which schemas and tables we can access
       const schemaResults = {};
-      data.forEach(schema => {
-        logger.info(`Schema ${schema.schema_name}: ${schema.can_access ? 'Accessible' : 'Not accessible'}`);
-        schemaResults[schema.schema_name] = {
-          accessible: schema.can_access,
-          tables: schema.tables || []
-        };
-      });
+      if (Array.isArray(data)) {
+        data.forEach(schema => {
+          logger.info(`Schema ${schema.schema_name}: ${schema.can_access ? 'Accessible' : 'Not accessible'}`);
+          schemaResults[schema.schema_name] = {
+            accessible: schema.can_access,
+            tables: schema.tables || []
+          };
+        });
+      }
       
       return { 
         success: true, 
         schemas: schemaResults,
-        salesforceAccessible: schemaResults.salesforce?.accessible || false
+        salesforceAccessible: schemaResults?.salesforce?.accessible || false
       };
     }
   } catch (err) {
@@ -252,3 +254,4 @@ export const testCrossSchemaMethods = async () => {
     results
   };
 };
+
