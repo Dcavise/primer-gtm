@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSalesforceData } from '@/hooks/use-salesforce-data';
 import { DashboardHeader } from '@/components/salesforce/DashboardHeader';
 import { CampusSelector } from '@/components/salesforce/CampusSelector';
@@ -7,39 +7,13 @@ import { StatsCardGrid } from '@/components/salesforce/StatsCardGrid';
 import { SyncErrorAlert } from '@/components/salesforce/SyncErrorAlert';
 import { MetricsDashboard } from '@/components/salesforce/MetricsDashboard';
 import { Navbar } from '@/components/Navbar';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { SUPABASE_URL } from '@/services/api-config';
+import { DatabaseConnectionAlert } from '@/components/salesforce/DatabaseConnectionAlert';
+import { checkDatabaseConnection } from '@/integrations/supabase/client';
 
 const SalesforceLeadsPage: React.FC = () => {
   const [selectedCampusIds, setSelectedCampusIds] = useState<string[]>([]);
   const [selectedCampusNames, setSelectedCampusNames] = useState<string[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
-  
-  useEffect(() => {
-    const checkConnection = async () => {
-      try {
-        console.log("Checking Supabase connectivity from Salesforce Leads page");
-        console.log("Supabase URL:", SUPABASE_URL);
-        
-        const { data, error } = await supabase.from('campuses').select('count').limit(1);
-        
-        if (error) {
-          console.error("Database connectivity test failed:", error);
-          setConnectionStatus('error');
-        } else {
-          console.log("Database connectivity test successful");
-          setConnectionStatus('connected');
-        }
-      } catch (error) {
-        console.error("Unexpected error during connectivity test:", error);
-        setConnectionStatus('error');
-      }
-    };
-    
-    checkConnection();
-  }, []);
   
   const {
     stats,
@@ -54,6 +28,21 @@ const SalesforceLeadsPage: React.FC = () => {
     lastRefreshed,
     databaseConnection
   } = useSalesforceData(selectedCampusIds);
+
+  const checkConnection = useCallback(async () => {
+    try {
+      setConnectionStatus('checking');
+      const isConnected = await checkDatabaseConnection();
+      setConnectionStatus(isConnected ? 'connected' : 'error');
+    } catch (error) {
+      console.error("Error checking database connection:", error);
+      setConnectionStatus('error');
+    }
+  }, []);
+
+  useEffect(() => {
+    checkConnection();
+  }, [checkConnection]);
 
   const handleSelectCampuses = (campusIds: string[], campusNames: string[]) => {
     setSelectedCampusIds(campusIds);
@@ -75,15 +64,11 @@ const SalesforceLeadsPage: React.FC = () => {
       </header>
       
       <main className="container mx-auto p-4">
-        {(connectionStatus === 'error' || databaseConnection === 'error') && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Database Connection Error</AlertTitle>
-            <AlertDescription>
-              Could not connect to the database. This may affect data loading and functionality.
-              Please check your network connection and try again.
-            </AlertDescription>
-          </Alert>
+        {connectionStatus !== 'connected' && (
+          <DatabaseConnectionAlert 
+            status={connectionStatus} 
+            onRetry={checkConnection}
+          />
         )}
         
         {syncError && <SyncErrorAlert error={syncError} />}
@@ -101,18 +86,19 @@ const SalesforceLeadsPage: React.FC = () => {
           onSelectCampuses={handleSelectCampuses}
         />
 
-        <div className="mt-8 p-6 bg-slate-100 rounded-lg text-center">
-          <h2 className="text-xl font-medium mb-4">Backend Implementation In Progress</h2>
-          <p className="mb-2">
-            Frontend visualizations have been temporarily disabled while backend metric 
-            calculations and functions are being implemented in Supabase.
-          </p>
-          <p className="text-sm text-slate-500">
-            {selectedCampusIds.length === 0 
-              ? 'No campuses selected' 
-              : `Selected Campuses: ${selectedCampusNames.join(', ')}`}
-          </p>
-        </div>
+        {connectionStatus === 'error' && (
+          <div className="mt-8 p-6 bg-slate-100 rounded-lg text-center">
+            <h2 className="text-xl font-medium mb-4">Database Connection Issues</h2>
+            <p className="mb-2">
+              The application is currently showing limited or mock data due to database connection issues.
+            </p>
+            <p className="text-sm text-slate-500 mb-3">
+              {selectedCampusIds.length === 0 
+                ? 'No campuses selected' 
+                : `Selected Campuses: ${selectedCampusNames.join(', ')}`}
+            </p>
+          </div>
+        )}
         
         <StatsCardGrid 
           stats={stats}
