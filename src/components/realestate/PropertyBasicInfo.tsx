@@ -10,7 +10,7 @@ import { RealEstateProperty, PropertyPhase } from '@/types/realEstate';
 import PhaseSelector from './PhaseSelector';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { s } from 'supastruct';
+import * as Supastruct from 'supastruct';
 
 interface PropertyBasicInfoProps {
   property: RealEstateProperty;
@@ -19,7 +19,7 @@ interface PropertyBasicInfoProps {
 
 // Define validation schemas using Supastruct
 const propertyFieldSchema = {
-  phase: s.union([s.literal(null), s.enum([
+  phase: Supastruct.union([Supastruct.literal(null), Supastruct.enum([
     '0. New Site',
     '1. Initial Diligence',
     '2. Survey',
@@ -31,12 +31,12 @@ const propertyFieldSchema = {
     'Hold',
     'Deprioritize'
   ])]),
-  sf_available: s.union([s.literal(null), s.string()]),
-  zoning: s.union([s.literal(null), s.string()]),
-  permitted_use: s.union([s.literal(null), s.string()]),
-  parking: s.union([s.literal(null), s.string()]),
-  fire_sprinklers: s.union([s.literal(null), s.enum(['true', 'false', 'unknown'])]),
-  fiber: s.union([s.literal(null), s.enum(['true', 'false', 'unknown'])])
+  sf_available: Supastruct.union([Supastruct.literal(null), Supastruct.string()]),
+  zoning: Supastruct.union([Supastruct.literal(null), Supastruct.string()]),
+  permitted_use: Supastruct.union([Supastruct.literal(null), Supastruct.string()]),
+  parking: Supastruct.union([Supastruct.literal(null), Supastruct.string()]),
+  fire_sprinklers: Supastruct.union([Supastruct.literal(null), Supastruct.enum(['true', 'false', 'unknown'])]),
+  fiber: Supastruct.union([Supastruct.literal(null), Supastruct.enum(['true', 'false', 'unknown'])])
 };
 
 const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
@@ -72,7 +72,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
     
     try {
       // Validate the value against the schema
-      s.validate(value, schema);
+      Supastruct.validate(value, schema);
       // Clear any existing validation error for this field
       setValidationErrors(prev => {
         const updated = { ...prev };
@@ -237,7 +237,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
                 variant="default" 
                 size="sm" 
                 onClick={() => handleSaveField(fieldName)}
-                disabled={isFieldSaving || hasError}
+                disabled={isFieldSaving || Boolean(hasError)}
                 className="h-7 px-2 text-xs"
               >
                 {isFieldSaving ? (
@@ -306,7 +306,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
                 variant="default" 
                 size="sm" 
                 onClick={() => handleSaveField(fieldName)}
-                disabled={isFieldSaving || hasError}
+                disabled={isFieldSaving || Boolean(hasError)}
                 className="h-7 px-2 text-xs"
               >
                 {isFieldSaving ? (
