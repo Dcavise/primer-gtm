@@ -68,25 +68,14 @@ export const fetchLeadsStats = async (
         logger.info(`Successfully retrieved ${leadsCount} leads across ${weeklyLeadCounts.length} weeks`);
       }
     } catch (rpcError) {
-      // Try direct query as fallback using a custom SQL query
+      // Try direct query as fallback using the fivetran utility
       try {
-        logger.debug('Attempting fallback with execute_sql_query RPC');
-        // Define SQL query for cross-schema access
-        const sqlQuery = `
-          SELECT created_date 
-          FROM salesforce.lead
-          WHERE created_date >= '${fourWeeksAgo.toISOString().split('T')[0]}'
-          AND created_date <= '${today.toISOString().split('T')[0]}'
-          AND is_deleted = false
-        `;
+        logger.debug('Attempting fallback with fivetran_views direct access');
         
-        logger.debug('Executing SQL query:', sqlQuery);
+        const { querySalesforceTable } = await import('@/utils/salesforce-fivetran-access');
         
-        // Using a generic RPC function which has permission to execute SQL
-        const { data: directData, error: directError } = await supabase.rpc(
-          'execute_sql_query',
-          { sql_query: sqlQuery }
-        );
+        // Query lead data directly
+        const { data: directData, error: directError } = await querySalesforceTable('lead');
           
         if (directError) {
           logger.warn('Direct query failed, falling back to mock data:', directError);

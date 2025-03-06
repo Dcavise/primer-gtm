@@ -84,7 +84,7 @@ export const SupabaseConnectionTest: React.FC = () => {
           .map(result => result.table);
         
         const statusText = `
-          Salesforce Schema Access:
+          Fivetran Views Schema Access:
           - Lead table access: Success
           - Using admin client: ${usingAdminClient ? 'Yes' : 'No'}
           - Additional tables: ${accessibleTables.length > 0 ? accessibleTables.join(', ') : 'None'}
@@ -94,8 +94,8 @@ export const SupabaseConnectionTest: React.FC = () => {
         setSfStatus(statusText);
         
         toast({
-          title: "Salesforce Access Verified",
-          description: `Successfully accessed Salesforce data${usingAdminClient ? ' (using admin client)' : ''}`,
+          title: "Fivetran Views Access Verified",
+          description: `Successfully accessed Fivetran Views data${usingAdminClient ? ' (using admin client)' : ''}`,
           variant: "default"
         });
       } else {
@@ -109,7 +109,7 @@ export const SupabaseConnectionTest: React.FC = () => {
                                schemaResult.data[0] && schemaResult.data[0].exists;
           
           setSfStatus(`
-            Salesforce Schema Check:
+            Fivetran Views Schema Check:
             - fivetran_views schema: ${schemaExists ? 'Exists' : 'Not found'}
             - Table access: Failed
             - Error: ${error?.message || 'Unknown error'}
@@ -119,17 +119,17 @@ export const SupabaseConnectionTest: React.FC = () => {
         }
         
         toast({
-          title: "Salesforce Access Failed",
-          description: `Could not access Salesforce data: ${error?.message || 'Unknown error'}`,
+          title: "Fivetran Views Access Failed",
+          description: `Could not access Fivetran Views data: ${error?.message || 'Unknown error'}`,
           variant: "destructive"
         });
       }
     } catch (error) {
-      console.error('Salesforce schema check failed:', error);
+      console.error('Fivetran Views schema check failed:', error);
       setSfStatus(`Error: ${error.message || JSON.stringify(error)}`);
       toast({
         title: "Connection Error",
-        description: `Failed to check Salesforce schema: ${error.message || "Unknown error"}`,
+        description: `Failed to check Fivetran Views schema: ${error.message || "Unknown error"}`,
         variant: "destructive"
       });
     } finally {
@@ -185,14 +185,14 @@ export const SupabaseConnectionTest: React.FC = () => {
           </div>
           
           <div className="space-y-2">
-            <h3 className="text-sm font-medium">Salesforce Schema Access</h3>
+            <h3 className="text-sm font-medium">Fivetran Views Schema Access</h3>
             <div className="flex space-x-2">
               <Button
                 onClick={testSalesforceSchema}
                 disabled={sfLoading}
                 variant="outline"
               >
-                {sfLoading ? 'Testing...' : 'Test Salesforce Schema'}
+                {sfLoading ? 'Testing...' : 'Test Fivetran Views Schema'}
               </Button>
             </div>
             <div className="bg-muted p-2 rounded-md">

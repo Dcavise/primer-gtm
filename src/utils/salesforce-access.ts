@@ -89,6 +89,69 @@ export const testConnection = async () => {
   return await supabase.testConnection();
 };
 
+/**
+ * Troubleshoot schema access issues
+ * @returns Detailed information about schema access
+ */
+export const troubleshootSchemaAccess = async () => {
+  logger.info('Troubleshooting schema access issues');
+  try {
+    // Check for public schema access
+    const { data: publicData, error: publicError } = await supabase
+      .from('campuses')
+      .select('count')
+      .limit(1);
+    
+    const publicSchemaAccessible = !publicError;
+    
+    // Check if Salesforce tables are accessible
+    let salesforceAccessible = false;
+    let salesforceTablesAccessible = false;
+    
+    try {
+      const { data, error } = await supabase.rpc('test_schema_exists', { schema_name: 'fivetran_views' });
+      salesforceAccessible = !error && !!data;
+    } catch (error) {
+      logger.warn('Error checking fivetran_views schema:', error);
+    }
+    
+    try {
+      const { data, error } = await supabase.rpc('check_schema_tables', { schema_name: 'fivetran_views' });
+      salesforceTablesAccessible = !error && Array.isArray(data) && data.length > 0;
+    } catch (error) {
+      logger.warn('Error checking fivetran_views tables:', error);
+    }
+    
+    // List available schemas
+    let availableSchemas = [];
+    try {
+      const { data, error } = await supabase.rpc('list_schemas');
+      if (!error && Array.isArray(data)) {
+        availableSchemas = data;
+      }
+    } catch (error) {
+      logger.warn('Error listing schemas:', error);
+    }
+    
+    // Test schemas
+    const schemas = {
+      public: { accessible: publicSchemaAccessible },
+      fivetran_views: { accessible: salesforceAccessible }
+    };
+    
+    return {
+      success: publicSchemaAccessible,
+      schemas,
+      salesforceAccessible,
+      salesforceTablesAccessible,
+      availableSchemas
+    };
+  } catch (error) {
+    logger.error('Error troubleshooting schema access:', error);
+    return { success: false, error };
+  }
+};
+
 interface FunctionTestResult {
   [key: string]: {
     success: boolean;
