@@ -60,15 +60,20 @@ export const fetchLeadsStats = async (
         }));
       }
     } catch (rpcError) {
-      // Try direct query as fallback
-      // We need to use the raw() method to query across schema boundaries
+      // Try direct query as fallback using raw() method for cross-schema access
       try {
-        const { data: directData, error: directError } = await supabase
-          .from('salesforce.lead')
-          .select('created_date')
-          .filter('created_date', 'gte', localFourWeeksAgo.toISOString().split('T')[0])
-          .filter('created_date', 'lte', today.toISOString().split('T')[0])
-          .filter('is_deleted', 'eq', false);
+        // Use raw SQL to query across schema boundaries
+        const query = `
+          SELECT created_date 
+          FROM salesforce.lead
+          WHERE created_date >= '${localFourWeeksAgo.toISOString().split('T')[0]}'
+          AND created_date <= '${today.toISOString().split('T')[0]}'
+          AND is_deleted = false
+        `;
+        
+        const { data: directData, error: directError } = await supabase.rpc('query_salesforce_lead', {
+          sql_query: query
+        });
           
         if (directError) {
           console.warn('Direct query failed, falling back to mock data:', directError);
