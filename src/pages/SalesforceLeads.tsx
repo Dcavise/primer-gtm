@@ -56,7 +56,10 @@ const SalesforceLeadsPage: React.FC = () => {
         return;
       }
       
-      const client = testResults.usingAdminClient ? supabase.admin : supabase.regular;
+      // Safely access the client to avoid build issues
+      const client = testResults.usingAdminClient && supabase.hasAdminAccess() 
+        ? supabase.admin 
+        : supabase.regular;
       
       // Try to query leads using RPC first
       try {
@@ -77,6 +80,11 @@ const SalesforceLeadsPage: React.FC = () => {
         if (testResults.usingAdminClient) {
           try {
             // First try fivetran_views schema
+            // Ensure admin client is available
+            if (!supabase.hasAdminAccess()) {
+              throw new Error('Admin client not available for SQL query');
+            }
+            
             const { data: fivetranData, error: fivetranError } = await supabase.admin.rpc('execute_sql_query', {
               query_text: 'SELECT * FROM fivetran_views.lead LIMIT 1000',
               query_params: []
@@ -92,6 +100,12 @@ const SalesforceLeadsPage: React.FC = () => {
             
             // If fivetran_views fails, try public schema
             logger.warn('Failed to load stats from fivetran_views, trying public schema');
+            
+            // Admin access was checked above, but checking again to be safe
+            if (!supabase.hasAdminAccess()) {
+              throw new Error('Admin client not available for SQL query');
+            }
+            
             const { data: publicData, error: publicError } = await supabase.admin.rpc('execute_sql_query', {
               query_text: 'SELECT * FROM public.lead LIMIT 1000',
               query_params: []
