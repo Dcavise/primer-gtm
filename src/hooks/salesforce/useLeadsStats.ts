@@ -14,10 +14,10 @@ export const fetchLeadsStats = async (
     
     // Get the current date and date 4 weeks ago
     const today = new Date();
-    const localFourWeeksAgo = new Date();
-    localFourWeeksAgo.setDate(today.getDate() - 28); // 4 weeks = 28 days
+    const fourWeeksAgo = new Date();
+    fourWeeksAgo.setDate(today.getDate() - 28); // 4 weeks = 28 days
 
-    console.log("Fetching weekly lead counts from", localFourWeeksAgo.toISOString(), "to", today.toISOString());
+    console.log("Fetching weekly lead counts from", fourWeeksAgo.toISOString(), "to", today.toISOString());
     console.log("Campus filter:", selectedCampusIds.length > 0 ? selectedCampusIds.join(', ') : "none (all campuses)");
 
     // First check auth status
@@ -29,7 +29,7 @@ export const fetchLeadsStats = async (
       });
       
       // Generate mock data if not authenticated
-      return generateMockLeadsData(localFourWeeksAgo);
+      return generateMockLeadsData(fourWeeksAgo);
     }
 
     // Try to get data using the RPC function first
@@ -37,7 +37,7 @@ export const fetchLeadsStats = async (
       const { data: weeklyLeadData, error: weeklyLeadError } = await supabase.rpc(
         'get_weekly_lead_counts',
         {
-          start_date: localFourWeeksAgo.toISOString().split('T')[0],
+          start_date: fourWeeksAgo.toISOString().split('T')[0],
           end_date: today.toISOString().split('T')[0],
           campus_filter: selectedCampusIds.length === 1 ? selectedCampusIds[0] : null
         }
@@ -63,20 +63,20 @@ export const fetchLeadsStats = async (
         }));
       }
     } catch (rpcError) {
-      // Try direct query as fallback using another RPC method for cross-schema access
+      // Try direct query as fallback using a custom SQL query
       try {
-        // Use a custom RPC function to execute SQL query for cross-schema access
+        // Define SQL query for cross-schema access
         const sqlQuery = `
           SELECT created_date 
           FROM salesforce.lead
-          WHERE created_date >= '${localFourWeeksAgo.toISOString().split('T')[0]}'
+          WHERE created_date >= '${fourWeeksAgo.toISOString().split('T')[0]}'
           AND created_date <= '${today.toISOString().split('T')[0]}'
           AND is_deleted = false
         `;
         
-        // Using custom query_salesforce_lead RPC function which has permission to access salesforce schema
+        // Using a generic RPC function which has permission to execute SQL
         const { data: directData, error: directError } = await supabase.rpc(
-          'query_salesforce_lead',
+          'execute_sql_query',
           { sql_query: sqlQuery }
         );
           
@@ -112,14 +112,14 @@ export const fetchLeadsStats = async (
       } catch (directError) {
         // Fallback to mock data if both approaches fail
         console.log("Generating mock weekly lead data due to database access error");
-        return generateMockLeadsData(localFourWeeksAgo);
+        return generateMockLeadsData(fourWeeksAgo);
       }
     }
     
     return { leadsCount, weeklyLeadCounts };
   } catch (error) {
     handleError(error, 'Error fetching leads stats');
-    return generateMockLeadsData(localFourWeeksAgo);
+    return generateMockLeadsData(fourWeeksAgo);
   }
 };
 

@@ -6,6 +6,16 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://pudncilureqpzxrxfupr.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1ZG5jaWx1cmVxcHp4cnhmdXByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDExMjM1NTUsImV4cCI6MjA1NjY5OTU1NX0.0lZySUmlC3nQs-62Ka-0rE6d9on3KIAt6U16g4YYpxY";
 
+// Type augmentation for the execute_sql_query RPC function
+declare module '@supabase/supabase-js' {
+  interface SupabaseClient<Database> {
+    rpc(
+      fn: 'execute_sql_query' | 'get_weekly_lead_counts' | 'query_salesforce_lead' | string,
+      params?: Record<string, any>
+    ): any;
+  }
+}
+
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
