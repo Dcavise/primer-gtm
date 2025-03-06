@@ -28,8 +28,8 @@ const StageProgressBar: React.FC<StageProgressBarProps> = ({ stages }) => {
             {/* Circle indicator */}
             <div 
               className={`w-6 h-6 rounded-full flex items-center justify-center mb-1
-                ${stage.isCompleted ? 'bg-blue-600 text-white' : 
-                  stage.isCurrent ? 'bg-blue-500 text-white border-2 border-blue-300' : 
+                ${stage.isCompleted ? 'bg-[#2CA02C] text-white' : 
+                  stage.isCurrent ? 'bg-[#1F77B4] text-white border-2 border-blue-300' : 
                   'bg-slate-200 text-slate-500'}`}
             >
               {stage.isCompleted ? (
@@ -42,7 +42,7 @@ const StageProgressBar: React.FC<StageProgressBarProps> = ({ stages }) => {
             {/* Stage name */}
             <span 
               className={`text-xs font-medium whitespace-nowrap mt-1 px-2 py-1 rounded
-                ${stage.isCurrent ? 'bg-blue-500 text-white' : 'text-slate-700'}`}
+                ${stage.isCurrent ? 'bg-[#1F77B4] text-white' : 'text-slate-700'}`}
             >
               {stage.name}
             </span>

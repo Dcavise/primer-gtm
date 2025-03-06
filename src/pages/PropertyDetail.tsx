@@ -18,7 +18,6 @@ import PropertyDocuments from '@/components/realestate/PropertyDocuments';
 import PropertyDiscussion from '@/components/realestate/PropertyDiscussion';
 import PropertyLocation from '@/components/realestate/PropertyLocation';
 import PropertyProgress from '@/components/realestate/PropertyProgress';
-import { mapPhaseToProgressStages } from '@/components/PropertyProgressStages';
 
 const PropertyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -143,10 +142,6 @@ const PropertyDetail: React.FC = () => {
     return <PropertyNotFound />;
   }
 
-  const progressStages = property.phase 
-    ? mapPhaseToProgressStages(property.phase) 
-    : [];
-
   return (
     <div className="min-h-screen bg-background">
       <PropertyHeader property={property} />
@@ -156,9 +151,7 @@ const PropertyDetail: React.FC = () => {
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Pipeline
         </Button>
         
-        {progressStages && progressStages.length > 0 && (
-          <PropertyProgress stages={progressStages} />
-        )}
+        <PropertyProgress phase={property.phase} />
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
