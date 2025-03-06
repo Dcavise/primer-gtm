@@ -1,3 +1,4 @@
+
 import { Stage } from '@/components/StageProgressBar';
 import { PropertyPhase } from '@/types/realEstate';
 
@@ -6,13 +7,13 @@ export const getProgressStages = (): Stage[] => {
   return [
     {
       name: 'Diligence',
-      isCompleted: true,
+      isCompleted: false,
       isCurrent: false
     },
     {
       name: 'Test Fit',
       isCompleted: false,
-      isCurrent: true
+      isCurrent: false
     },
     {
       name: 'Plan Production',
@@ -52,10 +53,19 @@ export const mapPhaseToProgressStages = (phase: PropertyPhase | null): Stage[] =
   // Determine which stages should be marked as completed or current based on the phase
   switch (phase) {
     case '0. New Site':
+      // In initial phase
+      stages[0].isCurrent = true;
+      return stages;
+    
     case '1. Initial Diligence':
-    case '2. Survey':
       // In diligence phase
       stages[0].isCurrent = true;
+      return stages;
+      
+    case '2. Survey':
+      // Survey phase - Diligence is completed, Test Fit is current
+      stages[0].isCompleted = true; 
+      stages[1].isCurrent = true;
       return stages;
     
     case '3. Test Fit':
