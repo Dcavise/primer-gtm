@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase-client';
 import { testSalesforceConnection } from '@/utils/test-salesforce';
 import SimpleDatabaseTest from "@/components/salesforce/SimpleDatabaseTest";
 import { logger } from '@/utils/logger';
