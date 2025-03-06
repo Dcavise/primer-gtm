@@ -10,16 +10,16 @@ import { RealEstateProperty, PropertyPhase } from '@/types/realEstate';
 import PhaseSelector from './PhaseSelector';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import * as Supastruct from 'supastruct';
+import { z } from 'zod';
 
 interface PropertyBasicInfoProps {
   property: RealEstateProperty;
   onPropertyUpdated: () => void;
 }
 
-// Define validation schemas using Supastruct
+// Define validation schemas using Zod
 const propertyFieldSchema = {
-  phase: Supastruct.union([Supastruct.literal(null), Supastruct.enum([
+  phase: z.union([z.null(), z.enum([
     '0. New Site',
     '1. Initial Diligence',
     '2. Survey',
@@ -31,12 +31,12 @@ const propertyFieldSchema = {
     'Hold',
     'Deprioritize'
   ])]),
-  sf_available: Supastruct.union([Supastruct.literal(null), Supastruct.string()]),
-  zoning: Supastruct.union([Supastruct.literal(null), Supastruct.string()]),
-  permitted_use: Supastruct.union([Supastruct.literal(null), Supastruct.string()]),
-  parking: Supastruct.union([Supastruct.literal(null), Supastruct.string()]),
-  fire_sprinklers: Supastruct.union([Supastruct.literal(null), Supastruct.enum(['true', 'false', 'unknown'])]),
-  fiber: Supastruct.union([Supastruct.literal(null), Supastruct.enum(['true', 'false', 'unknown'])])
+  sf_available: z.union([z.null(), z.string()]),
+  zoning: z.union([z.null(), z.string()]),
+  permitted_use: z.union([z.null(), z.string()]),
+  parking: z.union([z.null(), z.string()]),
+  fire_sprinklers: z.union([z.null(), z.enum(['true', 'false', 'unknown'])]),
+  fiber: z.union([z.null(), z.enum(['true', 'false', 'unknown'])])
 };
 
 const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
@@ -72,7 +72,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
     
     try {
       // Validate the value against the schema
-      Supastruct.validate(value, schema);
+      schema.parse(value);
       // Clear any existing validation error for this field
       setValidationErrors(prev => {
         const updated = { ...prev };

@@ -1,10 +1,10 @@
 
-import * as Supastruct from 'supastruct';
+import { z } from 'zod';
 
 // Basic string validation
 export const validateText = (value: unknown): { valid: boolean; error?: string } => {
   try {
-    Supastruct.validate(value, Supastruct.string());
+    z.string().parse(value);
     return { valid: true };
   } catch (error) {
     return { 
@@ -15,15 +15,11 @@ export const validateText = (value: unknown): { valid: boolean; error?: string }
 };
 
 // Email validation
-export const emailSchema = Supastruct.refine(
-  Supastruct.string(),
-  (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
-  'Must be a valid email address'
-);
+export const emailSchema = z.string().email('Must be a valid email address');
 
 export const validateEmail = (value: unknown): { valid: boolean; error?: string } => {
   try {
-    Supastruct.validate(value, emailSchema);
+    emailSchema.parse(value);
     return { valid: true };
   } catch (error) {
     return { 
@@ -34,17 +30,15 @@ export const validateEmail = (value: unknown): { valid: boolean; error?: string 
 };
 
 // Number validation (positive integers only)
-export const positiveIntegerSchema = Supastruct.refine(
-  Supastruct.number(),
-  (value) => Number.isInteger(value) && value > 0,
-  'Must be a positive integer'
-);
+export const positiveIntegerSchema = z.number()
+  .int('Must be an integer')
+  .positive('Must be a positive integer');
 
 export const validatePositiveInteger = (value: unknown): { valid: boolean; error?: string } => {
   try {
     // First convert string to number if needed
     const numberValue = typeof value === 'string' ? Number(value) : value;
-    Supastruct.validate(numberValue, positiveIntegerSchema);
+    positiveIntegerSchema.parse(numberValue);
     return { valid: true };
   } catch (error) {
     return { 
@@ -55,15 +49,12 @@ export const validatePositiveInteger = (value: unknown): { valid: boolean; error
 };
 
 // Phone number validation (simple format)
-export const phoneSchema = Supastruct.refine(
-  Supastruct.string(),
-  (value) => /^\+?[\d\s-()]{7,15}$/.test(value),
-  'Must be a valid phone number'
-);
+export const phoneSchema = z.string()
+  .regex(/^\+?[\d\s-()]{7,15}$/, 'Must be a valid phone number');
 
 export const validatePhone = (value: unknown): { valid: boolean; error?: string } => {
   try {
-    Supastruct.validate(value, phoneSchema);
+    phoneSchema.parse(value);
     return { valid: true };
   } catch (error) {
     return { 
@@ -74,9 +65,9 @@ export const validatePhone = (value: unknown): { valid: boolean; error?: string 
 };
 
 // Example of a complex object schema (for reference)
-export const propertyContactSchema = Supastruct.object({
-  name: Supastruct.string(),
+export const propertyContactSchema = z.object({
+  name: z.string(),
   email: emailSchema,
-  phone: Supastruct.union([Supastruct.literal(null), phoneSchema]),
-  role: Supastruct.union([Supastruct.literal(null), Supastruct.string()]),
+  phone: z.string().nullable(),
+  role: z.string().nullable(),
 });
