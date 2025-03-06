@@ -6,14 +6,6 @@ import {
   CardHeader, 
   CardTitle 
 } from '@/components/ui/card';
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from '@/components/ui/tabs';
-import { MetricsTable } from './MetricsTable';
-import { MetricsCharts } from './MetricsCharts';
 import { LeadsMetricsData, OpportunityMetricsData, AttendanceMetricsData } from '@/hooks/salesforce/types';
 
 interface MetricsDashboardProps {
@@ -25,11 +17,7 @@ interface MetricsDashboardProps {
 }
 
 export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
-  leadsMetrics,
-  opportunityMetrics,
-  attendanceMetrics,
-  selectedCampusName,
-  selectedCampusId
+  selectedCampusName
 }) => {
   return (
     <Card className="mt-8">
@@ -39,46 +27,11 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="leads" className="w-full">
-          <TabsList className="mb-4">
-            <TabsTrigger value="leads">Lead Growth</TabsTrigger>
-            <TabsTrigger value="pipeline">Pipeline Conversion</TabsTrigger>
-            <TabsTrigger value="attendance">Attendance</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="leads" className="space-y-4">
-            <MetricsTable 
-              metrics={leadsMetrics.metrics}
-              period="weekly"
-            />
-            <MetricsCharts 
-              timeSeriesData={leadsMetrics.timeSeriesData}
-              period="weekly"
-            />
-          </TabsContent>
-          
-          <TabsContent value="pipeline" className="space-y-4">
-            <MetricsTable 
-              metrics={opportunityMetrics.metrics}
-              period="weekly"
-            />
-            <MetricsCharts 
-              timeSeriesData={opportunityMetrics.timeSeriesData}
-              period="weekly"
-            />
-          </TabsContent>
-          
-          <TabsContent value="attendance" className="space-y-4">
-            <MetricsTable 
-              metrics={attendanceMetrics.metrics}
-              period="weekly"
-            />
-            <MetricsCharts 
-              timeSeriesData={attendanceMetrics.timeSeriesData}
-              period="weekly"
-            />
-          </TabsContent>
-        </Tabs>
+        <div className="p-6 text-center bg-gray-50 rounded-md">
+          <p className="text-gray-500">
+            Metrics dashboard temporarily disabled while backend calculations are being implemented.
+          </p>
+        </div>
       </CardContent>
     </Card>
   );

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSalesforceData } from '@/hooks/use-salesforce-data';
 import { DashboardHeader } from '@/components/salesforce/DashboardHeader';
@@ -18,7 +17,6 @@ const SalesforceLeadsPage: React.FC = () => {
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
   
   useEffect(() => {
-    // Check database connection on component mount
     const checkConnection = async () => {
       try {
         console.log("Checking Supabase connectivity from Salesforce Leads page");
@@ -102,6 +100,17 @@ const SalesforceLeadsPage: React.FC = () => {
           onSelectCampus={handleSelectCampus}
         />
 
+        <div className="mt-8 p-6 bg-slate-100 rounded-lg text-center">
+          <h2 className="text-xl font-medium mb-4">Backend Implementation In Progress</h2>
+          <p className="mb-2">
+            Frontend visualizations have been temporarily disabled while backend metric 
+            calculations and functions are being implemented in Supabase.
+          </p>
+          <p className="text-sm text-slate-500">
+            Selected Campus: {selectedCampusName || 'All Campuses'}
+          </p>
+        </div>
+        
         <StatsCardGrid 
           stats={stats}
           employmentStatusCounts={employmentStatusCounts}
