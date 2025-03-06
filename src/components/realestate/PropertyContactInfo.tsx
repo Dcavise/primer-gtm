@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Edit, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,27 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/LoadingState';
 import { RealEstateProperty } from '@/types/realEstate';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface PropertyContactInfoProps {
   property: RealEstateProperty;
-  isEditing: boolean;
-  isSaving: boolean;
-  formValues: Partial<RealEstateProperty>;
-  onEdit: () => void;
-  onCancel: () => void;
-  onSave: () => Promise<void>;
-  onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onPropertyUpdated: () => void;
 }
 
 const PropertyContactInfo: React.FC<PropertyContactInfoProps> = ({
   property,
-  isEditing,
-  isSaving,
-  formValues,
-  onEdit,
-  onCancel,
-  onSave,
-  onInputChange
+  onPropertyUpdated
 }) => {
   // Individual field edit states
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
@@ -35,7 +25,7 @@ const PropertyContactInfo: React.FC<PropertyContactInfoProps> = ({
   const [fieldValues, setFieldValues] = useState<Record<string, string | null | number>>({});
 
   // Initialize field values when property changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (property) {
       setFieldValues({
         ll_poc: property.ll_poc || '',
@@ -79,21 +69,16 @@ const PropertyContactInfo: React.FC<PropertyContactInfoProps> = ({
       
       if (error) {
         console.error(`Error saving ${fieldName}:`, error);
+        toast.error(`Failed to save ${fieldName}`);
         return;
       }
       
       setEditingFields(prev => ({ ...prev, [fieldName]: false }));
-      
-      // Also update the main form values so they stay in sync
-      if (onInputChange) {
-        const syntheticEvent = {
-          target: { name: fieldName, value: fieldValues[fieldName] }
-        } as React.ChangeEvent<HTMLInputElement>;
-        onInputChange(syntheticEvent);
-      }
-      
+      toast.success(`${fieldName} updated successfully`);
+      onPropertyUpdated();
     } catch (error) {
       console.error(`Error saving ${fieldName}:`, error);
+      toast.error(`Failed to save ${fieldName}`);
     } finally {
       setSavingFields(prev => ({ ...prev, [fieldName]: false }));
     }
@@ -107,7 +92,7 @@ const PropertyContactInfo: React.FC<PropertyContactInfoProps> = ({
       <div className="space-y-1">
         <div className="flex justify-between items-center">
           <p className="text-sm text-muted-foreground">{label}</p>
-          {!isEditing && !isFieldEditing && (
+          {!isFieldEditing && (
             <Button 
               variant="ghost" 
               size="sm" 
@@ -154,13 +139,6 @@ const PropertyContactInfo: React.FC<PropertyContactInfoProps> = ({
               </Button>
             </div>
           </div>
-        ) : isEditing ? (
-          <Input 
-            name={fieldName} 
-            value={formValues[fieldName as keyof RealEstateProperty] || ''} 
-            onChange={onInputChange}
-            placeholder={`Enter ${label.toLowerCase()}`}
-          />
         ) : (
           <p className="font-medium">{property[fieldName as keyof RealEstateProperty] || 'Not specified'}</p>
         )}
@@ -171,46 +149,8 @@ const PropertyContactInfo: React.FC<PropertyContactInfoProps> = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-xl flex items-center justify-between">
+        <CardTitle className="text-xl">
           Landlord Contact
-          <div className="space-x-2">
-            {isEditing ? (
-              <>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={onCancel}
-                  disabled={isSaving}
-                >
-                  <X className="h-4 w-4 mr-1" /> Cancel
-                </Button>
-                <Button 
-                  variant="default" 
-                  size="sm" 
-                  onClick={onSave}
-                  disabled={isSaving}
-                >
-                  {isSaving ? (
-                    <span className="flex items-center">
-                      <LoadingState message="Saving..." showSpinner={true} />
-                    </span>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-1" /> Save
-                    </>
-                  )}
-                </Button>
-              </>
-            ) : (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={onEdit}
-              >
-                <Edit className="h-4 w-4 mr-1" /> Edit All
-              </Button>
-            )}
-          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">

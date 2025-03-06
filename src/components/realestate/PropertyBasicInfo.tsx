@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Edit, Save, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,29 +9,16 @@ import { LoadingState } from '@/components/LoadingState';
 import { RealEstateProperty, PropertyPhase } from '@/types/realEstate';
 import PhaseSelector from './PhaseSelector';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface PropertyBasicInfoProps {
   property: RealEstateProperty;
-  isEditing: boolean;
-  isSaving: boolean;
-  formValues: Partial<RealEstateProperty>;
-  onEdit: () => void;
-  onCancel: () => void;
-  onSave: () => Promise<void>;
-  onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onPhaseChange: (value: PropertyPhase | '') => void;
+  onPropertyUpdated: () => void;
 }
 
 const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
   property,
-  isEditing,
-  isSaving,
-  formValues,
-  onEdit,
-  onCancel,
-  onSave,
-  onInputChange,
-  onPhaseChange
+  onPropertyUpdated
 }) => {
   // Individual field edit states
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
@@ -40,7 +27,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
   const [fieldValues, setFieldValues] = useState<Record<string, string | null | PropertyPhase | number>>({});
 
   // Initialize field values when property changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (property) {
       setFieldValues({
         phase: property.phase || '',
@@ -108,23 +95,16 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
       
       if (error) {
         console.error(`Error saving ${fieldName}:`, error);
+        toast.error(`Failed to save ${fieldName}`);
         return;
       }
       
       setEditingFields(prev => ({ ...prev, [fieldName]: false }));
-      
-      // Also update the main form values so they stay in sync
-      if (onInputChange && fieldName !== 'phase') {
-        const syntheticEvent = {
-          target: { name: fieldName, value: fieldValues[fieldName] }
-        } as React.ChangeEvent<HTMLInputElement>;
-        onInputChange(syntheticEvent);
-      } else if (onPhaseChange && fieldName === 'phase') {
-        onPhaseChange(fieldValues.phase as PropertyPhase || '');
-      }
-      
+      toast.success(`${fieldName} updated successfully`);
+      onPropertyUpdated();
     } catch (error) {
       console.error(`Error saving ${fieldName}:`, error);
+      toast.error(`Failed to save ${fieldName}`);
     } finally {
       setSavingFields(prev => ({ ...prev, [fieldName]: false }));
     }
@@ -138,7 +118,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
       <div className="space-y-1">
         <div className="flex justify-between items-center">
           <p className="text-sm text-muted-foreground">{label}</p>
-          {!isEditing && !isFieldEditing && (
+          {!isFieldEditing && (
             <Button 
               variant="ghost" 
               size="sm" 
@@ -186,14 +166,6 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
               </Button>
             </div>
           </div>
-        ) : isEditing ? (
-          <Input 
-            name={fieldName} 
-            value={formValues[fieldName as keyof RealEstateProperty] || ''} 
-            onChange={onInputChange}
-            placeholder={`Enter ${label.toLowerCase()}`}
-            type={type}
-          />
         ) : (
           <p className="font-medium">
             {fieldName === 'sf_available' && property[fieldName] 
@@ -214,7 +186,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
       <div className="space-y-1">
         <div className="flex justify-between items-center">
           <p className="text-sm text-muted-foreground">Phase</p>
-          {!isEditing && !isFieldEditing && (
+          {!isFieldEditing && (
             <Button 
               variant="ghost" 
               size="sm" 
@@ -259,11 +231,6 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
               </Button>
             </div>
           </div>
-        ) : isEditing ? (
-          <PhaseSelector
-            value={formValues.phase || null}
-            onValueChange={onPhaseChange}
-          />
         ) : (
           <p className="font-medium">{property?.phase || 'Not specified'}</p>
         )}
@@ -274,46 +241,8 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-xl flex items-center justify-between">
-          <div>Property Information</div>
-          <div className="space-x-2">
-            {isEditing ? (
-              <>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={onCancel}
-                  disabled={isSaving}
-                >
-                  <X className="h-4 w-4 mr-1" /> Cancel
-                </Button>
-                <Button 
-                  variant="default" 
-                  size="sm" 
-                  onClick={onSave}
-                  disabled={isSaving}
-                >
-                  {isSaving ? (
-                    <span className="flex items-center">
-                      <LoadingState message="Saving..." showSpinner={true} />
-                    </span>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-1" /> Save
-                    </>
-                  )}
-                </Button>
-              </>
-            ) : (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={onEdit}
-              >
-                <Edit className="h-4 w-4 mr-1" /> Edit All
-              </Button>
-            )}
-          </div>
+        <CardTitle className="text-xl">
+          Property Information
         </CardTitle>
         {property.market && (
           <div className="mt-2">

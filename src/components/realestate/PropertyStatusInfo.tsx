@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Edit, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,27 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/LoadingState';
 import { RealEstateProperty, BooleanStatus, SurveyStatus, TestFitStatus } from '@/types/realEstate';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface PropertyStatusInfoProps {
   property: RealEstateProperty;
-  isEditing: boolean;
-  isSaving: boolean;
-  formValues: Partial<RealEstateProperty>;
-  onEdit: () => void;
-  onCancel: () => void;
-  onSave: () => Promise<void>;
-  onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onPropertyUpdated: () => void;
 }
 
 const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
   property,
-  isEditing,
-  isSaving,
-  formValues,
-  onEdit,
-  onCancel,
-  onSave,
-  onInputChange
+  onPropertyUpdated
 }) => {
   // Individual field edit states
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
@@ -36,7 +25,7 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
   const [fieldValues, setFieldValues] = useState<Record<string, BooleanStatus | SurveyStatus | TestFitStatus | string | null>>({});
 
   // Initialize field values when property changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (property) {
       setFieldValues({
         ahj_zoning_confirmation: property.ahj_zoning_confirmation,
@@ -102,21 +91,16 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
       
       if (error) {
         console.error(`Error saving ${fieldName}:`, error);
+        toast.error(`Failed to save ${fieldName}`);
         return;
       }
       
       setEditingFields(prev => ({ ...prev, [fieldName]: false }));
-      
-      // Also update the main form values so they stay in sync
-      if (onInputChange) {
-        const syntheticEvent = {
-          target: { name: fieldName, value: valueToSave }
-        } as React.ChangeEvent<HTMLInputElement>;
-        onInputChange(syntheticEvent);
-      }
-      
+      toast.success(`${fieldName} updated successfully`);
+      onPropertyUpdated();
     } catch (error) {
       console.error(`Error saving ${fieldName}:`, error);
+      toast.error(`Failed to save ${fieldName}`);
     } finally {
       setSavingFields(prev => ({ ...prev, [fieldName]: false }));
     }
@@ -130,7 +114,7 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
       <div className="space-y-1">
         <div className="flex justify-between items-center">
           <p className="text-sm text-muted-foreground">{label}</p>
-          {!isEditing && !isFieldEditing && (
+          {!isFieldEditing && (
             <Button 
               variant="ghost" 
               size="sm" 
@@ -177,13 +161,6 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
               </Button>
             </div>
           </div>
-        ) : isEditing ? (
-          <Input 
-            name={fieldName} 
-            value={formValues[fieldName as keyof RealEstateProperty] as string || ''} 
-            onChange={onInputChange}
-            placeholder={`Enter ${label.toLowerCase()}`}
-          />
         ) : (
           <p className="font-medium">{property[fieldName as keyof RealEstateProperty] || 'Not specified'}</p>
         )}
@@ -194,46 +171,8 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-xl flex items-center justify-between">
+        <CardTitle className="text-xl">
           Status Information
-          <div className="space-x-2">
-            {isEditing ? (
-              <>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={onCancel}
-                  disabled={isSaving}
-                >
-                  <X className="h-4 w-4 mr-1" /> Cancel
-                </Button>
-                <Button 
-                  variant="default" 
-                  size="sm" 
-                  onClick={onSave}
-                  disabled={isSaving}
-                >
-                  {isSaving ? (
-                    <span className="flex items-center">
-                      <LoadingState message="Saving..." showSpinner={true} />
-                    </span>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-1" /> Save
-                    </>
-                  )}
-                </Button>
-              </>
-            ) : (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={onEdit}
-              >
-                <Edit className="h-4 w-4 mr-1" /> Edit All
-              </Button>
-            )}
-          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
