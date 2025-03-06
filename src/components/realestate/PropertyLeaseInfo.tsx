@@ -32,7 +32,7 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
   // Individual field edit states
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
-  // Update type to match our form inputs - use LeaseStatus
+  // Update type to match our form inputs
   const [fieldValues, setFieldValues] = useState<Record<string, LeaseStatus | string>>({});
 
   // Initialize field values when property changes

@@ -51,7 +51,7 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
     setEditingFields(prev => ({ ...prev, [fieldName]: true }));
     setFieldValues(prev => ({ 
       ...prev, 
-      [fieldName]: property[fieldName as keyof RealEstateProperty]
+      [fieldName]: property[fieldName as keyof RealEstateProperty] as BooleanStatus | SurveyStatus | TestFitStatus | string
     }));
   };
 
@@ -59,7 +59,7 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
     setEditingFields(prev => ({ ...prev, [fieldName]: false }));
     setFieldValues(prev => ({ 
       ...prev, 
-      [fieldName]: property[fieldName as keyof RealEstateProperty]
+      [fieldName]: property[fieldName as keyof RealEstateProperty] as BooleanStatus | SurveyStatus | TestFitStatus | string
     }));
   };
 
@@ -75,7 +75,7 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
     
     try {
       // Ensure the value matches enum type for specific fields
-      let valueToSave: string | BooleanStatus | SurveyStatus | TestFitStatus = null;
+      let valueToSave: BooleanStatus | SurveyStatus | TestFitStatus | string = null;
       const currentValue = fieldValues[fieldName];
       
       // For enum fields, make sure the value is valid
