@@ -9,10 +9,12 @@ describe('fetchLeadsStats', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     
-    // Add auth property to mockSupabase
-    mockSupabase.auth = {
-      getSession: vi.fn()
-    };
+    // Add auth property to mockSupabase if it doesn't exist
+    if (!mockSupabase.auth) {
+      mockSupabase.auth = {
+        getSession: vi.fn()
+      };
+    }
     
     // Ensure all mock methods return the mock object for chaining
     Object.values(mockSupabase).forEach(method => {
@@ -96,9 +98,9 @@ describe('fetchLeadsStats', () => {
     
     // Mock direct query success via second RPC call
     const mockFallbackData = [
-      { lead_id: '1', created_date: '2023-01-05T00:00:00Z' },
-      { lead_id: '2', created_date: '2023-01-06T00:00:00Z' },
-      { lead_id: '3', created_date: '2023-01-15T00:00:00Z' }
+      { created_date: '2023-01-05T00:00:00Z' },
+      { created_date: '2023-01-06T00:00:00Z' },
+      { created_date: '2023-01-15T00:00:00Z' }
     ];
     
     mockSupabase.rpc.mockResolvedValueOnce({

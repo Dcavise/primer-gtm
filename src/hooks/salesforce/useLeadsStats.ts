@@ -51,10 +51,13 @@ export const fetchLeadsStats = async (
       if (weeklyLeadData) {
         console.log("Weekly lead data from RPC:", weeklyLeadData);
         
-        // Calculate total leads from the weekly data
-        leadsCount = (weeklyLeadData as any[]).reduce((sum: number, item: any) => sum + Number(item.lead_count), 0);
+        // Use type assertion to help TypeScript understand the data structure
+        const typedWeeklyData = weeklyLeadData as { week: string; lead_count: number }[];
         
-        weeklyLeadCounts = (weeklyLeadData as any[]).map((item: any) => ({
+        // Calculate total leads from the weekly data
+        leadsCount = typedWeeklyData.reduce((sum: number, item) => sum + Number(item.lead_count), 0);
+        
+        weeklyLeadCounts = typedWeeklyData.map((item) => ({
           week: item.week,
           count: Number(item.lead_count)
         }));
@@ -62,7 +65,7 @@ export const fetchLeadsStats = async (
     } catch (rpcError) {
       // Try direct query as fallback using another RPC method for cross-schema access
       try {
-        // Use a custom RPC function to query across schema boundaries
+        // Use a custom RPC function to execute SQL query for cross-schema access
         const sqlQuery = `
           SELECT created_date 
           FROM salesforce.lead
@@ -84,8 +87,11 @@ export const fetchLeadsStats = async (
         if (directData && Array.isArray(directData) && directData.length > 0) {
           console.log(`Found ${directData.length} leads via direct query`);
           
+          // Type assertion for direct query results
+          const typedDirectData = directData as { created_date: string }[];
+          
           // Group leads by week
-          const groupedByWeek = directData.reduce((acc: { [key: string]: number }, lead: any) => {
+          const groupedByWeek = typedDirectData.reduce((acc: { [key: string]: number }, lead) => {
             const createdDate = new Date(lead.created_date);
             const weekStart = new Date(createdDate);
             weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Get Sunday of the week
@@ -112,7 +118,7 @@ export const fetchLeadsStats = async (
     return { leadsCount, weeklyLeadCounts };
   } catch (error) {
     handleError(error, 'Error fetching leads stats');
-    return generateMockLeadsData(new Date(new Date().setDate(new Date().getDate() - 28)));
+    return generateMockLeadsData(localFourWeeksAgo);
   }
 };
 

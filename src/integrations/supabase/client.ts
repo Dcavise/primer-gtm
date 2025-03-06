@@ -25,7 +25,7 @@ export const supabase = createClient<Database>(
       },
     },
     db: {
-      schema: ['public', 'salesforce'],
+      schema: 'public',
     },
   }
 );
