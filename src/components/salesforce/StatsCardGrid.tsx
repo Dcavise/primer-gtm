@@ -7,6 +7,7 @@ import { PipelineChartDialog } from './PipelineChartDialog';
 import { SummaryStats, EmploymentStatusCount, WeeklyLeadCount, OpportunityStageCount } from '@/hooks/salesforce/types';
 import { WeeklyLeadTrendsByCampus } from './WeeklyLeadTrendsByCampus';
 import { Campus } from '@/hooks/salesforce/types';
+import { Users, BarChartBig, PieChart, CheckCircle } from 'lucide-react';
 
 interface StatsCardGridProps {
   stats: SummaryStats;
@@ -39,6 +40,7 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = ({
           value={stats.fellowsCount}
           description="Total fellows"
           onClick={() => setIsEmploymentDialogOpen(true)}
+          icon={Users}
         />
         
         <StatsCard 
@@ -46,6 +48,7 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = ({
           value={stats.leadsCount}
           description="Total leads"
           onClick={() => setIsLeadsDialogOpen(true)}
+          icon={BarChartBig}
         />
         
         <StatsCard 
@@ -53,12 +56,14 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = ({
           value={stats.activeOpportunitiesCount}
           description="In progress"
           onClick={() => setIsPipelineDialogOpen(true)}
+          icon={PieChart}
         />
         
         <StatsCard 
           title="Closed Won"
           value={stats.closedWonOpportunitiesCount}
           description="Converted opportunities"
+          icon={CheckCircle}
         />
       </div>
       
@@ -72,8 +77,8 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = ({
       <EmploymentStatusDialog
         open={isEmploymentDialogOpen}
         onOpenChange={setIsEmploymentDialogOpen}
-        employmentStatusCounts={employmentStatusCounts}
-        selectedCampusName={selectedCampusName}
+        data={employmentStatusCounts}
+        campusName={selectedCampusName}
       />
       
       <LeadsChartDialog
