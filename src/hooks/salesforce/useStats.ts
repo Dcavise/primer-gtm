@@ -6,7 +6,7 @@ import { fetchFellowsStats } from './useFellowsStats';
 import { fetchLeadsStats } from './useLeadsStats';
 import { fetchOpportunitiesStats } from './useOpportunitiesStats';
 
-export const useStats = (selectedCampusId: string | null) => {
+export const useStats = (selectedCampusIds: string[]) => {
   const { stats, setStats, lastRefreshed, setLastRefreshed, handleError } = useBaseStats();
   const [employmentStatusCounts, setEmploymentStatusCounts] = useState<EmploymentStatusCount[]>([]);
   const [weeklyLeadCounts, setWeeklyLeadCounts] = useState<WeeklyLeadCount[]>([]);
@@ -15,11 +15,11 @@ export const useStats = (selectedCampusId: string | null) => {
   useEffect(() => {
     fetchStats();
     setLastRefreshed(new Date());
-  }, [selectedCampusId]);
+  }, [selectedCampusIds]);
 
   const fetchStats = async () => {
     try {
-      console.log("Fetching stats for campus:", selectedCampusId || "all campuses");
+      console.log("Fetching stats for campuses:", selectedCampusIds.length > 0 ? selectedCampusIds.join(', ') : "all campuses");
       
       // Log available campuses for debugging
       const { data: allCampuses, error: campusesError } = await 
@@ -32,15 +32,15 @@ export const useStats = (selectedCampusId: string | null) => {
       }
       
       // Fetch fellows stats
-      const fellowsResult = await fetchFellowsStats(selectedCampusId, handleError);
+      const fellowsResult = await fetchFellowsStats(selectedCampusIds, handleError);
       setEmploymentStatusCounts(fellowsResult.employmentStatusCounts);
       
       // Fetch leads stats
-      const leadsResult = await fetchLeadsStats(selectedCampusId, handleError);
+      const leadsResult = await fetchLeadsStats(selectedCampusIds, handleError);
       setWeeklyLeadCounts(leadsResult.weeklyLeadCounts);
       
       // Fetch opportunities stats
-      const opportunitiesResult = await fetchOpportunitiesStats(selectedCampusId, handleError);
+      const opportunitiesResult = await fetchOpportunitiesStats(selectedCampusIds, handleError);
       setOpportunityStageCounts(opportunitiesResult.opportunityStageCounts);
       
       // Update combined stats

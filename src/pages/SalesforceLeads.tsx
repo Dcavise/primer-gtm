@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSalesforceData } from '@/hooks/use-salesforce-data';
 import { DashboardHeader } from '@/components/salesforce/DashboardHeader';
@@ -12,8 +13,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { SUPABASE_URL } from '@/services/api-config';
 
 const SalesforceLeadsPage: React.FC = () => {
-  const [selectedCampusId, setSelectedCampusId] = useState<string | null>(null);
-  const [selectedCampusName, setSelectedCampusName] = useState<string | null>(null);
+  const [selectedCampusIds, setSelectedCampusIds] = useState<string[]>([]);
+  const [selectedCampusNames, setSelectedCampusNames] = useState<string[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
   
   useEffect(() => {
@@ -52,11 +53,11 @@ const SalesforceLeadsPage: React.FC = () => {
     syncError,
     lastRefreshed,
     databaseConnection
-  } = useSalesforceData(selectedCampusId);
+  } = useSalesforceData(selectedCampusIds);
 
-  const handleSelectCampus = (campusId: string | null, campusName: string | null) => {
-    setSelectedCampusId(campusId);
-    setSelectedCampusName(campusName);
+  const handleSelectCampuses = (campusIds: string[], campusNames: string[]) => {
+    setSelectedCampusIds(campusIds);
+    setSelectedCampusNames(campusNames);
   };
 
   return (
@@ -96,8 +97,8 @@ const SalesforceLeadsPage: React.FC = () => {
 
         <CampusSelector 
           campuses={campuses}
-          selectedCampusId={selectedCampusId}
-          onSelectCampus={handleSelectCampus}
+          selectedCampusIds={selectedCampusIds}
+          onSelectCampuses={handleSelectCampuses}
         />
 
         <div className="mt-8 p-6 bg-slate-100 rounded-lg text-center">
@@ -107,7 +108,9 @@ const SalesforceLeadsPage: React.FC = () => {
             calculations and functions are being implemented in Supabase.
           </p>
           <p className="text-sm text-slate-500">
-            Selected Campus: {selectedCampusName || 'All Campuses'}
+            {selectedCampusIds.length === 0 
+              ? 'No campuses selected' 
+              : `Selected Campuses: ${selectedCampusNames.join(', ')}`}
           </p>
         </div>
         
@@ -116,8 +119,8 @@ const SalesforceLeadsPage: React.FC = () => {
           employmentStatusCounts={employmentStatusCounts}
           weeklyLeadCounts={weeklyLeadCounts}
           opportunityStageCounts={opportunityStageCounts}
-          selectedCampusId={selectedCampusId}
-          selectedCampusName={selectedCampusName}
+          selectedCampusIds={selectedCampusIds}
+          selectedCampusNames={selectedCampusNames}
           campuses={campuses}
         />
         
@@ -125,8 +128,8 @@ const SalesforceLeadsPage: React.FC = () => {
           leadsMetrics={leadsMetrics}
           opportunityMetrics={opportunityMetrics}
           attendanceMetrics={attendanceMetrics}
-          selectedCampusName={selectedCampusName}
-          selectedCampusId={selectedCampusId}
+          selectedCampusNames={selectedCampusNames}
+          selectedCampusIds={selectedCampusIds}
         />
       </main>
     </div>

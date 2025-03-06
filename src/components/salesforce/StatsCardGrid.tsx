@@ -13,8 +13,8 @@ interface StatsCardGridProps {
   employmentStatusCounts: EmploymentStatusCount[];
   weeklyLeadCounts: WeeklyLeadCount[];
   opportunityStageCounts: OpportunityStageCount[];
-  selectedCampusId: string | null;
-  selectedCampusName: string | null;
+  selectedCampusIds: string[];
+  selectedCampusNames: string[];
   campuses?: Campus[];
 }
 
@@ -27,8 +27,8 @@ interface OpportunityStageData {
 }
 
 export const StatsCardGrid: React.FC<StatsCardGridProps> = ({ 
-  selectedCampusId,
-  selectedCampusName
+  selectedCampusIds,
+  selectedCampusNames
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +53,7 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = ({
           .rpc('get_weekly_lead_counts', { 
             start_date: startDate.toISOString().split('T')[0],
             end_date: new Date().toISOString().split('T')[0],
-            campus_filter: selectedCampusId
+            campus_ids: selectedCampusIds.length > 0 ? selectedCampusIds : null
           });
           
         if (weeklyError) throw weeklyError;
@@ -72,27 +72,26 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = ({
         
         // Process opportunity data - filter by campus if selected
         let processedOppData: OpportunityStageData[] = oppData;
-        if (selectedCampusId) {
+        if (selectedCampusIds.length > 0) {
           processedOppData = oppData.filter((item: any) => 
-            item.campus_name === selectedCampusName
+            selectedCampusIds.includes(item.campus_id)
           );
         }
         
-        // Group by stage and sum counts if we're showing all campuses
-        if (!selectedCampusId) {
-          const stageGroups: Record<string, number> = {};
-          processedOppData.forEach((item: any) => {
-            stageGroups[item.stage_name] = (stageGroups[item.stage_name] || 0) + Number(item.count);
-          });
-          
-          processedOppData = Object.entries(stageGroups).map(([stage_name, count]) => ({
-            stage_name,
-            count,
-            campus_name: 'All Campuses',
-            state: '',
-            percentage: 0
-          }));
-        }
+        // Group by stage and sum counts
+        const stageGroups: Record<string, number> = {};
+        processedOppData.forEach((item: any) => {
+          stageGroups[item.stage_name] = (stageGroups[item.stage_name] || 0) + Number(item.count);
+        });
+        
+        processedOppData = Object.entries(stageGroups).map(([stage_name, count]) => ({
+          stage_name,
+          count,
+          campus_name: selectedCampusIds.length === 0 ? 'All Campuses' : 
+                     (selectedCampusIds.length === 1 ? selectedCampusNames[0] : 'Selected Campuses'),
+          state: '',
+          percentage: 0
+        }));
         
         // Limit to top 5 stages if more
         processedOppData = processedOppData
@@ -110,7 +109,7 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = ({
     };
     
     fetchData();
-  }, [selectedCampusId, selectedCampusName]);
+  }, [selectedCampusIds, selectedCampusNames]);
 
   const renderWeeklyLeadChart = () => {
     if (weeklyLeadData.length === 0) {

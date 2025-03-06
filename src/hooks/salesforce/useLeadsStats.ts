@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { WeeklyLeadCount } from './types';
 
 export const fetchLeadsStats = async (
-  selectedCampusId: string | null,
+  selectedCampusIds: string[],
   handleError: (error: any, message?: string) => void
 ) => {
   try {
@@ -17,7 +17,7 @@ export const fetchLeadsStats = async (
     fourWeeksAgo.setDate(today.getDate() - 28); // 4 weeks = 28 days
 
     console.log("Fetching weekly lead counts from", fourWeeksAgo.toISOString(), "to", today.toISOString());
-    console.log("Campus filter:", selectedCampusId || "none (all campuses)");
+    console.log("Campus filter:", selectedCampusIds.length > 0 ? selectedCampusIds.join(', ') : "none (all campuses)");
 
     // Call the custom SQL function to get weekly lead counts
     let { data: weeklyLeadData, error: weeklyLeadError } = await supabase.rpc(
@@ -25,7 +25,7 @@ export const fetchLeadsStats = async (
       {
         start_date: fourWeeksAgo.toISOString().split('T')[0],
         end_date: today.toISOString().split('T')[0],
-        campus_filter: selectedCampusId
+        campus_ids: selectedCampusIds.length > 0 ? selectedCampusIds : null
       }
     );
 

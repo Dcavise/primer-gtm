@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { OpportunityStageCount } from './types';
 
 export const fetchOpportunitiesStats = async (
-  selectedCampusId: string | null,
+  selectedCampusIds: string[],
   handleError: (error: any, message?: string) => void
 ) => {
   try {
@@ -21,11 +21,11 @@ export const fetchOpportunitiesStats = async (
     }
     
     if (stagesData) {
-      // Filter the data for the selected campus
+      // Filter the data for the selected campuses
       let filteredData = stagesData;
-      if (selectedCampusId) {
+      if (selectedCampusIds.length > 0) {
         filteredData = stagesData.filter((item: any) => 
-          item.campus_id === selectedCampusId
+          selectedCampusIds.includes(item.campus_id)
         );
       }
       
@@ -71,9 +71,9 @@ export const fetchOpportunitiesStats = async (
       
       if (!closedWonError && closedWonData) {
         let filteredClosedWonData = closedWonData;
-        if (selectedCampusId) {
+        if (selectedCampusIds.length > 0) {
           filteredClosedWonData = closedWonData.filter((item: any) => 
-            item.campus_id === selectedCampusId
+            selectedCampusIds.includes(item.campus_id)
           );
         }
         

@@ -1,27 +1,23 @@
 
 import React, { useEffect, useState } from 'react';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { Campus } from '@/hooks/salesforce/types';
 import { supabase } from '@/integrations/supabase/client';
 
 interface CampusSelectorProps {
   campuses: Campus[];
-  selectedCampusId: string | null;
-  onSelectCampus: (campusId: string | null, campusName: string | null) => void;
+  selectedCampusIds: string[];
+  onSelectCampuses: (campusIds: string[], campusNames: string[]) => void;
 }
 
 export const CampusSelector: React.FC<CampusSelectorProps> = ({ 
   campuses, 
-  selectedCampusId, 
-  onSelectCampus 
+  selectedCampusIds, 
+  onSelectCampuses 
 }) => {
   const [validCampuses, setValidCampuses] = useState<Campus[]>([]);
+  const [selectAll, setSelectAll] = useState<boolean>(true);
   
   useEffect(() => {
     // Filter the campuses prop to only include campuses from the public.campuses table
@@ -68,37 +64,78 @@ export const CampusSelector: React.FC<CampusSelectorProps> = ({
     filterValidCampuses();
   }, [campuses]);
 
-  const handleCampusChange = (value: string) => {
-    if (value === "all") {
-      onSelectCampus(null, null);
+  const handleCampusToggle = (campusId: string, checked: boolean) => {
+    let newSelectedIds: string[];
+    
+    if (checked) {
+      // Add campus to selection
+      newSelectedIds = [...selectedCampusIds, campusId];
     } else {
-      const selectedCampus = validCampuses.find(campus => campus.campus_id === value);
-      onSelectCampus(value, selectedCampus?.campus_name || null);
+      // Remove campus from selection
+      newSelectedIds = selectedCampusIds.filter(id => id !== campusId);
+    }
+    
+    // Get campus names for the selected IDs
+    const selectedNames = validCampuses
+      .filter(campus => newSelectedIds.includes(campus.campus_id))
+      .map(campus => campus.campus_name);
+    
+    onSelectCampuses(newSelectedIds, selectedNames);
+    
+    // Update selectAll checkbox state
+    setSelectAll(newSelectedIds.length === validCampuses.length);
+  };
+
+  const handleSelectAllToggle = (checked: boolean) => {
+    setSelectAll(checked);
+    
+    if (checked) {
+      // Select all campuses
+      const allCampusIds = validCampuses.map(campus => campus.campus_id);
+      const allCampusNames = validCampuses.map(campus => campus.campus_name);
+      onSelectCampuses(allCampusIds, allCampusNames);
+    } else {
+      // Deselect all campuses
+      onSelectCampuses([], []);
     }
   };
 
   return (
     <div className="mb-6">
-      <div className="flex items-center gap-2">
-        <Select
-          value={selectedCampusId || "all"}
-          onValueChange={handleCampusChange}
-        >
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Select campus" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Campuses</SelectItem>
-            {validCampuses.map(campus => (
-              <SelectItem key={campus.campus_id} value={campus.campus_id}>
-                {campus.campus_name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <span className="text-sm text-muted-foreground">
-          {selectedCampusId ? `Showing data for selected campus` : 'Showing data for all campuses'}
-        </span>
+      <h3 className="text-sm font-medium mb-3">Campus Selection</h3>
+      <div className="flex flex-col gap-2 p-4 bg-slate-50 rounded-md border border-slate-200">
+        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-200">
+          <Checkbox 
+            id="select-all"
+            checked={selectAll}
+            onCheckedChange={(checked) => handleSelectAllToggle(!!checked)}
+          />
+          <Label htmlFor="select-all" className="font-medium">
+            All Campuses
+          </Label>
+        </div>
+        
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          {validCampuses.map(campus => (
+            <div key={campus.campus_id} className="flex items-center gap-2">
+              <Checkbox 
+                id={campus.campus_id}
+                checked={selectedCampusIds.includes(campus.campus_id)}
+                onCheckedChange={(checked) => handleCampusToggle(campus.campus_id, !!checked)}
+              />
+              <Label htmlFor={campus.campus_id}>{campus.campus_name}</Label>
+            </div>
+          ))}
+        </div>
+        
+        <div className="mt-3 text-sm text-muted-foreground">
+          {selectedCampusIds.length === 0 
+            ? 'No campuses selected' 
+            : selectedCampusIds.length === validCampuses.length 
+              ? 'Showing aggregated data for all campuses' 
+              : `Showing aggregated data for ${selectedCampusIds.length} selected ${selectedCampusIds.length === 1 ? 'campus' : 'campuses'}`
+          }
+        </div>
       </div>
     </div>
   );

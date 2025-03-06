@@ -1,12 +1,13 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { EmploymentStatusCount } from './types';
 
 export const fetchFellowsStats = async (
-  selectedCampusId: string | null,
+  selectedCampusIds: string[],
   handleError: (error: any, message?: string) => void
 ) => {
   try {
-    console.log("Fetching fellows stats for campus:", selectedCampusId || "all campuses");
+    console.log("Fetching fellows stats for campuses:", selectedCampusIds.length > 0 ? selectedCampusIds.join(', ') : "all campuses");
     
     // Fetch fellows count with proper filtering
     let query = supabase
@@ -17,12 +18,14 @@ export const fetchFellowsStats = async (
     query = query.not('fte_employment_status', 'eq', 'Exiting')
                .not('fte_employment_status', 'eq', 'Declined FTE Offer');
     
-    if (selectedCampusId) {
-      console.log(`Selected campus ID: ${selectedCampusId}`);
+    if (selectedCampusIds.length > 0) {
+      // Create a filter for each campus ID
+      const filters = selectedCampusIds.map(campusId => 
+        `campus_id.eq.${campusId},campus.eq.${campusId},campus.ilike.%${campusId}%`
+      ).join(',');
       
-      // We still use the OR filter for backwards compatibility with existing data
-      query = query.or(`campus_id.eq.${selectedCampusId},campus.eq.${selectedCampusId},campus.ilike.%${selectedCampusId}%`);
-      console.log(`Using enhanced campus filter for campus_id: ${selectedCampusId}`);
+      query = query.or(filters);
+      console.log(`Using enhanced campus filter for campus_ids: ${selectedCampusIds.join(', ')}`);
     }
     
     const { count: fellowsCount, error: fellowsError, data: fellowsData } = await query;

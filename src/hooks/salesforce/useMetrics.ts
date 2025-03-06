@@ -13,7 +13,7 @@ import {
   TimeSeriesData
 } from './types';
 
-export const useMetrics = (selectedCampusId: string | null) => {
+export const useMetrics = (selectedCampusIds: string[]) => {
   const [leadsMetrics, setLeadsMetrics] = useState<LeadsMetricsData>({
     metrics: [],
     timeSeriesData: []
@@ -64,7 +64,7 @@ export const useMetrics = (selectedCampusId: string | null) => {
     if (validCampusIds.length > 0) {
       fetchOpportunityMetrics();
     }
-  }, [selectedCampusId, validCampusIds]);
+  }, [selectedCampusIds, validCampusIds]);
   
   const fetchOpportunityMetrics = async () => {
     try {
@@ -75,13 +75,13 @@ export const useMetrics = (selectedCampusId: string | null) => {
       const startDate = new Date(today);
       startDate.setMonth(today.getMonth() - 12);
       
-      // 1. Get monthly opportunity trends
+      // 1. Get monthly opportunity trends - now accepting an array of campus IDs
       const { data: trendData, error: trendError } = await supabase.rpc(
         'get_monthly_opportunity_trends',
         {
           start_date: startDate.toISOString().split('T')[0],
           end_date: today.toISOString().split('T')[0],
-          p_campus_id: selectedCampusId
+          p_campus_ids: selectedCampusIds.length > 0 ? selectedCampusIds : null
         }
       );
       
@@ -100,7 +100,7 @@ export const useMetrics = (selectedCampusId: string | null) => {
         {
           start_date: startDate.toISOString().split('T')[0],
           end_date: today.toISOString().split('T')[0],
-          p_campus_id: selectedCampusId
+          p_campus_ids: selectedCampusIds.length > 0 ? selectedCampusIds : null
         }
       );
       
@@ -110,7 +110,7 @@ export const useMetrics = (selectedCampusId: string | null) => {
       const { data: conversionData, error: conversionError } = await supabase.rpc(
         'get_lead_to_win_conversion',
         {
-          p_campus_id: selectedCampusId,
+          p_campus_ids: selectedCampusIds.length > 0 ? selectedCampusIds : null,
           p_months: 12
         }
       );
@@ -129,8 +129,8 @@ export const useMetrics = (selectedCampusId: string | null) => {
       
       // Filter sales cycle data to only include campuses in our valid list
       const formattedCycles: SalesCycleMetric[] = cycleData
-        .filter((item: any) => validCampusIds.includes(item.campus_id) || 
-                              (!selectedCampusId || item.campus_name === selectedCampusId))
+        .filter((item: any) => validCampusIds.includes(item.campus_id) ||
+                              (selectedCampusIds.length > 0 && selectedCampusIds.includes(item.campus_id)))
         .map((item: any) => ({
           campus_name: item.campus_name,
           state: item.state,
@@ -194,4 +194,3 @@ export const useMetrics = (selectedCampusId: string | null) => {
     fetchAttendanceMetrics
   };
 };
-

@@ -30,7 +30,7 @@ export type {
   AttendanceMetricsData
 };
 
-export const useSalesforceData = (selectedCampusId: string | null) => {
+export const useSalesforceData = (selectedCampusIds: string[]) => {
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
   const [databaseConnection, setDatabaseConnection] = useState<'checking' | 'connected' | 'error'>('checking');
   
@@ -60,9 +60,9 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
     checkDatabaseConnection();
   }, []);
   
-  const { stats, employmentStatusCounts, weeklyLeadCounts, opportunityStageCounts, fetchStats } = useStats(selectedCampusId);
+  const { stats, employmentStatusCounts, weeklyLeadCounts, opportunityStageCounts, fetchStats } = useStats(selectedCampusIds);
   const { campuses, fetchCampuses } = useCampuses();
-  const { leadsMetrics, opportunityMetrics, attendanceMetrics } = useMetrics(selectedCampusId);
+  const { leadsMetrics, opportunityMetrics, attendanceMetrics } = useMetrics(selectedCampusIds);
   const { syncLoading, syncError, syncStatus, syncSalesforceData } = useSyncSalesforce(() => {
     fetchStats();
     fetchCampuses();
