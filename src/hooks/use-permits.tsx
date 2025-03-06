@@ -1,7 +1,6 @@
-
 import { useState } from "react";
 import { Permit, PermitResponse, PermitSearchParams, SearchStatus } from "@/types";
-import { searchPermits } from "@/services/permits-api";
+import { searchPermits } from "@/lib/serverComms";
 import { toast } from "sonner";
 
 export function usePermits() {

@@ -1,6 +1,5 @@
-
 // Set debug mode based on environment
-const isDebugMode = process.env.NODE_ENV === 'development';
+const isDebugMode = import.meta.env.DEV || import.meta.env.MODE === 'development';
 
 /**
  * Logger utility for consistent debugging across the application

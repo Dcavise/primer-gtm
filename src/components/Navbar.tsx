@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
@@ -16,7 +15,8 @@ import {
   UserRound, 
   Building, 
   Search,
-  LogOut 
+  LogOut,
+  BarChart
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,7 +25,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 const routes = [
   { path: "/", name: "Home", icon: <Home className="mr-2 h-4 w-4" /> },
   { path: "/property-research", name: "Property Research", icon: <Search className="mr-2 h-4 w-4" /> },
-  { path: "/salesforce-leads", name: "Salesforce Analytics", icon: <LayoutDashboard className="mr-2 h-4 w-4" /> },
+  { path: "/salesforce-leads", name: "Salesforce Leads", icon: <LayoutDashboard className="mr-2 h-4 w-4" /> },
+  { path: "/salesforce-metrics", name: "Salesforce Metrics", icon: <BarChart className="mr-2 h-4 w-4" /> },
   { path: "/real-estate-pipeline", name: "Real Estate Pipeline", icon: <Building className="mr-2 h-4 w-4" /> },
   { path: "/find-contacts", name: "Find Contacts", icon: <UserRound className="mr-2 h-4 w-4" /> },
 ];
