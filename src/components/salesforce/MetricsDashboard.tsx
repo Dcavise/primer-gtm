@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { 
   Card, 
@@ -32,6 +31,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [weekOverWeekData, setWeekOverWeekData] = useState<any[]>([]);
   const [closedWonData, setClosedWonData] = useState<any[]>([]);
+  const [validCampusIds, setValidCampusIds] = useState<string[]>([]);
   
   // Chart colors based on the design system
   const chartColors = {
@@ -43,8 +43,31 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
     daysToClose: "#8C564B"
   };
   
+  // Fetch valid campus IDs from the public.campuses table
+  useEffect(() => {
+    const fetchValidCampusIds = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('campuses')
+          .select('campus_id');
+        
+        if (error) throw error;
+        
+        const ids = data.map(campus => campus.campus_id);
+        setValidCampusIds(ids);
+        console.log('Valid campus IDs for metrics dashboard:', ids);
+      } catch (err) {
+        console.error('Error fetching valid campus IDs:', err);
+      }
+    };
+    
+    fetchValidCampusIds();
+  }, []);
+  
   useEffect(() => {
     const fetchMetricsData = async () => {
+      if (validCampusIds.length === 0) return; // Don't fetch until we have valid IDs
+      
       setIsLoading(true);
       setError(null);
       
@@ -63,13 +86,11 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
           
         if (closedWonError) throw closedWonError;
         
-        // Filter closed won data if campus is selected
-        let filteredClosedWonData = closedWonByData;
-        if (selectedCampusId) {
-          filteredClosedWonData = closedWonByData.filter((item: any) => 
-            item.campus_id === selectedCampusId
-          );
-        }
+        // Filter closed won data by valid campus IDs and campus selection
+        let filteredClosedWonData = closedWonByData.filter((item: any) => 
+          validCampusIds.includes(item.campus_id) || 
+          (selectedCampusId && item.campus_id === selectedCampusId)
+        );
         
         // Sort by win rate and limit to top 5
         filteredClosedWonData = filteredClosedWonData
@@ -87,7 +108,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
     };
     
     fetchMetricsData();
-  }, [selectedCampusId, selectedCampusName]);
+  }, [selectedCampusId, selectedCampusName, validCampusIds]);
   
   const renderWeekOverWeekMetrics = () => {
     if (weekOverWeekData.length === 0) {

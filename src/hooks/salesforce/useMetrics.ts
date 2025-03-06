@@ -32,13 +32,39 @@ export const useMetrics = (selectedCampusId: string | null) => {
     timeSeriesData: []
   });
   
+  const [validCampusIds, setValidCampusIds] = useState<string[]>([]);
+  
   const handleError = (error: any, message?: string) => {
     console.error(message || 'Error fetching metrics:', error);
   };
   
+  // Fetch valid campus IDs from the public.campuses table
   useEffect(() => {
-    fetchOpportunityMetrics();
-  }, [selectedCampusId]);
+    const fetchValidCampusIds = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('campuses')
+          .select('campus_id');
+        
+        if (error) throw error;
+        
+        const ids = data.map(campus => campus.campus_id);
+        setValidCampusIds(ids);
+        console.log('Valid campus IDs:', ids);
+      } catch (error) {
+        handleError(error, 'Error fetching valid campus IDs');
+      }
+    };
+    
+    fetchValidCampusIds();
+  }, []);
+  
+  useEffect(() => {
+    // Only fetch metrics if we have loaded valid campus IDs
+    if (validCampusIds.length > 0) {
+      fetchOpportunityMetrics();
+    }
+  }, [selectedCampusId, validCampusIds]);
   
   const fetchOpportunityMetrics = async () => {
     try {
@@ -101,8 +127,10 @@ export const useMetrics = (selectedCampusId: string | null) => {
         average_days_to_close: Number(item.average_days_to_close)
       }));
       
+      // Filter sales cycle data to only include campuses in our valid list
       const formattedCycles: SalesCycleMetric[] = cycleData
-        .filter((item: any) => !selectedCampusId || item.campus_name === selectedCampusId)
+        .filter((item: any) => validCampusIds.includes(item.campus_id) || 
+                              (!selectedCampusId || item.campus_name === selectedCampusId))
         .map((item: any) => ({
           campus_name: item.campus_name,
           state: item.state,
@@ -160,6 +188,7 @@ export const useMetrics = (selectedCampusId: string | null) => {
     leadsMetrics,
     opportunityMetrics,
     attendanceMetrics,
+    validCampusIds,
     fetchOpportunityMetrics,
     fetchLeadsMetrics,
     fetchAttendanceMetrics
