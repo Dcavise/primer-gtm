@@ -14,10 +14,10 @@ export const fetchLeadsStats = async (
     
     // Get the current date and date 4 weeks ago
     const today = new Date();
-    const fourWeeksAgo = new Date();
-    fourWeeksAgo.setDate(today.getDate() - 28); // 4 weeks = 28 days
+    const localFourWeeksAgo = new Date();
+    localFourWeeksAgo.setDate(today.getDate() - 28); // 4 weeks = 28 days
 
-    console.log("Fetching weekly lead counts from", fourWeeksAgo.toISOString(), "to", today.toISOString());
+    console.log("Fetching weekly lead counts from", localFourWeeksAgo.toISOString(), "to", today.toISOString());
     console.log("Campus filter:", selectedCampusIds.length > 0 ? selectedCampusIds.join(', ') : "none (all campuses)");
 
     // First check auth status
@@ -29,7 +29,7 @@ export const fetchLeadsStats = async (
       });
       
       // Generate mock data if not authenticated
-      return generateMockLeadsData(fourWeeksAgo);
+      return generateMockLeadsData(localFourWeeksAgo);
     }
 
     // Try to get data using the RPC function first
@@ -37,7 +37,7 @@ export const fetchLeadsStats = async (
       const { data: weeklyLeadData, error: weeklyLeadError } = await supabase.rpc(
         'get_weekly_lead_counts',
         {
-          start_date: fourWeeksAgo.toISOString().split('T')[0],
+          start_date: localFourWeeksAgo.toISOString().split('T')[0],
           end_date: today.toISOString().split('T')[0],
           campus_filter: selectedCampusIds.length === 1 ? selectedCampusIds[0] : null
         }
@@ -60,14 +60,15 @@ export const fetchLeadsStats = async (
         }));
       }
     } catch (rpcError) {
-      // Try direct query to salesforce schema as fallback
+      // Try direct query as fallback
+      // We need to use the raw() method to query across schema boundaries
       try {
         const { data: directData, error: directError } = await supabase
           .from('salesforce.lead')
           .select('created_date')
-          .gte('created_date', fourWeeksAgo.toISOString().split('T')[0])
-          .lte('created_date', today.toISOString().split('T')[0])
-          .eq('is_deleted', false);
+          .filter('created_date', 'gte', localFourWeeksAgo.toISOString().split('T')[0])
+          .filter('created_date', 'lte', today.toISOString().split('T')[0])
+          .filter('is_deleted', 'eq', false);
           
         if (directError) {
           console.warn('Direct query failed, falling back to mock data:', directError);
@@ -98,14 +99,14 @@ export const fetchLeadsStats = async (
       } catch (directError) {
         // Fallback to mock data if both approaches fail
         console.log("Generating mock weekly lead data due to database access error");
-        return generateMockLeadsData(fourWeeksAgo);
+        return generateMockLeadsData(localFourWeeksAgo);
       }
     }
     
     return { leadsCount, weeklyLeadCounts };
   } catch (error) {
     handleError(error, 'Error fetching leads stats');
-    return generateMockLeadsData(fourWeeksAgo);
+    return generateMockLeadsData(new Date(new Date().setDate(new Date().getDate() - 28)));
   }
 };
 

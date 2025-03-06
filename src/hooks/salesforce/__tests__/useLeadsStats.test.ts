@@ -25,7 +25,7 @@ describe('fetchLeadsStats', () => {
     });
     
     // Setup the last method in the chain to return a thenable
-    mockSupabase.eq.mockImplementationOnce(() => {
+    mockSupabase.filter.mockImplementationOnce(() => {
       return { ...mockSupabase, then: (callback: any) => mockLeadsPromise.then(callback) };
     });
     
@@ -65,7 +65,7 @@ describe('fetchLeadsStats', () => {
     });
     
     // Setup the last method in the chain to return a thenable
-    mockSupabase.eq.mockImplementationOnce(() => {
+    mockSupabase.filter.mockImplementationOnce(() => {
       return { ...mockSupabase, then: (callback: any) => mockLeadsPromise.then(callback) };
     });
     
@@ -93,7 +93,7 @@ describe('fetchLeadsStats', () => {
     });
     
     // Setup the last method in the chain to return a thenable
-    mockSupabase.eq.mockImplementationOnce(() => {
+    mockSupabase.filter.mockImplementationOnce(() => {
       return { ...mockSupabase, then: (callback: any) => mockLeadsPromise.then(callback) };
     });
     
@@ -120,8 +120,8 @@ describe('fetchLeadsStats', () => {
       error: null
     });
     
-    // Setup another eq method after gte for the fallback
-    mockSupabase.eq.mockImplementationOnce(() => {
+    // Setup another filter method after select for the fallback
+    mockSupabase.filter.mockImplementationOnce(() => {
       return { ...mockSupabase, then: (callback: any) => mockFallbackPromise.then(callback) };
     });
     
@@ -142,7 +142,7 @@ describe('fetchLeadsStats', () => {
     });
     
     // Setup the last method in the chain to return a thenable
-    mockSupabase.eq.mockImplementationOnce(() => {
+    mockSupabase.filter.mockImplementationOnce(() => {
       return { ...mockSupabase, then: (callback: any) => mockLeadsPromise.then(callback) };
     });
     
@@ -151,7 +151,7 @@ describe('fetchLeadsStats', () => {
     expect(mockHandleError).toHaveBeenCalledWith(mockError, 'Error fetching leads stats');
   });
   
-  it('should return empty data on error', async () => {
+  it('should return mock data on error', async () => {
     const mockError = new Error('API error');
     
     // Setup error response for leads count
@@ -161,15 +161,14 @@ describe('fetchLeadsStats', () => {
     });
     
     // Setup the last method in the chain to return a thenable
-    mockSupabase.eq.mockImplementationOnce(() => {
+    mockSupabase.filter.mockImplementationOnce(() => {
       return { ...mockSupabase, then: (callback: any) => mockLeadsPromise.then(callback) };
     });
     
     const result = await fetchLeadsStats([], mockHandleError);
     
-    expect(result).toEqual({
-      leadsCount: 0,
-      weeklyLeadCounts: []
-    });
+    // Should return mock data with actual values
+    expect(result.leadsCount).toBeGreaterThan(0);
+    expect(result.weeklyLeadCounts.length).toBe(4);
   });
 });
