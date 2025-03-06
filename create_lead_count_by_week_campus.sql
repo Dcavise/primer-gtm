@@ -1,4 +1,5 @@
-how -- Function to count leads created, grouped by week and campus
+-- Function to count leads created, grouped by week and campus
+-- First create the function with both naming conventions for compatibility
 CREATE OR REPLACE FUNCTION public.get_lead_count_by_week_and_campus(
   lookback_weeks integer DEFAULT 12
 )
@@ -119,3 +120,19 @@ $$;
 COMMENT ON FUNCTION public.get_lead_count_by_week_and_campus IS 'Count leads grouped by week and campus, with a default 12-week lookback period';
 GRANT EXECUTE ON FUNCTION public.get_lead_count_by_week_and_campus TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_lead_count_by_week_and_campus TO service_role;
+
+-- Create an alias using the underscore name format for compatibility with existing code
+CREATE OR REPLACE FUNCTION public.get_lead_count_by_week_campus(
+  lookback_weeks integer DEFAULT 12
+)
+RETURNS SETOF json
+LANGUAGE plpgsql
+SECURITY DEFINER AS $$
+BEGIN
+  -- Simply call the original function
+  RETURN QUERY SELECT * FROM public.get_lead_count_by_week_and_campus(lookback_weeks);
+END;
+$$;
+COMMENT ON FUNCTION public.get_lead_count_by_week_campus IS 'Alias for get_lead_count_by_week_and_campus function with underscore format';
+GRANT EXECUTE ON FUNCTION public.get_lead_count_by_week_campus TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_lead_count_by_week_campus TO service_role;

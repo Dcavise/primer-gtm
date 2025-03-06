@@ -1,14 +1,31 @@
 // Script to execute the Fivetran views SQL using Supabase admin client
 import fs from 'fs';
 import { createClient } from '@supabase/supabase-js';
+import 'dotenv/config';
 
 // Get the SQL script content
 const sqlScript = fs.readFileSync('./create_fivetran_views.sql', 'utf8');
 
-// Create a Supabase client with admin privileges
-const supabaseUrl = 'https://pudncilureqpzxrxfupr.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1ZG5jaWx1cmVxcHp4cnhmdXByIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MTEyMzU1NSwiZXhwIjoyMDU2Njk5NTU1fQ.EWKxn71khOgVFwKLXodAU2h2Cv3HVb-LMiQ3A0T-lZ4';
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Create a Supabase client with admin privileges using environment variables
+const supabaseUrl = process.env.SUPABASE_URL || 'https://pudncilureqpzxrxfupr.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseKey) {
+  console.error('SUPABASE_SERVICE_ROLE_KEY environment variable is required');
+  process.exit(1);
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+  },
+  global: {
+    headers: {
+      'x-client-info': 'primer-analytics-dashboard-admin',
+    },
+  },
+});
 
 async function executeSQL() {
   try {
