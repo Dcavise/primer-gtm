@@ -39,19 +39,19 @@ export const getPhaseColorClass = (phase: PropertyPhase | null | undefined): str
     case '0. New Site':
       return 'bg-gray-200 text-gray-800';
     case '1. Initial Diligence':
-      return 'bg-[#1F77B4] text-white';
+      return 'bg-[#1F77B4] text-white'; // Blue
     case '2. Survey':
-      return 'bg-[#FF7F0E] text-white';
+      return 'bg-[#FF7F0E] text-white'; // Orange
     case '3. Test Fit':
-      return 'bg-[#9467BD] text-white';
+      return 'bg-[#9467BD] text-white'; // Purple
     case '4. Plan Production':
-      return 'bg-[#2CA02C] text-white';
+      return 'bg-[#2CA02C] text-white'; // Green
     case '5. Permitting':
-      return 'bg-[#1F77B4] text-white';
+      return 'bg-[#1F77B4] text-white'; // Blue
     case '6. Construction':
-      return 'bg-[#495057] text-white';
+      return 'bg-[#495057] text-white'; // Dark gray
     case '7. Set Up':
-      return 'bg-[#2CA02C] text-white';
+      return 'bg-[#2CA02C] text-white'; // Green
     case 'Hold':
       return 'bg-amber-800 text-white';
     case 'Deprioritize':
@@ -82,8 +82,6 @@ export const PhaseSelector: React.FC<PhaseSelectorProps> = ({
   // The colorClass for the button should reflect the current phase
   const colorClass = value ? getPhaseColorClass(value) : '';
 
-  console.log("PhaseSelector rendering with value:", value);
-
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -111,7 +109,6 @@ export const PhaseSelector: React.FC<PhaseSelectorProps> = ({
               key="none"
               value="none"
               onSelect={() => {
-                console.log("Selecting: none");
                 onValueChange('');
                 setOpen(false);
               }}
@@ -129,7 +126,6 @@ export const PhaseSelector: React.FC<PhaseSelectorProps> = ({
                 key={phase}
                 value={phase}
                 onSelect={() => {
-                  console.log("Selecting phase:", phase);
                   onValueChange(phase);
                   setOpen(false);
                 }}
