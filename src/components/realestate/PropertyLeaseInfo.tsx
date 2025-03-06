@@ -22,7 +22,10 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
   // Update type to match our form inputs
-  const [fieldValues, setFieldValues] = useState<Record<string, LeaseStatus | string | null>>({});
+  const [fieldValues, setFieldValues] = useState<Record<string, LeaseStatus | string | null>>({
+    loi_status: null,
+    lease_status: null,
+  });
 
   // Initialize field values when property changes
   useEffect(() => {
@@ -95,8 +98,8 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
   };
 
   const renderField = (fieldName: string, label: string) => {
-    const isFieldEditing = editingFields[fieldName];
-    const isFieldSaving = savingFields[fieldName];
+    const isFieldEditing = editingFields[fieldName] || false;
+    const isFieldSaving = savingFields[fieldName] || false;
     
     return (
       <div className="space-y-1">

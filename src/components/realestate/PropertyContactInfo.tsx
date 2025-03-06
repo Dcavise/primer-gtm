@@ -22,7 +22,11 @@ const PropertyContactInfo: React.FC<PropertyContactInfoProps> = ({
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
   // Update type to include number
-  const [fieldValues, setFieldValues] = useState<Record<string, string | null | number>>({});
+  const [fieldValues, setFieldValues] = useState<Record<string, string | null | number>>({
+    ll_poc: '',
+    ll_phone: '',
+    ll_email: '',
+  });
 
   // Initialize field values when property changes
   useEffect(() => {
@@ -85,8 +89,8 @@ const PropertyContactInfo: React.FC<PropertyContactInfoProps> = ({
   };
 
   const renderField = (fieldName: string, label: string) => {
-    const isFieldEditing = editingFields[fieldName];
-    const isFieldSaving = savingFields[fieldName];
+    const isFieldEditing = editingFields[fieldName] || false;
+    const isFieldSaving = savingFields[fieldName] || false;
     
     return (
       <div className="space-y-1">

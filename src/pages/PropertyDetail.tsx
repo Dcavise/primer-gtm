@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -137,7 +138,10 @@ const PropertyDetail: React.FC = () => {
     return <PropertyNotFound />;
   }
 
-  const progressStages = property.phase ? mapPhaseToProgressStages(property.phase) : [];
+  // Add a safety check to make sure we have a valid property phase before mapping
+  const progressStages = property.phase 
+    ? mapPhaseToProgressStages(property.phase) 
+    : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -148,7 +152,7 @@ const PropertyDetail: React.FC = () => {
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Pipeline
         </Button>
         
-        {progressStages.length > 0 && (
+        {progressStages && progressStages.length > 0 && (
           <PropertyProgress stages={progressStages} />
         )}
         
