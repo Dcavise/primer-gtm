@@ -91,9 +91,14 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
     try {
       console.log(`Saving ${fieldName} with value:`, fieldValues[fieldName]);
       
+      // For the phase field, handle empty string as null for the database
+      const valueToSave = fieldName === 'phase' && fieldValues[fieldName] === '' 
+        ? null 
+        : fieldValues[fieldName];
+      
       const { error } = await supabase
         .from('real_estate_pipeline')
-        .update({ [fieldName]: fieldValues[fieldName] })
+        .update({ [fieldName]: valueToSave })
         .eq('id', property.id);
       
       if (error) {
@@ -204,7 +209,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
         {isFieldEditing ? (
           <div className="space-y-2">
             <PhaseSelector
-              value={fieldValues.phase as PropertyPhase || null}
+              value={fieldValues.phase as PropertyPhase | null}
               onValueChange={handlePhaseFieldChange}
             />
             <div className="flex justify-end space-x-2">
