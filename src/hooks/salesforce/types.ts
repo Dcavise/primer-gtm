@@ -16,6 +16,8 @@ export interface EmploymentStatusCount {
 export interface WeeklyLeadCount {
   week: string;
   count: number;
+  campus_id?: string;
+  campus_name?: string;
 }
 
 export interface OpportunityStageCount {
