@@ -7,10 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/LoadingState';
 import { RealEstateProperty, PropertyPhase } from '@/types/realEstate';
-import PhaseSelector from './PhaseSelector';
+import { SafePhaseSelector } from './SafePhaseSelector';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { fieldValidators } from '@/schemas/propertySchema';
+import { ErrorBoundary } from '@/components/error-boundary';
 
 interface PropertyBasicInfoProps {
   property: RealEstateProperty;
@@ -270,10 +271,12 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
         
         {isFieldEditing ? (
           <div className="space-y-2">
-            <PhaseSelector
-              value={fieldValues.phase as PropertyPhase | null}
-              onValueChange={handlePhaseFieldChange}
-            />
+            <ErrorBoundary>
+              <SafePhaseSelector
+                value={fieldValues.phase as PropertyPhase | null}
+                onValueChange={handlePhaseFieldChange}
+              />
+            </ErrorBoundary>
             {hasError && (
               <p className="text-xs text-red-500">{hasError}</p>
             )}
@@ -326,7 +329,9 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
         )}
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {renderPhaseField()}
+        <ErrorBoundary>
+          {renderPhaseField()}
+        </ErrorBoundary>
         {renderField('sf_available', 'Available Space')}
         {renderField('zoning', 'Zoning')}
         {renderField('permitted_use', 'Permitted Use')}
