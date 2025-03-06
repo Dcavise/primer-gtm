@@ -68,7 +68,28 @@ This project is built with .
 
 ## How can I deploy this project?
 
+### Deploy with Lovable
+
 Simply open [Lovable](https://lovable.dev/projects/7e60e186-6bfa-4878-9d2c-06629de4d6e7) and click on Share -> Publish.
+
+### Deploy with Vercel
+
+1. Create a new project in Vercel
+2. Connect your GitHub repository
+3. Configure the following settings:
+   - Framework Preset: Vite
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+   - Install Command: `npm install`
+4. Set up the environment variables in the Vercel project settings:
+   - Copy all variables from your `.env` file to Vercel's environment variables section
+   - Make sure to update `VITE_APP_URL` to your Vercel deployment URL
+5. Deploy the project
+
+If you encounter any issues with deployment:
+- Make sure all required environment variables are set in Vercel
+- Check that the build command and output directory are correctly configured
+- Verify that the Vercel project is connected to the correct branch of your repository
 
 ## I want to use a custom domain - is that possible?
 

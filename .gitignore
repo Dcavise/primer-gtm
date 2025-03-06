@@ -23,3 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 browser-tools-mcp/
+
+# Vercel
+.vercel
+.env*.local
