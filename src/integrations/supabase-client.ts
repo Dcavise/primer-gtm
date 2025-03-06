@@ -85,6 +85,13 @@ class SupabaseUnifiedClient {
   public from(table: any) {
     return this.regular.from(table as any);
   }
+  
+  /**
+   * Proxy auth property to access the regular client's auth property
+   */
+  public get auth() {
+    return this.regular.auth;
+  }
 }
 
 // Export a singleton instance
