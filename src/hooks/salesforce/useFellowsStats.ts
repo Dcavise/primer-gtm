@@ -1,5 +1,5 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase-client';
 import { EmploymentStatusCount } from './types';
 
 export const fetchFellowsStats = async (

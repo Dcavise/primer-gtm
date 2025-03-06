@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase-client';
 import { SummaryStats, EmploymentStatusCount, WeeklyLeadCount, OpportunityStageCount } from './types';
 import { useBaseStats } from './useBaseStats';
 import { fetchFellowsStats } from './useFellowsStats';

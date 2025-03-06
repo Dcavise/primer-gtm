@@ -1,6 +1,6 @@
 import { PermitResponse, PermitSearchParams } from "@/types";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase-client';
 
 // Mock data for fallback when the API is unavailable
 const fallbackPermitData = {

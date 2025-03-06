@@ -11,7 +11,7 @@ import {
   LineChart,
   Line
 } from "recharts";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase-client';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";

@@ -1,7 +1,7 @@
 
 import { toast } from "sonner";
 import { SUPABASE_URL } from "./api-config";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase-client';
 
 // Mock data for fallback when the API is unavailable
 const fallbackZoningData = {

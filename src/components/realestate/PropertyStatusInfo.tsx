@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/LoadingState';
 import { RealEstateProperty, BooleanStatus, SurveyStatus, TestFitStatus } from '@/types/realEstate';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase-client';
 import { toast } from 'sonner';
 import { BooleanStatusSelector } from './BooleanStatusSelector';
 import { SurveyStatusSelector } from './SurveyStatusSelector';

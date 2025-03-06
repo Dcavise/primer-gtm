@@ -3,7 +3,7 @@ import { useState } from "react";
 import { School, SchoolsResponse } from "@/types/schools";
 import { SearchStatus } from "@/types";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase-client';
 
 export function useSchoolsData() {
   const [schools, setSchools] = useState<School[]>([]);

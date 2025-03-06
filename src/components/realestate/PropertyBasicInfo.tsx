@@ -8,7 +8,7 @@ import { LoadingState } from '@/components/LoadingState';
 import { RealEstateProperty, PropertyPhase, BooleanStatus } from '@/types/realEstate';
 import { SafeSimplePhaseSelector } from './SafeSimplePhaseSelector';
 import { BooleanStatusSelector } from './BooleanStatusSelector';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase-client';
 import { toast } from 'sonner';
 import { fieldValidators } from '@/schemas/propertySchema';
 import { ErrorBoundary } from '@/components/error-boundary';

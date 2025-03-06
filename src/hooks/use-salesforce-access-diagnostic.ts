@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { troubleshootSchemaAccess, testCrossSchemaMethods } from '@/utils/salesforce-access';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase-client';
 import { logger } from '@/utils/logger';
 
 type DiagnosticStatus = 'idle' | 'running' | 'complete' | 'error';

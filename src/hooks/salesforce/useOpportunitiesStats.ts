@@ -1,5 +1,5 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase-client';
 import { OpportunityStageCount } from './types';
 import { logger } from '@/utils/logger';
 

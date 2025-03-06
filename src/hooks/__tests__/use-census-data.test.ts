@@ -24,7 +24,7 @@ vi.mock('sonner', () => ({
 }));
 
 // Import the mocked supabase
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase-client';
 
 // Mock census data response
 const mockCensusData = {

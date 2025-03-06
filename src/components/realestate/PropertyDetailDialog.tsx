@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RealEstateProperty, PropertyPhase } from '@/types/realEstate';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase-client';
 import { PhaseSelector } from './PhaseSelector';
 
 interface PropertyDetailDialogProps {

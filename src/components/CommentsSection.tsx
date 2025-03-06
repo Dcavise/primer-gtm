@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase-client';
 import Comment, { CommentData } from './Comment';
 import CommentForm from './CommentForm';
 import { MessageSquare } from 'lucide-react';

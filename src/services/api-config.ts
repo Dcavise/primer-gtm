@@ -1,5 +1,5 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase-client';
 
 // Base URLs
 export const API_BASE_URL = "https://api.zoneomics.com/v2";

@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, RefreshCw } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase-client';
 import { testSalesforceConnection } from '@/utils/test-salesforce';
 import { toast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';

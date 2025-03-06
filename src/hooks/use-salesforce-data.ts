@@ -3,7 +3,7 @@ import { useStats } from './salesforce/useStats';
 import { useCampuses } from './salesforce/useCampuses';
 import { useSyncSalesforce } from './salesforce/useSyncSalesforce';
 import { useMetrics } from './salesforce/useMetrics';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase-client';
 import { SUPABASE_URL, checkDatabaseConnection } from '@/lib/serverComms';
 import { 
   SummaryStats, 

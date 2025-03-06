@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase-client';
 import axios from 'axios';
 import { toast } from "sonner";
 import { Coordinates, PermitResponse, PermitSearchParams } from "@/types";
