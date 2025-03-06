@@ -26,9 +26,7 @@ function SelectorFallback({ error, resetError }: { error: Error; resetError: () 
 
 export function TestFitStatusSelector(props: TestFitStatusSelectorProps) {
   return (
-    <ErrorBoundary fallback={(error, resetError) => (
-      <SelectorFallback error={error} resetError={resetError} />
-    )}>
+    <ErrorBoundary fallback={(error, resetError) => <SelectorFallback error={error} resetError={resetError} />}>
       <EnumSelector<TestFitStatus>
         {...props}
         options={TEST_FIT_STATUS_OPTIONS}

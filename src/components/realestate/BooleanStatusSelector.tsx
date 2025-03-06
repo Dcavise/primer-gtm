@@ -26,9 +26,7 @@ function SelectorFallback({ error, resetError }: { error: Error; resetError: () 
 
 export function BooleanStatusSelector(props: BooleanStatusSelectorProps) {
   return (
-    <ErrorBoundary fallback={(error, resetError) => (
-      <SelectorFallback error={error} resetError={resetError} />
-    )}>
+    <ErrorBoundary fallback={(error, resetError) => <SelectorFallback error={error} resetError={resetError} />}>
       <EnumSelector<BooleanStatus>
         {...props}
         options={BOOLEAN_STATUS_OPTIONS}

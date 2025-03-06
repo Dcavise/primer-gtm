@@ -26,9 +26,7 @@ function SelectorFallback({ error, resetError }: { error: Error; resetError: () 
 
 export function SurveyStatusSelector(props: SurveyStatusSelectorProps) {
   return (
-    <ErrorBoundary fallback={(error, resetError) => (
-      <SelectorFallback error={error} resetError={resetError} />
-    )}>
+    <ErrorBoundary fallback={(error, resetError) => <SelectorFallback error={error} resetError={resetError} />}>
       <EnumSelector<SurveyStatus>
         {...props}
         options={SURVEY_STATUS_OPTIONS}
