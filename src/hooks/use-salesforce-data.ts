@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useStats } from './salesforce/useStats';
 import { useCampuses } from './salesforce/useCampuses';
@@ -40,7 +41,8 @@ export const useSalesforceData = (selectedCampusId: string | null) => {
         console.log("Checking Supabase database connection...");
         console.log("Supabase URL:", SUPABASE_URL);
         
-        const { data, error } = await supabase.from('salesforce_leads').select('count').limit(1);
+        // Use an RPC function instead of direct table access
+        const { data, error } = await supabase.rpc('get_campuses_with_lead_counts', {}).limit(1);
         
         if (error) {
           console.error("Database connection error:", error);

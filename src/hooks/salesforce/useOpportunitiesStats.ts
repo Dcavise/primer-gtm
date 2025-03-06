@@ -7,81 +7,85 @@ export const fetchOpportunitiesStats = async (
   handleError: (error: any, message?: string) => void
 ) => {
   try {
-    // Fetch active opportunities count
-    let activeOppsQuery = supabase
-      .from('salesforce_opportunities')
-      .select('opportunity_id', { count: 'exact', head: true })
-      .not('stage', 'in', '("Closed Won","Closed Lost")');
-    
-    if (selectedCampusId) {
-      activeOppsQuery = activeOppsQuery.eq('campus_id', selectedCampusId);
-    }
-    
-    const { count: activeOppsCount, error: activeOppsError } = await activeOppsQuery;
-    
-    if (activeOppsError) throw activeOppsError;
-    
-    // Fetch opportunity stages counts
-    let stagesQuery = supabase
-      .from('salesforce_opportunities')
-      .select('stage, opportunity_id')
-      .not('stage', 'in', '("Closed Won","Closed Lost")');
-    
-    if (selectedCampusId) {
-      stagesQuery = stagesQuery.eq('campus_id', selectedCampusId);
-    }
-    
-    const { data: stagesData, error: stagesError } = await stagesQuery;
-    
+    // Instead of direct table access, use RPC functions
     let opportunityStageCounts: OpportunityStageCount[] = [];
+    let activeOpportunitiesCount = 0;
+    let closedWonOpportunitiesCount = 0;
     
-    if (stagesError) throw stagesError;
+    // Fetch opportunity stages data using the RPC function
+    const { data: stagesData, error: stagesError } = await supabase
+      .rpc('get_opportunities_by_stage_campus');
+    
+    if (stagesError) {
+      throw stagesError;
+    }
     
     if (stagesData) {
-      // Group by stage and count
-      const stageCounts: Record<string, number> = {};
+      // Filter the data for the selected campus
+      let filteredData = stagesData;
+      if (selectedCampusId) {
+        filteredData = stagesData.filter((item: any) => 
+          item.campus_id === selectedCampusId || item.campus_name === selectedCampusName
+        );
+      }
       
-      // Initialize with the required stages to ensure they appear in the result even if count is 0
+      // Group and count by stage
+      const stageCounts: Record<string, number> = {};
       const requiredStages = ["Family Interview", "Awaiting Documents", "Preparing Offer", "Admission Offered"];
+      
+      // Initialize with required stages
       requiredStages.forEach(stage => {
         stageCounts[stage] = 0;
       });
       
-      // Count occurrences of each stage
-      stagesData.forEach(opportunity => {
-        if (opportunity.stage) {
-          stageCounts[opportunity.stage] = (stageCounts[opportunity.stage] || 0) + 1;
+      // Sum up the counts for each stage
+      filteredData.forEach((item: any) => {
+        if (requiredStages.includes(item.stage_name)) {
+          stageCounts[item.stage_name] = (stageCounts[item.stage_name] || 0) + Number(item.count);
+        }
+        
+        // Also count active opportunities (those not in Closed stages)
+        if (item.stage_name !== 'Closed Won' && item.stage_name !== 'Closed Lost') {
+          activeOpportunitiesCount += Number(item.count);
+        }
+        
+        // Count closed won opportunities
+        if (item.stage_name === 'Closed Won') {
+          closedWonOpportunitiesCount += Number(item.count);
         }
       });
       
-      // Convert to array and sort according to required order
+      // Format the data for the component
       opportunityStageCounts = requiredStages
-        .filter(stage => stageCounts[stage] !== undefined)
         .map(stage => ({
           stage,
-          count: stageCounts[stage]
+          count: stageCounts[stage] || 0
         }));
+    }
+    
+    // If we couldn't get the active and closed won counts from the RPC data,
+    // get them through a separate closed won stats call
+    if (closedWonOpportunitiesCount === 0) {
+      const { data: closedWonData, error: closedWonError } = await supabase
+        .rpc('get_closed_won_by_campus');
       
-      console.log("Opportunity stages counts:", opportunityStageCounts);
+      if (!closedWonError && closedWonData) {
+        let filteredClosedWonData = closedWonData;
+        if (selectedCampusId && selectedCampusName) {
+          filteredClosedWonData = closedWonData.filter((item: any) => 
+            item.campus_name === selectedCampusName
+          );
+        }
+        
+        closedWonOpportunitiesCount = filteredClosedWonData.reduce(
+          (sum: number, item: any) => sum + Number(item.closed_won_count), 0
+        );
+      }
     }
 
-    // Fetch closed won opportunities count
-    let closedWonOppsQuery = supabase
-      .from('salesforce_opportunities')
-      .select('opportunity_id', { count: 'exact', head: true })
-      .eq('stage', 'Closed Won');
-    
-    if (selectedCampusId) {
-      closedWonOppsQuery = closedWonOppsQuery.eq('campus_id', selectedCampusId);
-    }
-    
-    const { count: closedWonOppsCount, error: closedWonOppsError } = await closedWonOppsQuery;
-    
-    if (closedWonOppsError) throw closedWonOppsError;
-    
     return { 
-      activeOpportunitiesCount: activeOppsCount || 0, 
-      closedWonOpportunitiesCount: closedWonOppsCount || 0,
+      activeOpportunitiesCount, 
+      closedWonOpportunitiesCount,
       opportunityStageCounts
     };
   } catch (error) {

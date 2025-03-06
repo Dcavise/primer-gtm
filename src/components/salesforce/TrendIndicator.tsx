@@ -7,13 +7,17 @@ interface TrendIndicatorProps {
   format?: 'number' | 'percent' | 'currency';
   positive?: boolean;
   size?: 'sm' | 'md' | 'lg';
+  showValue?: boolean;
+  hideIcon?: boolean;
 }
 
 export const TrendIndicator: React.FC<TrendIndicatorProps> = ({ 
   value, 
   format = 'number', 
   positive, 
-  size = 'md' 
+  size = 'md',
+  showValue = true,
+  hideIcon = false
 }) => {
   // If positive is explicitly passed, use it, otherwise determine by value
   const isPositive = positive !== undefined ? positive : value >= 0;
@@ -45,12 +49,14 @@ export const TrendIndicator: React.FC<TrendIndicatorProps> = ({
   
   return (
     <div className={`flex items-center px-2 py-0.5 rounded ${bgColorClass} ${textColorClass} ${sizeClasses[size]}`}>
-      {isPositive ? (
-        <ArrowUp className="h-3 w-3 mr-1" />
-      ) : (
-        <ArrowDown className="h-3 w-3 mr-1" />
+      {!hideIcon && (
+        isPositive ? (
+          <ArrowUp className="h-3 w-3 mr-1" />
+        ) : (
+          <ArrowDown className="h-3 w-3 mr-1" />
+        )
       )}
-      <span>{formattedValue}</span>
+      {showValue && <span>{formattedValue}</span>}
     </div>
   );
 };

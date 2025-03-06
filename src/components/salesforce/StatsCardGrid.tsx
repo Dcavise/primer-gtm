@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { SummaryStats, EmploymentStatusCount, WeeklyLeadCount, OpportunityStageCount } from '@/hooks/salesforce/types';
@@ -19,6 +18,14 @@ interface StatsCardGridProps {
   campuses?: Campus[];
 }
 
+interface OpportunityStageData {
+  stage_name: string;
+  campus_name?: string;
+  state?: string;
+  count: number;
+  percentage?: number;
+}
+
 export const StatsCardGrid: React.FC<StatsCardGridProps> = ({ 
   selectedCampusId,
   selectedCampusName
@@ -26,7 +33,7 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [weeklyLeadData, setWeeklyLeadData] = useState<any[]>([]);
-  const [opportunityData, setOpportunityData] = useState<any[]>([]);
+  const [opportunityData, setOpportunityData] = useState<OpportunityStageData[]>([]);
 
   // Define chart colors
   const leadColors = ["#1F77B4", "#FF7F0E", "#2CA02C", "#D62728"];
@@ -64,7 +71,7 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = ({
         }));
         
         // Process opportunity data - filter by campus if selected
-        let processedOppData = oppData;
+        let processedOppData: OpportunityStageData[] = oppData;
         if (selectedCampusId) {
           processedOppData = oppData.filter((item: any) => 
             item.campus_name === selectedCampusName
@@ -80,7 +87,10 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = ({
           
           processedOppData = Object.entries(stageGroups).map(([stage_name, count]) => ({
             stage_name,
-            count
+            count,
+            campus_name: 'All Campuses',
+            state: '',
+            percentage: 0
           }));
         }
         
@@ -126,7 +136,7 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = ({
       </ResponsiveContainer>
     );
   };
-  
+
   const renderOpportunityChart = () => {
     if (opportunityData.length === 0) {
       return <div className="text-center text-gray-500 p-4">No opportunity data available</div>;
