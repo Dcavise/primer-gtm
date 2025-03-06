@@ -52,18 +52,18 @@ export const fetchLeadsStats = async (
         console.log("Weekly lead data from RPC:", weeklyLeadData);
         
         // Calculate total leads from the weekly data
-        leadsCount = weeklyLeadData.reduce((sum: number, item: any) => sum + Number(item.lead_count), 0);
+        leadsCount = (weeklyLeadData as any[]).reduce((sum: number, item: any) => sum + Number(item.lead_count), 0);
         
-        weeklyLeadCounts = weeklyLeadData.map((item: any) => ({
+        weeklyLeadCounts = (weeklyLeadData as any[]).map((item: any) => ({
           week: item.week,
           count: Number(item.lead_count)
         }));
       }
     } catch (rpcError) {
-      // Try direct query as fallback using raw() method for cross-schema access
+      // Try direct query as fallback using another RPC method for cross-schema access
       try {
-        // Use raw SQL to query across schema boundaries
-        const query = `
+        // Use a custom RPC function to query across schema boundaries
+        const sqlQuery = `
           SELECT created_date 
           FROM salesforce.lead
           WHERE created_date >= '${localFourWeeksAgo.toISOString().split('T')[0]}'
@@ -71,16 +71,17 @@ export const fetchLeadsStats = async (
           AND is_deleted = false
         `;
         
-        const { data: directData, error: directError } = await supabase.rpc('query_salesforce_lead', {
-          sql_query: query
-        });
+        const { data: directData, error: directError } = await supabase.rpc(
+          'execute_sql_query',
+          { sql_query: sqlQuery }
+        );
           
         if (directError) {
           console.warn('Direct query failed, falling back to mock data:', directError);
           throw directError;
         }
         
-        if (directData) {
+        if (directData && Array.isArray(directData) && directData.length > 0) {
           console.log(`Found ${directData.length} leads via direct query`);
           
           // Group leads by week
@@ -96,7 +97,7 @@ export const fetchLeadsStats = async (
           
           weeklyLeadCounts = Object.entries(groupedByWeek).map(([week, count]) => ({
             week,
-            count
+            count: count as number
           })).sort((a, b) => new Date(a.week).getTime() - new Date(b.week).getTime());
           
           leadsCount = directData.length;

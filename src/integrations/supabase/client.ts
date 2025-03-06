@@ -24,6 +24,9 @@ export const supabase = createClient<Database>(
         'x-client-info': 'primer-analytics-dashboard'
       },
     },
+    db: {
+      schema: ['public', 'salesforce'],
+    },
   }
 );
 

@@ -13,6 +13,9 @@ export const mockSupabase = {
   limit: vi.fn(() => mockSupabase),
   gte: vi.fn(() => mockSupabase),
   rpc: vi.fn(() => mockSupabase),
+  auth: {
+    getSession: vi.fn()
+  },
   functions: {
     invoke: vi.fn()
   }

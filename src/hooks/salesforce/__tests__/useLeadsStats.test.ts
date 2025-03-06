@@ -9,6 +9,11 @@ describe('fetchLeadsStats', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     
+    // Add auth property to mockSupabase
+    mockSupabase.auth = {
+      getSession: vi.fn()
+    };
+    
     // Ensure all mock methods return the mock object for chaining
     Object.values(mockSupabase).forEach(method => {
       if (typeof method === 'function') {
@@ -18,12 +23,6 @@ describe('fetchLeadsStats', () => {
   });
   
   it('should return correct lead count and weekly data when API calls succeed', async () => {
-    // Mock leads count response
-    const mockLeadsPromise = Promise.resolve({
-      count: 25,
-      error: null
-    });
-    
     // Mock Auth
     mockSupabase.auth.getSession.mockResolvedValue({
       data: { session: { user: { id: 'test-user-id' } } },
@@ -38,12 +37,10 @@ describe('fetchLeadsStats', () => {
       { week: '2023-01-22', lead_count: 7 }
     ];
     
-    const mockWeeklyPromise = Promise.resolve({
+    mockSupabase.rpc.mockResolvedValueOnce({
       data: mockWeeklyData,
       error: null
     });
-    
-    mockSupabase.rpc.mockResolvedValueOnce(mockWeeklyPromise);
     
     const result = await fetchLeadsStats([], mockHandleError);
     
@@ -63,7 +60,7 @@ describe('fetchLeadsStats', () => {
     });
     
     // Mock RPC call
-    const mockWeeklyPromise = Promise.resolve({
+    mockSupabase.rpc.mockResolvedValueOnce({
       data: [
         { week: '2023-01-01', lead_count: 3 },
         { week: '2023-01-08', lead_count: 4 },
@@ -72,8 +69,6 @@ describe('fetchLeadsStats', () => {
       ],
       error: null
     });
-    
-    mockSupabase.rpc.mockResolvedValueOnce(mockWeeklyPromise);
     
     const result = await fetchLeadsStats(campusIds, mockHandleError);
     
@@ -113,9 +108,9 @@ describe('fetchLeadsStats', () => {
     
     const result = await fetchLeadsStats([], mockHandleError);
     
-    // The second RPC call should be for query_salesforce_lead
+    // The second RPC call should be for execute_sql_query
     expect(mockSupabase.rpc).toHaveBeenCalledTimes(2);
-    expect(mockSupabase.rpc).toHaveBeenNthCalledWith(2, 'query_salesforce_lead', expect.anything());
+    expect(mockSupabase.rpc).toHaveBeenNthCalledWith(2, 'execute_sql_query', expect.anything());
     
     // Should have weekly data
     expect(result.weeklyLeadCounts.length).toBeGreaterThan(0);
