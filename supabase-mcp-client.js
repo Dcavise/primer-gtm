@@ -6,8 +6,8 @@ import readline from 'readline';
 
 const execAsync = promisify(exec);
 
-// Supabase API key
-const supabaseApiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1ZG5jaWx1cmVxcHp4cnhmdXByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDExMjM1NTUsImV4cCI6MjA1NjY5OTU1NX0.0lZySUmlC3nQs-62Ka-0rE6d9on3KIAt6U16g4YYpxY";
+// Supabase API key from environment
+const supabaseApiKey = process.env.SUPABASE_ANON_KEY || "your-supabase-anon-key-here";
 
 // Create readline interface for user input
 const rl = readline.createInterface({
