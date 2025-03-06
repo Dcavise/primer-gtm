@@ -48,6 +48,9 @@ export const useRealEstatePipeline = (options: UseRealEstatePipelineOptions = {}
       }
       
       return data || [];
-    }
+    },
+    // Enable automatic refetching
+    refetchOnWindowFocus: true,
+    staleTime: 5 * 60 * 1000, // Consider data stale after 5 minutes
   });
 };

@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useRealEstatePipeline } from '@/hooks/useRealEstatePipeline';
 import { useCampuses } from '@/hooks/useCampuses';
@@ -8,6 +7,10 @@ import { LoadingState } from '@/components/LoadingState';
 import { Navbar } from '@/components/Navbar';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { CampusSelector } from '@/components/salesforce/CampusSelector';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
+import { useRealEstateSync } from '@/hooks/useReEstateSync';
+import { useQueryClient } from '@tanstack/react-query';
 
 const PHASES: PropertyPhase[] = [
   '0. New Site',
@@ -46,8 +49,10 @@ const PHASE_TO_GROUP: Record<PropertyPhase, string> = {
 const RealEstatePipeline: React.FC = () => {
   const [selectedCampusId, setSelectedCampusId] = useState<string | null>(null);
   const [selectedCampusName, setSelectedCampusName] = useState<string | null>(null);
-  const { data: properties, isLoading, error } = useRealEstatePipeline({ campusId: selectedCampusId });
+  const { data: properties, isLoading, error, refetch } = useRealEstatePipeline({ campusId: selectedCampusId });
   const { data: campuses, isLoading: isLoadingCampuses } = useCampuses();
+  const { isSyncing, syncRealEstateData } = useRealEstateSync();
+  const queryClient = useQueryClient();
   
   const [defaultAccordionValue, setDefaultAccordionValue] = useState<string[]>(PHASE_GROUPS);
 
@@ -102,6 +107,12 @@ const RealEstatePipeline: React.FC = () => {
     setSelectedCampusName(campusName);
   };
 
+  const handleSync = async () => {
+    await syncRealEstateData();
+    queryClient.invalidateQueries({ queryKey: ['real-estate-pipeline'] });
+    refetch();
+  };
+
   if (isLoading || isLoadingCampuses) {
     return <LoadingState message="Loading pipeline data..." />;
   }
@@ -145,21 +156,34 @@ const RealEstatePipeline: React.FC = () => {
       </header>
 
       <main className="container mx-auto py-6">
-        {campuses && campuses.length > 0 && (
-          <div className="mb-6">
-            <CampusSelector 
-              campuses={campuses}
-              selectedCampusId={selectedCampusId}
-              onSelectCampus={handleCampusSelect}
-            />
-            
-            <div className="mt-2 text-sm text-muted-foreground">
-              {selectedCampusName 
-                ? `Showing ${getTotalPropertyCount()} properties for ${selectedCampusName}` 
-                : `Showing all ${getTotalPropertyCount()} properties across all campuses`}
-            </div>
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex-1">
+            {campuses && campuses.length > 0 && (
+              <div>
+                <CampusSelector 
+                  campuses={campuses}
+                  selectedCampusId={selectedCampusId}
+                  onSelectCampus={handleCampusSelect}
+                />
+                
+                <div className="mt-2 text-sm text-muted-foreground">
+                  {selectedCampusName 
+                    ? `Showing ${getTotalPropertyCount()} properties for ${selectedCampusName}` 
+                    : `Showing all ${getTotalPropertyCount()} properties across all campuses`}
+                </div>
+              </div>
+            )}
           </div>
-        )}
+          <Button 
+            onClick={handleSync} 
+            variant="outline" 
+            disabled={isSyncing}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            {isSyncing ? 'Syncing...' : 'Resync Data'}
+          </Button>
+        </div>
 
         <Accordion type="multiple" defaultValue={defaultAccordionValue} className="space-y-4">
           {PHASE_GROUPS.map((phaseGroup) => {
