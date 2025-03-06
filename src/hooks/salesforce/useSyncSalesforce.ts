@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { SyncStatus } from './types';
@@ -12,6 +11,7 @@ export const useSyncSalesforce = (onSyncComplete: () => void) => {
     fellows: 'idle'
   });
 
+  // Keep the function but it's not actively used in the UI anymore
   const syncSalesforceData = async () => {
     setSyncLoading(true);
     setSyncError(null);
