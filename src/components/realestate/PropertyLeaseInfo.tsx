@@ -32,8 +32,8 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
   // Individual field edit states
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
-  // Update type to string | null to match our form inputs
-  const [fieldValues, setFieldValues] = useState<Record<string, string | null>>({});
+  // Update type to match our form inputs - use LeaseStatus
+  const [fieldValues, setFieldValues] = useState<Record<string, LeaseStatus | string>>({});
 
   // Initialize field values when property changes
   React.useEffect(() => {
@@ -49,7 +49,7 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
     setEditingFields(prev => ({ ...prev, [fieldName]: true }));
     setFieldValues(prev => ({ 
       ...prev, 
-      [fieldName]: property[fieldName as keyof RealEstateProperty] as string | null 
+      [fieldName]: property[fieldName as keyof RealEstateProperty] as LeaseStatus
     }));
   };
 
@@ -57,13 +57,13 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
     setEditingFields(prev => ({ ...prev, [fieldName]: false }));
     setFieldValues(prev => ({ 
       ...prev, 
-      [fieldName]: property[fieldName as keyof RealEstateProperty] as string | null 
+      [fieldName]: property[fieldName as keyof RealEstateProperty] as LeaseStatus
     }));
   };
 
   const handleFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFieldValues(prev => ({ ...prev, [name]: value || null }));
+    setFieldValues(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSaveField = async (fieldName: string) => {
@@ -79,7 +79,7 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
       if (fieldName === 'loi_status' || fieldName === 'lease_status') {
         const currentValue = fieldValues[fieldName];
         valueToSave = (currentValue === 'pending' || currentValue === 'sent' || currentValue === 'signed') 
-          ? currentValue 
+          ? currentValue as LeaseStatus
           : null;
       }
       

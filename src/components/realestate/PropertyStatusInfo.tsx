@@ -33,16 +33,16 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
   // Update type to accommodate enum values
-  const [fieldValues, setFieldValues] = useState<Record<string, string | null>>({});
+  const [fieldValues, setFieldValues] = useState<Record<string, BooleanStatus | SurveyStatus | TestFitStatus | string>>({});
 
   // Initialize field values when property changes
   React.useEffect(() => {
     if (property) {
       setFieldValues({
-        ahj_zoning_confirmation: property.ahj_zoning_confirmation || null,
-        ahj_building_records: property.ahj_building_records || null,
-        survey_status: property.survey_status || null,
-        test_fit_status: property.test_fit_status || null,
+        ahj_zoning_confirmation: property.ahj_zoning_confirmation,
+        ahj_building_records: property.ahj_building_records,
+        survey_status: property.survey_status,
+        test_fit_status: property.test_fit_status,
       });
     }
   }, [property]);
@@ -51,7 +51,7 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
     setEditingFields(prev => ({ ...prev, [fieldName]: true }));
     setFieldValues(prev => ({ 
       ...prev, 
-      [fieldName]: property[fieldName as keyof RealEstateProperty] as string | null 
+      [fieldName]: property[fieldName as keyof RealEstateProperty]
     }));
   };
 
@@ -59,13 +59,13 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
     setEditingFields(prev => ({ ...prev, [fieldName]: false }));
     setFieldValues(prev => ({ 
       ...prev, 
-      [fieldName]: property[fieldName as keyof RealEstateProperty] as string | null 
+      [fieldName]: property[fieldName as keyof RealEstateProperty]
     }));
   };
 
   const handleFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFieldValues(prev => ({ ...prev, [name]: value || null }));
+    setFieldValues(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSaveField = async (fieldName: string) => {
@@ -92,7 +92,7 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
           ? currentValue as TestFitStatus
           : null;
       } else {
-        valueToSave = currentValue;
+        valueToSave = currentValue as string;
       }
       
       const { error } = await supabase

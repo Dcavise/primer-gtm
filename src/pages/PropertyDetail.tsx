@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -415,16 +414,20 @@ const PropertyDetail: React.FC = () => {
         if (key === 'ahj_zoning_confirmation' || key === 'fire_sprinklers' || key === 'fiber') {
           validated[key] = (value === 'true' || value === 'false' || value === 'unknown') ? 
             value as BooleanStatus : null;
-        } else if (key === 'survey_status') {
+        } 
+        else if (key === 'survey_status') {
           validated[key] = (value === 'complete' || value === 'pending' || value === 'unknown') ? 
             value as SurveyStatus : null;
-        } else if (key === 'test_fit_status') {
+        } 
+        else if (key === 'test_fit_status') {
           validated[key] = (value === 'unknown' || value === 'pending' || value === 'complete') ? 
             value as TestFitStatus : null;
-        } else if (key === 'loi_status' || key === 'lease_status') {
+        } 
+        else if (key === 'loi_status' || key === 'lease_status') {
           validated[key] = (value === 'pending' || value === 'sent' || value === 'signed') ? 
             value as LeaseStatus : null;
-        } else {
+        } 
+        else {
           validated[key] = value;
         }
       }
