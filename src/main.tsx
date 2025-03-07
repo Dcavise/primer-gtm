@@ -5,14 +5,12 @@ import App from './App.tsx'
 import './index.css'
 import Index from './pages/Index.tsx'
 import PropertyResearch from './pages/PropertyResearch.tsx'
-import SalesforceLeadsPage from './pages/SalesforceLeads.tsx'
 import FindContactsPage from './pages/FindContacts.tsx'
 import RealEstatePipeline from './pages/RealEstatePipeline.tsx'
 import PropertyDetail from './pages/PropertyDetail.tsx'
 import NotFound from './pages/NotFound.tsx'
 import Auth from './pages/Auth.tsx'
 import ProtectedRoute from './components/ProtectedRoute.tsx'
-import SalesforceMetrics from './pages/SalesforceMetrics'
 import { logger } from './utils/logger'
 import { toast } from 'sonner'
 
@@ -113,14 +111,6 @@ const router = createBrowserRouter([
       {
         path: "property-research",
         element: <ProtectedRoute><PropertyResearch /></ProtectedRoute>
-      },
-      {
-        path: "salesforce-leads",
-        element: <ProtectedRoute><SalesforceLeadsPage /></ProtectedRoute>
-      },
-      {
-        path: "salesforce-metrics",
-        element: <ProtectedRoute><SalesforceMetrics /></ProtectedRoute>
       },
       {
         path: "find-contacts",
