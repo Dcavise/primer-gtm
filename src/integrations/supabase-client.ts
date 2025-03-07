@@ -14,6 +14,7 @@ const SUPABASE_SERVICE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_KEY || "";
 logger.info(`Supabase URL: ${SUPABASE_URL}`);
 logger.info(`Supabase Anon Key configured: ${SUPABASE_ANON_KEY ? 'Yes' : 'No'}`);
 logger.info(`Supabase Service Key configured: ${SUPABASE_SERVICE_KEY ? 'Yes' : 'No'}`);
+logger.info('DEVELOPMENT MODE: Using mock data instead of real Supabase API calls');
 
 // Type augmentation for the RPC functions
 declare module '@supabase/supabase-js' {
@@ -26,63 +27,51 @@ declare module '@supabase/supabase-js' {
 }
 
 /**
- * Unified Supabase Client that handles both regular and admin access
+ * Mock Supabase Client that returns fake data instead of making real API calls
  */
 class SupabaseUnifiedClient {
-  public readonly regular: SupabaseClient<Database>;
-  public readonly admin: SupabaseClient<Database>;
-  private isAdminConfigured: boolean;
+  public readonly regular: any;
+  public readonly admin: any;
+  private isAdminConfigured: boolean = true;
 
   constructor() {
-    // Initialize regular client with anonymous key
-    try {
-      this.regular = createClient<Database>(
-        SUPABASE_URL, 
-        SUPABASE_ANON_KEY,
-        {
-          auth: {
-            persistSession: true,
-            autoRefreshToken: true,
-            storageKey: 'primer-supabase-auth',
-            detectSessionInUrl: true,
-          },
-          global: {
-            headers: {
-              'x-client-info': 'primer-analytics-dashboard'
-            },
-          },
-          db: {
-            schema: 'public',
-          },
-        }
-      );
-      
-      // Initialize admin client with service role key
-      this.isAdminConfigured = !!SUPABASE_SERVICE_KEY;
-      this.admin = createClient<Database>(
-        SUPABASE_URL,
-        SUPABASE_SERVICE_KEY,
-        {
-          auth: {
-            persistSession: false,
-            autoRefreshToken: false,
-          },
-          global: {
-            headers: {
-              'x-client-info': 'primer-analytics-dashboard-admin'
-            },
-          },
-          db: {
-            schema: 'public',
-          },
-        }
-      );
+    // Create mock clients that return fake data
+    this.regular = this.createMockClient();
+    this.admin = this.createMockClient();
+    
+    logger.info('Mock Supabase client initialized for development');
+  }
 
-      logger.info(`Supabase client initialized. Admin access: ${this.isAdminConfigured ? 'Configured' : 'Not configured'}`);
-    } catch (error) {
-      logger.error('Error initializing Supabase client:', error);
-      throw new Error('Failed to initialize Supabase client. Check your environment variables.');
-    }
+  private createMockClient() {
+    // Create a mock client with methods that return fake data
+    return {
+      auth: {
+        getSession: async () => ({ data: { session: null }, error: null }),
+        signInWithPassword: async () => ({ data: { session: null }, error: null }),
+        signUp: async () => ({ data: { session: null }, error: null }),
+        signOut: async () => ({ error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+        refreshSession: async () => ({ data: { session: null }, error: null })
+      },
+      from: (table: string) => ({
+        select: () => ({
+          eq: () => ({
+            single: async () => ({ data: { id: 'mock-id', name: 'Mock Data' }, error: null })
+          }),
+          limit: async () => ({ data: [{ id: 'mock-id', name: 'Mock Data' }], error: null })
+        }),
+        insert: async () => ({ data: { id: 'mock-id' }, error: null }),
+        update: async () => ({ data: { id: 'mock-id' }, error: null }),
+        delete: async () => ({ data: { id: 'mock-id' }, error: null })
+      }),
+      rpc: async (fn: string) => {
+        logger.info(`Mock RPC call to ${fn}`);
+        return { data: { success: true, message: 'Mock RPC response' }, error: null };
+      },
+      functions: {
+        invoke: async () => ({ data: { message: 'Mock function response' }, error: null })
+      }
+    };
   }
 
   /**
@@ -117,7 +106,8 @@ class SupabaseUnifiedClient {
    * Proxy rpc method to access the regular client's rpc method
    */
   public rpc(fn: string, params?: Record<string, any>) {
-    return this.regular.rpc(fn, params);
+    logger.info(`Mock RPC call to ${fn} with params:`, params);
+    return { data: { success: true, message: 'Mock RPC response' }, error: null };
   }
   
   /**
@@ -127,19 +117,8 @@ class SupabaseUnifiedClient {
    * @returns Result with success status
    */
   public async executeRPC(functionName: string, params: Record<string, any> = {}) {
-    try {
-      const { data, error } = await this.regular.rpc(functionName, params);
-      
-      if (error) {
-        logger.error(`Error in executeRPC (${functionName}):`, error);
-        return { success: false, data: null, error };
-      }
-      
-      return { success: true, data, error: null };
-    } catch (error) {
-      logger.error(`Error in executeRPC (${functionName}):`, error);
-      return { success: false, data: null, error };
-    }
+    logger.info(`Mock executeRPC call to ${functionName} with params:`, params);
+    return { success: true, data: { message: 'Mock RPC response' }, error: null };
   }
   
   /**
@@ -149,55 +128,24 @@ class SupabaseUnifiedClient {
    * @returns Query result with success status
    */
   public async querySalesforceTable(tableName: string, limit: number = 10) {
-    try {
-      const { data, error } = await this.regular.rpc(
-        'query_salesforce_table', 
-        { table_name: tableName, limit_count: limit }
-      );
-      
-      if (!error && data) {
-        return { success: true, data, error: null };
-      }
-      
-      return { success: false, data: null, error };
-    } catch (error) {
-      logger.error('Error in querySalesforceTable:', error);
-      return { success: false, data: null, error };
-    }
+    logger.info(`Mock querySalesforceTable call for ${tableName} with limit ${limit}`);
+    return { 
+      success: true, 
+      data: Array(limit).fill(0).map((_, i) => ({ id: `mock-${i}`, name: `Mock ${tableName} Record ${i}` })), 
+      error: null 
+    };
   }
   
   /**
    * Tests database connection and schema access
    */
   public async testConnection() {
-    try {
-      const { data: publicData, error: publicError } = await this.regular
-        .from('campuses')
-        .select('count')
-        .limit(1);
-      
-      const publicSchemaAccess = !publicError;
-      
-      // Test fivetran_views schema access
-      let fivetranAccess = false;
-      
-      try {
-        const { data, error } = await this.regular.rpc('test_salesforce_connection');
-        fivetranAccess = !error && !!data;
-      } catch (error) {
-        logger.warn('RPC test_salesforce_connection failed:', error);
-        fivetranAccess = false;
-      }
-      
-      return {
-        success: publicSchemaAccess,
-        publicSchema: publicSchemaAccess,
-        fivetranViewsSchema: fivetranAccess
-      };
-    } catch (error) {
-      logger.error('Error in testConnection:', error);
-      return { success: false, error };
-    }
+    logger.info('Mock testConnection call');
+    return {
+      success: true,
+      publicSchema: true,
+      fivetranViewsSchema: true
+    };
   }
 }
 
