@@ -254,8 +254,8 @@ const PropertyResearch = () => {
             isSearching={isAnyDataLoading}
             searchType="property-research"
           />
-        </div>
-      </motion.header>
+        </CardContent>
+      </Card>
 
       <main className="flex-1 container mx-auto px-4 md:px-8 py-8 max-w-5xl">
         {displayedAddress && (
@@ -477,7 +477,6 @@ const PropertyResearch = () => {
           </div>
         </div>
       </footer>
->>>>>>> Stashed changes
     </div>
   );
 };
