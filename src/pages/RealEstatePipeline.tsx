@@ -1,15 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRealEstatePipeline } from '@/hooks/useRealEstatePipeline';
 import { useCampuses } from '@/hooks/useCampuses';
-import { PipelineColumn } from '@/components/realestate/PipelineColumn';
 import { RealEstateProperty, PropertyPhase } from '@/types/realEstate';
 import { LoadingState } from '@/components/LoadingState';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { CampusSelector } from '@/components/salesforce/CampusSelector';
-import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
-import { useRealEstateSync } from '@/hooks/useReEstateSync';
-import { useQueryClient } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Building } from 'lucide-react';
 
 const PHASES: PropertyPhase[] = [
   '0. New Site',
@@ -24,91 +21,52 @@ const PHASES: PropertyPhase[] = [
   'Deprioritize'
 ];
 
-const PHASE_GROUPS = [
-  'Diligence',
-  'Pre Construction',
-  'Construction',
-  'Set Up',
-  'Other'
-];
-
-const PHASE_TO_GROUP: Record<PropertyPhase, string> = {
-  '0. New Site': 'Diligence',
-  '1. Initial Diligence': 'Diligence',
-  '2. Survey': 'Diligence',
-  '3. Test Fit': 'Diligence',
-  '4. Plan Production': 'Pre Construction',
-  '5. Permitting': 'Pre Construction',
-  '6. Construction': 'Construction',
-  '7. Set Up': 'Set Up',
-  'Hold': 'Other',
-  'Deprioritize': 'Other'
-};
-
 const RealEstatePipeline: React.FC = () => {
   const [selectedCampusIds, setSelectedCampusIds] = useState<string[]>([]);
   const [selectedCampusNames, setSelectedCampusNames] = useState<string[]>([]);
-  const { data: properties, isLoading, error, refetch } = useRealEstatePipeline({ campusId: selectedCampusIds.length === 1 ? selectedCampusIds[0] : null });
+  const { data: properties, isLoading, error } = useRealEstatePipeline({ campusId: null });
   const { data: campuses, isLoading: isLoadingCampuses } = useCampuses();
-  const { isRefreshing, refreshRealEstateData } = useRealEstateSync();
-  const queryClient = useQueryClient();
   
-  const [defaultAccordionValue, setDefaultAccordionValue] = useState<string[]>(PHASE_GROUPS);
-
-  const groupedProperties = useMemo(() => {
-    if (!properties) return {};
-
-    const grouped: Record<string, Record<string, RealEstateProperty[]>> = {};
+  // Group properties by campus and phase
+  const groupedByCampus = useMemo(() => {
+    if (!properties || !campuses) return {};
     
-    PHASE_GROUPS.forEach(group => {
-      grouped[group] = {};
-    });
+    const grouped: Record<string, Record<PropertyPhase, RealEstateProperty[]>> = {};
     
-    PHASES.forEach(phase => {
-      const group = PHASE_TO_GROUP[phase];
-      if (grouped[group]) {
-        grouped[group][phase] = [];
-      }
-    });
-    
-    Object.keys(grouped).forEach(group => {
-      grouped[group]["Unspecified"] = [];
-    });
-    
-    properties.forEach(property => {
-      let phaseGroup = property.phase_group;
-      if (!phaseGroup && property.phase) {
-        phaseGroup = PHASE_TO_GROUP[property.phase as PropertyPhase] || 'Unspecified';
-      } else if (!phaseGroup) {
-        phaseGroup = 'Unspecified';
-      }
+    // Initialize the structure with all campuses and phases
+    campuses.forEach(campus => {
+      grouped[campus.id] = {} as Record<PropertyPhase, RealEstateProperty[]>;
       
+      PHASES.forEach(phase => {
+        grouped[campus.id][phase] = [];
+      });
+    });
+    
+    // Group properties by campus and phase
+    properties.forEach(property => {
+      const campusId = property.campus_id || 'unknown';
       const phase = property.phase || 'Unspecified';
       
-      if (grouped[phaseGroup]) {
-        if (!grouped[phaseGroup][phase]) {
-          grouped[phaseGroup][phase] = [];
-        }
-        
-        grouped[phaseGroup][phase].push(property);
-      } else {
-        grouped['Unspecified'] = grouped['Unspecified'] || {};
-        grouped['Unspecified'][phase] = grouped['Unspecified'][phase] || [];
-        grouped['Unspecified'][phase].push(property);
+      if (!grouped[campusId]) {
+        grouped[campusId] = {} as Record<PropertyPhase, RealEstateProperty[]>;
+        PHASES.forEach(p => {
+          grouped[campusId][p] = [];
+        });
       }
+      
+      if (!grouped[campusId][phase]) {
+        grouped[campusId][phase] = [];
+      }
+      
+      grouped[campusId][phase].push(property);
     });
     
     return grouped;
-  }, [properties]);
+  }, [properties, campuses]);
 
   const handleSelectCampuses = (campusIds: string[], campusNames: string[]) => {
     setSelectedCampusIds(campusIds);
     setSelectedCampusNames(campusNames);
-  };
-
-  const handleRefresh = async () => {
-    await refreshRealEstateData();
-    refetch();
   };
 
   useEffect(() => {
@@ -130,20 +88,10 @@ const RealEstatePipeline: React.FC = () => {
     );
   }
 
-  const getGroupPropertyCount = (group: string) => {
-    let count = 0;
-    const phases = groupedProperties[group] || {};
-    
-    Object.keys(phases).forEach(phase => {
-      count += phases[phase]?.length || 0;
-    });
-    
-    return count;
-  };
-
-  const getTotalPropertyCount = () => {
-    return PHASE_GROUPS.reduce((total, group) => total + getGroupPropertyCount(group), 0);
-  };
+  // Filter campuses based on selection or show all
+  const filteredCampuses = campuses?.filter(campus => 
+    selectedCampusIds.length === 0 || selectedCampusIds.includes(campus.id)
+  ) || [];
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -159,70 +107,77 @@ const RealEstatePipeline: React.FC = () => {
       </header>
 
       <main className="container px-4 py-8 mx-auto max-w-7xl">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex-1">
-            {campuses && campuses.length > 0 && (
-              <div>
-                <CampusSelector 
-                  campuses={campuses}
-                  selectedCampusIds={selectedCampusIds}
-                  onSelectCampuses={handleSelectCampuses}
-                />
-                
-                <div className="mt-2 text-sm text-muted-foreground">
-                  {selectedCampusNames.length > 0
-                    ? `Showing ${getTotalPropertyCount()} properties for ${selectedCampusNames.join(', ')}` 
-                    : `Showing all ${getTotalPropertyCount()} properties across all campuses`}
-                </div>
+        <div className="mb-6">
+          {campuses && campuses.length > 0 && (
+            <div>
+              <CampusSelector 
+                campuses={campuses}
+                selectedCampusIds={selectedCampusIds}
+                onSelectCampuses={handleSelectCampuses}
+              />
+              
+              <div className="mt-2 text-sm text-muted-foreground">
+                {selectedCampusNames.length > 0
+                  ? `Showing properties for ${selectedCampusNames.join(', ')}` 
+                  : `Showing properties across all campuses`}
               </div>
-            )}
-          </div>
-          <Button 
-            onClick={handleRefresh} 
-            variant="outline" 
-            disabled={isRefreshing}
-            className="gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? 'Refreshing...' : 'Refresh Data'}
-          </Button>
+            </div>
+          )}
         </div>
 
-        <Accordion type="multiple" defaultValue={defaultAccordionValue} className="space-y-4">
-          {PHASE_GROUPS.map((phaseGroup) => {
-            const phasesByGroup = PHASES.filter(phase => PHASE_TO_GROUP[phase] === phaseGroup);
-            
-            if (phasesByGroup.length === 0) return null;
-            
-            const propertyCount = getGroupPropertyCount(phaseGroup);
-            
-            if (propertyCount === 0 && selectedCampusIds) return null;
-            
-            return (
-              <AccordionItem key={phaseGroup} value={phaseGroup} className="border rounded-lg overflow-hidden">
-                <AccordionTrigger className="px-4 py-2 bg-secondary/10 hover:bg-secondary/20">
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-xl font-semibold">{phaseGroup}</span>
-                    <span className="text-sm text-muted-foreground mr-3">
-                      {propertyCount} {propertyCount === 1 ? 'property' : 'properties'}
-                    </span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="px-4 py-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-                    {phasesByGroup.map(phase => (
-                      <PipelineColumn
-                        key={phase}
-                        title={phase}
-                        properties={groupedProperties[phaseGroup]?.[phase] || []}
-                      />
-                    ))}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            );
-          })}
-        </Accordion>
+        {/* Stages header row */}
+        <div className="grid grid-cols-[200px_repeat(10,1fr)] gap-2 mb-4 overflow-x-auto">
+          <div className="font-semibold p-2">Campus</div>
+          {PHASES.map(phase => (
+            <div key={phase} className="font-semibold p-2 text-center text-sm">
+              {phase}
+            </div>
+          ))}
+        </div>
+
+        {/* Campus rows with properties by stage */}
+        <div className="space-y-4">
+          {filteredCampuses.map(campus => (
+            <Card key={campus.id} className="overflow-hidden">
+              <div className="grid grid-cols-[200px_repeat(10,1fr)] gap-2">
+                {/* Campus name */}
+                <div className="p-3 bg-secondary/10 flex items-center">
+                  <Building className="h-4 w-4 mr-2" />
+                  <span className="font-medium truncate">{campus.campus_name}</span>
+                </div>
+                
+                {/* Property cells by phase */}
+                {PHASES.map(phase => {
+                  const phaseProperties = groupedByCampus[campus.id]?.[phase] || [];
+                  return (
+                    <div key={phase} className="p-2 border-l min-h-[80px] flex flex-col items-center justify-center">
+                      {phaseProperties.length > 0 ? (
+                        <div className="w-full">
+                          <Badge className="mb-1 w-full justify-center">
+                            {phaseProperties.length}
+                          </Badge>
+                          <div className="text-xs text-center">
+                            {phaseProperties.map(property => (
+                              <div 
+                                key={property.id} 
+                                className="truncate p-1 hover:bg-secondary/10 rounded cursor-pointer"
+                                title={property.address || 'No address'}
+                              >
+                                {property.address || 'Unnamed property'}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-xs text-muted-foreground">-</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          ))}
+        </div>
       </main>
     </div>
   );
