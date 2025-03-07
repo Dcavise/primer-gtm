@@ -1,1 +1,23 @@
+# Supabase Project Configuration
 project_id = "pudncilureqpzxrxfupr"
+
+# API Configuration
+[api]
+  # Port for the API URL
+  port = 54321
+  # Schemas to expose in your API
+  schemas = ["public", "storage"]
+  # Extra schemas to add to the search_path of every request
+  extra_search_path = ["public", "extensions"]
+  # Max rows to return from a view, table, or stored procedure
+  max_rows = 1000
+
+# Database Configuration
+[db]
+  # Port for the database URL
+  port = 5432
+
+# Edge Functions Configuration
+[functions]
+  # Port for the Functions URL
+  port = 54321
