@@ -1,8 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 
 interface LayoutContextProps {
-  showAdminBackButton: boolean;
-  setShowAdminBackButton: (show: boolean) => void;
   showUserProfile: boolean;
   setShowUserProfile: (show: boolean) => void;
 }
@@ -10,13 +8,10 @@ interface LayoutContextProps {
 const LayoutContext = createContext<LayoutContextProps | undefined>(undefined);
 
 export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [showAdminBackButton, setShowAdminBackButton] = useState(true);
   const [showUserProfile, setShowUserProfile] = useState(true);
 
   return (
     <LayoutContext.Provider value={{
-      showAdminBackButton,
-      setShowAdminBackButton,
       showUserProfile,
       setShowUserProfile
     }}>

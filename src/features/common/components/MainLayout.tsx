@@ -14,7 +14,6 @@ import {
   CreditCard, 
   Settings, 
   HelpCircle,
-  ChevronLeft, 
   LogOut
 } from 'lucide-react';
 
@@ -32,50 +31,42 @@ const MainLayout: React.FC = () => {
     .sort((a, b) => (a.order || 999) - (b.order || 999));
     
   // Use the global layout context
-  const { showAdminBackButton, setShowAdminBackButton, showUserProfile, setShowUserProfile } = useLayout();
+  const { showUserProfile, setShowUserProfile } = useLayout();
   
   // Control sidebar elements based on the current route
   useEffect(() => {
     // Default configuration for all routes
-    let showAdmin = true;
     let showProfile = true;
     
     // Route-specific configurations
     if (location.pathname.includes('/dashboard')) {
-      // Dashboard should have neither
-      showAdmin = false;
+      // Dashboard should have no user profile
       showProfile = false;
     } 
     else if (location.pathname.includes('/contact-finding')) {
-      // Contact finding has neither
-      showAdmin = false;
+      // Contact finding has no user profile
       showProfile = false;
     }
     else if (location.pathname.includes('/real-estate-pipeline')) {
-      // Real estate pipeline has neither
-      showAdmin = false;
+      // Real estate pipeline has no user profile
       showProfile = false;
     }
     else if (location.pathname.includes('/property-research')) {
-      // Property research only has back to admin
-      showAdmin = true;
+      // Property research has no user profile
       showProfile = false;
     }
     else if (location.pathname.includes('/ats')) {
-      // ATS has both
-      showAdmin = true;
+      // ATS has user profile
       showProfile = true;
     }
     else if (location.pathname.includes('/crm')) {
-      // CRM pipeline has both
-      showAdmin = true;
+      // CRM pipeline has user profile
       showProfile = true;
     }
     
     // Update the context state
-    setShowAdminBackButton(showAdmin);
     setShowUserProfile(showProfile);
-  }, [location.pathname, setShowAdminBackButton, setShowUserProfile]);
+  }, [location.pathname, setShowUserProfile]);
   
   // Get the initials of the user for the avatar
   const getInitials = () => {
@@ -169,18 +160,6 @@ const MainLayout: React.FC = () => {
           
           {/* Spacer */}
           <div className="flex-1"></div>
-          
-          {/* Back to Admin - Consistently shown when showAdminBackButton is true */}
-          {showAdminBackButton && (
-            <div className="px-3 py-3 border-t border-white/10">
-              <button 
-                onClick={() => {window.location.href = '/admin';}} 
-                className="flex items-center px-2 py-2 rounded-md text-sm text-white/70 hover:bg-white/10 hover:text-white w-full">
-                <ChevronLeft className="h-4 w-4 mr-2" />
-                Back to Admin
-              </button>
-            </div>
-          )}
           
           {/* User Profile - Consistently shown when showUserProfile is true */}
           {showUserProfile && (
