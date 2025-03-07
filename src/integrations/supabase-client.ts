@@ -119,6 +119,86 @@ class SupabaseUnifiedClient {
   public rpc(fn: string, params?: Record<string, any>) {
     return this.regular.rpc(fn, params);
   }
+  
+  /**
+   * Execute an RPC function with better error handling
+   * @param functionName The name of the RPC function to call
+   * @param params Parameters to pass to the function
+   * @returns Result with success status
+   */
+  public async executeRPC(functionName: string, params: Record<string, any> = {}) {
+    try {
+      const { data, error } = await this.regular.rpc(functionName, params);
+      
+      if (error) {
+        logger.error(`Error in executeRPC (${functionName}):`, error);
+        return { success: false, data: null, error };
+      }
+      
+      return { success: true, data, error: null };
+    } catch (error) {
+      logger.error(`Error in executeRPC (${functionName}):`, error);
+      return { success: false, data: null, error };
+    }
+  }
+  
+  /**
+   * Queries Salesforce data through RPC
+   * @param tableName The Salesforce table name to query
+   * @param limit Maximum number of records to return
+   * @returns Query result with success status
+   */
+  public async querySalesforceTable(tableName: string, limit: number = 10) {
+    try {
+      const { data, error } = await this.regular.rpc(
+        'query_salesforce_table', 
+        { table_name: tableName, limit_count: limit }
+      );
+      
+      if (!error && data) {
+        return { success: true, data, error: null };
+      }
+      
+      return { success: false, data: null, error };
+    } catch (error) {
+      logger.error('Error in querySalesforceTable:', error);
+      return { success: false, data: null, error };
+    }
+  }
+  
+  /**
+   * Tests database connection and schema access
+   */
+  public async testConnection() {
+    try {
+      const { data: publicData, error: publicError } = await this.regular
+        .from('campuses')
+        .select('count')
+        .limit(1);
+      
+      const publicSchemaAccess = !publicError;
+      
+      // Test fivetran_views schema access
+      let fivetranAccess = false;
+      
+      try {
+        const { data, error } = await this.regular.rpc('test_salesforce_connection');
+        fivetranAccess = !error && !!data;
+      } catch (error) {
+        logger.warn('RPC test_salesforce_connection failed:', error);
+        fivetranAccess = false;
+      }
+      
+      return {
+        success: publicSchemaAccess,
+        publicSchema: publicSchemaAccess,
+        fivetranViewsSchema: fivetranAccess
+      };
+    } catch (error) {
+      logger.error('Error in testConnection:', error);
+      return { success: false, error };
+    }
+  }
 }
 
 // Export a singleton instance
