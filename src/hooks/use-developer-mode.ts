@@ -1,72 +1,26 @@
-import { useEffect } from 'react';
-import { toast } from 'sonner';
-import { useDeveloperMode } from '@/contexts/DeveloperModeContext';
-import { getMockData } from '@/utils/mockData';
-
 /**
- * A utility hook for handling developer mode data fetching
- * This hook simplifies the process of using mock data in developer mode
+ * A utility hook that always returns false for developer mode status
+ * This is a replacement for the previous developer mode functionality
  * 
- * @param resetFunction - Function to reset the data state
+ * @param resetFunction - Function to reset the data state (not used)
  * @return Object with utility functions and state for dev mode
  */
-export function useDeveloperModeData(resetFunction: () => void) {
-  const { isDeveloperMode } = useDeveloperMode();
+export function useDeveloperModeData(_resetFunction?: () => void) {
+  // Always returns false for isDeveloperMode
+  const isDeveloperMode = false;
   
-  // Setup event listener for dev mode changes
-  useEffect(() => {
-    const handleDevModeChange = () => {
-      resetFunction();
-    };
-    
-    window.addEventListener('developer-mode-changed', handleDevModeChange);
-    return () => window.removeEventListener('developer-mode-changed', handleDevModeChange);
-  }, [resetFunction]);
-
   /**
-   * Get mock data with a simulated loading delay
-   * 
-   * @param dataType - The type of mock data to retrieve ('properties', 'schools', etc)
-   * @param delayMs - Optional delay in milliseconds to simulate network latency (default 800ms)
-   * @param successMessage - Optional custom success message
-   * @returns The mock data of the requested type
+   * Dummy function that throws an error when developer mode is disabled
    */
-  const getMockDataWithDelay = async <T>(
-    dataType: string, 
-    delayMs = 800, 
-    successMessage?: string
-  ): Promise<T> => {
-    if (!isDeveloperMode) {
-      throw new Error('Developer mode is not enabled');
-    }
-    
-    console.log(`[DEV MODE] Using mock ${dataType} data`);
-    
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, delayMs));
-    
-    const data = getMockData(dataType);
-    
-    if (successMessage) {
-      toast.success(successMessage, {
-        description: `Using mock data for ${dataType}`
-      });
-    }
-    
-    return data as T;
+  const getMockDataWithDelay = async <T>(_dataType: string, _delayMs = 800, _successMessage?: string): Promise<T> => {
+    throw new Error('Developer mode is disabled');
   };
 
   /**
-   * Check if an operation should use mock data
-   * 
-   * @param operationLabel - A label for the operation using mock data (for logging)
-   * @returns true if should use mock data, false otherwise
+   * Always returns false since developer mode is disabled
    */
-  const shouldUseMockData = (operationLabel?: string): boolean => {
-    if (isDeveloperMode && operationLabel) {
-      console.log(`[DEV MODE] ${operationLabel} will use mock data`);
-    }
-    return isDeveloperMode;
+  const shouldUseMockData = (_operationLabel?: string): boolean => {
+    return false;
   };
   
   return {
@@ -74,4 +28,12 @@ export function useDeveloperModeData(resetFunction: () => void) {
     getMockDataWithDelay,
     shouldUseMockData
   };
+}
+
+/**
+ * Simple hook that always returns false for developer mode
+ * Use this instead of the previous DeveloperModeContext hook
+ */
+export function useDeveloperMode() {
+  return { isDeveloperMode: false };
 } 

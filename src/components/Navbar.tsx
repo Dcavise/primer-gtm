@@ -23,7 +23,6 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { DeveloperModeToggle } from './DeveloperModeToggle';
 
 const routes = [
   { path: "/", name: "Home", icon: <Home className="mr-2 h-4 w-4" /> },
@@ -95,11 +94,8 @@ export const Navbar = () => {
         </div>
       </div>
       
-      {/* User profile menu and developer mode toggle */}
+      {/* User profile menu */}
       <div className="flex items-center gap-2">
-        {/* Developer Mode Toggle */}
-        <DeveloperModeToggle />
-        
         {/* User Profile */}
         {user && (
           <DropdownMenu>

@@ -3,18 +3,11 @@ import ReactDOM from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import App from './App.tsx'
 import './index.css'
-import Index from './pages/Index.tsx'
-import PropertyResearch from './pages/PropertyResearch.tsx'
-import FindContactsPage from './pages/FindContacts.tsx'
-import RealEstatePipeline from './pages/RealEstatePipeline.tsx'
-import PropertyDetail from './pages/PropertyDetail.tsx'
-import PLHiring from './pages/PLHiring.tsx'
-import LiveLook from './pages/LiveLook.tsx'
 import NotFound from './pages/NotFound.tsx'
-import Auth from './pages/Auth.tsx'
-import MainLayout from './components/MainLayout.tsx'
 import { logger } from './utils/logger'
 import { toast } from 'sonner'
+import { getAuthRoutes, getAuthenticatedRoutes } from './features/registry'
+import MainLayout from './features/common/components/MainLayout'
 
 // Global error boundary component
 class ErrorBoundary extends React.Component<
@@ -97,47 +90,19 @@ window.addEventListener('unhandledrejection', (event) => {
   }
 });
 
+// Create the router with feature-based routes
 const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
     children: [
-      {
-        path: "auth",
-        element: <Auth />
-      },
+      // Auth routes (non-authenticated)
+      ...getAuthRoutes(),
+      
+      // Authenticated routes wrapped in MainLayout
       {
         element: <MainLayout />,
-        children: [
-          {
-            index: true,
-            element: <Index />
-          },
-          {
-            path: "property-research",
-            element: <PropertyResearch />
-          },
-          {
-            path: "find-contacts",
-            element: <FindContactsPage />
-          },
-          {
-            path: "real-estate-pipeline",
-            element: <RealEstatePipeline />
-          },
-          {
-            path: "real-estate-pipeline/property/:id",
-            element: <PropertyDetail />
-          },
-          {
-            path: "pl-hiring",
-            element: <PLHiring />
-          },
-          {
-            path: "live-look",
-            element: <LiveLook />
-          }
-        ]
+        children: getAuthenticatedRoutes()
       }
     ],
     errorElement: <NotFound />
