@@ -95,8 +95,13 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
+    errorElement: <NotFound />,
     children: [
-      // No default redirect - let the application handle the index route
+      // Default redirect to admissions analytics
+      {
+        index: true,
+        element: <Navigate to="/admissions-analytics" replace />
+      },
       
       // Auth routes (non-authenticated)
       ...getAuthRoutes(),
@@ -106,8 +111,7 @@ const router = createBrowserRouter([
         element: <MainLayout />,
         children: getAuthenticatedRoutes()
       }
-    ],
-    errorElement: <NotFound />
+    ]
   }
 ]);
 

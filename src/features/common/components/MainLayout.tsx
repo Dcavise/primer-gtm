@@ -23,7 +23,8 @@ import {
  * appears consistently throughout the application
  */
 const MainLayout: React.FC = () => {
-  const { user, profile, signOut } = useAuth();
+  const auth = useAuth();
+  const { profile, signOut } = auth;
   const features = getNavigationFeatures();
   const location = useLocation();
   const navItems = features.flatMap(feature => feature.navItems || [])
@@ -76,125 +77,127 @@ const MainLayout: React.FC = () => {
       
       <div className="flex flex-1">
         {/* Sidebar Navigation */}
-        <aside className="w-[203px] bg-[#000000] text-white flex flex-col min-h-[calc(100vh-4rem)] sticky top-16">
+        <aside className="w-[203px] bg-[#000000] text-white flex flex-col sticky top-16" style={{ minHeight: 'calc(100vh - 4rem)' }}>
           {/* Logo & Title - Top Section */}
           <div className="p-4 pb-6 border-b border-white/10">
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-medium">Navigation</h1>
             </div>
           </div>
-        
-        {/* Navigation Links */}
-        <div className="px-3 space-y-1">
-          {/* Dashboard - matches the location if at root or starts with /dashboard */}
-          <Link to="/" 
-            className={cn("flex items-center px-2 py-2 rounded-md text-sm", 
-              (location.pathname === '/' || location.pathname.startsWith('/dashboard')) 
-                ? "bg-white/10 text-white" 
-                : "text-white/70 hover:bg-white/10 hover:text-white")}>
-            <LayoutDashboard className="h-5 w-5 mr-3" />
-            Dashboard
-          </Link>
           
-          {/* Admissions Analytics */}
-          <Link to="/admissions-analytics" 
-            className={cn("flex items-center px-2 py-2 rounded-md text-sm", 
-              location.pathname.includes('admissions-analytics') 
-                ? "bg-white/10 text-white" 
-                : "text-white/70 hover:bg-white/10 hover:text-white")}>
-            <Users className="h-5 w-5 mr-3" />
-            Admissions Analytics
-          </Link>
+          {/* Navigation Links */}
+          <div className="px-3 space-y-1">
+            {/* Dashboard - matches the location if at root or starts with /dashboard */}
+            <Link to="/" 
+              className={cn("flex items-center px-2 py-2 rounded-md text-sm", 
+                (location.pathname === '/' || location.pathname.startsWith('/dashboard')) 
+                  ? "bg-white/10 text-white" 
+                  : "text-white/70 hover:bg-white/10 hover:text-white")}>
+              <LayoutDashboard className="h-5 w-5 mr-3" />
+              Dashboard
+            </Link>
+            
+            {/* Admissions Analytics */}
+            <Link to="/admissions-analytics" 
+              className={cn("flex items-center px-2 py-2 rounded-md text-sm", 
+                location.pathname.includes('admissions-analytics') 
+                  ? "bg-white/10 text-white" 
+                  : "text-white/70 hover:bg-white/10 hover:text-white")}>
+              <Users className="h-5 w-5 mr-3" />
+              Admissions Analytics
+            </Link>
+            
+            {/* Real Estate Pipeline */}
+            <Link to="/real-estate-pipeline" 
+              className={cn("flex items-center px-2 py-2 rounded-md text-sm", 
+                location.pathname.includes('real-estate-pipeline') 
+                  ? "bg-white/10 text-white" 
+                  : "text-white/70 hover:bg-white/10 hover:text-white")}>
+              <FileText className="h-5 w-5 mr-3" />
+              Real Estate Pipeline
+            </Link>
+            
+            {/* CRM Pipeline */}
+            <Link to="/crm-pipeline" 
+              className={cn("flex items-center px-2 py-2 rounded-md text-sm", 
+                location.pathname.includes('crm-pipeline') 
+                  ? "bg-white/10 text-white" 
+                  : "text-white/70 hover:bg-white/10 hover:text-white")}>
+              <UserPlus className="h-5 w-5 mr-3" />
+              CRM Pipeline
+            </Link>
+            
+            {/* Property Research */}
+            <Link to="/property-research" 
+              className={cn("flex items-center px-2 py-2 rounded-md text-sm", 
+                location.pathname.includes('property-research') 
+                  ? "bg-white/10 text-white" 
+                  : "text-white/70 hover:bg-white/10 hover:text-white")}>
+              <Shield className="h-5 w-5 mr-3" />
+              Property Research
+            </Link>
+            
+            {/* Contact Finding */}
+            <Link to="/contact-finding" 
+              className={cn("flex items-center px-2 py-2 rounded-md text-sm", 
+                location.pathname.includes('contact-finding') 
+                  ? "bg-white/10 text-white" 
+                  : "text-white/70 hover:bg-white/10 hover:text-white")}>
+              <CreditCard className="h-5 w-5 mr-3" />
+              Contact Finding
+            </Link>
+            
+            {/* ATS */}
+            <Link to="/ats" 
+              className={cn("flex items-center px-2 py-2 rounded-md text-sm", 
+                location.pathname.includes('ats') 
+                  ? "bg-white/10 text-white" 
+                  : "text-white/70 hover:bg-white/10 hover:text-white")}>
+              <HelpCircle className="h-5 w-5 mr-3" />
+              ATS
+            </Link>
+          </div>
           
-          {/* Real Estate Pipeline */}
-          <Link to="/real-estate-pipeline" 
-            className={cn("flex items-center px-2 py-2 rounded-md text-sm", 
-              location.pathname.includes('real-estate-pipeline') 
-                ? "bg-white/10 text-white" 
-                : "text-white/70 hover:bg-white/10 hover:text-white")}>
-            <FileText className="h-5 w-5 mr-3" />
-            Real Estate Pipeline
-          </Link>
+          {/* Spacer */}
+          <div className="flex-1"></div>
           
-          {/* CRM Pipeline */}
-          <Link to="/crm-pipeline" 
-            className={cn("flex items-center px-2 py-2 rounded-md text-sm", 
-              location.pathname.includes('crm-pipeline') 
-                ? "bg-white/10 text-white" 
-                : "text-white/70 hover:bg-white/10 hover:text-white")}>
-            <UserPlus className="h-5 w-5 mr-3" />
-            CRM Pipeline
-          </Link>
-          
-          {/* Property Research */}
-          <Link to="/property-research" 
-            className={cn("flex items-center px-2 py-2 rounded-md text-sm", 
-              location.pathname.includes('property-research') 
-                ? "bg-white/10 text-white" 
-                : "text-white/70 hover:bg-white/10 hover:text-white")}>
-            <Shield className="h-5 w-5 mr-3" />
-            Property Research
-          </Link>
-          
-          {/* Contact Finding */}
-          <Link to="/contact-finding" 
-            className={cn("flex items-center px-2 py-2 rounded-md text-sm", 
-              location.pathname.includes('contact-finding') 
-                ? "bg-white/10 text-white" 
-                : "text-white/70 hover:bg-white/10 hover:text-white")}>
-            <CreditCard className="h-5 w-5 mr-3" />
-            Contact Finding
-          </Link>
-          
-          {/* ATS */}
-          <Link to="/ats" 
-            className={cn("flex items-center px-2 py-2 rounded-md text-sm", 
-              location.pathname.includes('ats') 
-                ? "bg-white/10 text-white" 
-                : "text-white/70 hover:bg-white/10 hover:text-white")}>
-            <HelpCircle className="h-5 w-5 mr-3" />
-            ATS
-          </Link>
-        </div>
-        
-        {/* Spacer */}
-        <div className="flex-1"></div>
-        
-        {/* Back to Admin */}
-        <div className="px-3 py-3 border-t border-white/10">
-          <button 
-            onClick={() => {}} 
-            className="flex items-center px-2 py-2 rounded-md text-sm text-white/70 hover:bg-white/10 hover:text-white w-full">
-            <ChevronLeft className="h-4 w-4 mr-2" />
-            Back to Admin
-          </button>
-        </div>
-        
-        {/* User Profile */}
-        <div className="px-3 py-3">
-          <div className="flex items-center justify-between px-2 py-2">
-            <div className="flex items-center gap-2">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-white text-black rounded-full text-xs">
-                  {getInitials()}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-sm">{profile?.full_name || 'User'}</span>
-            </div>
+          {/* Back to Admin */}
+          <div className="px-3 py-3 border-t border-white/10">
             <button 
-              onClick={() => signOut()} 
-              className="text-white/50 hover:text-white">
-              <LogOut className="h-4 w-4" />
+              onClick={() => {}} 
+              className="flex items-center px-2 py-2 rounded-md text-sm text-white/70 hover:bg-white/10 hover:text-white w-full">
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              Back to Admin
             </button>
           </div>
+          
+          {/* User Profile */}
+          <div className="px-3 py-3">
+            <div className="flex items-center justify-between px-2 py-2">
+              <div className="flex items-center gap-2">
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback className="bg-white text-black rounded-full text-xs">
+                    {getInitials()}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-sm">{profile?.full_name || 'User'}</span>
+              </div>
+              <button 
+                onClick={() => { if (signOut) signOut(); }} 
+                className="text-white/50 hover:text-white">
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </aside>
+        
+        {/* Main Content */}
+        <div className="flex-1 overflow-auto bg-[#f8f9fa]">
+          <main className="p-6" style={{ minHeight: 'calc(100vh - 4rem)' }}>
+            {/* Render outlet */}
+            <Outlet />
+          </main>
         </div>
-      </aside>
-      
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto bg-[#f8f9fa]">
-        <main className="min-h-[calc(100vh-4rem)] p-6">
-          <Outlet />
-        </main>
       </div>
     </div>
   );

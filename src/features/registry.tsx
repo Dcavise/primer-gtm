@@ -36,6 +36,14 @@ export const getAuthenticatedRoutes = () => {
     // Log the features and routes for debugging
     console.log('Registered features:', featuresRegistry.map(f => f.id));
     
+    // Specifically check for the admissionsAnalytics feature
+    const admissionsAnalyticsFeatureCheck = featuresRegistry.find(f => f.id === 'admissionsAnalytics');
+    console.log('AdmissionsAnalytics feature check:', admissionsAnalyticsFeatureCheck);
+    
+    if (admissionsAnalyticsFeatureCheck) {
+      console.log('AdmissionsAnalytics routes:', admissionsAnalyticsFeatureCheck.routes);
+    }
+    
     // Add specific check for propertyResearch feature
     const propertyResearchFeatureCheck = featuresRegistry.find(f => f.id === 'propertyResearch');
     console.log('PropertyResearch feature check:', propertyResearchFeatureCheck);
@@ -44,7 +52,19 @@ export const getAuthenticatedRoutes = () => {
       console.log('PropertyResearch routes:', propertyResearchFeatureCheck.routes);
     }
     
-    const routes = featuresRegistry
+    // Create a copy of featuresRegistry and make sure admissionsAnalytics is first
+    const orderedFeatures = [...featuresRegistry];
+    
+    // Move admissionsAnalytics to the front if it exists
+    const admissionsIndex = orderedFeatures.findIndex(f => f.id === 'admissionsAnalytics');
+    if (admissionsIndex > 0) {
+      const [admissionsFeature] = orderedFeatures.splice(admissionsIndex, 1);
+      orderedFeatures.unshift(admissionsFeature);
+    }
+    
+    console.log('Ordered features for routing:', orderedFeatures.map(f => f.id));
+    
+    const routes = orderedFeatures
       .filter(feature => {
         // Filter out auth routes
         const isAuth = feature.id === 'auth';
@@ -62,9 +82,9 @@ export const getAuthenticatedRoutes = () => {
           return [];
         }
         
-        // Add special handling for propertyResearch feature
-        if (feature.id === 'propertyResearch') {
-          console.log('Adding propertyResearch routes with special handling');
+        // Prioritize specific features
+        if (feature.id === 'admissionsAnalytics') {
+          console.log('Adding admissionsAnalytics routes with priority');
         }
         
         return feature.routes;

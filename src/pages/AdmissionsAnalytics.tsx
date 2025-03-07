@@ -3,8 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { Badge } from "../components/ui/badge";
-import { ChevronDown, ChevronUp } from "lucide-react";
 
 // Sample data for the charts
 const applicationData = [
@@ -125,20 +123,13 @@ const openPipelineData = [
   { name: 'Closed Won', value: 30, fill: '#82ca9d' },
 ];
 
-const AdmissionsAnalytics: React.FC = () => {
+const AdmissionsAnalytics = () => {
   // State for date truncation selection
   const [dateTruncation, setDateTruncation] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
-  // Function to format dates in a reader-friendly format
+  // Simple function to format dates
   const formatDateHeader = (dateString: string) => {
-    // For 'Today', 'Week to Date', and 'Month to Date' special cases
-    if (['Today', 'Week to Date', 'Month to Date'].includes(dateString)) {
-      return dateString;
-    }
-    
-    // Format as MM/DD
-    const [month, day] = dateString.split('/');
-    return `${month}/${day}`;
+    return dateString;
   };
 
   // Helper function to get appropriate data based on the selected date truncation
@@ -178,7 +169,8 @@ const AdmissionsAnalytics: React.FC = () => {
   // Helper to format change percentages
   const formatChange = (change: number) => {
     const sign = change > 0 ? '+' : '';
-    return `${sign}${change.toFixed(1)}`;
+    const value = Number.isNaN(change) ? 0 : change;
+    return `${sign}${value.toFixed(1)}`;
   };
 
   // Helper to get appropriate color class for change values
@@ -188,16 +180,7 @@ const AdmissionsAnalytics: React.FC = () => {
 
   // Helper function to get appropriate trend data based on the selected date truncation
   const getTrendDataByTruncation = () => {
-    switch (dateTruncation) {
-      case 'daily':
-        return dailyTrendData;
-      case 'weekly':
-        return weeklyTrendData;
-      case 'monthly':
-        return monthlyTrendData;
-      default:
-        return dailyTrendData;
-    }
+    return dailyTrendData;
   };
 
   // Generate dynamic column headers based on the selected date truncation
@@ -303,25 +286,27 @@ const AdmissionsAnalytics: React.FC = () => {
                   return (
                     <div key={index} className="w-1/6 text-center">
                       <div className="font-semibold">{formatValue(value)}</div>
-                      <Badge variant="outline" className={`mt-1 ${getChangeColor(change)}`}>
+                      <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block ${getChangeColor(change)}`}>
                         {formatChange(change)}%
-                      </Badge>
+                      </div>
                     </div>
                   );
                 })}
                 
                 <div className="w-1/3 h-16 pl-4">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={currentTrendData}>
+                    <LineChart data={monthlyTrendData}>
+                      <XAxis dataKey="date" hide />
+                      <YAxis hide />
                       <Line 
                         type="monotone" 
                         dataKey={metric.id === 'leads-created' ? 'leadsCreated' : 
-                                metric.id === 'leads-converted' ? 'leadsConverted' : 
-                                metric.id === 'admission-offered' ? 'admissionOffered' : 'closedWon'} 
+                               metric.id === 'leads-converted' ? 'leadsConverted' : 
+                               metric.id === 'admission-offered' ? 'admissionOffered' : 'closedWon'} 
                         stroke="#8884d8" 
                         strokeWidth={2} 
-                        dot={{ r: 4 }}
-                        activeDot={{ r: 6 }}
+                        dot={false}
+                        activeDot={false}
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -391,10 +376,7 @@ const AdmissionsAnalytics: React.FC = () => {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="applications" fill="#8884d8" name="Applications" />
-                  <Bar dataKey="acceptances" fill="#82ca9d" name="Acceptances" />
-                  <Bar dataKey="enrollments" fill="#ffc658" name="Enrollments" />
-                  <Line type="monotone" dataKey="trend" stroke="#ff7300" strokeWidth={2} name="Trend" />
+                  <Bar dataKey="value" fill="#8884d8" name="Count" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -402,6 +384,77 @@ const AdmissionsAnalytics: React.FC = () => {
         </Card>
       </div>
 
+      {/* Tabs Section - Pipeline and Campus Distribution */}
+      <Tabs defaultValue="pipeline" className="mt-8">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
+          <TabsTrigger value="campus">Campus Distribution</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="pipeline" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Pipeline Stages</CardTitle>
+              <CardDescription>Current admissions pipeline by stage</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={openPipelineData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={false}
+                      outerRadius={130}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {openPipelineData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="campus" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Campus Distribution</CardTitle>
+              <CardDescription>Admissions by campus location</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={campusData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={false}
+                      outerRadius={130}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {campusData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
     </div>
   );

@@ -2,17 +2,11 @@ import { RouteObject } from 'react-router-dom';
 import AdmissionsAnalytics from '../../pages/AdmissionsAnalytics';
 import { FeatureRoutes } from '../common/routes';
 
+// Define admissions analytics routes
 const admissionsAnalyticsRoutes: RouteObject[] = [
   {
     path: "admissions-analytics",
-    element: <AdmissionsAnalytics />,
-    // Adding index route to ensure it loads as default child route
-    children: [
-      {
-        index: true,
-        element: <AdmissionsAnalytics />
-      }
-    ]
+    element: <AdmissionsAnalytics />
   }
 ];
 
