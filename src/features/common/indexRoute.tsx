@@ -12,11 +12,6 @@ const indexRoute: RouteObject[] = [
 export const indexFeature: FeatureRoutes = {
   id: 'index',
   routes: indexRoute,
-  navItems: [
-    {
-      path: '/',
-      label: 'Dashboard',
-      order: 0
-    }
-  ]
+  // Removed navItems to prevent duplicate Dashboard entry
+  navItems: []
 };
