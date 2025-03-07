@@ -589,6 +589,27 @@ export const mockCensusData = {
   }
 };
 
+// Mock real estate pipeline data
+export const mockRealEstatePipeline = [
+  { id: 1, created_at: '2024-01-01', address: '123 Main St', phase: '0. New Site', campus_id: 'campus-1', site_name: 'Downtown Site' },
+  { id: 2, created_at: '2024-01-02', address: '456 Park Ave', phase: '1. Initial Diligence', campus_id: 'campus-1', site_name: 'Park Location' },
+  { id: 3, created_at: '2024-01-03', address: '789 Broadway', phase: '2. Survey', campus_id: 'campus-2', site_name: 'Broadway Complex' },
+  { id: 4, created_at: '2024-01-04', address: '101 Market St', phase: '3. Test Fit', campus_id: 'campus-2', site_name: 'Market Center' },
+  { id: 5, created_at: '2024-01-05', address: '222 Lake Dr', phase: '4. Plan Production', campus_id: 'campus-3', site_name: 'Lakeside Property' },
+  { id: 6, created_at: '2024-01-06', address: '333 Oak St', phase: '5. Permitting', campus_id: 'campus-3', site_name: 'Oak Street Building' },
+  { id: 7, created_at: '2024-01-07', address: '444 Pine St', phase: '6. Construction', campus_id: 'campus-1', site_name: 'Pine Building' },
+  { id: 8, created_at: '2024-01-08', address: '555 Elm St', phase: '7. Set Up', campus_id: 'campus-2', site_name: 'Elm Street Site' },
+  { id: 9, created_at: '2024-01-09', address: '666 Cedar St', phase: 'Hold', campus_id: 'campus-3', site_name: 'Cedar Location' },
+  { id: 10, created_at: '2024-01-10', address: '777 Maple St', phase: 'Deprioritize', campus_id: 'campus-1', site_name: 'Maple Street Building' }
+];
+
+// Mock campuses data
+export const mockCampuses = [
+  { id: 'campus-1', campus_id: 'campus-1', campus_name: 'San Francisco', created_at: '2024-01-01', updated_at: '2024-01-01' },
+  { id: 'campus-2', campus_id: 'campus-2', campus_name: 'New York', created_at: '2024-01-01', updated_at: '2024-01-01' },
+  { id: 'campus-3', campus_id: 'campus-3', campus_name: 'Chicago', created_at: '2024-01-01', updated_at: '2024-01-01' }
+];
+
 // Helper function to get mock data based on type
 export const getMockData = (type: string) => {
   switch (type) {
@@ -608,6 +629,10 @@ export const getMockData = (type: string) => {
       return mockContacts;
     case 'census':
       return mockCensusData;
+    case 'real-estate-pipeline':
+      return mockRealEstatePipeline;
+    case 'campuses':
+      return mockCampuses;
     default:
       return null;
   }

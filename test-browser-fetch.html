@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser Fetch Test</title>
+</head>
+<body>
+    <h1>Browser Fetch Test</h1>
+    <div id="results">Testing fetch API...</div>
+    <button id="testButton">Run Test</button>
+
+    <script>
+        document.getElementById('testButton').addEventListener('click', runTests);
+
+        async function runTests() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>Running fetch tests...</p>';
+            
+            const endpoints = [
+                'https://jsonplaceholder.typicode.com/todos/1',
+                'https://api.github.com',
+                'https://pudncilureqpzxrxfupr.supabase.co/rest/v1/campuses?select=count'
+            ];
+            
+            let results = '';
+            
+            for (const url of endpoints) {
+                results += `<h3>Testing ${url}</h3>`;
+                
+                try {
+                    const headers = {};
+                    
+                    // Add Supabase headers if needed
+                    if (url.includes('supabase')) {
+                        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1ZG5jaWx1cmVxcHp4cnhmdXByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDExMjM1NTUsImV4cCI6MjA1NjY5OTU1NX0.0lZySUmlC3nQs-62Ka-0rE6d9on3KIAt6U16g4YYpxY';
+                        headers['apikey'] = supabaseKey;
+                        headers['Authorization'] = `Bearer ${supabaseKey}`;
+                    }
+                    
+                    console.log(`Fetching ${url} with headers:`, headers);
+                    const response = await fetch(url, { headers });
+                    
+                    results += `<p style="color: green;">Status: ${response.status} ${response.statusText}</p>`;
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        results += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    } else {
+                        results += `<p style="color: red;">Error: ${await response.text()}</p>`;
+                    }
+                } catch (error) {
+                    console.error(`Error fetching ${url}:`, error);
+                    results += `<p style="color: red;">Fetch error: ${error.message}</p>`;
+                }
+                
+                results += '<hr>';
+            }
+            
+            resultsDiv.innerHTML = results;
+        }
+    </script>
+</body>
+</html> 
