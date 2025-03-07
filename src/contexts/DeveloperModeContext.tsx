@@ -29,6 +29,10 @@ export const DeveloperModeProvider: React.FC<{ children: React.ReactNode }> = ({
       toast.success('Developer Mode Enabled', { 
         description: 'Using mock data for all modules' 
       });
+    } else {
+      toast.info('Developer Mode Disabled', {
+        description: 'Using real data sources'
+      });
     }
   }, [isDeveloperMode]);
 
