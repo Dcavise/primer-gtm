@@ -22,7 +22,8 @@ import {
  */
 const MainLayout: React.FC = () => {
   const auth = useAuth();
-  const { profile, signOut } = auth;
+  const profile = auth?.profile;
+  const signOut = auth?.signOut;
   const features = getNavigationFeatures();
   const location = useLocation();
   const navItems = features.flatMap(feature => feature.navItems || [])
