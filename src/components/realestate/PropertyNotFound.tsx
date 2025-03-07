@@ -1,9 +1,7 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Navbar } from '@/components/Navbar';
 
 const PropertyNotFound: React.FC = () => {
   const navigate = useNavigate();
@@ -16,9 +14,8 @@ const PropertyNotFound: React.FC = () => {
     <div className="min-h-screen bg-background">
       <header className="bg-gradient-to-r from-blue-600 to-blue-500 text-white py-6 px-6">
         <div className="container mx-auto max-w-5xl">
-          <div className="flex items-center justify-between mb-3">
+          <div className="mb-3">
             <h1 className="text-2xl md:text-3xl font-semibold">Property Not Found</h1>
-            <Navbar />
           </div>
         </div>
       </header>

@@ -1,11 +1,9 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRealEstatePipeline } from '@/hooks/useRealEstatePipeline';
 import { useCampuses } from '@/hooks/useCampuses';
 import { PipelineColumn } from '@/components/realestate/PipelineColumn';
 import { RealEstateProperty, PropertyPhase } from '@/types/realEstate';
 import { LoadingState } from '@/components/LoadingState';
-import { Navbar } from '@/components/Navbar';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { CampusSelector } from '@/components/salesforce/CampusSelector';
 import { Button } from '@/components/ui/button';
@@ -153,7 +151,6 @@ const RealEstatePipeline: React.FC = () => {
         <div className="container mx-auto max-w-5xl">
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-2xl md:text-3xl font-semibold">Real Estate Pipeline</h1>
-            <Navbar />
           </div>
           <p className="text-white/80 mt-2">
             Manage and track properties through the real estate development pipeline
