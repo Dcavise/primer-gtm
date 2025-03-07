@@ -42,20 +42,47 @@ const MainLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-[#f8f9fa]">
-      {/* Sidebar Navigation */}
-      <aside className="w-[203px] bg-[#000000] text-white flex flex-col min-h-screen">
-        {/* Logo & Title - Top Section */}
-        <div className="p-4 pb-6">
-          <div className="flex items-center gap-2">
+    <div className="min-h-screen flex flex-col bg-[#f8f9fa]">
+      {/* Top Navigation Bar */}
+      <header className="w-full bg-[#000000] text-white border-b border-white/10 h-16 z-10">
+        <div className="h-full flex justify-between items-center px-6">
+          <div className="flex items-center gap-3">
             <div className="w-8 h-8 flex items-center justify-center">
               <svg viewBox="0 0 24 24" fill="white" width="24" height="24">
                 <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 2.18l7 3.12v5.7c0 4.83-3.38 8.94-7 10-3.62-1.06-7-5.17-7-10V6.3l7-3.12z"/>
               </svg>
             </div>
-            <h1 className="text-lg font-medium">Dashboard</h1>
+            <h1 className="text-xl font-medium">Primer Dashboard</h1>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <button className="text-white/70 hover:text-white flex items-center gap-1">
+              <HelpCircle className="h-5 w-5" />
+            </button>
+            <button className="text-white/70 hover:text-white flex items-center gap-1">
+              <Settings className="h-5 w-5" />
+            </button>
+            <div className="flex items-center gap-2 pl-4 border-l border-white/10">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-white text-black rounded-full text-xs">
+                  {getInitials()}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-sm">{profile?.full_name || 'User'}</span>
+            </div>
           </div>
         </div>
+      </header>
+      
+      <div className="flex flex-1">
+        {/* Sidebar Navigation */}
+        <aside className="w-[203px] bg-[#000000] text-white flex flex-col min-h-[calc(100vh-4rem)]">
+          {/* Logo & Title - Top Section */}
+          <div className="p-4 pb-6">
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-medium">Navigation</h1>
+            </div>
+          </div>
         
         {/* Navigation Links */}
         <div className="px-3 space-y-1">
@@ -164,8 +191,8 @@ const MainLayout: React.FC = () => {
       </aside>
       
       {/* Main Content */}
-      <div className="flex-1">
-        <main className="min-h-screen">
+      <div className="flex-1 overflow-auto">
+        <main className="min-h-[calc(100vh-4rem)] p-6">
           <Outlet />
         </main>
       </div>
