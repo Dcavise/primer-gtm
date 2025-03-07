@@ -142,7 +142,7 @@ class SupabaseUnifiedClient {
 export const supabase = new SupabaseUnifiedClient();
 
 // Export the admin client directly for convenience
-export const adminClient = supabase.admin;
+export const supabaseAdminClient = supabase.admin;
 
 // Export a function to check if admin access is available
 export const hasAdminAccess = () => supabase.hasAdminAccess(); 
