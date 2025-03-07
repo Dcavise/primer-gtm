@@ -1,9 +1,8 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { getNavigationFeatures } from '../../registry';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useLayout } from '../../../contexts/LayoutContext';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/utils/cn';
 import { 
   LayoutDashboard, 
@@ -13,8 +12,7 @@ import {
   Shield, 
   CreditCard, 
   Settings, 
-  HelpCircle,
-  LogOut
+  HelpCircle
 } from 'lucide-react';
 
 /**
@@ -30,55 +28,12 @@ const MainLayout: React.FC = () => {
   const navItems = features.flatMap(feature => feature.navItems || [])
     .sort((a, b) => (a.order || 999) - (b.order || 999));
     
-  // Use the global layout context
-  const { showUserProfile, setShowUserProfile } = useLayout();
+  // Use the layout context for compatibility
+  const { showUserProfile } = useLayout();
   
-  // Control sidebar elements based on the current route
-  useEffect(() => {
-    // Default configuration for all routes
-    let showProfile = true;
-    
-    // Route-specific configurations
-    if (location.pathname.includes('/dashboard')) {
-      // Dashboard should have no user profile
-      showProfile = false;
-    } 
-    else if (location.pathname.includes('/contact-finding')) {
-      // Contact finding has no user profile
-      showProfile = false;
-    }
-    else if (location.pathname.includes('/real-estate-pipeline')) {
-      // Real estate pipeline has no user profile
-      showProfile = false;
-    }
-    else if (location.pathname.includes('/property-research')) {
-      // Property research has no user profile
-      showProfile = false;
-    }
-    else if (location.pathname.includes('/ats')) {
-      // ATS has user profile
-      showProfile = true;
-    }
-    else if (location.pathname.includes('/crm')) {
-      // CRM pipeline has user profile
-      showProfile = true;
-    }
-    
-    // Update the context state
-    setShowUserProfile(showProfile);
-  }, [location.pathname, setShowUserProfile]);
+  // No longer need control logic for sidebar elements
   
-  // Get the initials of the user for the avatar
-  const getInitials = () => {
-    if (profile?.full_name) {
-      return profile.full_name.split(' ')
-        .map(name => name[0])
-        .join('')
-        .substring(0, 2)
-        .toUpperCase();
-    }
-    return 'U';
-  };
+  // No user profile avatar is needed anymore
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -158,29 +113,8 @@ const MainLayout: React.FC = () => {
             ))}
           </div>
           
-          {/* Spacer */}
+          {/* Bottom spacer */}
           <div className="flex-1"></div>
-          
-          {/* User Profile - Consistently shown when showUserProfile is true */}
-          {showUserProfile && (
-            <div className="px-3 py-3">
-              <div className="flex items-center justify-between px-2 py-2">
-                <div className="flex items-center gap-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-white text-black rounded-full text-xs">
-                      {getInitials()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm">{profile?.full_name || 'User'}</span>
-                </div>
-                <button 
-                  onClick={() => { if (signOut) signOut(); }} 
-                  className="text-white/50 hover:text-white">
-                  <LogOut className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          )}
         </aside>
         
         {/* Main Content */}
