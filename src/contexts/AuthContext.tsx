@@ -61,6 +61,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Skip authentication in development mode
     logger.auth('Authentication bypassed in development mode');
     setLoading(false);
+    
+    // Log navigation state for debugging
+    logger.debug('Current mock user:', mockUser);
+    logger.debug('Current mock session:', mockSession);
   }, []);
 
   // Simplified mock functions
@@ -78,7 +82,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     logger.auth('Mock sign out');
-    navigate('/auth');
+    // In development mode, just log the sign out without redirecting
+    logger.debug('Sign out clicked, but not redirecting in development mode');
+    // navigate('/auth');
   };
 
   // Provide the context value with mock data
