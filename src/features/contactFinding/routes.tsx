@@ -4,7 +4,7 @@ import { FeatureRoutes } from '../common/routes';
 
 const contactFindingRoutes: RouteObject[] = [
   {
-    path: "find-contacts",
+    path: "contact-finding",
     element: <FindContactsPage />
   }
 ];
@@ -14,8 +14,8 @@ export const contactFindingFeature: FeatureRoutes = {
   routes: contactFindingRoutes,
   navItems: [
     {
-      path: '/find-contacts',
-      label: 'Find Contacts',
+      path: '/contact-finding',
+      label: 'Contact Finding',
       order: 40
     }
   ]

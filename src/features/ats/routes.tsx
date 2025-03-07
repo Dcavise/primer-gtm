@@ -4,7 +4,7 @@ import { FeatureRoutes } from '../common/routes';
 
 const atsRoutes: RouteObject[] = [
   {
-    path: "ats-tracker",
+    path: "ats",
     element: <ATSTracker />
   }
 ];
@@ -14,9 +14,9 @@ export const atsFeature: FeatureRoutes = {
   routes: atsRoutes,
   navItems: [
     {
-      path: '/ats-tracker',
-      label: 'Applicant Tracking',
-      order: 40
+      path: '/ats',
+      label: 'ATS',
+      order: 60
     }
   ]
 };
