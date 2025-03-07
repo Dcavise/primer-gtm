@@ -5,7 +5,7 @@ import { realEstateFeature } from './realEstate/routes';
 import { salesforceFeature } from './salesforce/routes';
 import { propertyResearchFeature } from './propertyResearch/routes';
 import { contactFindingFeature } from './contactFinding/routes';
-import { liveLookFeature } from './liveLook/routes';
+// Live Look feature removed
 import { crmFeature } from './crm/routes';
 import { atsFeature } from './ats/routes';
 import { admissionsAnalyticsFeature } from './admissionsAnalytics/routes';
@@ -18,7 +18,7 @@ export const featuresRegistry: FeatureRoutes[] = [
   salesforceFeature,
   propertyResearchFeature,
   contactFindingFeature,
-  liveLookFeature,
+  // Live Look feature removed
   crmFeature,
   atsFeature,
   admissionsAnalyticsFeature

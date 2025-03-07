@@ -37,8 +37,9 @@ const MainLayout: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="bg-gradient-to-r from-slate-700 to-slate-600 text-white py-4 px-6">
-        <div className="container mx-auto max-w-6xl">
+        <div className="container mx-auto max-w-7xl">
           <div className="flex items-center justify-between">
+            {/* Logo and site name */}
             <div className="flex items-center gap-3">
               <img 
                 src="/lovable-uploads/532db431-7977-460c-a6f0-28a7513e5091.png" 
@@ -47,17 +48,19 @@ const MainLayout: React.FC = () => {
               />
               <h1 className="text-xl font-semibold">Primer Property Explorer</h1>
             </div>
-            <div className="flex items-center justify-between w-full ml-8">
-              <div className="hidden md:block">
-                <Navigation features={features} />
-              </div>
-              
-              <div className="md:hidden">
-                <MobileNavigation features={features} />
-              </div>
-              
-              {/* User profile menu */}
-              <div className="flex items-center gap-2">
+
+            {/* Main Navigation */}
+            <div className="hidden md:flex flex-1 px-6">
+              <Navigation features={features} />
+            </div>
+
+            {/* Mobile Navigation - only shown on small screens */}
+            <div className="md:hidden mr-2">
+              <MobileNavigation features={features} />
+            </div>
+            
+            {/* User profile menu */}
+            <div className="flex items-center ml-auto">
                 {/* User Profile */}
                 {user && (
                   <DropdownMenu>
