@@ -1,19 +1,74 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Permit, PermitResponse, PermitSearchParams, SearchStatus } from "@/types";
 import { searchPermits } from "@/lib/serverComms";
 import { toast } from "sonner";
+import { useDeveloperMode } from '@/contexts/DeveloperModeContext';
+import { mockPermits } from '@/utils/mockData';
 
 export function usePermits() {
   const [permits, setPermits] = useState<Permit[]>([]);
   const [status, setStatus] = useState<SearchStatus>("idle");
   const [searchedAddress, setSearchedAddress] = useState<string>("");
   const [isUsingFallbackData, setIsUsingFallbackData] = useState<boolean>(false);
+  const { isDeveloperMode } = useDeveloperMode();
+
+  // Listen for developer mode changes
+  useEffect(() => {
+    const handleDevModeChange = () => {
+      // Reset data when developer mode changes
+      reset();
+    };
+    
+    window.addEventListener('developer-mode-changed', handleDevModeChange);
+    return () => window.removeEventListener('developer-mode-changed', handleDevModeChange);
+  }, []);
 
   const fetchPermits = async (params: PermitSearchParams, address: string) => {
     setStatus("loading");
     setIsUsingFallbackData(false);
     console.log(`Fetching permits for address: ${address}`);
     
+    // Use mock data in developer mode
+    if (isDeveloperMode) {
+      console.log("[DEV MODE] Using mock permits data");
+      
+      // Reset the permits when searching for a new address
+      setPermits([]);
+      
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Map mock permits to the Permit type
+      const mockPermitsData = mockPermits.map(permit => ({
+        id: permit.id,
+        permit_number: permit.permitNumber,
+        type: permit.type,
+        status: permit.status,
+        date: new Date().toISOString(),
+        issued_date: permit.issuedDate ? new Date(permit.issuedDate).toISOString() : null,
+        expiration_date: permit.expirationDate ? new Date(permit.expirationDate).toISOString() : null,
+        description: permit.description,
+        applicant: permit.applicant,
+        address: permit.address,
+        valuation: permit.valuation,
+        details: permit.details || [],
+        square_footage: permit.squareFootage,
+        source: "Mock Data"
+      })) as Permit[];
+      
+      setPermits(mockPermitsData);
+      setSearchedAddress(address);
+      setStatus("success");
+      setIsUsingFallbackData(false);
+      
+      toast.success(`Found ${mockPermitsData.length} permits (MOCK)`, {
+        description: "Showing mock permit data for development."
+      });
+      
+      return;
+    }
+    
+    // Real data fetching for non-developer mode
     try {
       // Reset the permits when searching for a new address
       setPermits([]);

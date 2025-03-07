@@ -1,20 +1,64 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { School, SchoolsResponse } from "@/types/schools";
 import { SearchStatus } from "@/types";
 import { toast } from "sonner";
 import { supabase } from '@/integrations/supabase-client';
+import { useDeveloperMode } from '@/contexts/DeveloperModeContext';
+import { mockSchools } from '@/utils/mockData';
 
 export function useSchoolsData() {
   const [schools, setSchools] = useState<School[]>([]);
   const [status, setStatus] = useState<SearchStatus>("idle");
   const [searchedAddress, setSearchedAddress] = useState<string>("");
   const [searchResponse, setSearchResponse] = useState<SchoolsResponse | null>(null);
+  const { isDeveloperMode } = useDeveloperMode();
+
+  // Listen for developer mode changes
+  useEffect(() => {
+    const handleDevModeChange = () => {
+      // Reset data when developer mode changes
+      reset();
+    };
+    
+    window.addEventListener('developer-mode-changed', handleDevModeChange);
+    return () => window.removeEventListener('developer-mode-changed', handleDevModeChange);
+  }, []);
 
   const fetchSchoolsData = async (params: { lat: number, lon: number }, address: string) => {
     setStatus("loading");
     console.log(`Fetching schools data for address: ${address}, coordinates: (${params.lat}, ${params.lon})`);
     
+    // Use mock data in developer mode
+    if (isDeveloperMode) {
+      console.log("[DEV MODE] Using mock schools data");
+      
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      const mockResponse: SchoolsResponse = {
+        searchedAddress: address,
+        coordinates: {
+          lat: params.lat,
+          lon: params.lon
+        },
+        radiusMiles: 5,
+        totalResults: mockSchools.length,
+        schools: mockSchools
+      };
+      
+      setSchools(mockSchools);
+      setSearchResponse(mockResponse);
+      setStatus("success");
+      setSearchedAddress(address);
+      
+      toast.success("Schools data retrieved (MOCK)", {
+        description: `Found ${mockSchools.length} schools within 5 miles.`
+      });
+      
+      return;
+    }
+    
+    // Real data fetching for non-developer mode
     try {
       const { data: response, error } = await supabase.functions.invoke('nearby-schools', {
         body: { 
