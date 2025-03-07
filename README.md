@@ -1,5 +1,7 @@
 # Primer GTM Dashboard
 
+*Updated: March 7, 2025 - Added new features for CRM Pipeline, ATS, and Admissions Analytics*
+
 ## Project info
 
 **URL**: https://lovable.dev/projects/7e60e186-6bfa-4878-9d2c-06629de4d6e7
