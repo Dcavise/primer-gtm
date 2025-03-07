@@ -226,7 +226,6 @@ const AdmissionsAnalytics: React.FC = () => {
               <span className="text-xs text-gray-500 mr-2">Last updated:</span>
               <span className="text-sm font-medium">March 7, 2025</span>
             </div>
->>>>>>> 02089c2472216390b968b2103a7b7dce0b952b76
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 bg-white p-3 rounded-md border border-gray-100">
@@ -390,50 +389,12 @@ const AdmissionsAnalytics: React.FC = () => {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
-<<<<<<< HEAD
                   <Tooltip />
                   <Legend />
                   <Bar dataKey="applications" fill="#8884d8" name="Applications" />
                   <Bar dataKey="acceptances" fill="#82ca9d" name="Acceptances" />
                   <Bar dataKey="enrollments" fill="#ffc658" name="Enrollments" />
                   <Line type="monotone" dataKey="trend" stroke="#ff7300" strokeWidth={2} name="Trend" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Applications by Campus</CardTitle>
-            <CardDescription>Distribution of applications across campuses</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={campusData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {campusData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-=======
-                  <Tooltip 
-                    formatter={(value) => [`${value} Students`, 'Count']}
-                  />
-                  <Bar dataKey="value" name="Students">
-                    {openPipelineData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
->>>>>>> 02089c2472216390b968b2103a7b7dce0b952b76
-                    ))}
-                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
