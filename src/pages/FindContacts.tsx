@@ -1,29 +1,13 @@
 import React, { useState } from "react";
-import { Navbar } from "@/components/Navbar";
-import { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription, 
-  CardContent,
-  CardFooter
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Search, Mail, Phone, MapPin, Building, User, Users, Filter } from "lucide-react";
 import { 
-  Search, 
-  UserRound, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  Building, 
-  Briefcase, 
-  ExternalLink,
-  AlertCircle,
-  LinkedinIcon,
-  Twitter
-} from "lucide-react";
-import {
   HunterContact,
   HunterDomainResponse,
   EmailFinderResponse,
@@ -31,7 +15,6 @@ import {
   findEmailByName
 } from "@/lib/serverComms";
 import { LoadingState } from "@/components/LoadingState";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -164,7 +147,6 @@ export default function FindContactsPage() {
         <div className="container mx-auto max-w-5xl">
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-2xl md:text-3xl font-semibold">Find Contacts</h1>
-            <Navbar />
           </div>
           <p className="text-white/80 mt-2">
             Search and find business contacts by domain name
@@ -345,7 +327,7 @@ export default function FindContactsPage() {
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
                       <div className="bg-blue-100 rounded-full p-3">
-                        <UserRound className="h-6 w-6 text-blue-600" />
+                        <User className="h-6 w-6 text-blue-600" />
                       </div>
                       <div className="flex-1 space-y-2">
                         <div className="flex justify-between items-start">
@@ -364,7 +346,7 @@ export default function FindContactsPage() {
                         
                         {contact.position && (
                           <div className="flex items-center text-sm text-muted-foreground">
-                            <Briefcase className="h-4 w-4 mr-2" />
+                            <Users className="h-4 w-4 mr-2" />
                             <span>{contact.position}</span>
                           </div>
                         )}
@@ -380,21 +362,6 @@ export default function FindContactsPage() {
                             <span>{contact.phone_number}</span>
                           </div>
                         )}
-                        
-                        {(contact.linkedin || contact.twitter) && (
-                          <div className="flex gap-2 mt-2">
-                            {contact.linkedin && (
-                              <a href={contact.linkedin} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-blue-600">
-                                <LinkedinIcon className="h-5 w-5" />
-                              </a>
-                            )}
-                            {contact.twitter && (
-                              <a href={contact.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-blue-400">
-                                <Twitter className="h-5 w-5" />
-                              </a>
-                            )}
-                          </div>
-                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -402,7 +369,7 @@ export default function FindContactsPage() {
                     <CardFooter className="pt-0 border-t px-6 py-3">
                       <div className="w-full text-xs text-muted-foreground">
                         <span className="flex items-center">
-                          <ExternalLink className="h-3 w-3 mr-1" />
+                          <Users className="h-3 w-3 mr-1" />
                           Found on {contact.sources.length} {contact.sources.length === 1 ? 'source' : 'sources'}
                         </span>
                       </div>
@@ -434,7 +401,7 @@ export default function FindContactsPage() {
               
               <div className="flex items-start gap-4">
                 <div className="bg-blue-100 rounded-full p-3">
-                  <UserRound className="h-6 w-6 text-blue-600" />
+                  <User className="h-6 w-6 text-blue-600" />
                 </div>
                 <div className="flex-1 space-y-3">
                   <h3 className="font-medium text-lg">
@@ -443,7 +410,7 @@ export default function FindContactsPage() {
                   
                   {foundEmail.data.position && (
                     <div className="flex items-center text-sm text-muted-foreground">
-                      <Briefcase className="h-4 w-4 mr-2" />
+                      <Users className="h-4 w-4 mr-2" />
                       <span>{foundEmail.data.position}</span>
                     </div>
                   )}
@@ -473,21 +440,6 @@ export default function FindContactsPage() {
                       </Badge>
                     </div>
                   )}
-                  
-                  {(foundEmail.data.linkedin || foundEmail.data.twitter) && (
-                    <div className="flex gap-2 mt-2">
-                      {foundEmail.data.linkedin && (
-                        <a href={foundEmail.data.linkedin} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-blue-600">
-                          <LinkedinIcon className="h-5 w-5" />
-                        </a>
-                      )}
-                      {foundEmail.data.twitter && (
-                        <a href={foundEmail.data.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-blue-400">
-                          <Twitter className="h-5 w-5" />
-                        </a>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
             </CardContent>
@@ -495,7 +447,7 @@ export default function FindContactsPage() {
               <CardFooter className="pt-0 border-t px-6 py-3">
                 <div className="w-full text-xs text-muted-foreground">
                   <span className="flex items-center">
-                    <ExternalLink className="h-3 w-3 mr-1" />
+                    <Users className="h-3 w-3 mr-1" />
                     Found on {foundEmail.data.sources.length} {foundEmail.data.sources.length === 1 ? 'source' : 'sources'}
                   </span>
                 </div>
@@ -507,7 +459,7 @@ export default function FindContactsPage() {
         {searchStatus === 'success' && searchMode === 'domain' && contacts.length === 0 && (
           <Card>
             <CardContent className="p-8 text-center">
-              <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+              <Users className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">No contacts found</h3>
               <p className="text-muted-foreground">
                 We couldn't find any contacts for the domain "{searchQuery}". Try another domain or refine your search filters.
@@ -519,7 +471,7 @@ export default function FindContactsPage() {
         {searchStatus === 'success' && searchMode === 'email' && !foundEmail && (
           <Card>
             <CardContent className="p-8 text-center">
-              <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+              <Users className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">Email not found</h3>
               <p className="text-muted-foreground">
                 We couldn't find an email address for {firstName} {lastName} at {searchQuery}.
@@ -531,7 +483,7 @@ export default function FindContactsPage() {
         {searchStatus === 'error' && (
           <Card className="border-red-200">
             <CardContent className="p-8 text-center">
-              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <Users className="h-12 w-12 text-red-500 mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">Error searching contacts</h3>
               <p className="text-muted-foreground">
                 {error || "An error occurred while searching for contacts. Please try again."}

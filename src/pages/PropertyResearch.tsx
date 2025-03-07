@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { SearchForm } from "@/components/SearchForm";
 import { PermitList } from "@/components/PermitList";
@@ -13,7 +12,6 @@ import { FileTextIcon, MapIcon, School, SearchIcon } from "lucide-react";
 import { Permit } from "@/types";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
-import { Navbar } from "@/components/Navbar";
 
 const PropertyResearch = () => {
   // Permits data
@@ -131,7 +129,6 @@ const PropertyResearch = () => {
               />
               <h1 className="text-xl md:text-3xl font-semibold">Primer Property Explorer</h1>
             </div>
-            <Navbar />
           </div>
           
           <Tabs 

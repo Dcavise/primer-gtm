@@ -12,6 +12,7 @@ import PLHiring from './pages/PLHiring.tsx'
 import NotFound from './pages/NotFound.tsx'
 import Auth from './pages/Auth.tsx'
 import ProtectedRoute from './components/ProtectedRoute.tsx'
+import MainLayout from './components/MainLayout.tsx'
 import { logger } from './utils/logger'
 import { toast } from 'sonner'
 
@@ -106,28 +107,33 @@ const router = createBrowserRouter([
         element: <Auth />
       },
       {
-        index: true,
-        element: <ProtectedRoute><Index /></ProtectedRoute>
-      },
-      {
-        path: "property-research",
-        element: <ProtectedRoute><PropertyResearch /></ProtectedRoute>
-      },
-      {
-        path: "find-contacts",
-        element: <ProtectedRoute><FindContactsPage /></ProtectedRoute>
-      },
-      {
-        path: "real-estate-pipeline",
-        element: <ProtectedRoute><RealEstatePipeline /></ProtectedRoute>
-      },
-      {
-        path: "real-estate-pipeline/property/:id",
-        element: <ProtectedRoute><PropertyDetail /></ProtectedRoute>
-      },
-      {
-        path: "pl-hiring",
-        element: <ProtectedRoute><PLHiring /></ProtectedRoute>
+        element: <ProtectedRoute><MainLayout /></ProtectedRoute>,
+        children: [
+          {
+            index: true,
+            element: <Index />
+          },
+          {
+            path: "property-research",
+            element: <PropertyResearch />
+          },
+          {
+            path: "find-contacts",
+            element: <FindContactsPage />
+          },
+          {
+            path: "real-estate-pipeline",
+            element: <RealEstatePipeline />
+          },
+          {
+            path: "real-estate-pipeline/property/:id",
+            element: <PropertyDetail />
+          },
+          {
+            path: "pl-hiring",
+            element: <PLHiring />
+          }
+        ]
       }
     ],
     errorElement: <NotFound />
