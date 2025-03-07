@@ -248,10 +248,6 @@ const PropertyResearch = () => {
               </Card>
             </TabsContent>
           </Tabs>
-<<<<<<< Updated upstream
-        </CardContent>
-      </Card>
-=======
           
           <SearchForm 
             onSearch={handleSearchAllData} 
