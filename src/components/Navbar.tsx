@@ -17,8 +17,8 @@ import {
   Search,
   LogOut,
   BarChart,
-  GraduationCap,
-  Activity
+  GraduationCap
+  // Activity icon removed (was used for Live Look)
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from '@/contexts/AuthContext';
@@ -30,7 +30,7 @@ const routes = [
   { path: "/real-estate-pipeline", name: "Real Estate Pipeline", icon: <Building className="mr-2 h-4 w-4" /> },
   { path: "/find-contacts", name: "Find Contacts", icon: <UserRound className="mr-2 h-4 w-4" /> },
   { path: "/pl-hiring", name: "PL Hiring", icon: <GraduationCap className="mr-2 h-4 w-4" /> },
-  { path: "/live-look", name: "Live Look", icon: <Activity className="mr-2 h-4 w-4" /> },
+  // Live Look route removed
 ];
 
 export const Navbar = () => {

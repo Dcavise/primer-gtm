@@ -23,17 +23,19 @@ export const MobileNavigation = ({ features }: MobileNavigationProps) => {
     <div className="md:hidden">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="text-white px-2 py-1 h-auto">
+          <Button variant="ghost" className="text-white hover:bg-white/10 rounded-md px-3 py-1.5 h-auto border border-white/20">
             <span className="sr-only">Navigation</span>
-            Navigate <ChevronDown className="h-4 w-4 ml-1" />
+            Menu <ChevronDown className="h-4 w-4 ml-1" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-48 bg-white">
+        <DropdownMenuContent align="start" className="w-56 mt-2 bg-slate-800 border border-slate-700 shadow-lg">
           {navItems.map((item) => (
-            <DropdownMenuItem key={item.path} asChild>
+            <DropdownMenuItem key={item.path} asChild className="focus:bg-slate-700">
               <NavLink
                 to={item.path}
-                className="flex items-center w-full px-2 py-1.5 cursor-pointer"
+                className={({isActive}) => 
+                  `flex items-center w-full px-3 py-2 cursor-pointer ${isActive ? 'text-white font-medium' : 'text-white/80 hover:text-white'}`
+                }
               >
                 {item.label}
               </NavLink>
