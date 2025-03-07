@@ -8,6 +8,7 @@ import PropertyResearch from './pages/PropertyResearch.tsx'
 import FindContactsPage from './pages/FindContacts.tsx'
 import RealEstatePipeline from './pages/RealEstatePipeline.tsx'
 import PropertyDetail from './pages/PropertyDetail.tsx'
+import PLHiring from './pages/PLHiring.tsx'
 import NotFound from './pages/NotFound.tsx'
 import Auth from './pages/Auth.tsx'
 import ProtectedRoute from './components/ProtectedRoute.tsx'
@@ -123,6 +124,10 @@ const router = createBrowserRouter([
       {
         path: "real-estate-pipeline/property/:id",
         element: <ProtectedRoute><PropertyDetail /></ProtectedRoute>
+      },
+      {
+        path: "pl-hiring",
+        element: <ProtectedRoute><PLHiring /></ProtectedRoute>
       }
     ],
     errorElement: <NotFound />

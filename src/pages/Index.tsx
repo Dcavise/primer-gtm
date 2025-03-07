@@ -6,7 +6,8 @@ import {
   FileTextIcon, 
   SearchIcon, 
   UserRound, 
-  LayoutDashboard 
+  LayoutDashboard,
+  GraduationCap
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Navbar } from "@/components/Navbar";
@@ -31,10 +32,10 @@ const Index = () => {
       color: "bg-green-50"
     },
     {
-      title: "Salesforce Analytics",
-      description: "Analyze your Salesforce data and track performance metrics",
-      icon: <LayoutDashboard className="h-10 w-10 text-purple-500 mb-4" />,
-      path: "/salesforce-leads",
+      title: "PL Hiring",
+      description: "Review fellows and manage hiring decisions",
+      icon: <GraduationCap className="h-10 w-10 text-purple-500 mb-4" />,
+      path: "/pl-hiring",
       color: "bg-purple-50"
     },
     {
