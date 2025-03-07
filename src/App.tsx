@@ -3,6 +3,7 @@ import { ThemeProvider } from 'next-themes';
 import { Toaster as SonnerToaster } from 'sonner';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { LayoutProvider } from './contexts/LayoutContext';
 import { CMDKPatcher } from './patches/cmdk-patch';
 
 // Initialize the query client
@@ -13,11 +14,13 @@ function App() {
     <ThemeProvider attribute="class" defaultTheme="light">
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          {/* Apply the CMDK patch globally */}
-          <CMDKPatcher />
-          {/* Direct outlet for router content */}
-          <Outlet />
-          <SonnerToaster position="bottom-right" />
+          <LayoutProvider>
+            {/* Apply the CMDK patch globally */}
+            <CMDKPatcher />
+            {/* Direct outlet for router content */}
+            <Outlet />
+            <SonnerToaster position="bottom-right" />
+          </LayoutProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>

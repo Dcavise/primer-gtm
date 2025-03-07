@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { getNavigationFeatures } from '../../registry';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useLayout } from '../../../contexts/LayoutContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/utils/cn';
 import { 
@@ -29,6 +30,52 @@ const MainLayout: React.FC = () => {
   const location = useLocation();
   const navItems = features.flatMap(feature => feature.navItems || [])
     .sort((a, b) => (a.order || 999) - (b.order || 999));
+    
+  // Use the global layout context
+  const { showAdminBackButton, setShowAdminBackButton, showUserProfile, setShowUserProfile } = useLayout();
+  
+  // Control sidebar elements based on the current route
+  useEffect(() => {
+    // Default configuration for all routes
+    let showAdmin = true;
+    let showProfile = true;
+    
+    // Route-specific configurations
+    if (location.pathname.includes('/dashboard')) {
+      // Dashboard should have neither
+      showAdmin = false;
+      showProfile = false;
+    } 
+    else if (location.pathname.includes('/contact-finding')) {
+      // Contact finding has neither
+      showAdmin = false;
+      showProfile = false;
+    }
+    else if (location.pathname.includes('/real-estate-pipeline')) {
+      // Real estate pipeline has neither
+      showAdmin = false;
+      showProfile = false;
+    }
+    else if (location.pathname.includes('/property-research')) {
+      // Property research only has back to admin
+      showAdmin = true;
+      showProfile = false;
+    }
+    else if (location.pathname.includes('/ats')) {
+      // ATS has both
+      showAdmin = true;
+      showProfile = true;
+    }
+    else if (location.pathname.includes('/crm')) {
+      // CRM pipeline has both
+      showAdmin = true;
+      showProfile = true;
+    }
+    
+    // Update the context state
+    setShowAdminBackButton(showAdmin);
+    setShowUserProfile(showProfile);
+  }, [location.pathname, setShowAdminBackButton, setShowUserProfile]);
   
   // Get the initials of the user for the avatar
   const getInitials = () => {
@@ -123,34 +170,38 @@ const MainLayout: React.FC = () => {
           {/* Spacer */}
           <div className="flex-1"></div>
           
-          {/* Back to Admin */}
-          <div className="px-3 py-3 border-t border-white/10">
-            <button 
-              onClick={() => {}} 
-              className="flex items-center px-2 py-2 rounded-md text-sm text-white/70 hover:bg-white/10 hover:text-white w-full">
-              <ChevronLeft className="h-4 w-4 mr-2" />
-              Back to Admin
-            </button>
-          </div>
-          
-          {/* User Profile */}
-          <div className="px-3 py-3">
-            <div className="flex items-center justify-between px-2 py-2">
-              <div className="flex items-center gap-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-white text-black rounded-full text-xs">
-                    {getInitials()}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-sm">{profile?.full_name || 'User'}</span>
-              </div>
+          {/* Back to Admin - Consistently shown when showAdminBackButton is true */}
+          {showAdminBackButton && (
+            <div className="px-3 py-3 border-t border-white/10">
               <button 
-                onClick={() => { if (signOut) signOut(); }} 
-                className="text-white/50 hover:text-white">
-                <LogOut className="h-4 w-4" />
+                onClick={() => {window.location.href = '/admin';}} 
+                className="flex items-center px-2 py-2 rounded-md text-sm text-white/70 hover:bg-white/10 hover:text-white w-full">
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Back to Admin
               </button>
             </div>
-          </div>
+          )}
+          
+          {/* User Profile - Consistently shown when showUserProfile is true */}
+          {showUserProfile && (
+            <div className="px-3 py-3">
+              <div className="flex items-center justify-between px-2 py-2">
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="bg-white text-black rounded-full text-xs">
+                      {getInitials()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm">{profile?.full_name || 'User'}</span>
+                </div>
+                <button 
+                  onClick={() => { if (signOut) signOut(); }} 
+                  className="text-white/50 hover:text-white">
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </aside>
         
         {/* Main Content */}
