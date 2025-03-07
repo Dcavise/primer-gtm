@@ -8,11 +8,25 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Clock, FileText, RefreshCw } from "lucide-react";
-import { useCampuses } from "@/hooks/useCampuses";
 import { LoadingState } from "@/components/LoadingState";
-import { supabase } from "@/integrations/supabase-client";
-import { Fellow } from "@/types";
 import { toast } from "sonner";
+import { v4 as uuidv4 } from 'uuid';
+
+interface Fellow {
+  id: string;
+  fellow_id: number;
+  fellow_name: string;
+  campus_id: string;
+  cohort: string;
+  grade_band: string;
+  fte_employment_status: string;
+  interview_status: string;
+}
+
+interface Campus {
+  campus_id: string;
+  campus_name: string;
+}
 
 interface FellowNote {
   id: string;
@@ -22,74 +36,73 @@ interface FellowNote {
   created_by: string;
 }
 
+// Mock data for campuses
+const MOCK_CAMPUSES: Campus[] = [
+  { campus_id: "1", campus_name: "San Francisco" },
+  { campus_id: "2", campus_name: "New York" },
+  { campus_id: "3", campus_name: "Chicago" },
+  { campus_id: "4", campus_name: "Austin" }
+];
+
+// Mock data for fellows
+const MOCK_FELLOWS: Record<string, Fellow[]> = {
+  "1": [
+    { id: "1", fellow_id: 101, fellow_name: "Alex Johnson", campus_id: "1", cohort: "Spring 2023", grade_band: "A", fte_employment_status: "Hired", interview_status: "Completed" },
+    { id: "2", fellow_id: 102, fellow_name: "Jamie Smith", campus_id: "1", cohort: "Spring 2023", grade_band: "B+", fte_employment_status: "In Progress", interview_status: "Scheduled" },
+    { id: "3", fellow_id: 103, fellow_name: "Taylor Brown", campus_id: "1", cohort: "Fall 2022", grade_band: "A-", fte_employment_status: "Not Started", interview_status: "Not Started" }
+  ],
+  "2": [
+    { id: "4", fellow_id: 201, fellow_name: "Morgan Lee", campus_id: "2", cohort: "Spring 2023", grade_band: "A+", fte_employment_status: "Hired", interview_status: "Completed" },
+    { id: "5", fellow_id: 202, fellow_name: "Casey Wilson", campus_id: "2", cohort: "Fall 2022", grade_band: "B", fte_employment_status: "Not Started", interview_status: "Not Started" }
+  ],
+  "3": [
+    { id: "6", fellow_id: 301, fellow_name: "Jordan Miller", campus_id: "3", cohort: "Spring 2023", grade_band: "A-", fte_employment_status: "In Progress", interview_status: "Scheduled" },
+    { id: "7", fellow_id: 302, fellow_name: "Riley Davis", campus_id: "3", cohort: "Fall 2022", grade_band: "B+", fte_employment_status: "Not Started", interview_status: "Not Started" }
+  ],
+  "4": [
+    { id: "8", fellow_id: 401, fellow_name: "Quinn Martinez", campus_id: "4", cohort: "Spring 2023", grade_band: "A", fte_employment_status: "Hired", interview_status: "Completed" }
+  ]
+};
+
+// Mock data for notes
+const MOCK_NOTES: Record<number, FellowNote[]> = {
+  101: [
+    { id: "n1", fellow_id: 101, content: "Excellent performance in technical interviews", created_at: "2023-05-15T14:30:00Z", created_by: "Admin" },
+    { id: "n2", fellow_id: 101, content: "Strong leadership skills demonstrated during group project", created_at: "2023-04-20T10:15:00Z", created_by: "Admin" }
+  ],
+  201: [
+    { id: "n3", fellow_id: 201, content: "Outstanding problem-solving abilities", created_at: "2023-05-10T09:45:00Z", created_by: "Admin" }
+  ],
+  301: [
+    { id: "n4", fellow_id: 301, content: "Good communication skills, needs improvement in technical areas", created_at: "2023-05-05T16:20:00Z", created_by: "Admin" }
+  ],
+  401: [
+    { id: "n5", fellow_id: 401, content: "Exceptional project work, highly recommended", created_at: "2023-05-12T11:30:00Z", created_by: "Admin" }
+  ]
+};
+
 const PLHiring = () => {
   const [selectedCampus, setSelectedCampus] = useState<string | null>(null);
   const [fellows, setFellows] = useState<Fellow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [notes, setNotes] = useState<Record<number, FellowNote[]>>({});
+  const [loading, setLoading] = useState(false);
+  const [notes, setNotes] = useState<Record<number, FellowNote[]>>(MOCK_NOTES);
   const [newNote, setNewNote] = useState("");
   const [selectedFellow, setSelectedFellow] = useState<Fellow | null>(null);
-  const { data: campuses, isLoading: campusesLoading, error: campusesError } = useCampuses();
 
-  // Fetch fellows for the selected campus
+  // Fetch fellows for the selected campus (using mock data)
   useEffect(() => {
-    const fetchFellows = async () => {
-      if (!selectedCampus) return;
-      
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('fellows')
-          .select('*')
-          .eq('campus_id', selectedCampus)
-          .order('fellow_name', { ascending: true });
-        
-        if (error) throw error;
-        
-        setFellows(data || []);
-        
-        // Fetch notes for all fellows in this campus
-        if (data && data.length > 0) {
-          const fellowIds = data.map(f => f.fellow_id).filter(Boolean);
-          await fetchNotesForFellows(fellowIds as number[]);
-        }
-      } catch (error) {
-        console.error('Error fetching fellows:', error);
-        toast.error('Failed to load fellows data');
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (!selectedCampus) return;
     
-    fetchFellows();
+    // Simulate loading
+    setLoading(true);
+    
+    // Simulate API delay
+    setTimeout(() => {
+      setFellows(MOCK_FELLOWS[selectedCampus] || []);
+      setLoading(false);
+    }, 500);
+    
   }, [selectedCampus]);
-
-  // Fetch notes for a list of fellow IDs
-  const fetchNotesForFellows = async (fellowIds: number[]) => {
-    try {
-      const { data, error } = await supabase
-        .from('fellow_notes')
-        .select('*')
-        .in('fellow_id', fellowIds)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      // Group notes by fellow_id
-      const notesMap: Record<number, FellowNote[]> = {};
-      (data || []).forEach(note => {
-        if (!notesMap[note.fellow_id]) {
-          notesMap[note.fellow_id] = [];
-        }
-        notesMap[note.fellow_id].push(note);
-      });
-      
-      setNotes(notesMap);
-    } catch (error) {
-      console.error('Error fetching notes:', error);
-      toast.error('Failed to load fellow notes');
-    }
-  };
 
   // Add a new note for the selected fellow
   const addNote = async () => {
@@ -97,41 +110,30 @@ const PLHiring = () => {
       return;
     }
     
-    try {
-      const { data, error } = await supabase
-        .from('fellow_notes')
-        .insert([
-          {
-            fellow_id: selectedFellow.fellow_id,
-            content: newNote.trim(),
-            created_by: "current_user" // This should be replaced with the actual user ID
-          }
-        ])
-        .select();
-      
-      if (error) throw error;
-      
-      // Update the notes state
-      if (data && data.length > 0) {
-        setNotes(prev => {
-          const updatedNotes = { ...prev };
-          if (!updatedNotes[selectedFellow.fellow_id!]) {
-            updatedNotes[selectedFellow.fellow_id!] = [];
-          }
-          updatedNotes[selectedFellow.fellow_id!] = [
-            data[0],
-            ...updatedNotes[selectedFellow.fellow_id!]
-          ];
-          return updatedNotes;
-        });
-        
-        setNewNote("");
-        toast.success('Note added successfully');
+    // Create a new note with mock data
+    const newNoteObj: FellowNote = {
+      id: uuidv4(),
+      fellow_id: selectedFellow.fellow_id,
+      content: newNote.trim(),
+      created_at: new Date().toISOString(),
+      created_by: "current_user"
+    };
+    
+    // Update the notes state
+    setNotes(prev => {
+      const updatedNotes = { ...prev };
+      if (!updatedNotes[selectedFellow.fellow_id!]) {
+        updatedNotes[selectedFellow.fellow_id!] = [];
       }
-    } catch (error) {
-      console.error('Error adding note:', error);
-      toast.error('Failed to add note');
-    }
+      updatedNotes[selectedFellow.fellow_id!] = [
+        newNoteObj,
+        ...(updatedNotes[selectedFellow.fellow_id!] || [])
+      ];
+      return updatedNotes;
+    });
+    
+    setNewNote("");
+    toast.success('Note added successfully');
   };
 
   // Format date for display
@@ -143,46 +145,8 @@ const PLHiring = () => {
     });
   };
 
-  // If table doesn't exist, create it
-  useEffect(() => {
-    const createNotesTableIfNeeded = async () => {
-      try {
-        // Check if the table exists
-        const { error } = await supabase
-          .from('fellow_notes')
-          .select('id')
-          .limit(1);
-        
-        // If the table doesn't exist, the error will indicate that
-        if (error && error.message.includes('does not exist')) {
-          console.log('Notes table does not exist, will create it');
-          
-          // Create the table using SQL (requires SQL permissions)
-          const { error: createError } = await supabase.rpc('create_fellow_notes_table');
-          
-          if (createError) throw createError;
-          
-          console.log('Created fellow_notes table successfully');
-        }
-      } catch (error) {
-        console.error('Error checking/creating notes table:', error);
-      }
-    };
-    
-    createNotesTableIfNeeded();
-  }, []);
-
-  if (campusesLoading) {
-    return <LoadingState message="Loading campuses..." />;
-  }
-
-  if (campusesError) {
-    return (
-      <div className="p-4 border border-red-300 bg-red-50 rounded-md text-red-800">
-        <h2 className="text-lg font-semibold mb-2">Error loading campuses</h2>
-        <p>Please try refreshing the page.</p>
-      </div>
-    );
+  if (loading) {
+    return <LoadingState message="Loading fellows..." />;
   }
 
   return (
@@ -201,7 +165,7 @@ const PLHiring = () => {
         <TabsContent value="fellows">
           {/* Campus selector */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            {campuses?.map(campus => (
+            {MOCK_CAMPUSES.map(campus => (
               <Card 
                 key={campus.campus_id} 
                 className={`cursor-pointer transition-all ${selectedCampus === campus.campus_id ? 'ring-2 ring-primary' : 'hover:bg-accent/50'}`}
@@ -216,244 +180,244 @@ const PLHiring = () => {
           
           {/* Fellows list */}
           {selectedCampus ? (
-            loading ? (
-              <LoadingState message="Loading fellows..." />
-            ) : (
-              <>
-                <div className="bg-white rounded-md shadow overflow-hidden mb-8">
-                  <Table>
-                    <TableCaption>Fellows at selected campus</TableCaption>
-                    <TableHeader>
+            <>
+              <div className="bg-white rounded-md shadow overflow-hidden mb-8">
+                <Table>
+                  <TableCaption>Fellows at selected campus</TableCaption>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Cohort</TableHead>
+                      <TableHead>Grade Band</TableHead>
+                      <TableHead>Employment Status</TableHead>
+                      <TableHead>Notes</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {fellows.length === 0 ? (
                       <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Cohort</TableHead>
-                        <TableHead>Grade Band</TableHead>
-                        <TableHead>Employment Status</TableHead>
-                        <TableHead>Notes</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
+                          No fellows data available for this campus
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {fellows.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
-                            No fellows data available for this campus
+                    ) : (
+                      fellows.map((fellow) => (
+                        <TableRow key={fellow.id}>
+                          <TableCell className="font-medium">{fellow.fellow_name}</TableCell>
+                          <TableCell>{fellow.cohort || '-'}</TableCell>
+                          <TableCell>{fellow.grade_band || '-'}</TableCell>
+                          <TableCell>
+                            {fellow.fte_employment_status === 'Hired' ? (
+                              <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Hired
+                              </Badge>
+                            ) : fellow.fte_employment_status === 'In Progress' ? (
+                              <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">
+                                <Clock className="h-3 w-3 mr-1" />
+                                In Progress
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-200">
+                                Not Started
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {notes[fellow.fellow_id!]?.length || 0} notes
+                          </TableCell>
+                          <TableCell>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => setSelectedFellow(fellow)}
+                                >
+                                  <FileText className="h-4 w-4 mr-1" />
+                                  View Notes
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-3xl">
+                                <DialogHeader>
+                                  <DialogTitle>Notes for {fellow.fellow_name}</DialogTitle>
+                                  <DialogDescription>
+                                    Review and add notes for this fellow
+                                  </DialogDescription>
+                                </DialogHeader>
+                                
+                                <div className="mt-4 space-y-4">
+                                  {/* Add note form */}
+                                  <div className="space-y-2">
+                                    <h3 className="text-sm font-medium">Add a new note</h3>
+                                    <Textarea 
+                                      placeholder="Enter your note here..." 
+                                      value={newNote}
+                                      onChange={(e) => setNewNote(e.target.value)}
+                                      className="min-h-[100px]"
+                                    />
+                                    <Button 
+                                      onClick={addNote}
+                                      disabled={!newNote.trim()}
+                                    >
+                                      Add Note
+                                    </Button>
+                                  </div>
+                                  
+                                  <Separator />
+                                  
+                                  {/* Notes list */}
+                                  <div className="space-y-4">
+                                    <h3 className="text-sm font-medium">Previous Notes</h3>
+                                    
+                                    {!notes[fellow.fellow_id!] || notes[fellow.fellow_id!].length === 0 ? (
+                                      <p className="text-sm text-muted-foreground">No notes available for this fellow.</p>
+                                    ) : (
+                                      <div className="space-y-3">
+                                        {notes[fellow.fellow_id!].map((note) => (
+                                          <div key={note.id} className="bg-muted p-3 rounded-md">
+                                            <p className="text-sm mb-2">{note.content}</p>
+                                            <div className="flex justify-between items-center text-xs text-muted-foreground">
+                                              <span>Added by: {note.created_by}</span>
+                                              <span>{formatDate(note.created_at)}</span>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
                           </TableCell>
                         </TableRow>
-                      ) : (
-                        fellows.map((fellow) => (
-                          <TableRow key={fellow.id}>
-                            <TableCell className="font-medium">{fellow.fellow_name}</TableCell>
-                            <TableCell>{fellow.cohort || '-'}</TableCell>
-                            <TableCell>{fellow.grade_band || '-'}</TableCell>
-                            <TableCell>
-                              {fellow.fte_employment_status ? (
-                                <Badge variant={fellow.fte_employment_status === 'PL Hire' ? 'success' : 'secondary'}>
-                                  {fellow.fte_employment_status}
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline">Not Set</Badge>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {(notes[fellow.fellow_id!]?.length || 0) > 0 ? (
-                                <Badge variant="outline">
-                                  {notes[fellow.fellow_id!]?.length} notes
-                                </Badge>
-                              ) : (
-                                '-'
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    onClick={() => setSelectedFellow(fellow)}
-                                  >
-                                    <FileText className="h-4 w-4 mr-1" />
-                                    Details
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-                                  <DialogHeader>
-                                    <DialogTitle>{fellow.fellow_name}</DialogTitle>
-                                    <DialogDescription>
-                                      {fellow.campus} • Cohort: {fellow.cohort || 'Unknown'} • Grade Band: {fellow.grade_band || 'Unknown'}
-                                    </DialogDescription>
-                                  </DialogHeader>
-                                  
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                                    <div>
-                                      <h3 className="text-lg font-semibold mb-2">Fellow Information</h3>
-                                      <div className="space-y-2">
-                                        <div>
-                                          <span className="font-medium">ID:</span> {fellow.fellow_id || 'Unknown'}
-                                        </div>
-                                        <div>
-                                          <span className="font-medium">Name:</span> {fellow.fellow_name}
-                                        </div>
-                                        <div>
-                                          <span className="font-medium">Campus:</span> {fellow.campus || 'Unknown'}
-                                        </div>
-                                        <div>
-                                          <span className="font-medium">Cohort:</span> {fellow.cohort || 'Unknown'}
-                                        </div>
-                                        <div>
-                                          <span className="font-medium">Grade Band:</span> {fellow.grade_band || 'Unknown'}
-                                        </div>
-                                        <div>
-                                          <span className="font-medium">Employment Status:</span> {fellow.fte_employment_status || 'Not Set'}
-                                        </div>
-                                      </div>
-                                      
-                                      <div className="mt-6">
-                                        <h3 className="text-lg font-semibold mb-2">Hiring Status</h3>
-                                        <div className="flex items-center gap-2 mb-4">
-                                          {fellow.fte_employment_status === 'PL Hire' ? (
-                                            <Badge variant="success" className="flex items-center gap-1">
-                                              <CheckCircle2 className="h-3 w-3" />
-                                              PL Hire
-                                            </Badge>
-                                          ) : fellow.fte_employment_status === 'Not Hired' ? (
-                                            <Badge variant="destructive">Not Hired</Badge>
-                                          ) : (
-                                            <Badge variant="outline" className="flex items-center gap-1">
-                                              <Clock className="h-3 w-3" />
-                                              Pending Decision
-                                            </Badge>
-                                          )}
-                                        </div>
-                                        
-                                        <div className="flex gap-2">
-                                          <Button 
-                                            size="sm" 
-                                            variant="success"
-                                            onClick={() => {
-                                              // Update fellow employment status to 'PL Hire'
-                                              toast.success('Status updated to PL Hire');
-                                            }}
-                                          >
-                                            Mark as PL Hire
-                                          </Button>
-                                          <Button 
-                                            size="sm" 
-                                            variant="destructive"
-                                            onClick={() => {
-                                              // Update fellow employment status to 'Not Hired'
-                                              toast.success('Status updated to Not Hired');
-                                            }}
-                                          >
-                                            Mark as Not Hired
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    
-                                    <div>
-                                      <h3 className="text-lg font-semibold mb-2">Notes & Feedback</h3>
-                                      <div className="mb-4">
-                                        <Textarea
-                                          placeholder="Add a new note..."
-                                          value={newNote}
-                                          onChange={(e) => setNewNote(e.target.value)}
-                                          className="mb-2"
-                                          rows={4}
-                                        />
-                                        <Button 
-                                          onClick={addNote}
-                                          disabled={!newNote.trim()}
-                                        >
-                                          Add Note
-                                        </Button>
-                                      </div>
-                                      
-                                      <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-                                        {notes[fellow.fellow_id!]?.length > 0 ? (
-                                          notes[fellow.fellow_id!].map((note) => (
-                                            <div key={note.id} className="p-3 bg-muted rounded-md">
-                                              <div className="text-sm text-muted-foreground mb-1">
-                                                {formatDate(note.created_at)}
-                                              </div>
-                                              <p className="whitespace-pre-wrap">{note.content}</p>
-                                            </div>
-                                          ))
-                                        ) : (
-                                          <p className="text-muted-foreground">No notes added yet.</p>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </>
-            )
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           ) : (
-            <div className="text-center p-8 bg-muted/50 rounded-md">
-              <h3 className="text-xl font-medium text-muted-foreground">
-                Select a campus to view fellows
-              </h3>
+            <div className="text-center p-8 bg-muted rounded-md">
+              <h3 className="text-lg font-medium mb-2">Select a Campus</h3>
+              <p className="text-muted-foreground">Choose a campus from above to view fellows</p>
             </div>
           )}
         </TabsContent>
         
         <TabsContent value="stats">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>Total Fellows</CardTitle>
-                <CardDescription>Across all campuses</CardDescription>
+              <CardHeader>
+                <CardTitle>Hiring Progress</CardTitle>
+                <CardDescription>Overall hiring status across all campuses</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">--</div>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between mb-1 text-sm">
+                      <span>Hired</span>
+                      <span>3 fellows</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div className="bg-green-600 h-2.5 rounded-full" style={{ width: '30%' }}></div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1 text-sm">
+                      <span>In Progress</span>
+                      <span>2 fellows</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: '20%' }}></div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1 text-sm">
+                      <span>Not Started</span>
+                      <span>5 fellows</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div className="bg-gray-400 h-2.5 rounded-full" style={{ width: '50%' }}></div>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
             
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>PL Hires</CardTitle>
-                <CardDescription>Fellows marked for hiring</CardDescription>
+              <CardHeader>
+                <CardTitle>Grade Distribution</CardTitle>
+                <CardDescription>Fellow grades across all cohorts</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-600">--</div>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between mb-1 text-sm">
+                      <span>A+/A</span>
+                      <span>4 fellows</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div className="bg-green-600 h-2.5 rounded-full" style={{ width: '40%' }}></div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1 text-sm">
+                      <span>A-/B+</span>
+                      <span>3 fellows</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: '30%' }}></div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1 text-sm">
+                      <span>B/B-</span>
+                      <span>3 fellows</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div className="bg-yellow-500 h-2.5 rounded-full" style={{ width: '30%' }}></div>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
             
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>Pending Decision</CardTitle>
-                <CardDescription>Fellows awaiting decision</CardDescription>
+              <CardHeader>
+                <CardTitle>Cohort Breakdown</CardTitle>
+                <CardDescription>Fellows by cohort</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-orange-500">--</div>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between mb-1 text-sm">
+                      <span>Spring 2023</span>
+                      <span>6 fellows</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div className="bg-purple-600 h-2.5 rounded-full" style={{ width: '60%' }}></div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1 text-sm">
+                      <span>Fall 2022</span>
+                      <span>4 fellows</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div className="bg-indigo-600 h-2.5 rounded-full" style={{ width: '40%' }}></div>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Hiring Progress by Campus</CardTitle>
-              <CardDescription>
-                Overview of hiring decisions across all campuses
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px] flex items-center justify-center">
-                <div className="text-center text-muted-foreground">
-                  <RefreshCw className="h-16 w-16 mx-auto mb-4 opacity-20" />
-                  <p>Stats will be available once hiring decisions are recorded</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>

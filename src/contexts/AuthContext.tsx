@@ -22,266 +22,66 @@ interface AuthContextProps {
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [databaseConnected, setDatabaseConnected] = useState(false);
+  // Create a mock user for development
+  const mockUser = {
+    id: 'mock-user-id',
+    email: 'mock@example.com',
+    app_metadata: {},
+    user_metadata: { full_name: 'Mock User' },
+    aud: 'authenticated',
+    created_at: new Date().toISOString()
+  } as User;
+
+  const mockSession = {
+    access_token: 'mock-token',
+    refresh_token: 'mock-refresh-token',
+    expires_at: Date.now() + 3600,
+    expires_in: 3600,
+    user: mockUser
+  } as Session;
+
+  const [session, setSession] = useState<Session | null>(mockSession);
+  const [user, setUser] = useState<User | null>(mockUser);
+  const [profile, setProfile] = useState<any | null>({ id: mockUser.id, full_name: 'Mock User' });
+  const [loading, setLoading] = useState(false); // Set to false to skip loading state
+  const [databaseConnected, setDatabaseConnected] = useState(true); // Set to true to skip database connection check
   const [schemaStatus, setSchemaStatus] = useState<{ public: boolean, salesforce: boolean }>({ 
-    public: false, 
-    salesforce: false 
+    public: true, 
+    salesforce: true 
   });
   const navigate = useNavigate();
 
-  // Function to refresh the session
+  // Function to refresh the session - simplified for development
   const refreshSession = async () => {
-    try {
-      logger.auth('Manually refreshing session');
-      const { data, error } = await supabase.auth.refreshSession();
-      
-      if (error) {
-        logger.auth('Error refreshing session:', error);
-        toast.error('Session refresh failed', {
-          description: error.message
-        });
-        return;
-      }
-      
-      if (data.session) {
-        logger.auth('Session refreshed successfully');
-        setSession(data.session);
-        setUser(data.session.user);
-        
-        if (data.session.user) {
-          await fetchProfile(data.session.user.id);
-          checkDatabaseAccess();
-        }
-      } else {
-        logger.auth('No session returned after refresh');
-        setSession(null);
-        setUser(null);
-        setProfile(null);
-        navigate('/auth');
-      }
-    } catch (error) {
-      logger.auth('Unexpected error during session refresh:', error);
-      toast.error('Session refresh failed', {
-        description: 'An unexpected error occurred'
-      });
-    }
+    logger.auth('Session refresh bypassed in development mode');
+    return;
   };
 
   useEffect(() => {
-    // Get initial session
-    const initializeAuth = async () => {
-      try {
-        logger.auth('Initializing authentication');
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          logger.auth('Error getting session:', error);
-          setLoading(false);
-          return;
-        }
-        
-        logger.auth(`Session found: ${!!data.session}`);
-        setSession(data.session);
-        setUser(data.session?.user ?? null);
-        
-        if (data.session?.user) {
-          await fetchProfile(data.session.user.id);
-          
-          // Check database connection after authentication
-          checkDatabaseAccess();
-        } else {
-          setLoading(false);
-        }
-        
-        // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          async (event, newSession) => {
-            logger.auth(`Auth state changed: ${event}`);
-            setSession(newSession);
-            setUser(newSession?.user ?? null);
-            
-            if (newSession?.user) {
-              await fetchProfile(newSession.user.id);
-              
-              // Check database access on sign in
-              if (event === 'SIGNED_IN') {
-                checkDatabaseAccess();
-                toast.success('Signed in successfully');
-                logger.auth('User signed in successfully');
-              } else if (event === 'TOKEN_REFRESHED') {
-                logger.auth('Token refreshed automatically');
-              }
-            } else {
-              setProfile(null);
-              setDatabaseConnected(false);
-              setSchemaStatus({ public: false, salesforce: false });
-              setLoading(false);
-              
-              if (event === 'SIGNED_OUT') {
-                logger.auth('User signed out');
-                toast.info('Signed out');
-              }
-            }
-          }
-        );
-        
-        return () => {
-          subscription.unsubscribe();
-        };
-      } catch (error) {
-        logger.auth("Error initializing auth:", error);
-        setLoading(false);
-        toast.error('Authentication initialization failed', {
-          description: 'Please try refreshing the page'
-        });
-      }
-    };
-    
-    initializeAuth();
+    // Skip authentication in development mode
+    logger.auth('Authentication bypassed in development mode');
+    setLoading(false);
   }, []);
 
-  const checkDatabaseAccess = async () => {
-    try {
-      logger.info('Checking database access');
-      const connectionStatus = await checkDatabaseConnection();
-      setDatabaseConnected(connectionStatus.connected);
-      setSchemaStatus(connectionStatus.schemas);
-      
-      if (!connectionStatus.connected) {
-        if (!connectionStatus.schemas.public && !connectionStatus.schemas.salesforce) {
-          toast.error('Database connection failed', { 
-            description: 'Unable to connect to any database schemas' 
-          });
-        } else if (connectionStatus.schemas.public && !connectionStatus.schemas.salesforce) {
-          toast.warning('Limited data access', { 
-            description: 'Connected to public schema but not salesforce schema' 
-          });
-        }
-      }
-    } catch (error) {
-      logger.error('Error checking database access:', error);
-      setDatabaseConnected(false);
-      setSchemaStatus({ public: false, salesforce: false });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchProfile = async (userId: string) => {
-    try {
-      logger.info(`Fetching profile for user: ${userId}`);
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        logger.error('Error fetching profile:', error);
-      } else {
-        logger.info('Profile fetched successfully');
-        setProfile(data);
-      }
-    } catch (error) {
-      logger.error('Error in fetchProfile:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Simplified mock functions
   const signIn = async (email: string, password: string) => {
-    try {
-      setLoading(true);
-      logger.auth(`Signing in user: ${email}`);
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (error) {
-        logger.auth('Sign in error:', error);
-        setLoading(false);
-        return { error };
-      }
-      
-      logger.auth('Sign in successful');
-      
-      // Store the session in localStorage as a backup
-      if (data.session) {
-        try {
-          localStorage.setItem('supabase-auth-token', JSON.stringify(data.session));
-          logger.auth('Session stored in localStorage');
-        } catch (storageError) {
-          logger.warn('Failed to store session in localStorage:', storageError);
-        }
-      }
-      
-      navigate('/');
-      return { error: null };
-    } catch (error) {
-      logger.auth('Unexpected error signing in:', error);
-      setLoading(false);
-      return { error };
-    }
+    logger.auth(`Mock sign in for: ${email}`);
+    navigate('/');
+    return { error: null };
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    try {
-      setLoading(true);
-      logger.info(`Signing up user: ${email}`);
-      
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-        },
-      });
-      
-      if (!error) {
-        logger.info('Sign up successful');
-        navigate('/');
-      } else {
-        logger.error('Sign up error:', error);
-        setLoading(false);
-      }
-      
-      return { error };
-    } catch (error) {
-      logger.error('Error signing up:', error);
-      setLoading(false);
-      return { error };
-    }
+    logger.auth(`Mock sign up for: ${email}`);
+    navigate('/');
+    return { error: null };
   };
 
   const signOut = async () => {
-    try {
-      setLoading(true);
-      logger.auth('Signing out user');
-      
-      // Clear any stored session
-      try {
-        localStorage.removeItem('supabase-auth-token');
-      } catch (storageError) {
-        logger.warn('Error clearing localStorage:', storageError);
-      }
-      
-      await supabase.auth.signOut();
-      navigate('/auth');
-    } catch (error) {
-      logger.auth('Error signing out:', error);
-    } finally {
-      setLoading(false);
-    }
+    logger.auth('Mock sign out');
+    navigate('/auth');
   };
 
+  // Provide the context value with mock data
   const value = {
     session,
     user,

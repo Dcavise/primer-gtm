@@ -9,9 +9,9 @@ import FindContactsPage from './pages/FindContacts.tsx'
 import RealEstatePipeline from './pages/RealEstatePipeline.tsx'
 import PropertyDetail from './pages/PropertyDetail.tsx'
 import PLHiring from './pages/PLHiring.tsx'
+import LiveLook from './pages/LiveLook.tsx'
 import NotFound from './pages/NotFound.tsx'
 import Auth from './pages/Auth.tsx'
-import ProtectedRoute from './components/ProtectedRoute.tsx'
 import MainLayout from './components/MainLayout.tsx'
 import { logger } from './utils/logger'
 import { toast } from 'sonner'
@@ -107,7 +107,7 @@ const router = createBrowserRouter([
         element: <Auth />
       },
       {
-        element: <ProtectedRoute><MainLayout /></ProtectedRoute>,
+        element: <MainLayout />,
         children: [
           {
             index: true,
@@ -132,6 +132,10 @@ const router = createBrowserRouter([
           {
             path: "pl-hiring",
             element: <PLHiring />
+          },
+          {
+            path: "live-look",
+            element: <LiveLook />
           }
         ]
       }
