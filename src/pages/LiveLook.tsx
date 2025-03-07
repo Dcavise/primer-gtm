@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Users, MousePointerClick } from "lucide-react";
+import usMapBg from '@/assets/maps/us-map-bg.svg';
 
 // Type for visitor data
 interface Visitor {
@@ -29,6 +30,7 @@ const LiveLook: React.FC = () => {
   });
   const mapRef = useRef<HTMLDivElement>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [showOnlyStaticMap, setShowOnlyStaticMap] = useState(false);
 
   // Generate random coordinates within the US
   const generateRandomUSCoordinates = () => {
@@ -126,8 +128,27 @@ const LiveLook: React.FC = () => {
       setMapLoaded(true);
     }, 1500);
     
-    return () => clearTimeout(timer);
-  }, []);
+    // Check if the Google Maps iframe fails to load due to API key issues
+    const fallbackTimer = setTimeout(() => {
+      if (!mapLoaded) {
+        // If map doesn't load, use only the static background
+        setShowOnlyStaticMap(true);
+        setMapLoaded(true);
+      }
+    }, 5000);
+    
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(fallbackTimer);
+    };
+  }, [mapLoaded]);
+
+  // Handle Google Maps iframe error
+  const handleMapError = () => {
+    console.log('Google Maps iframe failed to load, using static map only');
+    setShowOnlyStaticMap(true);
+    setMapLoaded(true);
+  };
 
   return (
     <div className="container mx-auto max-w-6xl py-6 px-4">
@@ -180,20 +201,43 @@ const LiveLook: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="relative h-[500px] rounded-md overflow-hidden">
+              {/* Static US Map Background */}
+              <div className="absolute inset-0 z-0 bg-slate-50 flex items-center justify-center">
+                <div 
+                  className="w-full h-full"
+                  style={{
+                    backgroundImage: `url(${usMapBg})`,
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: 'contain',
+                    opacity: showOnlyStaticMap ? 0.7 : 0.3
+                  }}
+                />
+              </div>
+
               {/* Map Container */}
-              <div ref={mapRef} className="w-full h-full">
+              <div ref={mapRef} className="w-full h-full relative z-1">
                 {mapLoaded ? (
-                  <iframe 
-                    src={`https://www.google.com/maps/embed/v1/view?key=${MOCK_GOOGLE_MAPS_API_KEY}&center=39.8283,-98.5795&zoom=4&maptype=roadmap`}
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                  ></iframe>
+                  <>
+                    {!showOnlyStaticMap && (
+                      <iframe 
+                        src={`https://www.google.com/maps/embed/v1/view?key=${MOCK_GOOGLE_MAPS_API_KEY}&center=39.8283,-98.5795&zoom=4&maptype=roadmap`}
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0, opacity: 0.7 }}
+                        allowFullScreen
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        className="absolute inset-0"
+                        onError={handleMapError}
+                      ></iframe>
+                    )}
+                    
+                    {/* Grid Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-200/10 to-transparent mix-blend-overlay" style={{backgroundSize: '75px 75px', backgroundImage: 'linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px)'}}></div>
+                  </>
                 ) : (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-800">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-800 bg-opacity-70 dark:bg-opacity-70 z-10">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-4"></div>
                     <p className="text-muted-foreground">Loading map...</p>
                   </div>
@@ -206,20 +250,20 @@ const LiveLook: React.FC = () => {
                   key={visitor.id}
                   className={`absolute w-3 h-3 rounded-full transform -translate-x-1/2 -translate-y-1/2 ${
                     visitor.isActive 
-                      ? 'bg-red-500 animate-pulse' 
+                      ? 'bg-red-500 animate-pulse shadow-lg' 
                       : 'bg-gray-400 opacity-50'
                   }`}
                   style={{
                     left: `${((visitor.lng + 125) / (125 + 66.93457)) * 100}%`,
                     top: `${((49.384358 - visitor.lat) / (49.384358 - 24.396308)) * 100}%`,
                     transition: 'opacity 1s ease-out',
-                    zIndex: 10
+                    zIndex: 20
                   }}
                 />
               ))}
               
               {/* Legend */}
-              <div className="absolute bottom-4 right-4 bg-white dark:bg-slate-700 p-2 rounded-md shadow-md z-20">
+              <div className="absolute bottom-4 right-4 bg-white/90 dark:bg-slate-700/90 p-2 rounded-md shadow-md z-30">
                 <div className="flex items-center mb-2">
                   <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse mr-2"></div>
                   <span className="text-xs">Active Visitor</span>
@@ -231,7 +275,7 @@ const LiveLook: React.FC = () => {
               </div>
               
               {/* Current Visitor Count */}
-              <Badge className="absolute top-4 right-4 z-20" variant="outline">
+              <Badge className="absolute top-4 right-4 z-30" variant="outline">
                 <Users className="h-3 w-3 mr-1" />
                 {visitors.filter(v => v.isActive).length} active visitors
               </Badge>

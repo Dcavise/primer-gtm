@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SearchStatus } from "@/types";
 import { toast } from "sonner";
 import { fetchZoneDetails } from "@/lib/serverComms";
+import { useDeveloperMode } from '@/contexts/DeveloperModeContext';
+import { mockZoningData } from '@/utils/mockData';
 
 export interface ZoningData {
   id: string;
@@ -27,11 +29,43 @@ export function useZoningData() {
   const [status, setStatus] = useState<SearchStatus>("idle");
   const [searchedAddress, setSearchedAddress] = useState<string>("");
   const [isUsingFallbackData, setIsUsingFallbackData] = useState<boolean>(false);
+  const { isDeveloperMode } = useDeveloperMode();
+
+  // Listen for developer mode changes
+  useEffect(() => {
+    const handleDevModeChange = () => {
+      // Reset data when developer mode changes
+      reset();
+    };
+    
+    window.addEventListener('developer-mode-changed', handleDevModeChange);
+    return () => window.removeEventListener('developer-mode-changed', handleDevModeChange);
+  }, []);
 
   const fetchZoningData = async (address: string) => {
     setStatus("loading");
     setIsUsingFallbackData(false);
     
+    // Use mock data in developer mode
+    if (isDeveloperMode) {
+      console.log("[DEV MODE] Using mock zoning data for address:", address);
+      
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      setZoningData(mockZoningData);
+      setSearchedAddress(address);
+      setStatus("success");
+      setIsUsingFallbackData(false);
+      
+      toast.success("Zoning data retrieved (MOCK)", {
+        description: `Showing ${mockZoningData.length} zoning records for this location.`
+      });
+      
+      return;
+    }
+    
+    // Real data fetching for non-developer mode
     try {
       console.log("Fetching zoning data for address:", address);
       
