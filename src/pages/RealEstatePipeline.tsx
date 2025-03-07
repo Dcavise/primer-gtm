@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useRealEstatePipeline } from '@/hooks/useRealEstatePipeline';
+import { useRealEstatePipeline } from '@/features/realEstate/hooks/useRealEstatePipeline';
 import { useCampuses } from '@/hooks/useCampuses';
 import { RealEstateProperty, PropertyPhase } from '@/types/realEstate';
 import { LoadingState } from '@/components/LoadingState';

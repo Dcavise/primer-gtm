@@ -87,8 +87,8 @@ const MainLayout: React.FC = () => {
           
           {/* Navigation Links */}
           <div className="px-3 space-y-1">
-            {/* Dashboard - matches the location if at root or starts with /dashboard */}
-            <Link to="/" 
+            {/* Dashboard - always first */}
+            <Link to="/dashboard" 
               className={cn("flex items-center px-2 py-2 rounded-md text-sm", 
                 (location.pathname === '/' || location.pathname.startsWith('/dashboard')) 
                   ? "bg-white/10 text-white" 
@@ -97,65 +97,27 @@ const MainLayout: React.FC = () => {
               Dashboard
             </Link>
             
-            {/* Admissions Analytics */}
-            <Link to="/admissions-analytics" 
-              className={cn("flex items-center px-2 py-2 rounded-md text-sm", 
-                location.pathname.includes('admissions-analytics') 
-                  ? "bg-white/10 text-white" 
-                  : "text-white/70 hover:bg-white/10 hover:text-white")}>
-              <Users className="h-5 w-5 mr-3" />
-              Admissions Analytics
-            </Link>
-            
-            {/* Real Estate Pipeline */}
-            <Link to="/real-estate-pipeline" 
-              className={cn("flex items-center px-2 py-2 rounded-md text-sm", 
-                location.pathname.includes('real-estate-pipeline') 
-                  ? "bg-white/10 text-white" 
-                  : "text-white/70 hover:bg-white/10 hover:text-white")}>
-              <FileText className="h-5 w-5 mr-3" />
-              Real Estate Pipeline
-            </Link>
-            
-            {/* CRM Pipeline */}
-            <Link to="/crm-pipeline" 
-              className={cn("flex items-center px-2 py-2 rounded-md text-sm", 
-                location.pathname.includes('crm-pipeline') 
-                  ? "bg-white/10 text-white" 
-                  : "text-white/70 hover:bg-white/10 hover:text-white")}>
-              <UserPlus className="h-5 w-5 mr-3" />
-              CRM Pipeline
-            </Link>
-            
-            {/* Property Research */}
-            <Link to="/property-research" 
-              className={cn("flex items-center px-2 py-2 rounded-md text-sm", 
-                location.pathname.includes('property-research') 
-                  ? "bg-white/10 text-white" 
-                  : "text-white/70 hover:bg-white/10 hover:text-white")}>
-              <Shield className="h-5 w-5 mr-3" />
-              Property Research
-            </Link>
-            
-            {/* Contact Finding */}
-            <Link to="/contact-finding" 
-              className={cn("flex items-center px-2 py-2 rounded-md text-sm", 
-                location.pathname.includes('contact-finding') 
-                  ? "bg-white/10 text-white" 
-                  : "text-white/70 hover:bg-white/10 hover:text-white")}>
-              <CreditCard className="h-5 w-5 mr-3" />
-              Contact Finding
-            </Link>
-            
-            {/* ATS */}
-            <Link to="/ats" 
-              className={cn("flex items-center px-2 py-2 rounded-md text-sm", 
-                location.pathname.includes('ats') 
-                  ? "bg-white/10 text-white" 
-                  : "text-white/70 hover:bg-white/10 hover:text-white")}>
-              <HelpCircle className="h-5 w-5 mr-3" />
-              ATS
-            </Link>
+            {/* Dynamic navigation items from features registry */}
+            {navItems
+              .filter(item => item.path !== '/dashboard') // Filter out Dashboard since we have a static link
+              .map(item => (
+              <Link 
+                key={item.path}
+                to={item.path} 
+                className={cn("flex items-center px-2 py-2 rounded-md text-sm", 
+                  location.pathname.includes(item.path.slice(1)) 
+                    ? "bg-white/10 text-white" 
+                    : "text-white/70 hover:bg-white/10 hover:text-white")}>
+                {/* Render appropriate icon based on path */}
+                {item.path.includes('admissions') && <Users className="h-5 w-5 mr-3" />}
+                {item.path.includes('real-estate') && <FileText className="h-5 w-5 mr-3" />}
+                {item.path.includes('crm') && <UserPlus className="h-5 w-5 mr-3" />}
+                {item.path.includes('property-research') && <Shield className="h-5 w-5 mr-3" />}
+                {item.path.includes('contact-finding') && <CreditCard className="h-5 w-5 mr-3" />}
+                {item.path.includes('ats') && <HelpCircle className="h-5 w-5 mr-3" />}
+                {item.label}
+              </Link>
+            ))}
           </div>
           
           {/* Spacer */}

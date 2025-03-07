@@ -1,5 +1,5 @@
-// Set debug mode based on environment, disabled in all environments
-const isDebugMode = false;
+// Set debug mode based on environment
+const isDebugMode = import.meta.env.DEV || import.meta.env.MODE === 'development';
 
 // Maximum number of logs to keep in localStorage
 const MAX_PERSISTENT_LOGS = 100;

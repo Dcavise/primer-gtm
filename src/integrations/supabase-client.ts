@@ -6,9 +6,18 @@ import type { Database } from './supabase/types';
 import { logger } from '@/utils/logger';
 
 // Ensure environment variables are properly loaded with fallbacks
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://pudncilureqpzxrxfupr.supabase.co";
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 const SUPABASE_SERVICE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_KEY || "";
+
+// Validate that we have the required environment variables
+if (!SUPABASE_URL) {
+  throw new Error("VITE_SUPABASE_URL is required. Make sure it's set in your .env file.");
+}
+
+if (!SUPABASE_ANON_KEY) {
+  throw new Error("VITE_SUPABASE_ANON_KEY is required. Make sure it's set in your .env file.");
+}
 
 // Log configuration for debugging
 logger.info(`Supabase URL: ${SUPABASE_URL}`);
@@ -108,6 +117,11 @@ class SupabaseUnifiedClient {
    * @returns Query result with success status
    */
   public async querySalesforceTable(tableName: string, limit: number = 10) {
+    if (!tableName) {
+      logger.error('Invalid table name provided to querySalesforceTable');
+      return { success: false, data: null, error: 'Invalid table name' };
+    }
+    
     return this.executeRPC('query_salesforce_table', { table_name: tableName, limit });
   }
   

@@ -1,12 +1,17 @@
-import { RouteObject } from 'react-router-dom';
+import { RouteObject, Navigate } from 'react-router-dom';
 import AdmissionsAnalytics from '../../pages/AdmissionsAnalytics';
 import { FeatureRoutes } from '../common/routes';
 
-// Define admissions analytics routes
+// Define dashboard routes (previously admissions analytics)
 const admissionsAnalyticsRoutes: RouteObject[] = [
   {
-    path: "admissions-analytics",
+    path: "dashboard",
     element: <AdmissionsAnalytics />
+  },
+  // Keep old route temporarily for compatibility
+  {
+    path: "admissions-analytics",
+    element: <Navigate to="/dashboard" replace />
   }
 ];
 
@@ -15,9 +20,9 @@ export const admissionsAnalyticsFeature: FeatureRoutes = {
   routes: admissionsAnalyticsRoutes,
   navItems: [
     {
-      path: '/admissions-analytics',
-      label: 'Admissions Analytics',
-      order: 50
+      path: '/dashboard',
+      label: 'Dashboard',
+      order: 1 // Ensure it appears first
     }
   ]
 };

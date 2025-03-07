@@ -97,10 +97,10 @@ const router = createBrowserRouter([
     element: <App />,
     errorElement: <NotFound />,
     children: [
-      // Default redirect to admissions analytics
+      // Dashboard is the main page (no redirect needed)
       {
         index: true,
-        element: <Navigate to="/admissions-analytics" replace />
+        element: <Navigate to="/dashboard" replace />
       },
       
       // Auth routes (non-authenticated)
