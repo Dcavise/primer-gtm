@@ -5,7 +5,14 @@ import { FeatureRoutes } from '../common/routes';
 const admissionsAnalyticsRoutes: RouteObject[] = [
   {
     path: "admissions-analytics",
-    element: <AdmissionsAnalytics />
+    element: <AdmissionsAnalytics />,
+    // Adding index route to ensure it loads as default child route
+    children: [
+      {
+        index: true,
+        element: <AdmissionsAnalytics />
+      }
+    ]
   }
 ];
 

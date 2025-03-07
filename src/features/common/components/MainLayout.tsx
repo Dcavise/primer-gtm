@@ -89,10 +89,9 @@ const MainLayout: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
       </header>
       
-      <main className="flex-1">
+      <main className="flex-1 bg-white">
         <Outlet />
       </main>
       

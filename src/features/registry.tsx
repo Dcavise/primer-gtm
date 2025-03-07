@@ -12,6 +12,8 @@ import { admissionsAnalyticsFeature } from './admissionsAnalytics/routes';
 
 // Register all features here
 export const featuresRegistry: FeatureRoutes[] = [
+  // Prioritize admissionsAnalytics by putting it first
+  admissionsAnalyticsFeature,
   indexFeature,
   authFeature,
   realEstateFeature,
@@ -20,8 +22,7 @@ export const featuresRegistry: FeatureRoutes[] = [
   contactFindingFeature,
   // Live Look feature removed
   crmFeature,
-  atsFeature,
-  admissionsAnalyticsFeature
+  atsFeature
 ];
 
 // Get all routes from all features
@@ -88,5 +89,8 @@ export const getAuthRoutes = () => {
 
 // Get features for navigation
 export const getNavigationFeatures = () => {
-  return featuresRegistry.filter(feature => feature.navItems && feature.navItems.length > 0);
+  // Make sure the features with navItems are returned, prioritizing admissionsAnalytics
+  const features = featuresRegistry.filter(feature => feature.navItems && feature.navItems.length > 0);
+  console.log('Navigation features:', features.map(f => f.id));
+  return features;
 };

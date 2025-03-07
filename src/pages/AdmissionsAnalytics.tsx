@@ -2,16 +2,17 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, Line, LineChart } from 'recharts';
 
 // Sample data for the charts
 const applicationData = [
-  { name: 'Jan', applications: 65, acceptances: 40, enrollments: 30 },
-  { name: 'Feb', applications: 80, acceptances: 45, enrollments: 35 },
-  { name: 'Mar', applications: 95, acceptances: 60, enrollments: 45 },
-  { name: 'Apr', applications: 120, acceptances: 75, enrollments: 50 },
-  { name: 'May', applications: 105, acceptances: 65, enrollments: 48 },
-  { name: 'Jun', applications: 90, acceptances: 55, enrollments: 40 },
+  { name: 'Mar 1', applications: 65, acceptances: 40, enrollments: 30, trend: 55 },
+  { name: 'Mar 2', applications: 80, acceptances: 45, enrollments: 35, trend: 60 },
+  { name: 'Mar 3', applications: 95, acceptances: 60, enrollments: 45, trend: 67 },
+  { name: 'Mar 4', applications: 120, acceptances: 75, enrollments: 50, trend: 80 },
+  { name: 'Mar 5', applications: 105, acceptances: 65, enrollments: 48, trend: 90 },
+  { name: 'Mar 6', applications: 90, acceptances: 55, enrollments: 40, trend: 85 },
+  { name: 'Mar 7', applications: 110, acceptances: 70, enrollments: 52, trend: 95 },
 ];
 
 const campusData = [
@@ -24,22 +25,23 @@ const campusData = [
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
 const AdmissionsAnalytics: React.FC = () => {
+  console.log('AdmissionsAnalytics component rendering');
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 bg-white">
+
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Admissions Analytics Dashboard</h1>
         <div className="flex gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">Date Range</label>
-            <Select defaultValue="6months">
+            <Select defaultValue="week">
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select date range" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="30days">Last 30 Days</SelectItem>
-                <SelectItem value="3months">Last 3 Months</SelectItem>
-                <SelectItem value="6months">Last 6 Months</SelectItem>
-                <SelectItem value="1year">Last Year</SelectItem>
+                <SelectItem value="day">Day</SelectItem>
+                <SelectItem value="week">Week</SelectItem>
+                <SelectItem value="month">Month</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -123,6 +125,7 @@ const AdmissionsAnalytics: React.FC = () => {
                   <Bar dataKey="applications" fill="#8884d8" name="Applications" />
                   <Bar dataKey="acceptances" fill="#82ca9d" name="Acceptances" />
                   <Bar dataKey="enrollments" fill="#ffc658" name="Enrollments" />
+                  <Line type="monotone" dataKey="trend" stroke="#ff7300" strokeWidth={2} name="Trend" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
