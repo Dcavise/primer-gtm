@@ -16,8 +16,8 @@ import {
   Building, 
   Search,
   LogOut,
-  BarChart,
-  GraduationCap
+  BarChart
+  // GraduationCap removed (was used for PL Hiring)
   // Activity icon removed (was used for Live Look)
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -29,7 +29,7 @@ const routes = [
   { path: "/property-research", name: "Property Research", icon: <Search className="mr-2 h-4 w-4" /> },
   { path: "/real-estate-pipeline", name: "Real Estate Pipeline", icon: <Building className="mr-2 h-4 w-4" /> },
   { path: "/find-contacts", name: "Find Contacts", icon: <UserRound className="mr-2 h-4 w-4" /> },
-  { path: "/pl-hiring", name: "PL Hiring", icon: <GraduationCap className="mr-2 h-4 w-4" /> },
+  // PL Hiring route removed
   // Live Look route removed
 ];
 

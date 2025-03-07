@@ -5,8 +5,8 @@ import {
   FileTextIcon, 
   SearchIcon, 
   UserRound, 
-  LayoutDashboard,
-  GraduationCap
+  LayoutDashboard
+  // GraduationCap removed (was used for PL Hiring)
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,13 +28,6 @@ const Index = () => {
       icon: <Building className="h-10 w-10 text-green-500 mb-4" />,
       path: "/real-estate-pipeline",
       color: "bg-green-50"
-    },
-    {
-      title: "PL Hiring",
-      description: "Review fellows and manage hiring decisions",
-      icon: <GraduationCap className="h-10 w-10 text-purple-500 mb-4" />,
-      path: "/pl-hiring",
-      color: "bg-purple-50"
     },
     {
       title: "Find Contacts",
