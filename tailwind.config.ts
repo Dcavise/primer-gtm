@@ -3,10 +3,14 @@ import type { Config } from "tailwindcss";
 export default {
   darkMode: ["class"],
   content: [
-    "./pages/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
-    "./app/**/*.{ts,tsx}",
-    "./src/**/*.{ts,tsx}",
+    "./index.html",
+    "./src/**/*.{ts,tsx,js,jsx}",
+  ],
+  safelist: [
+    'animate-fade-in',
+    'animate-fade-out',
+    'animate-slide-up',
+    'animate-slide-down',
   ],
   prefix: "",
   theme: {
@@ -243,5 +247,8 @@ export default {
       }
     }
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    require('@tailwindcss/typography'),
+  ],
 } satisfies Config;
