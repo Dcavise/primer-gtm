@@ -41,9 +41,7 @@ const MainLayout: React.FC = () => {
         <div className="h-full flex justify-between items-center px-6">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 flex items-center justify-center">
-              <svg viewBox="0 0 512 512" fill="white" width="24" height="24">
-                <path d="M200 32l-24 96 120 72-168 72 24 96 120-72-96 128 96 48 96-128 144 64-72-96-144-64 168-72-72-96-120 72 24-96-96-24z"/>
-              </svg>
+              <img src="/lovable-uploads/primer-logo.png" alt="Primer Logo" width="24" height="24" />
             </div>
             <h1 className="text-xl font-medium">Primer Dashboard</h1>
           </div>
