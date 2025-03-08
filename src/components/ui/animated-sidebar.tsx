@@ -107,15 +107,33 @@ export const DesktopSidebar = ({
       {...props}
     >
       {/* Logo */}
-      <div className={cn("flex items-center mb-10", open ? "px-3 justify-start" : "justify-center")} style={{ maxWidth: open ? "250px" : "auto", paddingRight: open ? "15px" : "0" }}>
-        <img 
-          src="/logos/029 - Small.png" 
-          alt="ZigZag Logo" 
-          className={cn(
-            "object-contain shrink-0", 
-            open ? "w-10 h-10" : "h-5 w-5"
-          )} 
-        />
+      <div className="flex items-center mb-10" style={{ 
+        position: 'relative',
+        justifyContent: open ? 'flex-start' : 'center',
+        paddingLeft: open ? '12px' : '0',
+        width: '100%'
+      }}>
+        {/* ZigZag Logo - Stays within sidebar boundaries */}
+        <div style={{ 
+          width: '40px', 
+          height: '40px', 
+          flexShrink: 0,
+          position: 'relative',
+          zIndex: 10,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <img 
+            src="/logos/029 - Small.png" 
+            alt="ZigZag Logo" 
+            style={{ 
+              width: '40px', 
+              height: '40px', 
+              objectFit: 'contain'
+            }}
+          />
+        </div>
         <AnimatePresence>
           {open && (
             <motion.img 
