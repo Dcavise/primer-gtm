@@ -1,5 +1,75 @@
 [
   {
+    "id": "family-profile-1",
+    "title": "Johnson Family",
+    "description": "Riverdale Campus",
+    "category": "Family Profile",
+    "url": "/family/johnson"
+  },
+  {
+    "id": "family-profile-2",
+    "title": "Martinez Family",
+    "description": "Oakridge Campus",
+    "category": "Family Profile",
+    "url": "/family/martinez"
+  },
+  {
+    "id": "family-profile-3",
+    "title": "Wong Family",
+    "description": "Meadowbrook Campus",
+    "category": "Family Profile",
+    "url": "/family/wong"
+  },
+  {
+    "id": "family-profile-4",
+    "title": "Smith Family",
+    "description": "Highland Campus",
+    "category": "Family Profile",
+    "url": "/family/smith"
+  },
+  {
+    "id": "family-profile-5",
+    "title": "Patel Family",
+    "description": "Westlake Campus",
+    "category": "Family Profile",
+    "url": "/family/patel"
+  },
+  {
+    "id": "staff-profile-1",
+    "title": "Michael Thompson",
+    "description": "Riverdale Campus",
+    "category": "Campus Staff Candidate",
+    "url": "/staff/thompson"
+  },
+  {
+    "id": "staff-profile-2",
+    "title": "Sarah Rodriguez",
+    "description": "Oakridge Campus",
+    "category": "Campus Staff Candidate",
+    "url": "/staff/rodriguez"
+  },
+  {
+    "id": "staff-profile-3",
+    "title": "James Wilson",
+    "description": "Meadowbrook Campus",
+    "category": "Campus Staff Candidate",
+    "url": "/staff/wilson"
+  },
+  {
+    "id": "staff-profile-4",
+    "title": "Emily Chen",
+    "description": "Highland Campus",
+    "category": "Campus Staff Candidate",
+    "url": "/staff/chen"
+  },
+  {
+    "id": "staff-profile-5",
+    "title": "David Jackson",
+    "description": "Westlake Campus",
+    "category": "Campus Staff Candidate",
+    "url": "/staff/jackson"
+  },
+  {
     "id": "dashboard-1",
     "title": "Admissions Analytics Dashboard",
     "description": "View admissions analytics and statistics",
@@ -14,13 +84,6 @@
     "url": "/dashboard"
   },
   {
-    "id": "dashboard-3",
-    "title": "Application Processing Times",
-    "description": "Monitor application processing efficiency",
-    "category": "Dashboard",
-    "url": "/dashboard"
-  },
-  {
     "id": "real-estate-1",
     "title": "Property Pipeline Overview",
     "description": "View all properties in the pipeline",
@@ -28,58 +91,9 @@
     "url": "/realestate"
   },
   {
-    "id": "real-estate-2",
-    "title": "Diligence Properties",
-    "description": "Properties in the diligence phase",
-    "category": "Real Estate",
-    "url": "/realestate"
-  },
-  {
-    "id": "real-estate-3",
-    "title": "LOI Status",
-    "description": "Track properties with letters of intent",
-    "category": "Real Estate",
-    "url": "/realestate"
-  },
-  {
-    "id": "real-estate-4",
-    "title": "Lease Agreements",
-    "description": "Monitor properties with active leases",
-    "category": "Real Estate",
-    "url": "/realestate"
-  },
-  {
-    "id": "real-estate-5",
-    "title": "Build Out Progress",
-    "description": "Track property build out progress",
-    "category": "Real Estate",
-    "url": "/realestate"
-  },
-  {
     "id": "campus-staff-1",
     "title": "Candidate Overview",
     "description": "View all staff candidates",
-    "category": "Campus Staff",
-    "url": "/campusstaff"
-  },
-  {
-    "id": "campus-staff-2",
-    "title": "Application Statuses",
-    "description": "Track candidate application progress",
-    "category": "Campus Staff",
-    "url": "/campusstaff"
-  },
-  {
-    "id": "campus-staff-3",
-    "title": "Interview Scheduling",
-    "description": "Manage candidate interview schedules",
-    "category": "Campus Staff",
-    "url": "/campusstaff"
-  },
-  {
-    "id": "campus-staff-4",
-    "title": "Offer Management",
-    "description": "Track and manage candidate offers",
     "category": "Campus Staff",
     "url": "/campusstaff"
   }
