@@ -98,7 +98,7 @@ const RealEstatePipeline: React.FC = () => {
       <header className="bg-gradient-to-r from-onyx to-outer-space text-seasalt py-8 px-6">
         <div className="container mx-auto max-w-5xl">
           <div className="flex items-center justify-between mb-3">
-            <h1 className="text-2xl md:text-3xl font-semibold">Real Estate Pipeline</h1>
+            <h1 className="text-2xl md:text-3xl font-semibold">Real Estate</h1>
           </div>
           <p className="text-seasalt/80 mt-2">
             Manage and track properties through the real estate development pipeline

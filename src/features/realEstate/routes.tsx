@@ -20,7 +20,7 @@ export const realEstateFeature: FeatureRoutes = {
   navItems: [
     {
       path: '/real-estate-pipeline',
-      label: 'Real Estate Pipeline',
+      label: 'Real Estate',
       order: 20
     }
   ]
