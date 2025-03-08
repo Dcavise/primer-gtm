@@ -96,33 +96,33 @@ export const DesktopSidebar = ({
   return (
     <motion.div
       className={cn(
-        "min-h-screen h-full px-4 py-6 hidden md:flex md:flex-col bg-neutral-50 border-r border-gray-200 w-[280px] flex-shrink-0",
+        "min-h-screen h-full px-6 py-8 hidden md:flex md:flex-col bg-neutral-50 border-r border-gray-200 w-[280px] flex-shrink-0",
         className
       )}
       animate={{
-        width: animate ? (open ? "300px" : "60px") : "300px",
+        width: animate ? (open ? "280px" : "60px") : "280px",
       }}
       onMouseEnter={() => animate && setOpen(true)}
       onMouseLeave={() => animate && setOpen(false)}
       {...props}
     >
       {/* Logo */}
-      <div className="flex items-center mb-8 justify-center">
+      <div className={cn("flex items-center mb-10", open ? "px-3 justify-start" : "justify-center")}>
         <img 
           src="/logos/029 - Small.png" 
           alt="ZigZag Logo" 
-          width="40" 
-          height="40" 
-          className="object-contain" 
+          width={open ? "24" : "28"} 
+          height={open ? "24" : "28"} 
+          className="object-contain shrink-0" 
         />
         <AnimatePresence>
           {open && (
             <motion.img 
               src="/logos/001_1 Primer Logo - Small.png" 
               alt="Primer Logo" 
-              width="120" 
-              height="40" 
-              className="object-contain ml-2" 
+              width="110" 
+              height="26" 
+              className="object-contain ml-3" 
               initial={{ opacity: 0, width: 0 }}
               animate={{ opacity: 1, width: "auto" }}
               exit={{ opacity: 0, width: 0 }}
@@ -262,14 +262,16 @@ export const SidebarLink = ({
     <RouterLink
       to={link.href}
       className={cn(
-        "flex items-center px-3 py-2.5 rounded-md font-medium text-sm group/sidebar transition duration-200 ease-in-out",
+        "flex items-center py-2.5 rounded-md font-medium text-sm group/sidebar transition duration-200 ease-in-out",
+        open ? "px-3" : "px-0 w-full justify-center",
         isActive ? "bg-blue-50 text-blue-700" : "text-gray-700 hover:bg-gray-100",
         className
       )}
       {...props}
     >
       <div className={cn(
-        "flex-shrink-0 mr-3",
+        "flex-shrink-0",
+        open ? "mr-3" : "mx-auto",
         isActive ? "text-blue-700" : "text-gray-500"
       )}>
         {link.icon}
