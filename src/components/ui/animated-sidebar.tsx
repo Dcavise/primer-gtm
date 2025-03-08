@@ -111,8 +111,8 @@ export const DesktopSidebar = ({
         <img 
           src="/logos/029 - Small.png" 
           alt="ZigZag Logo" 
-          width={open ? "24" : "28"} 
-          height={open ? "24" : "28"} 
+          width="40" 
+          height="40" 
           className="object-contain shrink-0" 
         />
         <AnimatePresence>
@@ -120,9 +120,9 @@ export const DesktopSidebar = ({
             <motion.img 
               src="/logos/001_1 Primer Logo - Small.png" 
               alt="Primer Logo" 
-              width="110" 
-              height="26" 
-              className="object-contain ml-3" 
+              width="140" 
+              height="40" 
+              className="object-contain ml-4" 
               initial={{ opacity: 0, width: 0 }}
               animate={{ opacity: 1, width: "auto" }}
               exit={{ opacity: 0, width: 0 }}
