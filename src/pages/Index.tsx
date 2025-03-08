@@ -4,7 +4,6 @@ import {
   Building, 
   FileTextIcon, 
   SearchIcon, 
-  UserRound, 
   LayoutDashboard
   // GraduationCap removed (was used for PL Hiring)
 } from "lucide-react";
@@ -23,18 +22,11 @@ const Index = () => {
       color: "bg-blue-50"
     },
     {
-      title: "Real Estate Pipeline",
+      title: "Real Estate",
       description: "Track and manage your real estate investment opportunities",
       icon: <Building className="h-10 w-10 text-green-500 mb-4" />,
       path: "/real-estate-pipeline",
       color: "bg-green-50"
-    },
-    {
-      title: "Find Contacts",
-      description: "Search and connect with property owners and industry contacts",
-      icon: <UserRound className="h-10 w-10 text-orange-500 mb-4" />,
-      path: "/find-contacts",
-      color: "bg-orange-50"
     }
   ];
 

@@ -2,7 +2,6 @@ import { FeatureRoutes } from './common/routes';
 import { indexFeature } from './common/indexRoute';
 import { realEstateFeature } from './realEstate/routes';
 import { salesforceFeature } from './salesforce/routes';
-import { contactFindingFeature } from './contactFinding/routes';
 import { atsFeature } from './ats/routes';
 import { admissionsAnalyticsFeature } from './admissionsAnalytics/routes';
 import { logger } from '@/utils/logger';
@@ -13,7 +12,6 @@ export const featuresRegistry: FeatureRoutes[] = [
   indexFeature,
   realEstateFeature,
   salesforceFeature,
-  contactFindingFeature,
   atsFeature
 ];
 

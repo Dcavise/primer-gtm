@@ -37,12 +37,6 @@ src/
       services/
       routes.tsx
     
-    contactFinding/     # Contact finding feature
-      components/
-      hooks/
-      services/
-      routes.tsx
-    
     liveLook/           # Live visualization feature
       components/
       hooks/

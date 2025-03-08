@@ -2,23 +2,6 @@ import { supabase } from '@/integrations/supabase-client';
 import axios from 'axios';
 import { toast } from "sonner";
 import { Coordinates } from "@/types";
-// Importing types that were previously defined in contacts-api.ts
-import { 
-  HunterContact, 
-  HunterDomainResponse, 
-  EmailFinderResponse, 
-  ContactsSearchParams, 
-  EmailFinderParams 
-} from "@/services/contacts-api";
-
-// Re-export the types
-export type { 
-  HunterContact, 
-  HunterDomainResponse, 
-  EmailFinderResponse, 
-  ContactsSearchParams, 
-  EmailFinderParams 
-};
 
 // Base URLs
 export const SUPABASE_URL = "https://pudncilureqpzxrxfupr.supabase.co";
@@ -166,71 +149,6 @@ export const createBoundingBox = (
   };
 };
 
-/**
- * Search for contacts by domain
- */
-export async function searchContactsByDomain(params: ContactsSearchParams): Promise<HunterDomainResponse | null> {
-  try {
-    const { domain, limit } = params;
-    // Clean up params - if department, seniority or type is 'any', remove it
-    const department = params.department === 'any' ? undefined : params.department;
-    const seniority = params.seniority === 'any' ? undefined : params.seniority;
-    const type = params.type === 'any' ? undefined : params.type as "personal" | "generic" | undefined;
-    
-    console.log('Calling domain-search edge function with params:', { domain, limit, department, seniority, type });
-    
-    const { data, error } = await supabase.functions.invoke('domain-search', {
-      body: { domain, limit, department, seniority, type }
-    });
-
-    if (error) {
-      console.error('Error calling domain-search edge function:', error);
-      throw new Error(`Failed to fetch contacts: ${error.message}`);
-    }
-
-    if (!data || !data.data) {
-      console.error('No data returned from domain-search edge function');
-      return null;
-    }
-
-    console.log(`Successfully retrieved ${data.data.emails?.length || 0} contacts for domain ${domain}`);
-    return data.data as HunterDomainResponse;
-  } catch (error) {
-    console.error('Error in searchContactsByDomain:', error);
-    throw error;
-  }
-}
-
-/**
- * Find email by name and domain
- */
-export async function findEmailByName(params: EmailFinderParams): Promise<EmailFinderResponse | null> {
-  try {
-    const { domain, company, first_name, last_name, max_duration } = params;
-    
-    console.log('Calling email-finder edge function with params:', { domain, company, first_name, last_name, max_duration });
-    
-    const { data, error } = await supabase.functions.invoke('email-finder', {
-      body: { domain, company, first_name, last_name, max_duration }
-    });
-
-    if (error) {
-      console.error('Error calling email-finder edge function:', error);
-      throw new Error(`Failed to find email: ${error.message}`);
-    }
-
-    if (!data) {
-      console.error('No data returned from email-finder edge function');
-      return null;
-    }
-
-    console.log('Successfully found email for', first_name, last_name, 'at', domain);
-    return data as EmailFinderResponse;
-  } catch (error) {
-    console.error('Error in findEmailByName:', error);
-    throw error;
-  }
-}
 
 /**
  * Check database connection status
