@@ -4,7 +4,7 @@ import { cn } from "@/utils/cn";
 import { Link as RouterLink, LinkProps, useLocation } from "react-router-dom";
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X, LayoutDashboard, Users, FileText, HelpCircle, Settings, Building } from "lucide-react";
+import { Menu, X, LayoutDashboard, Users, FileText, HelpCircle, Settings, Building, UserRound } from "lucide-react";
 import { useSidebar, SidebarProvider } from "./sidebar-context";
 import { getNavigationFeatures } from "@/features/registry";
 
@@ -58,7 +58,7 @@ const getNavItemIcon = (path: string) => {
   } else if (path.includes('real-estate')) {
     return <Building className="h-5 w-5 flex-shrink-0" />;
   } else if (path.includes('campus-staff')) {
-    return <HelpCircle className="h-5 w-5 flex-shrink-0" />;
+    return <UserRound className="h-5 w-5 flex-shrink-0" />;
   } else {
     return <Settings className="h-5 w-5 flex-shrink-0" />;
   }
