@@ -41,7 +41,7 @@ const MainLayout: React.FC = () => {
         <div className="h-full flex justify-between items-center px-6">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 flex items-center justify-center">
-              <img src="/logos/ZigZagPurple.png" alt="Primer Logo" width="24" height="24" />
+              <img src="/primerwhite.png" alt="Primer Logo" width="24" height="24" />
             </div>
             <h1 className="text-xl font-medium">Primer Dashboard</h1>
           </div>
