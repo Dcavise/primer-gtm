@@ -42,7 +42,7 @@ const MainLayout: React.FC = () => {
           {/* Logo */}
           <div className="h-24 flex items-center justify-center">
             <img 
-              src="/primerwhite.png" 
+              src="/logos/PrimerWhite.png" 
               alt="Primer Logo" 
               width="90" 
               height="90" 
