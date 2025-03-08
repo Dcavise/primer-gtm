@@ -111,8 +111,8 @@ export const DesktopSidebar = ({
         <img 
           src="/logos/029 - Small.png" 
           alt="ZigZag Logo" 
-          width="40" 
-          height="40" 
+          width={open ? "40" : "50"} 
+          height={open ? "40" : "50"} 
           className="object-contain shrink-0" 
         />
         <AnimatePresence>
