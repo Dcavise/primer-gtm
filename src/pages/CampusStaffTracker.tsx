@@ -4,11 +4,11 @@ import { Button } from "../components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 
-const ATSTracker: React.FC = () => {
+const CampusStaffTracker: React.FC = () => {
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Applicant Tracking System</h1>
+        <h1 className="text-3xl font-bold">Campus Staff</h1>
         <Button>Add New Candidate</Button>
       </div>
 
@@ -232,4 +232,4 @@ const ATSTracker: React.FC = () => {
   );
 };
 
-export default ATSTracker;
+export default CampusStaffTracker;

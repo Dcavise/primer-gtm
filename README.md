@@ -1,6 +1,6 @@
 # Primer GTM Dashboard
 
-*Updated: March 7, 2025 - Added new features for CRM Pipeline, ATS, and Admissions Analytics*
+*Updated: March 7, 2025 - Added new features for CRM Pipeline, Campus Staff, and Admissions Analytics*
 
 ## Project info
 

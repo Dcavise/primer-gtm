@@ -73,7 +73,7 @@ const MainLayout: React.FC = () => {
                 {/* Render appropriate icon based on path */}
                 {item.path.includes('admissions') && <Users className="h-5 w-5 mr-3" />}
                 {item.path.includes('real-estate') && <FileText className="h-5 w-5 mr-3" />}
-                {item.path.includes('ats') && <HelpCircle className="h-5 w-5 mr-3" />}
+                {item.path.includes('campus-staff') && <HelpCircle className="h-5 w-5 mr-3" />}
                 {item.label}
               </Link>
             ))}
