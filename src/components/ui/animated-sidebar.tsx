@@ -107,7 +107,7 @@ export const DesktopSidebar = ({
       {...props}
     >
       {/* Logo */}
-      <div className={cn("flex items-center mb-10", open ? "px-3 justify-start" : "justify-center")}>
+      <div className={cn("flex items-center mb-10", open ? "px-3 justify-start" : "justify-center")} style={{ maxWidth: open ? "250px" : "auto", paddingRight: open ? "15px" : "0" }}>
         <img 
           src="/logos/029 - Small.png" 
           alt="ZigZag Logo" 
@@ -121,11 +121,11 @@ export const DesktopSidebar = ({
             <motion.img 
               src="/logos/001_1 Primer Logo - Small.png" 
               alt="Primer Logo" 
-              width="140" 
+              width="130" 
               height="40" 
-              className="object-contain ml-4" 
+              className="object-contain ml-3" 
               initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: "auto" }}
+              animate={{ opacity: 1, width: "130px" }}
               exit={{ opacity: 0, width: 0 }}
               transition={{ duration: 0.2 }}
             />
