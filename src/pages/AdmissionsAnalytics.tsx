@@ -136,8 +136,8 @@ const AdmissionsAnalytics = () => {
   const getDataByTruncation = () => {
     switch (dateTruncation) {
       case 'daily': {
-        // Create a copy of the last 3 days of data
-        const days = dailyData.slice(-4, -1);
+        // Create a copy of the last 4 days of data so we have 5 total columns
+        const days = dailyData.slice(-5, -1);
         // Add today as "Today" for the last entry
         const withToday = [...days, { ...dailyData[dailyData.length - 1], date: 'Today' }];
         return withToday;
@@ -188,62 +188,24 @@ const AdmissionsAnalytics = () => {
   const currentTrendData = getTrendDataByTruncation();
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto py-6 px-8 max-w-7xl">
+      <h1 className="text-2xl font-semibold text-gray-800 mb-6">PRIME TIME</h1>
       {/* Dashboard header with improved design */}
-      <Card className="mb-6 border-none shadow-sm bg-gradient-to-r from-blue-50 to-indigo-50">
-        <div className="px-6 py-5">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
-            <div className="mb-4 md:mb-0">
-              <h1 className="text-3xl md:text-4xl font-semibold text-slate-800 flex items-center mb-1">
-                <span className="inline-flex items-center justify-center h-10 w-10 bg-slate-100 rounded-md mr-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                </span>
-                Admissions Analytics
-              </h1>
-              <p className="text-slate-500 ml-12 text-sm">25/26 Primer Student Enrollment</p>
-            </div>
-            
-            <div className="flex items-center bg-white rounded-md px-3 py-1 shadow-sm border border-gray-100">
-              <span className="text-xs text-gray-500 mr-2">Last updated:</span>
-              <span className="text-sm font-medium">March 7, 2025</span>
-            </div>
-          </div>
+      <Card className="mb-8 border border-gray-200 bg-white overflow-hidden rounded-lg shadow-sm">
+        <div className="px-0">
+
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 bg-white p-3 rounded-md border border-gray-100">
-            <div className="flex flex-col">
-              <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                Date Truncation
-              </label>
-              <Select 
-                value={dateTruncation}
-                onValueChange={(value) => setDateTruncation(value as 'daily' | 'weekly' | 'monthly')}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select date truncation" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex flex-col">
-              <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-                Campus
-              </label>
+          <div className="flex flex-wrap items-center justify-between p-5 bg-white">
+            {/* Campus Selection Dropdown - Extended Width */}
+            <div className="w-full md:w-1/3 mb-3 md:mb-0 md:mr-4">
               <Select defaultValue="all">
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select campus" />
+                <SelectTrigger className="w-full border border-gray-300 rounded-md px-4 py-2 shadow-sm hover:border-gray-400 focus:outline-none">
+                  <div className="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    <SelectValue placeholder="All Campuses" />
+                  </div>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Campuses</SelectItem>
@@ -254,12 +216,37 @@ const AdmissionsAnalytics = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Truncation Options */}
+            <div className="flex space-x-2">
+              <button 
+                className={`px-4 py-2 rounded-md ${dateTruncation === 'daily' ? 'text-white' : 'bg-white text-gray-700 border border-gray-300'}`}
+                style={dateTruncation === 'daily' ? { backgroundColor: '#773FF0' } : {}}
+                onClick={() => setDateTruncation('daily')}
+              >
+                Daily
+              </button>
+              <button 
+                className={`px-4 py-2 rounded-md ${dateTruncation === 'weekly' ? 'text-white' : 'bg-white text-gray-700 border border-gray-300'}`}
+                style={dateTruncation === 'weekly' ? { backgroundColor: '#773FF0' } : {}}
+                onClick={() => setDateTruncation('weekly')}
+              >
+                Weekly
+              </button>
+              <button 
+                className={`px-4 py-2 rounded-md ${dateTruncation === 'monthly' ? 'text-white' : 'bg-white text-gray-700 border border-gray-300'}`}
+                style={dateTruncation === 'monthly' ? { backgroundColor: '#773FF0' } : {}}
+                onClick={() => setDateTruncation('monthly')}
+              >
+                Monthly
+              </button>
+            </div>
           </div>
         </div>
       </Card>
       
       {/* Metrics Section */}
-      <div className="mb-8 bg-white rounded-lg border shadow-sm">
+      <div className="mb-8 bg-white rounded-lg border border-gray-200 shadow-sm">
         <div className="px-4 py-4">
           <div className="flex border-b pb-2 text-sm font-medium text-gray-500">
             <div className="w-1/6"></div>
