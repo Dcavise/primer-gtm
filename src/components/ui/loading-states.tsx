@@ -41,7 +41,7 @@ export function LoadingOverlay({
       {children}
       {loading && (
         <div className={cn(
-          'absolute inset-0 flex items-center justify-center bg-background/80',
+          'absolute inset-0 flex items-center justify-center bg-seasalt/80',
           blur && 'backdrop-blur-[2px]',
           overlayClassName
         )}>
@@ -58,10 +58,10 @@ export function LoadingOverlay({
 export function CardSkeleton({ className }: { className?: string }) {
   return (
     <div className={cn('space-y-3', className)}>
-      <Skeleton className="h-[125px] w-full rounded-lg" />
+      <Skeleton className="h-[125px] w-full rounded-lg bg-platinum" />
       <div className="space-y-2">
-        <Skeleton className="h-4 w-[80%]" />
-        <Skeleton className="h-4 w-[60%]" />
+        <Skeleton className="h-4 w-[80%] bg-platinum" />
+        <Skeleton className="h-4 w-[60%] bg-platinum" />
       </div>
     </div>
   );
@@ -80,7 +80,7 @@ export function TableRowSkeleton({
   return (
     <div className={cn('flex items-center space-x-4 py-3', className)}>
       {Array.from({ length: columns }).map((_, i) => (
-        <Skeleton key={i} className={`h-4 w-[${100 / columns - 5}%]`} />
+        <Skeleton key={i} className={`h-4 w-[${100 / columns - 5}%] bg-platinum`} />
       ))}
     </div>
   );
@@ -100,8 +100,8 @@ export function FormSkeleton({
     <div className={cn('space-y-6', className)}>
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="space-y-2">
-          <Skeleton className="h-4 w-[30%]" />
-          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-4 w-[30%] bg-platinum" />
+          <Skeleton className="h-10 w-full bg-platinum" />
         </div>
       ))}
     </div>
@@ -123,9 +123,9 @@ export function TextSkeleton({
   return (
     <div className={cn('space-y-2', className)}>
       {Array.from({ length: lines - 1 }).map((_, i) => (
-        <Skeleton key={i} className="h-4 w-full" />
+        <Skeleton key={i} className="h-4 w-full bg-platinum" />
       ))}
-      <Skeleton className={`h-4 w-[${lastLineWidth}%]`} />
+      <Skeleton className={`h-4 w-[${lastLineWidth}%] bg-platinum`} />
     </div>
   );
 } 

@@ -113,14 +113,14 @@ const admissionsMetrics = [
   },
 ];
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+const COLORS = ['#474b4f', '#6b6e70', '#86888a', '#a9aaab'];
 
 // Sample open pipeline data
 const openPipelineData = [
-  { name: 'Family Interview', value: 85, fill: '#8884d8' },
-  { name: 'Awaiting Documents', value: 65, fill: '#83a6ed' },
-  { name: 'Admission Offered', value: 45, fill: '#8dd1e1' },
-  { name: 'Closed Won', value: 30, fill: '#82ca9d' },
+  { name: 'Family Interview', value: 85, fill: '#474b4f' },
+  { name: 'Awaiting Documents', value: 65, fill: '#6b6e70' },
+  { name: 'Admission Offered', value: 45, fill: '#86888a' },
+  { name: 'Closed Won', value: 30, fill: '#a9aaab' },
 ];
 
 const AdmissionsAnalytics = () => {
@@ -174,6 +174,7 @@ const AdmissionsAnalytics = () => {
   };
 
   // Helper to get appropriate color class for change values
+  // Keeping red/green indicators for changes as requested
   const getChangeColor = (change: number) => {
     return change >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
   };
@@ -188,20 +189,20 @@ const AdmissionsAnalytics = () => {
   const currentTrendData = getTrendDataByTruncation();
 
   return (
-    <div className="container mx-auto py-6 px-8 max-w-7xl">
-      <h1 className="text-2xl font-semibold text-gray-800 mb-6">PRIME TIME</h1>
+    <div className="container mx-auto py-6 px-8 max-w-7xl bg-seasalt">
+      <h1 className="text-2xl font-semibold text-eerie-black mb-6">PRIME TIME</h1>
       {/* Dashboard header with improved design */}
-      <Card className="mb-8 border border-gray-200 bg-white overflow-hidden rounded-lg shadow-sm">
+      <Card className="mb-8 border border-platinum bg-seasalt overflow-hidden rounded-lg shadow-sm">
         <div className="px-0">
 
           
-          <div className="flex flex-wrap items-center justify-between p-5 bg-white">
+          <div className="flex flex-wrap items-center justify-between p-5 bg-seasalt">
             {/* Campus Selection Dropdown - Extended Width */}
             <div className="w-full md:w-1/3 mb-3 md:mb-0 md:mr-4">
               <Select defaultValue="all">
-                <SelectTrigger className="w-full border border-gray-300 rounded-md px-4 py-2 shadow-sm hover:border-gray-400 focus:outline-none">
+                <SelectTrigger className="w-full border border-platinum rounded-md px-4 py-2 shadow-sm hover:border-french-gray focus:outline-none">
                   <div className="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-slate-gray" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
                     <SelectValue placeholder="All Campuses" />
@@ -220,22 +221,22 @@ const AdmissionsAnalytics = () => {
             {/* Truncation Options */}
             <div className="flex space-x-2">
               <button 
-                className={`px-4 py-2 rounded-md ${dateTruncation === 'daily' ? 'text-white' : 'bg-white text-gray-700 border border-gray-300'}`}
-                style={dateTruncation === 'daily' ? { backgroundColor: '#773FF0' } : {}}
+                className={`px-4 py-2 rounded-md ${dateTruncation === 'daily' ? 'text-seasalt' : 'bg-seasalt text-outer-space border border-platinum'}`}
+                style={dateTruncation === 'daily' ? { backgroundColor: '#474b4f' } : {}}
                 onClick={() => setDateTruncation('daily')}
               >
                 Daily
               </button>
               <button 
-                className={`px-4 py-2 rounded-md ${dateTruncation === 'weekly' ? 'text-white' : 'bg-white text-gray-700 border border-gray-300'}`}
-                style={dateTruncation === 'weekly' ? { backgroundColor: '#773FF0' } : {}}
+                className={`px-4 py-2 rounded-md ${dateTruncation === 'weekly' ? 'text-seasalt' : 'bg-seasalt text-outer-space border border-platinum'}`}
+                style={dateTruncation === 'weekly' ? { backgroundColor: '#474b4f' } : {}}
                 onClick={() => setDateTruncation('weekly')}
               >
                 Weekly
               </button>
               <button 
-                className={`px-4 py-2 rounded-md ${dateTruncation === 'monthly' ? 'text-white' : 'bg-white text-gray-700 border border-gray-300'}`}
-                style={dateTruncation === 'monthly' ? { backgroundColor: '#773FF0' } : {}}
+                className={`px-4 py-2 rounded-md ${dateTruncation === 'monthly' ? 'text-seasalt' : 'bg-seasalt text-outer-space border border-platinum'}`}
+                style={dateTruncation === 'monthly' ? { backgroundColor: '#474b4f' } : {}}
                 onClick={() => setDateTruncation('monthly')}
               >
                 Monthly
@@ -246,9 +247,9 @@ const AdmissionsAnalytics = () => {
       </Card>
       
       {/* Metrics Section */}
-      <div className="mb-8 bg-white rounded-lg border border-gray-200 shadow-sm">
+      <div className="mb-8 bg-seasalt rounded-lg border border-platinum shadow-sm">
         <div className="px-4 py-4">
-          <div className="flex border-b pb-2 text-sm font-medium text-gray-500">
+          <div className="flex border-b pb-2 text-sm font-medium text-slate-gray">
             <div className="w-1/6"></div>
             {columnData.map((item, index) => (
               <div key={index} className="w-1/6 text-center">{formatDateHeader(item.date)}</div>
@@ -259,7 +260,7 @@ const AdmissionsAnalytics = () => {
           <div className="flex flex-col divide-y">
             {admissionsMetrics.map((metric) => (
               <div key={metric.id} className="flex py-3 items-center">
-                <div className="w-1/6 font-medium">{metric.name}</div>
+                <div className="w-1/6 font-medium text-outer-space">{metric.name}</div>
                 
                 {columnData.map((item, index) => {
                   const value = metric.id === 'leads-created' ? item.leadsCreated :
@@ -272,7 +273,7 @@ const AdmissionsAnalytics = () => {
                   
                   return (
                     <div key={index} className="w-1/6 text-center">
-                      <div className="font-semibold">{formatValue(value)}</div>
+                      <div className="font-semibold text-eerie-black">{formatValue(value)}</div>
                       <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block ${getChangeColor(change)}`}>
                         {formatChange(change)}%
                       </div>
@@ -290,7 +291,7 @@ const AdmissionsAnalytics = () => {
                         dataKey={metric.id === 'leads-created' ? 'leadsCreated' : 
                                metric.id === 'leads-converted' ? 'leadsConverted' : 
                                metric.id === 'admission-offered' ? 'admissionOffered' : 'closedWon'} 
-                        stroke="#8884d8" 
+                        stroke="#474b4f" 
                         strokeWidth={2} 
                         dot={false}
                         activeDot={false}
@@ -306,39 +307,39 @@ const AdmissionsAnalytics = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card>
+        <Card className="bg-seasalt border border-platinum">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-gray-500">Total Enrolled</CardTitle>
+            <CardTitle className="text-sm text-slate-gray">Total Enrolled</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">555</div>
+            <div className="text-3xl font-bold text-eerie-black">555</div>
             <div className="text-sm text-green-600">+12% from last period</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-seasalt border border-platinum">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-gray-500">Admission Offered</CardTitle>
+            <CardTitle className="text-sm text-slate-gray">Admission Offered</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">62.4%</div>
+            <div className="text-3xl font-bold text-eerie-black">62.4%</div>
             <div className="text-sm text-green-600">+5% from last period</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-seasalt border border-platinum">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-gray-500">Win Rate</CardTitle>
+            <CardTitle className="text-sm text-slate-gray">Win Rate</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">42.8%</div>
+            <div className="text-3xl font-bold text-eerie-black">42.8%</div>
             <div className="text-sm text-red-600">-2% from last period</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-seasalt border border-platinum">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-gray-500">Capacity Remaining</CardTitle>
+            <CardTitle className="text-sm text-slate-gray">Capacity Remaining</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">12 days</div>
+            <div className="text-3xl font-bold text-eerie-black">12 days</div>
             <div className="text-sm text-green-600">-3 days from last period</div>
           </CardContent>
         </Card>
@@ -346,7 +347,7 @@ const AdmissionsAnalytics = () => {
 
       {/* Charts */}
       <div className="mb-6">
-        <Card>
+        <Card className="bg-seasalt border-platinum">
           <CardHeader>
             <CardTitle>Pipeline</CardTitle>
             <CardDescription>Pipeline stages from Family Interview to Closed Won</CardDescription>
@@ -358,12 +359,12 @@ const AdmissionsAnalytics = () => {
                   data={openPipelineData}
                   margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#d2d3d4" />
+                  <XAxis dataKey="name" tick={{fill: "#6b6e70"}} />
+                  <YAxis tick={{fill: "#6b6e70"}} />
                   <Tooltip />
-                  <Legend />
-                  <Bar dataKey="value" fill="#8884d8" name="Count" />
+                  <Legend wrapperStyle={{color: "#6b6e70"}} />
+                  <Bar dataKey="value" fill="#474b4f" name="Count" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -373,16 +374,16 @@ const AdmissionsAnalytics = () => {
 
       {/* Tabs Section - Pipeline and Campus Distribution */}
       <Tabs defaultValue="pipeline" className="mt-8">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
-          <TabsTrigger value="campus">Campus Distribution</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 bg-anti-flash">
+          <TabsTrigger value="pipeline" className="text-outer-space data-[state=active]:bg-seasalt">Pipeline</TabsTrigger>
+          <TabsTrigger value="campus" className="text-outer-space data-[state=active]:bg-seasalt">Campus Distribution</TabsTrigger>
         </TabsList>
         
         <TabsContent value="pipeline" className="mt-4">
-          <Card>
+          <Card className="bg-seasalt border-platinum">
             <CardHeader>
-              <CardTitle>Pipeline Stages</CardTitle>
-              <CardDescription>Current admissions pipeline by stage</CardDescription>
+              <CardTitle className="text-eerie-black">Pipeline Stages</CardTitle>
+              <CardDescription className="text-slate-gray">Current admissions pipeline by stage</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-80">
@@ -395,14 +396,14 @@ const AdmissionsAnalytics = () => {
                       labelLine={false}
                       label={false}
                       outerRadius={130}
-                      fill="#8884d8"
+                      fill="#474b4f"
                       dataKey="value"
                     >
                       {openPipelineData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Legend />
+                    <Legend wrapperStyle={{color: "#6b6e70"}} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -411,10 +412,10 @@ const AdmissionsAnalytics = () => {
         </TabsContent>
         
         <TabsContent value="campus" className="mt-4">
-          <Card>
+          <Card className="bg-seasalt border-platinum">
             <CardHeader>
-              <CardTitle>Campus Distribution</CardTitle>
-              <CardDescription>Admissions by campus location</CardDescription>
+              <CardTitle className="text-eerie-black">Campus Distribution</CardTitle>
+              <CardDescription className="text-slate-gray">Admissions by campus location</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-80">
@@ -427,14 +428,14 @@ const AdmissionsAnalytics = () => {
                       labelLine={false}
                       label={false}
                       outerRadius={130}
-                      fill="#8884d8"
+                      fill="#474b4f"
                       dataKey="value"
                     >
                       {campusData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Legend />
+                    <Legend wrapperStyle={{color: "#6b6e70"}} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>

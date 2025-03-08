@@ -25,10 +25,10 @@ const NotFound = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-anti-flash">
       <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">404</h1>
-        <p className="text-xl text-gray-600 mb-4">Oops! Page not found</p>
+        <h1 className="text-4xl font-bold mb-4 text-eerie-black">404</h1>
+        <p className="text-xl text-slate-gray mb-4">Oops! Page not found</p>
         <Button 
           variant="default" 
           onClick={handleBackClick}

@@ -1,3 +1,12 @@
+/* These Tailwind directives are processed by PostCSS and used to generate the CSS styles */
+/* See postcss.config.js and tailwind.config.ts for configuration */
+/* 
+ * Tailwind CSS Directives
+ * These directives (@tailwind, @apply) are processed by the Tailwind CSS framework
+ * and transformed into actual CSS during build time.
+ * For IDE linting: These directives are valid in a Tailwind CSS context even though
+ * your CSS linter might not recognize them.
+ */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,105 +14,114 @@
 @layer base {
   :root {
     /* Base colors */
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 210 17% 98%;
+    --foreground: 210 11% 15%;
 
     /* Component colors */
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --card: 210 17% 98%;
+    --card-foreground: 210 11% 15%;
+    --popover: 210 17% 98%;
+    --popover-foreground: 210 11% 15%;
     
     /* Semantic colors */
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --primary: 210 9% 31%;
+    --primary-foreground: 210 17% 98%;
+    --secondary: 210 14% 89%;
+    --secondary-foreground: 210 9% 31%;
+    --muted: 210 14% 83%;
+    --muted-foreground: 210 7% 46%;
+    --accent: 210 11% 71%;
+    --accent-foreground: 210 11% 15%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 210 17% 98%;
     
     /* Border and input colors */
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 210 14% 89%;
+    --input: 210 14% 89%;
+    --ring: 210 9% 31%;
     
     /* Sizing */
     --radius: 0.5rem;
     
     /* Custom colors */
+    --seasalt: #f8f9fa;
+    --anti-flash-white: #e9ecef;
+    --platinum: #dee2e6;
+    --french-gray: #ced4da;
+    --french-gray-2: #adb5bd;
     --slate-gray: #6c757d;
-    --slate-gray-400: #495057;
+    --outer-space: #495057;
+    --onyx: #343a40;
+    --eerie-black: #212529;
   }
  
   .dark {
     /* Base colors */
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 210 11% 15%;
+    --foreground: 210 17% 98%;
     
     /* Component colors */
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --card: 210 11% 15%;
+    --card-foreground: 210 17% 98%;
+    --popover: 210 11% 15%;
+    --popover-foreground: 210 17% 98%;
     
     /* Semantic colors */
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --primary: 210 17% 98%;
+    --primary-foreground: 210 11% 15%;
+    --secondary: 210 10% 23%;
+    --secondary-foreground: 210 17% 98%;
+    --muted: 210 10% 23%;
+    --muted-foreground: 210 11% 71%;
+    --accent: 210 10% 23%;
+    --accent-foreground: 210 17% 98%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 210 17% 98%;
     
     /* Border and input colors */
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 210 10% 23%;
+    --input: 210 10% 23%;
+    --ring: 210 14% 83%;
   }
 }
  
+/* Base styles that are applied to all elements */
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border; /* Apply border color to all elements with borders */
   }
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-anti-flash text-outer-space antialiased; /* Apply background, text color and font smoothing */
   }
 }
 
+/* Component styles that can be composed together */
 @layer components {
   /* Loading state shimmer effect */
   .shimmer-bg {
-    @apply relative overflow-hidden bg-gray-200;
+    @apply relative overflow-hidden bg-platinum; /* Apply platinum background to shimmer elements */
   }
 
   .shimmer-bg::before {
-    @apply absolute inset-0;
+    @apply absolute inset-0; /* Position element to cover the entire parent */
     content: '';
     background: linear-gradient(
       90deg, 
-      rgba(255, 255, 255, 0) 0%, 
-      rgba(255, 255, 255, 0.8) 50%, 
-      rgba(255, 255, 255, 0) 100%
+      rgba(232, 236, 239, 0) 0%, 
+      rgba(232, 236, 239, 0.8) 50%, 
+      rgba(232, 236, 239, 0) 100%
     );
     animation: shimmer 1.5s infinite;
   }
 
-  /* Card styles */
+  /* Card hover animation styles */
   .card-hover {
-    @apply transition-all duration-200 hover:shadow-md hover:-translate-y-1;
+    @apply transition-all duration-200 hover:shadow-md hover:-translate-y-1; /* Add subtle movement on hover */
   }
 
-  /* Button styles */
+  /* Icon button styles */
   .btn-icon {
-    @apply inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 w-10;
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outer-space focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 w-10; /* Icon button with accessibility focus states */
   }
 }
 
@@ -117,11 +135,11 @@
   }
 
   .flex-center {
-    @apply flex items-center justify-center;
+    @apply flex items-center justify-center; /* Utility for centering flex elements */
   }
 
   .grid-center {
-    @apply grid place-items-center;
+    @apply grid place-items-center; /* Utility for centering grid elements */
   }
 }
 

@@ -136,12 +136,12 @@ export const CampusSelector: React.FC<CampusSelectorProps> = ({
         className="rounded-md border border-slate-200 overflow-hidden shadow-sm"
       >
         <CollapsibleTrigger asChild onClick={handleTogglePanel}>
-          <div className="flex items-center justify-between p-4 bg-white cursor-pointer hover:bg-slate-50 transition-colors">
+          <div className="flex items-center justify-between p-4 bg-seasalt cursor-pointer hover:bg-anti-flash transition-colors">
             <div className="flex items-center space-x-3">
-              <Building className="h-5 w-5 text-slate-700" />
+              <Building className="h-5 w-5 text-outer-space" />
               <div>
-                <h3 className="font-medium text-slate-800">Campus Selection</h3>
-                <p className="text-sm text-slate-500">
+                <h3 className="font-medium text-eerie-black">Campus Selection</h3>
+                <p className="text-sm text-slate-gray">
                   {selectedCampusIds.length === 0 
                     ? 'No campuses selected' 
                     : selectedCampusIds.length === validCampuses.length 
@@ -158,37 +158,37 @@ export const CampusSelector: React.FC<CampusSelectorProps> = ({
                     .filter(campus => selectedCampusIds.includes(campus.campus_id))
                     .slice(0, 2)
                     .map(campus => (
-                      <Badge key={campus.campus_id} variant="outline" className="bg-slate-100">
+                      <Badge key={campus.campus_id} variant="outline" className="bg-anti-flash">
                         {campus.campus_name}
                       </Badge>
                     ))}
                   {selectedCampusIds.length > 2 && (
-                    <Badge variant="outline" className="bg-slate-100">
+                    <Badge variant="outline" className="bg-anti-flash">
                       +{selectedCampusIds.length - 2} more
                     </Badge>
                   )}
                 </div>
               )}
               {isOpen ? (
-                <ChevronUp className="h-5 w-5 text-slate-500" />
+                <ChevronUp className="h-5 w-5 text-slate-gray" />
               ) : (
-                <ChevronDown className="h-5 w-5 text-slate-500" />
+                <ChevronDown className="h-5 w-5 text-slate-gray" />
               )}
             </div>
           </div>
         </CollapsibleTrigger>
         
         <CollapsibleContent>
-          <div className="p-4 bg-slate-50 border-t border-slate-200">
+          <div className="p-4 bg-anti-flash border-t border-platinum">
             <div className="flex items-center mb-3 space-x-2">
               <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-gray" />
                 <Input 
                   type="text" 
                   placeholder="Search campuses..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 bg-white border-slate-300 focus-visible:ring-slate-400"
+                  className="pl-9 bg-seasalt border-french-gray focus-visible:ring-slate-gray"
                 />
               </div>
               <Button 
@@ -202,12 +202,12 @@ export const CampusSelector: React.FC<CampusSelectorProps> = ({
               </Button>
             </div>
             
-            <div className="flex items-center gap-2 mb-3 p-2 bg-white rounded border border-slate-200">
+            <div className="flex items-center gap-2 mb-3 p-2 bg-seasalt rounded border border-platinum">
               <Checkbox 
                 id="select-all"
                 checked={selectAll}
                 onCheckedChange={(checked) => handleSelectAllToggle(!!checked)}
-                className="data-[state=checked]:bg-slate-700 data-[state=checked]:border-slate-700"
+                className="data-[state=checked]:bg-onyx data-[state=checked]:border-onyx"
               />
               <Label htmlFor="select-all" className="font-medium">
                 All Campuses
@@ -216,7 +216,7 @@ export const CampusSelector: React.FC<CampusSelectorProps> = ({
             
             <div className="max-h-[300px] overflow-y-auto pr-1 space-y-1">
               {filteredCampuses.length === 0 ? (
-                <div className="text-center p-4 text-slate-500">
+                <div className="text-center p-4 text-slate-gray">
                   No campuses found matching "{searchQuery}"
                 </div>
               ) : (
@@ -224,15 +224,15 @@ export const CampusSelector: React.FC<CampusSelectorProps> = ({
                   {filteredCampuses.map(campus => (
                     <div 
                       key={campus.campus_id} 
-                      className={`flex items-center gap-2 p-2 rounded hover:bg-white transition-colors ${
-                        selectedCampusIds.includes(campus.campus_id) ? 'bg-white border border-slate-200' : ''
+                      className={`flex items-center gap-2 p-2 rounded hover:bg-seasalt transition-colors ${
+                        selectedCampusIds.includes(campus.campus_id) ? 'bg-seasalt border border-platinum' : ''
                       }`}
                     >
                       <Checkbox 
                         id={campus.campus_id}
                         checked={selectedCampusIds.includes(campus.campus_id)}
                         onCheckedChange={(checked) => handleCampusToggle(campus.campus_id, !!checked)}
-                        className="data-[state=checked]:bg-slate-700 data-[state=checked]:border-slate-700"
+                        className="data-[state=checked]:bg-onyx data-[state=checked]:border-onyx"
                       />
                       <Label 
                         htmlFor={campus.campus_id} 
@@ -242,7 +242,7 @@ export const CampusSelector: React.FC<CampusSelectorProps> = ({
                         {campus.campus_name}
                       </Label>
                       {selectedCampusIds.includes(campus.campus_id) && (
-                        <Check className="h-3.5 w-3.5 ml-auto text-slate-500" />
+                        <Check className="h-3.5 w-3.5 ml-auto text-slate-gray" />
                       )}
                     </div>
                   ))}
@@ -250,7 +250,7 @@ export const CampusSelector: React.FC<CampusSelectorProps> = ({
               )}
             </div>
             
-            <div className="mt-4 text-sm text-slate-500 p-2 bg-white rounded border border-slate-200">
+            <div className="mt-4 text-sm text-slate-gray p-2 bg-seasalt rounded border border-platinum">
               {selectedCampusIds.length === 0 
                 ? 'No campuses selected - showing all data' 
                 : selectedCampusIds.length === validCampuses.length 

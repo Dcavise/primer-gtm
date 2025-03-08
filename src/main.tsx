@@ -37,20 +37,20 @@ class ErrorBoundary extends React.Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-50">
-          <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
+        <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-anti-flash">
+          <div className="w-full max-w-md p-6 bg-seasalt rounded-lg shadow-md">
             <h2 className="text-2xl font-bold text-red-600 mb-4">
               Something went wrong
             </h2>
-            <p className="text-gray-700 mb-4">
+            <p className="text-outer-space mb-4">
               An unexpected error occurred. Please try refreshing the page.
             </p>
-            <pre className="bg-gray-100 p-3 rounded text-sm overflow-auto max-h-40 mb-4">
+            <pre className="bg-platinum p-3 rounded text-sm overflow-auto max-h-40 mb-4">
               {this.state.error?.message || 'Unknown error'}
             </pre>
             <button
               onClick={this.handleResetError}
-              className="w-full py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              className="w-full py-2 px-4 bg-outer-space text-seasalt rounded hover:bg-onyx transition-colors"
             >
               Try Again
             </button>
@@ -115,7 +115,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         router={router} 
         fallbackElement={
           <div className="flex items-center justify-center h-screen">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-outer-space"></div>
           </div>
         }
       />

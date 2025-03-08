@@ -82,8 +82,8 @@ const RealEstatePipeline: React.FC = () => {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-[50vh]">
-        <div className="text-destructive mb-2">Error loading pipeline data</div>
-        <div className="text-sm text-muted-foreground">Please try again later</div>
+        <div className="text-red-600 mb-2">Error loading pipeline data</div>
+        <div className="text-sm text-slate-gray">Please try again later</div>
       </div>
     );
   }
@@ -94,13 +94,13 @@ const RealEstatePipeline: React.FC = () => {
   ) || [];
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-gradient-to-r from-slate-700 to-slate-600 text-white py-8 px-6">
+    <div className="min-h-screen bg-anti-flash">
+      <header className="bg-gradient-to-r from-onyx to-outer-space text-seasalt py-8 px-6">
         <div className="container mx-auto max-w-5xl">
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-2xl md:text-3xl font-semibold">Real Estate Pipeline</h1>
           </div>
-          <p className="text-white/80 mt-2">
+          <p className="text-seasalt/80 mt-2">
             Manage and track properties through the real estate development pipeline
           </p>
         </div>
@@ -116,7 +116,7 @@ const RealEstatePipeline: React.FC = () => {
                 onSelectCampuses={handleSelectCampuses}
               />
               
-              <div className="mt-2 text-sm text-muted-foreground">
+              <div className="mt-2 text-sm text-slate-gray">
                 {selectedCampusNames.length > 0
                   ? `Showing properties for ${selectedCampusNames.join(', ')}` 
                   : `Showing properties across all campuses`}
@@ -127,9 +127,9 @@ const RealEstatePipeline: React.FC = () => {
 
         {/* Stages header row */}
         <div className="grid grid-cols-[200px_repeat(10,1fr)] gap-2 mb-4 overflow-x-auto">
-          <div className="font-semibold p-2">Campus</div>
+          <div className="font-semibold p-2 text-eerie-black">Campus</div>
           {PHASES.map(phase => (
-            <div key={phase} className="font-semibold p-2 text-center text-sm">
+            <div key={phase} className="font-semibold p-2 text-center text-sm text-outer-space">
               {phase}
             </div>
           ))}
@@ -138,29 +138,29 @@ const RealEstatePipeline: React.FC = () => {
         {/* Campus rows with properties by stage */}
         <div className="space-y-4">
           {filteredCampuses.map(campus => (
-            <Card key={campus.id} className="overflow-hidden">
+            <Card key={campus.id} className="overflow-hidden bg-seasalt border-platinum">
               <div className="grid grid-cols-[200px_repeat(10,1fr)] gap-2">
                 {/* Campus name */}
-                <div className="p-3 bg-secondary/10 flex items-center">
+                <div className="p-3 bg-platinum/50 flex items-center">
                   <Building className="h-4 w-4 mr-2" />
-                  <span className="font-medium truncate">{campus.campus_name}</span>
+                  <span className="font-medium truncate text-eerie-black">{campus.campus_name}</span>
                 </div>
                 
                 {/* Property cells by phase */}
                 {PHASES.map(phase => {
                   const phaseProperties = groupedByCampus[campus.id]?.[phase] || [];
                   return (
-                    <div key={phase} className="p-2 border-l min-h-[80px] flex flex-col items-center justify-center">
+                    <div key={phase} className="p-2 border-l border-french-gray/30 min-h-[80px] flex flex-col items-center justify-center">
                       {phaseProperties.length > 0 ? (
                         <div className="w-full">
-                          <Badge className="mb-1 w-full justify-center">
+                          <Badge className="mb-1 w-full justify-center bg-anti-flash text-outer-space">
                             {phaseProperties.length}
                           </Badge>
                           <div className="text-xs text-center">
                             {phaseProperties.map(property => (
                               <div 
                                 key={property.id} 
-                                className="truncate p-1 hover:bg-secondary/10 rounded cursor-pointer"
+                                className="truncate p-1 hover:bg-platinum/50 rounded cursor-pointer text-outer-space"
                                 title={property.address || 'No address'}
                               >
                                 {property.address || 'Unnamed property'}
@@ -169,7 +169,7 @@ const RealEstatePipeline: React.FC = () => {
                           </div>
                         </div>
                       ) : (
-                        <div className="text-xs text-muted-foreground">-</div>
+                        <div className="text-xs text-slate-gray">-</div>
                       )}
                     </div>
                   );
