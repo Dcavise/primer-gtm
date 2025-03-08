@@ -1,118 +1,38 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useMemo, memo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { SummaryStats, EmploymentStatusCount, WeeklyLeadCount, OpportunityStageCount } from '@/hooks/salesforce/types';
 import { Campus } from '@/hooks/salesforce/types';
-import { supabase } from '@/integrations/supabase-client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { useDashboardCharts } from '@/hooks/salesforce/useDashboardCharts';
+import { chartColors } from '@/utils/chartColors';
 
 interface StatsCardGridProps {
-  stats: SummaryStats;
-  employmentStatusCounts: EmploymentStatusCount[];
-  weeklyLeadCounts: WeeklyLeadCount[];
-  opportunityStageCounts: OpportunityStageCount[];
   selectedCampusIds: string[];
   selectedCampusNames: string[];
   campuses?: Campus[];
 }
 
-interface OpportunityStageData {
-  stage_name: string;
-  campus_name?: string;
-  state?: string;
-  count: number;
-  percentage?: number;
-}
-
-export const StatsCardGrid: React.FC<StatsCardGridProps> = ({ 
+export const StatsCardGrid: React.FC<StatsCardGridProps> = memo(({ 
   selectedCampusIds,
   selectedCampusNames
 }) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [weeklyLeadData, setWeeklyLeadData] = useState<any[]>([]);
-  const [opportunityData, setOpportunityData] = useState<OpportunityStageData[]>([]);
+  // Use the custom hook for data fetching
+  const { weeklyLeadData, opportunityData, isLoading, error } = useDashboardCharts(
+    selectedCampusIds,
+    selectedCampusNames
+  );
 
-  // Define chart colors
-  const leadColors = ["#1F77B4", "#FF7F0E", "#2CA02C", "#D62728"];
-  const opportunityColors = ["#1F77B4", "#FF7F0E", "#2CA02C", "#D62728", "#9467BD"];
+  // Memoized chart colors to prevent re-creation
+  const colors = useMemo(() => ({
+    leads: chartColors.slice(0, 4),
+    opportunities: chartColors.slice(0, 5)
+  }), []);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      setError(null);
-      
-      try {
-        // Fetch weekly lead counts
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - 28); // 4 weeks ago
-        
-        const { data: weeklyData, error: weeklyError } = await supabase
-          .rpc('get_weekly_lead_counts', { 
-            start_date: startDate.toISOString().split('T')[0],
-            end_date: new Date().toISOString().split('T')[0],
-            campus_filter: selectedCampusIds.length === 1 ? selectedCampusIds[0] : null
-          });
-          
-        if (weeklyError) throw weeklyError;
-        
-        // Fetch opportunity stage counts
-        const { data: oppData, error: oppError } = await supabase
-          .rpc('get_opportunities_by_stage_campus');
-          
-        if (oppError) throw oppError;
-        
-        // Process weekly data for chart display
-        const formattedWeeklyData = weeklyData.map((item: any) => ({
-          week: new Date(item.week).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          count: item.lead_count
-        }));
-        
-        // Process opportunity data - filter by campus if selected
-        let processedOppData: OpportunityStageData[] = oppData;
-        if (selectedCampusIds.length > 0) {
-          processedOppData = oppData.filter((item: any) => 
-            selectedCampusIds.includes(item.campus_id)
-          );
-        }
-        
-        // Group by stage and sum counts
-        const stageGroups: Record<string, number> = {};
-        processedOppData.forEach((item: any) => {
-          stageGroups[item.stage_name] = (stageGroups[item.stage_name] || 0) + Number(item.count);
-        });
-        
-        processedOppData = Object.entries(stageGroups).map(([stage_name, count]) => ({
-          stage_name,
-          count,
-          campus_name: selectedCampusIds.length === 0 ? 'All Campuses' : 
-                     (selectedCampusIds.length === 1 ? selectedCampusNames[0] : 'Selected Campuses'),
-          state: '',
-          percentage: 0
-        }));
-        
-        // Limit to top 5 stages if more
-        processedOppData = processedOppData
-          .sort((a: any, b: any) => b.count - a.count)
-          .slice(0, 5);
-        
-        setWeeklyLeadData(formattedWeeklyData);
-        setOpportunityData(processedOppData);
-        setIsLoading(false);
-      } catch (err) {
-        console.error('Error fetching dashboard data:', err);
-        setError('Failed to load dashboard data. Please try again later.');
-        setIsLoading(false);
-      }
-    };
-    
-    fetchData();
-  }, [selectedCampusIds, selectedCampusNames]);
-
-  const renderWeeklyLeadChart = () => {
+  // Memoized chart rendering functions
+  const renderWeeklyLeadChart = useMemo(() => {
     if (weeklyLeadData.length === 0) {
       return <div className="text-center text-gray-500 p-4">No lead data available for the selected period</div>;
     }
@@ -129,15 +49,15 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = ({
           />
           <Bar dataKey="count" fill="#1F77B4" name="Leads">
             {weeklyLeadData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={leadColors[index % leadColors.length]} />
+              <Cell key={`cell-${index}`} fill={colors.leads[index % colors.leads.length]} />
             ))}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
     );
-  };
+  }, [weeklyLeadData, colors.leads]);
 
-  const renderOpportunityChart = () => {
+  const renderOpportunityChart = useMemo(() => {
     if (opportunityData.length === 0) {
       return <div className="text-center text-gray-500 p-4">No opportunity data available</div>;
     }
@@ -153,13 +73,13 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = ({
           />
           <Bar dataKey="count" fill="#1F77B4" name="Opportunities">
             {opportunityData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={opportunityColors[index % opportunityColors.length]} />
+              <Cell key={`cell-${index}`} fill={colors.opportunities[index % colors.opportunities.length]} />
             ))}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
     );
-  };
+  }, [opportunityData, colors.opportunities]);
 
   if (error) {
     return (
@@ -185,9 +105,7 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = ({
               <div className="space-y-2">
                 <Skeleton className="h-[250px] w-full" />
               </div>
-            ) : (
-              renderWeeklyLeadChart()
-            )}
+            ) : renderWeeklyLeadChart}
           </div>
           
           <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
@@ -196,12 +114,10 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = ({
               <div className="space-y-2">
                 <Skeleton className="h-[250px] w-full" />
               </div>
-            ) : (
-              renderOpportunityChart()
-            )}
+            ) : renderOpportunityChart}
           </div>
         </div>
       </CardContent>
     </Card>
   );
-};
+});
