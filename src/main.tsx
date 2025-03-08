@@ -10,6 +10,7 @@ import { getAuthenticatedRoutes } from './features/registry'
 import MainLayout from './features/common/components/MainLayout'
 import Dashboard from './pages/Dashboard.tsx'
 import GridListDemoPage from './pages/GridListDemoPage.tsx'
+import FamilyProfile from './pages/FamilyProfile.tsx'
 
 // Global error boundary component
 class ErrorBoundary extends React.Component<
@@ -105,6 +106,11 @@ const router = createBrowserRouter([
           {
             path: "grid-list-demo",
             element: <GridListDemoPage />,
+          },
+          // Family Profile Page
+          {
+            path: "family/:familyId",
+            element: <FamilyProfile />,
           },
           // Include all other routes from features
           ...getAuthenticatedRoutes()
