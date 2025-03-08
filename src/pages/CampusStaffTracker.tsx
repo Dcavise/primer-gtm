@@ -1,160 +1,153 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { Badge } from "../components/ui/badge";
+import { ChevronDown, Plus, UserRound } from "lucide-react";
 
 const CampusStaffTracker: React.FC = () => {
+  const [selectedCampus, setSelectedCampus] = useState<string>("riverdale");
+  
+  // Campus data
+  const campuses = [
+    { id: "riverdale", name: "Riverdale Campus" },
+    { id: "brooklyn", name: "Brooklyn Campus" },
+    { id: "queens", name: "Queens Campus" },
+    { id: "bronx", name: "Bronx Campus" },
+    { id: "manhattan", name: "Manhattan Campus" }
+  ];
+
   return (
     <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Campus Staff</h1>
-        <Button>Add New Candidate</Button>
+      <div className="flex flex-col space-y-4 mb-6">
+        {/* Campus Selector Header - similar to the wireframe */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <Select value={selectedCampus} onValueChange={setSelectedCampus}>
+              <SelectTrigger className="min-w-[220px] bg-white border-gray-300">
+                <div className="flex items-center gap-2">
+                  <UserRound className="h-4 w-4" />
+                  <SelectValue placeholder="Select campus" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {campuses.map(campus => (
+                  <SelectItem key={campus.id} value={campus.id}>{campus.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex items-center">
+            {/* Filter button removed */}
+          </div>
+        </div>
+        
+        {/* Descriptive paragraph removed */}
       </div>
 
-      <div className="flex flex-wrap gap-4 mb-6">
-        <div className="flex-1 min-w-[200px]">
-          <label className="block text-sm font-medium mb-1">Filter by Role</label>
-          <Select defaultValue="all">
-            <SelectTrigger>
-              <SelectValue placeholder="Select role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Roles</SelectItem>
-              <SelectItem value="developer">Developer</SelectItem>
-              <SelectItem value="designer">Designer</SelectItem>
-              <SelectItem value="manager">Project Manager</SelectItem>
-              <SelectItem value="marketing">Marketing Specialist</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex-1 min-w-[200px]">
-          <label className="block text-sm font-medium mb-1">Filter by Location</label>
-          <Select defaultValue="all">
-            <SelectTrigger>
-              <SelectValue placeholder="Select location" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Locations</SelectItem>
-              <SelectItem value="remote">Remote</SelectItem>
-              <SelectItem value="newyork">New York</SelectItem>
-              <SelectItem value="sanfrancisco">San Francisco</SelectItem>
-              <SelectItem value="chicago">Chicago</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex-1 min-w-[200px]">
-          <label className="block text-sm font-medium mb-1">Filter by Status</label>
-          <Select defaultValue="all">
-            <SelectTrigger>
-              <SelectValue placeholder="Select status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="applied">Applied</SelectItem>
-              <SelectItem value="screening">Screening</SelectItem>
-              <SelectItem value="interview">Interview</SelectItem>
-              <SelectItem value="offer">Offer</SelectItem>
-              <SelectItem value="hired">Hired</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
-            </SelectContent>
-          </Select>
+      {/* Pipeline Stages Tabs */}
+      <div className="border-b mb-6">
+        <div className="grid grid-cols-5 w-full">
+          <button className="border-b-2 border-black py-3 text-center font-medium text-black">Applied</button>
+          <button className="py-3 text-center text-gray-500 hover:text-black hover:border-b-2 hover:border-gray-300">Interviewing</button>
+          <button className="py-3 text-center text-gray-500 hover:text-black hover:border-b-2 hover:border-gray-300">Fellowship</button>
+          <button className="py-3 text-center text-gray-500 hover:text-black hover:border-b-2 hover:border-gray-300">Made Offer</button>
+          <button className="py-3 text-center text-gray-500 hover:text-black hover:border-b-2 hover:border-gray-300">Hired</button>
         </div>
       </div>
 
-      <Tabs defaultValue="kanban" className="w-full">
+      {/* Qualified/Disqualified Filter section removed */}
+      
+      {/* Search */}
+      <div className="mb-6">
+        <input 
+          type="text" 
+          placeholder="Search name, headline or tag" 
+          className="w-full p-3 border border-gray-300 rounded-md" 
+        />
+      </div>
+
+      {/* Candidates List */}
+      {/* First Tab: Current Applied View */}
+      <div className="space-y-4">
+        {/* Candidate Card 1 */}
+        <Card className="border hover:shadow-md transition-shadow">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-4">
+              <input type="checkbox" className="mt-2" />
+              <div className="flex-shrink-0 w-12 h-12 bg-gray-200 rounded-md"></div>
+              <div className="flex-grow">
+                <div className="flex flex-col sm:flex-row sm:justify-between">
+                  <h3 className="font-medium">Max Lackner</h3>
+                  <button className="text-gray-400 hover:text-gray-600">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+                <p className="text-gray-600 text-sm">Senior Visual Interaction Design</p>
+                
+                <div className="flex flex-wrap gap-1 mt-2">
+                  <Badge variant="outline" className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100">media</Badge>
+                  <Badge variant="outline" className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100">creative</Badge>
+                  <Badge variant="outline" className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100">agency</Badge>
+                </div>
+                
+                <div className="flex items-center mt-3 text-xs text-gray-500">
+                  <span>via twitter.com</span>
+                  <span className="mx-2">•</span>
+                  <span>4 days ago</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Candidate Card 2 */}
+        <Card className="border hover:shadow-md transition-shadow">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-4">
+              <input type="checkbox" className="mt-2" />
+              <div className="flex-shrink-0 w-12 h-12 bg-gray-200 rounded-md"></div>
+              <div className="flex-grow">
+                <div className="flex flex-col sm:flex-row sm:justify-between">
+                  <h3 className="font-medium">Jenny Wilson</h3>
+                  <button className="text-gray-400 hover:text-gray-600">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+                <p className="text-gray-600 text-sm">Senior Design Lead at IDEO</p>
+                
+                <div className="flex flex-wrap gap-1 mt-2">
+                  <Badge variant="outline" className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100">media</Badge>
+                  <Badge variant="outline" className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100">creative</Badge>
+                  <Badge variant="outline" className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100">agency</Badge>
+                </div>
+                
+                <div className="flex items-center mt-3 text-xs text-gray-500">
+                  <span>via worktable.com</span>
+                  <span className="mx-2">•</span>
+                  <span>4 days ago</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Tabs UI for different view modes */}
+      <Tabs defaultValue="cards" className="w-full mt-6">
         <TabsList className="mb-4">
-          <TabsTrigger value="kanban">Kanban Board</TabsTrigger>
+          <TabsTrigger value="cards">Cards View</TabsTrigger>
           <TabsTrigger value="table">Table View</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="kanban">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            {/* Applied Column */}
-            <Card>
-              <CardHeader className="bg-gray-100 pb-2">
-                <CardTitle className="text-lg">Applied</CardTitle>
-                <CardDescription>15 candidates</CardDescription>
-              </CardHeader>
-              <CardContent className="p-2">
-                <Card className="mb-2 p-3 cursor-move">
-                  <div className="font-medium">John Smith</div>
-                  <div className="text-sm text-gray-500">Developer - Remote</div>
-                  <div className="text-xs text-gray-400">Applied: 2025-03-05</div>
-                </Card>
-                <Card className="mb-2 p-3 cursor-move">
-                  <div className="font-medium">Sarah Johnson</div>
-                  <div className="text-sm text-gray-500">Designer - New York</div>
-                  <div className="text-xs text-gray-400">Applied: 2025-03-04</div>
-                </Card>
-              </CardContent>
-            </Card>
-
-            {/* Screening Column */}
-            <Card>
-              <CardHeader className="bg-gray-100 pb-2">
-                <CardTitle className="text-lg">Screening</CardTitle>
-                <CardDescription>8 candidates</CardDescription>
-              </CardHeader>
-              <CardContent className="p-2">
-                <Card className="mb-2 p-3 cursor-move">
-                  <div className="font-medium">Michael Brown</div>
-                  <div className="text-sm text-gray-500">Developer - Chicago</div>
-                  <div className="text-xs text-gray-400">Screening: 2025-03-10</div>
-                </Card>
-                <Card className="mb-2 p-3 cursor-move">
-                  <div className="font-medium">Emily Davis</div>
-                  <div className="text-sm text-gray-500">Marketing - Remote</div>
-                  <div className="text-xs text-gray-400">Screening: 2025-03-12</div>
-                </Card>
-              </CardContent>
-            </Card>
-            
-            {/* Interview Column */}
-            <Card>
-              <CardHeader className="bg-gray-100 pb-2">
-                <CardTitle className="text-lg">Interview</CardTitle>
-                <CardDescription>5 candidates</CardDescription>
-              </CardHeader>
-              <CardContent className="p-2">
-                <Card className="mb-2 p-3 cursor-move">
-                  <div className="font-medium">David Wilson</div>
-                  <div className="text-sm text-gray-500">Manager - San Francisco</div>
-                  <div className="text-xs text-gray-400">Interview: 2025-03-15</div>
-                </Card>
-              </CardContent>
-            </Card>
-            
-            {/* Offer Column */}
-            <Card>
-              <CardHeader className="bg-gray-100 pb-2">
-                <CardTitle className="text-lg">Offer</CardTitle>
-                <CardDescription>2 candidates</CardDescription>
-              </CardHeader>
-              <CardContent className="p-2">
-                <Card className="mb-2 p-3 cursor-move">
-                  <div className="font-medium">Jennifer Lee</div>
-                  <div className="text-sm text-gray-500">Developer - Remote</div>
-                  <div className="text-xs text-gray-400">Offer sent: 2025-03-03</div>
-                </Card>
-              </CardContent>
-            </Card>
-            
-            {/* Hired Column */}
-            <Card>
-              <CardHeader className="bg-gray-100 pb-2">
-                <CardTitle className="text-lg">Hired</CardTitle>
-                <CardDescription>3 candidates</CardDescription>
-              </CardHeader>
-              <CardContent className="p-2">
-                <Card className="mb-2 p-3 cursor-move">
-                  <div className="font-medium">Robert Garcia</div>
-                  <div className="text-sm text-gray-500">Designer - New York</div>
-                  <div className="text-xs text-gray-400">Hired: 2025-02-28</div>
-                </Card>
-              </CardContent>
-            </Card>
-          </div>
+        <TabsContent value="cards">
+          {/* Card view is already implemented above */}
         </TabsContent>
         
         <TabsContent value="table">

@@ -47,12 +47,18 @@ const SearchBox: React.FC<SearchBoxProps> = ({ isOpen, onClose }) => {
         const response = await fetch('/assets/data/searchbox.json');
         const data: SearchResult[] = await response.json();
         
-        // Filter results based on search query
-        const filteredResults = data.filter(item => 
-          item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-          item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.category.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+        // Filter results based on search query and exclude campus staff profiles
+        const filteredResults = data.filter(item => {
+          // First, check if it's a campus staff profile (if so, exclude it)
+          if (item.category.toLowerCase().includes('campus staff')) {
+            return false;
+          }
+          
+          // Then, check if it matches the search query
+          return item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                 item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                 item.category.toLowerCase().includes(searchQuery.toLowerCase());
+        });
         
         setResults(filteredResults);
         setSelectedIndex(0); // Reset selection when results change
