@@ -37,23 +37,28 @@ const MainLayout: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Top Navigation Bar */}
-      <header className="w-full bg-[#000000] text-white h-16 z-10 sticky top-0">
-        <div className="h-full flex justify-between items-center px-6">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 flex items-center justify-center">
-              <img src="/logos/PrimerWhite.png" alt="Primer Logo" width="24" height="24" />
+      <header className="w-full bg-[#000000] text-white h-32 z-10 sticky top-0 shadow-md">
+        <div className="h-full flex justify-between items-center max-w-screen-2xl mx-auto w-full">
+          <div className="flex items-center">
+            <div className="h-32 flex items-center justify-center px-6 border-r border-white/10">
+              <img 
+                src="/logos/PrimerWhite.png" 
+                alt="Primer Logo" 
+                width="120" 
+                height="120" 
+                className="object-contain" 
+              />
             </div>
-            <h1 className="text-xl font-medium">Primer Dashboard</h1>
           </div>
           
           {/* Right side of header intentionally left empty */}
-          <div></div>
+          <div className="pr-6"></div>
         </div>
       </header>
       
       <div className="flex flex-1">
         {/* Sidebar Navigation */}
-        <aside className="w-[203px] bg-[#000000] text-white flex flex-col sticky top-16" style={{ minHeight: 'calc(100vh - 4rem)' }}>
+        <aside className="w-[203px] bg-[#000000] text-white flex flex-col sticky top-32" style={{ minHeight: 'calc(100vh - 8rem)' }}>
           {/* Logo & Title - Top Section */}
           <div className="p-4 pb-6 border-b border-white/10">
             <div className="flex items-center gap-2">
@@ -102,7 +107,7 @@ const MainLayout: React.FC = () => {
         
         {/* Main Content */}
         <div className="flex-1 overflow-auto bg-[#f8f9fa]">
-          <main className="p-6" style={{ minHeight: 'calc(100vh - 4rem)' }}>
+          <main className="p-6" style={{ minHeight: 'calc(100vh - 8rem)' }}>
             {/* Render outlet */}
             <Outlet />
           </main>
