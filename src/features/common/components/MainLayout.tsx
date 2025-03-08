@@ -1,7 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { getNavigationFeatures } from '../../registry';
-import { useAuth } from '../../../contexts/AuthContext';
 import { useLayout } from '../../../contexts/LayoutContext';
 import { cn } from '@/utils/cn';
 import { 
@@ -21,9 +20,8 @@ import {
  * appears consistently throughout the application
  */
 const MainLayout: React.FC = () => {
-  const auth = useAuth();
-  const profile = auth?.profile;
-  const signOut = auth?.signOut;
+  // Mock user profile data since auth has been removed
+  const mockProfile = { full_name: 'Demo User' };
   const features = getNavigationFeatures();
   const location = useLocation();
   const navItems = features.flatMap(feature => feature.navItems || [])
@@ -50,22 +48,8 @@ const MainLayout: React.FC = () => {
             <h1 className="text-xl font-medium">Primer Dashboard</h1>
           </div>
           
-          <div className="flex items-center gap-4">
-            <button className="text-white/70 hover:text-white flex items-center gap-1 p-2 rounded-md hover:bg-white/10">
-              <HelpCircle className="h-5 w-5" />
-            </button>
-            <button className="text-white/70 hover:text-white flex items-center gap-1 p-2 rounded-md hover:bg-white/10">
-              <Settings className="h-5 w-5" />
-            </button>
-            <div className="flex items-center gap-2 pl-4 ml-2 border-l border-white/10">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-white text-black rounded-full text-xs">
-                  {getInitials()}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-sm">{profile?.full_name || 'User'}</span>
-            </div>
-          </div>
+          {/* Right side of header intentionally left empty */}
+          <div></div>
         </div>
       </header>
       

@@ -1,6 +1,5 @@
 import { FeatureRoutes } from './common/routes';
 import { indexFeature } from './common/indexRoute';
-import { authFeature } from './auth/routes';
 import { realEstateFeature } from './realEstate/routes';
 import { salesforceFeature } from './salesforce/routes';
 import { propertyResearchFeature } from './propertyResearch/routes';
@@ -14,7 +13,6 @@ import { logger } from '@/utils/logger';
 export const featuresRegistry: FeatureRoutes[] = [
   admissionsAnalyticsFeature,
   indexFeature,
-  authFeature,
   realEstateFeature,
   salesforceFeature,
   propertyResearchFeature,
@@ -28,11 +26,10 @@ export const getAllRoutes = () => {
   return featuresRegistry.flatMap(feature => feature.routes);
 };
 
-// Get all authenticated routes (those that should be inside MainLayout)
+// Get all routes for MainLayout
 export const getAuthenticatedRoutes = () => {
   try {
     const routes = featuresRegistry
-      .filter(feature => feature.id !== 'auth') // Filter out auth routes
       .flatMap(feature => {
         // Validate routes before returning them
         if (!feature.routes || !Array.isArray(feature.routes)) {
@@ -49,11 +46,9 @@ export const getAuthenticatedRoutes = () => {
   }
 };
 
-// Get only auth routes
+// Get empty auth routes (auth has been removed)
 export const getAuthRoutes = () => {
-  return featuresRegistry
-    .filter(feature => feature.id === 'auth')
-    .flatMap(feature => feature.routes);
+  return [];
 };
 
 // Get features for navigation
