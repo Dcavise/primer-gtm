@@ -3,7 +3,7 @@ import { useRealEstatePipeline } from '@/features/realEstate/hooks/useRealEstate
 import { useCampuses } from '@/hooks/useCampuses';
 import { RealEstateProperty, PropertyPhase } from '@/types/realEstate';
 import { LoadingState } from '@/components/LoadingState';
-import { CampusSelector } from '@/components/salesforce/CampusSelector';
+import { CampusSelector } from '@/features/salesforce/components/CampusSelector';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Building } from 'lucide-react';

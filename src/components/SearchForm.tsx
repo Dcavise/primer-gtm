@@ -9,7 +9,7 @@ import { Search, Loader2, Info } from "lucide-react";
 interface SearchFormProps {
   onSearch: (params: any, address: string) => void;
   isSearching: boolean;
-  searchType: "permits" | "zoning" | "census" | "schools" | "property-research";
+  searchType: "permits" | "zoning" | "census" | "schools";
 }
 
 export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProps) => {
@@ -50,19 +50,11 @@ export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProp
       
       const { coordinates } = geocodeResult;
       toast.success(`Address found: ${geocodeResult.address}`, {
-        description: `Searching for ${searchType === "property-research" ? "property data" : searchType} in this area...`
+        description: `Searching for ${searchType} in this area...`
       });
       
       // Different handling for different search types
-      if (searchType === "property-research") {
-        // For property research, we pass the exact coordinates and address
-        console.log(`Property research coordinates: (${coordinates.lat}, ${coordinates.lng})`);
-        onSearch({
-          coordinates,
-          address: geocodeResult.address
-        }, geocodeResult.address);
-      } 
-      else if (searchType === "schools") {
+      if (searchType === "schools") {
         // Just for schools
         onSearch({
           lat: coordinates.lat,
@@ -120,8 +112,6 @@ export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProp
               ? "Census data shows demographic information within a 5-mile radius of the address."
               : searchType === "schools"
               ? "Find schools within a 5-mile radius of the property including ratings, contact info, and more."
-              : searchType === "property-research"
-              ? "Enter an address to instantly retrieve permits, zoning, census, and school data for this location."
               : "For best results, include the full address with state and ZIP code (e.g., \"831 N California Ave, Chicago, IL 60622\")"}
           </p>
         </div>
@@ -138,9 +128,7 @@ export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProp
                 Searching...
               </>
             ) : (
-              searchType === "property-research" ? 
-                "Research Property" : 
-                `Search ${searchType === "permits" ? "Permits" : 
+              `Search ${searchType === "permits" ? "Permits" : 
                        searchType === "zoning" ? "Zoning" : 
                        searchType === "census" ? "Census Data" : "Schools"}`
             )}

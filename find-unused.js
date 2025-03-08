@@ -3,11 +3,14 @@
  * Run with: node find-unused.js
  */
 
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
 
 // Configuration
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const SRC_DIR = path.join(__dirname, 'src');
 const FILE_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx'];
 const IGNORE_DIRS = ['node_modules', '.git', 'dist', 'build', 'public'];
@@ -56,7 +59,7 @@ function findFileReferences(filename, allFiles) {
   
   try {
     // Use grep to look for references to this file
-    const grepResult = execSync(`grep -r "${searchName}" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" ${SRC_DIR} | grep -v ${filename}`, { stdio: 'pipe' }).toString();
+    const grepResult = execSync(`grep -r "${searchName}" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" ${SRC_DIR} | grep -v "${filename}"`, { stdio: 'pipe' }).toString();
     
     return grepResult.split('\n').filter(line => line.trim() !== '').length > 0;
   } catch (error) {

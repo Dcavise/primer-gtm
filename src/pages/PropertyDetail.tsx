@@ -2,22 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase-client';
+import { logger } from '@/utils/logger';
 import { RealEstateProperty, PropertyPhase, BooleanStatus, SurveyStatus, TestFitStatus, LeaseStatus } from '@/types/realEstate';
 import { Button } from '@/components/ui/button';
 import { LoadingState } from '@/components/LoadingState';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
-import PropertyHeader from '@/components/realestate/PropertyHeader';
-import PropertyNotFound from '@/components/realestate/PropertyNotFound';
-import PropertyBasicInfo from '@/components/realestate/PropertyBasicInfo';
-import PropertyStatusInfo from '@/components/realestate/PropertyStatusInfo';
-import PropertyNotes from '@/components/realestate/PropertyNotes';
-import PropertyContactInfo from '@/components/realestate/PropertyContactInfo';
-import PropertyLeaseInfo from '@/components/realestate/PropertyLeaseInfo';
-import PropertyDocuments from '@/components/realestate/PropertyDocuments';
-import PropertyDiscussion from '@/components/realestate/PropertyDiscussion';
-import PropertyLocation from '@/components/realestate/PropertyLocation';
-import PropertyProgress from '@/components/realestate/PropertyProgress';
+import PropertyHeader from '@/features/realEstate/components/PropertyHeader';
+import PropertyNotFound from '@/features/realEstate/components/PropertyNotFound';
+import PropertyBasicInfo from '@/features/realEstate/components/PropertyBasicInfo';
+import PropertyStatusInfo from '@/features/realEstate/components/PropertyStatusInfo';
+import PropertyNotes from '@/features/realEstate/components/PropertyNotes';
+import PropertyContactInfo from '@/features/realEstate/components/PropertyContactInfo';
+import PropertyLeaseInfo from '@/features/realEstate/components/PropertyLeaseInfo';
+import PropertyDocuments from '@/features/realEstate/components/PropertyDocuments';
+import PropertyDiscussion from '@/features/realEstate/components/PropertyDiscussion';
+import PropertyLocation from '@/features/realEstate/components/PropertyLocation';
+import PropertyProgress from '@/features/realEstate/components/PropertyProgress';
 
 const PropertyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -32,16 +33,16 @@ const PropertyDetail: React.FC = () => {
     queryKey: ['property', id],
     queryFn: async (): Promise<RealEstateProperty | null> => {
       if (!id) {
-        console.error('No property ID provided');
+        logger.error('No property ID provided');
         return null;
       }
       
-      console.log('Fetching property with id:', id);
+      logger.debug('Fetching property with id:', id);
       
       const propertyId = parseInt(id);
       
       if (isNaN(propertyId)) {
-        console.error('Invalid property ID:', id);
+        logger.error('Invalid property ID:', id);
         throw new Error(`Invalid property ID: ${id}`);
       }
       
@@ -53,19 +54,19 @@ const PropertyDetail: React.FC = () => {
           .maybeSingle();
         
         if (error) {
-          console.error('Error fetching property details:', error);
+          logger.error('Error fetching property details:', error);
           throw new Error(`Failed to fetch property details: ${error.message}`);
         }
         
         if (!data) {
-          console.error('Property not found with id:', id);
+          logger.error('Property not found with id:', id);
           return null;
         }
         
-        console.log('Found property:', data);
+        logger.debug('Found property:', data);
         return data;
       } catch (error: any) {
-        console.error('Error during property fetch:', error);
+        logger.error('Error during property fetch:', error);
         toast.error(`Error loading property: ${error.message}`);
         return null;
       }
@@ -118,7 +119,7 @@ const PropertyDetail: React.FC = () => {
         .eq('id', parseInt(id));
       
       if (error) {
-        console.error('Error saving notes:', error);
+        logger.error('Error saving notes:', error);
         toast.error('Failed to save notes');
         return;
       }
@@ -127,7 +128,7 @@ const PropertyDetail: React.FC = () => {
       toast.success('Notes saved successfully');
       refetch();
     } catch (error) {
-      console.error('Error saving notes:', error);
+      logger.error('Error saving notes:', error);
       toast.error('Failed to save notes');
     } finally {
       setIsSavingNotes(false);
@@ -194,7 +195,7 @@ const PropertyDetail: React.FC = () => {
                     .eq('id', parseInt(id));
                   
                   if (error) {
-                    console.error('Error saving notes:', error);
+                    logger.error('Error saving notes:', error);
                     toast.error('Failed to save notes');
                     return;
                   }
@@ -203,7 +204,7 @@ const PropertyDetail: React.FC = () => {
                   toast.success('Notes saved successfully');
                   refetch();
                 } catch (error) {
-                  console.error('Error saving notes:', error);
+                  logger.error('Error saving notes:', error);
                   toast.error('Failed to save notes');
                 } finally {
                   setIsSavingNotes(false);
