@@ -110,11 +110,26 @@ export const DesktopSidebar = ({
       <div className="flex items-center mb-8 justify-center">
         <img 
           src="/logos/029 - Small.png" 
-          alt="Logo" 
+          alt="ZigZag Logo" 
           width="40" 
           height="40" 
           className="object-contain" 
         />
+        <AnimatePresence>
+          {open && (
+            <motion.img 
+              src="/logos/001_1 Primer Logo - Small.png" 
+              alt="Primer Logo" 
+              width="120" 
+              height="40" 
+              className="object-contain ml-2" 
+              initial={{ opacity: 0, width: 0 }}
+              animate={{ opacity: 1, width: "auto" }}
+              exit={{ opacity: 0, width: 0 }}
+              transition={{ duration: 0.2 }}
+            />
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Navigation Links */}
