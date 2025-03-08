@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { GridList, GridListItem } from "../components/ui/grid-list";
+import { Button } from "../components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 
 // Sample data for the charts
@@ -126,6 +129,7 @@ const openPipelineData = [
 const AdmissionsAnalytics = () => {
   // State for date truncation selection
   const [dateTruncation, setDateTruncation] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const [selectedCampus, setSelectedCampus] = useState<string>('all');
 
   // Simple function to format dates
   const formatDateHeader = (dateString: string) => {
@@ -190,32 +194,57 @@ const AdmissionsAnalytics = () => {
 
   return (
     <div className="container mx-auto py-6 px-8 max-w-7xl bg-seasalt">
-      <h1 className="text-2xl font-semibold text-eerie-black mb-6">PRIME TIME</h1>
       {/* Dashboard header with improved design */}
       <Card className="mb-8 border border-platinum bg-seasalt overflow-hidden rounded-lg shadow-sm">
         <div className="px-0">
 
           
           <div className="flex flex-wrap items-center justify-between p-5 bg-seasalt">
-            {/* Campus Selection Dropdown - Extended Width */}
+            {/* Campus Selection using GridList within a Popover - Extended Width */}
             <div className="w-full md:w-1/3 mb-3 md:mb-0 md:mr-4">
-              <Select defaultValue="all">
-                <SelectTrigger className="w-full border border-platinum rounded-md px-4 py-2 shadow-sm hover:border-french-gray focus:outline-none">
-                  <div className="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-slate-gray" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="w-full border border-platinum rounded-md px-4 py-2 shadow-sm hover:border-french-gray focus:outline-none bg-white justify-between"
+                  >
+                    <div className="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-slate-gray" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                      <span>
+                        {selectedCampus === 'all' && 'All Campuses'}
+                        {selectedCampus === 'main' && 'Main Campus'}
+                        {selectedCampus === 'north' && 'North Campus'}
+                        {selectedCampus === 'south' && 'South Campus'}
+                        {selectedCampus === 'online' && 'Online'}
+                      </span>
+                    </div>
+                    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" className="ml-2 h-4 w-4 shrink-0 opacity-50">
+                      <path d="M4.93179 5.43179C4.75605 5.60753 4.75605 5.89245 4.93179 6.06819C5.10753 6.24392 5.39245 6.24392 5.56819 6.06819L7.49999 4.13638L9.43179 6.06819C9.60753 6.24392 9.89245 6.24392 10.0682 6.06819C10.2439 5.89245 10.2439 5.60753 10.0682 5.43179L7.81819 3.18179C7.73379 3.0974 7.61933 3.04999 7.49999 3.04999C7.38064 3.04999 7.26618 3.0974 7.18179 3.18179L4.93179 5.43179ZM10.0682 9.56819C10.2439 9.39245 10.2439 9.10753 10.0682 8.93179C9.89245 8.75606 9.60753 8.75606 9.43179 8.93179L7.49999 10.8636L5.56819 8.93179C5.39245 8.75606 5.10753 8.75606 4.93179 8.93179C4.75605 9.10753 4.75605 9.39245 4.93179 9.56819L7.18179 11.8182C7.26618 11.9026 7.38064 11.95 7.49999 11.95C7.61933 11.95 7.73379 11.9026 7.81819 11.8182L10.0682 9.56819Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
                     </svg>
-                    <SelectValue placeholder="All Campuses" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Campuses</SelectItem>
-                  <SelectItem value="main">Main Campus</SelectItem>
-                  <SelectItem value="north">North Campus</SelectItem>
-                  <SelectItem value="south">South Campus</SelectItem>
-                  <SelectItem value="online">Online</SelectItem>
-                </SelectContent>
-              </Select>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="p-0 w-[300px]" align="start">
+                  <GridList 
+                    aria-label="Campus Selection"
+                    selectionMode="single"
+                    className="overflow-auto max-h-[200px]"
+                    selectedKeys={[selectedCampus]}
+                    onSelectionChange={(keys) => {
+                      if (keys && typeof keys === 'object' && 'size' in keys && keys.size > 0) {
+                        setSelectedCampus(Array.from(keys)[0] as string);
+                      }
+                    }}
+                  >
+                    <GridListItem id="all">All Campuses</GridListItem>
+                    <GridListItem id="main">Main Campus</GridListItem>
+                    <GridListItem id="north">North Campus</GridListItem>
+                    <GridListItem id="south">South Campus</GridListItem>
+                    <GridListItem id="online">Online</GridListItem>
+                  </GridList>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Truncation Options */}

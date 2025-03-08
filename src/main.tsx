@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { getAuthenticatedRoutes } from './features/registry'
 import MainLayout from './features/common/components/MainLayout'
 import Dashboard from './pages/Dashboard.tsx'
+import GridListDemoPage from './pages/GridListDemoPage.tsx'
 
 // Global error boundary component
 class ErrorBoundary extends React.Component<
@@ -99,6 +100,11 @@ const router = createBrowserRouter([
           {
             path: "dashboard",
             element: <Dashboard />,
+          },
+          // Grid List Demo Page
+          {
+            path: "grid-list-demo",
+            element: <GridListDemoPage />,
           },
           // Include all other routes from features
           ...getAuthenticatedRoutes()

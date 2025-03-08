@@ -150,7 +150,7 @@ const RealEstatePipeline: React.FC = () => {
                 {PHASES.map(phase => {
                   const phaseProperties = groupedByCampus[campus.id]?.[phase] || [];
                   return (
-                    <div key={phase} className="p-2 border-l border-french-gray/30 min-h-[80px] flex flex-col items-center justify-center">
+                    <div key={`${campus.id}-${phase}`} className="p-2 border-l border-french-gray/30 min-h-[80px] flex flex-col items-center justify-center">
                       {phaseProperties.length > 0 ? (
                         <div className="w-full">
                           <Badge className="mb-1 w-full justify-center bg-anti-flash text-outer-space">
@@ -159,7 +159,7 @@ const RealEstatePipeline: React.FC = () => {
                           <div className="text-xs text-center">
                             {phaseProperties.map(property => (
                               <div 
-                                key={property.id} 
+                                key={`${campus.id}-${phase}-${property.id}`} 
                                 className="truncate p-1 hover:bg-platinum/50 rounded cursor-pointer text-outer-space"
                                 title={property.address || 'No address'}
                               >
