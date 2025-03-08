@@ -41,8 +41,8 @@ const MainLayout: React.FC = () => {
         <div className="h-full flex justify-between items-center px-6">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 flex items-center justify-center">
-              <svg viewBox="0 0 24 24" fill="white" width="24" height="24">
-                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 2.18l7 3.12v5.7c0 4.83-3.38 8.94-7 10-3.62-1.06-7-5.17-7-10V6.3l7-3.12z"/>
+              <svg viewBox="0 0 512 512" fill="white" width="24" height="24">
+                <path d="M200 32l-24 96 120 72-168 72 24 96 120-72-96 128 96 48 96-128 144 64-72-96-144-64 168-72-72-96-120 72 24-96-96-24z"/>
               </svg>
             </div>
             <h1 className="text-xl font-medium">Primer Dashboard</h1>
