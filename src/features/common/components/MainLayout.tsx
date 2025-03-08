@@ -6,7 +6,6 @@ import { cn } from '@/utils/cn';
 import { 
   LayoutDashboard, 
   Users, 
-  UserPlus, 
   FileText, 
   Shield, 
   CreditCard, 
@@ -75,8 +74,6 @@ const MainLayout: React.FC = () => {
                 {/* Render appropriate icon based on path */}
                 {item.path.includes('admissions') && <Users className="h-5 w-5 mr-3" />}
                 {item.path.includes('real-estate') && <FileText className="h-5 w-5 mr-3" />}
-                {item.path.includes('crm') && <UserPlus className="h-5 w-5 mr-3" />}
-                {item.path.includes('property-research') && <Shield className="h-5 w-5 mr-3" />}
                 {item.path.includes('contact-finding') && <CreditCard className="h-5 w-5 mr-3" />}
                 {item.path.includes('ats') && <HelpCircle className="h-5 w-5 mr-3" />}
                 {item.label}
