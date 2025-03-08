@@ -107,24 +107,14 @@ export const DesktopSidebar = ({
       {...props}
     >
       {/* Logo */}
-      <div className={cn("flex items-center mb-10", open ? "px-3 justify-start" : "px-0 justify-center")}>
-        {open ? (
-          <img 
-            src="/logos/029 - Small.png" 
-            alt="ZigZag Logo" 
-            width="40" 
-            height="40" 
-            className="object-contain shrink-0" 
-          />
-        ) : (
-          <img 
-            src="/logos/ZigZagPurple.png" 
-            alt="ZigZag Logo" 
-            width="52" 
-            height="52" 
-            className="object-contain shrink-0" 
-          />
-        )}
+      <div className={cn("flex items-center mb-10", open ? "px-3 justify-start" : "justify-center")}>
+        <img 
+          src="/logos/029 - Small.png" 
+          alt="ZigZag Logo" 
+          width="40" 
+          height="40" 
+          className="object-contain shrink-0" 
+        />
         <AnimatePresence>
           {open && (
             <motion.img 
