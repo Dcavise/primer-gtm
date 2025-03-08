@@ -1,10 +1,8 @@
 # Primer GTM Dashboard
 
-*Updated: March 7, 2025 - Added new features for CRM Pipeline, ATS, and Admissions Analytics*
+*Updated: March 7, 2025 - Added new features for CRM Pipeline, Campus Staff, and Admissions Analytics*
 
 ## Project info
-
-**URL**: https://lovable.dev/projects/7e60e186-6bfa-4878-9d2c-06629de4d6e7
 
 ## Installation and Development
 
@@ -70,10 +68,6 @@ This project is built with .
 
 ## How can I deploy this project?
 
-### Deploy with Lovable
-
-Simply open [Lovable](https://lovable.dev/projects/7e60e186-6bfa-4878-9d2c-06629de4d6e7) and click on Share -> Publish.
-
 ### Deploy with Vercel
 
 1. Create a new project in Vercel
@@ -93,6 +87,6 @@ If you encounter any issues with deployment:
 - Check that the build command and output directory are correctly configured
 - Verify that the Vercel project is connected to the correct branch of your repository
 
-## I want to use a custom domain - is that possible?
+## Custom Domains
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+To use a custom domain with your application, you can configure it through Vercel's domain settings or deploy with Netlify which offers similar custom domain capabilities.
