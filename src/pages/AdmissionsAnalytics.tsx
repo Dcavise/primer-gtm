@@ -27,61 +27,61 @@ const campusData = [
 
 // Daily data for metrics charts - using actual dates from early March 2025
 const dailyData = [
-  { date: '3/2', leadsCreated: 15, leadsConverted: 6, admissionOffered: 4, closedWon: 2 },
-  { date: '3/3', leadsCreated: 18, leadsConverted: 8, admissionOffered: 5, closedWon: 3 },
-  { date: '3/4', leadsCreated: 22, leadsConverted: 10, admissionOffered: 7, closedWon: 4 },
-  { date: '3/5', leadsCreated: 20, leadsConverted: 9, admissionOffered: 6, closedWon: 3 },
-  { date: '3/6', leadsCreated: 24, leadsConverted: 12, admissionOffered: 8, closedWon: 5 },
-  { date: '3/7', leadsCreated: 19, leadsConverted: 8, admissionOffered: 5, closedWon: 2 },
+  { date: '3/2', leadsCreated: 15, leadsConverted: 6, admissionOffered: 4, closedWon: 2, arrAdded: 3.2 },
+  { date: '3/3', leadsCreated: 18, leadsConverted: 8, admissionOffered: 5, closedWon: 3, arrAdded: 4.5 },
+  { date: '3/4', leadsCreated: 22, leadsConverted: 10, admissionOffered: 7, closedWon: 4, arrAdded: 6.8 },
+  { date: '3/5', leadsCreated: 20, leadsConverted: 9, admissionOffered: 6, closedWon: 3, arrAdded: 5.2 },
+  { date: '3/6', leadsCreated: 24, leadsConverted: 12, admissionOffered: 8, closedWon: 5, arrAdded: 7.5 },
+  { date: '3/7', leadsCreated: 19, leadsConverted: 8, admissionOffered: 5, closedWon: 2, arrAdded: 4.9 },
 ];
 
 // Weekly data for metrics charts - using actual week start dates
 const weeklyData = [
-  { date: '2/7', leadsCreated: 95, leadsConverted: 42, admissionOffered: 28, closedWon: 15 },  // 4 weeks ago
-  { date: '2/14', leadsCreated: 105, leadsConverted: 48, admissionOffered: 32, closedWon: 18 }, // 3 weeks ago
-  { date: '2/21', leadsCreated: 112, leadsConverted: 52, admissionOffered: 35, closedWon: 20 }, // 2 weeks ago
-  { date: '2/28', leadsCreated: 120, leadsConverted: 58, admissionOffered: 38, closedWon: 22 }, // 1 week ago
-  { date: '3/7', leadsCreated: 115, leadsConverted: 55, admissionOffered: 36, closedWon: 21 },  // current week
+  { date: '2/7', leadsCreated: 95, leadsConverted: 42, admissionOffered: 28, closedWon: 15, arrAdded: 18.5 },  // 4 weeks ago
+  { date: '2/14', leadsCreated: 105, leadsConverted: 48, admissionOffered: 32, closedWon: 18, arrAdded: 22.3 }, // 3 weeks ago
+  { date: '2/21', leadsCreated: 112, leadsConverted: 52, admissionOffered: 35, closedWon: 20, arrAdded: 25.8 }, // 2 weeks ago
+  { date: '2/28', leadsCreated: 120, leadsConverted: 58, admissionOffered: 38, closedWon: 22, arrAdded: 28.6 }, // 1 week ago
+  { date: '3/7', leadsCreated: 115, leadsConverted: 55, admissionOffered: 36, closedWon: 21, arrAdded: 27.2 },  // current week
 ];
 
 // Monthly data for metrics charts - using first day of the month
 const monthlyData = [
-  { date: '11/1', leadsCreated: 380, leadsConverted: 175, admissionOffered: 120, closedWon: 65 },  // 4 months ago
-  { date: '12/1', leadsCreated: 420, leadsConverted: 195, admissionOffered: 130, closedWon: 75 },  // 3 months ago
-  { date: '1/1', leadsCreated: 450, leadsConverted: 210, admissionOffered: 145, closedWon: 82 },   // 2 months ago
-  { date: '2/1', leadsCreated: 485, leadsConverted: 230, admissionOffered: 155, closedWon: 90 },   // 1 month ago
-  { date: '3/1', leadsCreated: 320, leadsConverted: 150, admissionOffered: 100, closedWon: 55 },   // current month
+  { date: '11/1', leadsCreated: 380, leadsConverted: 175, admissionOffered: 120, closedWon: 65, arrAdded: 85.6 },  // 4 months ago
+  { date: '12/1', leadsCreated: 420, leadsConverted: 195, admissionOffered: 130, closedWon: 75, arrAdded: 97.5 },  // 3 months ago
+  { date: '1/1', leadsCreated: 450, leadsConverted: 210, admissionOffered: 145, closedWon: 82, arrAdded: 105.2 },   // 2 months ago
+  { date: '2/1', leadsCreated: 485, leadsConverted: 230, admissionOffered: 155, closedWon: 90, arrAdded: 115.8 },   // 1 month ago
+  { date: '3/1', leadsCreated: 320, leadsConverted: 150, admissionOffered: 100, closedWon: 55, arrAdded: 75.5 },   // current month
 ];
 
 // Trend data for line charts - daily granularity
 const dailyTrendData = [
-  { date: '3/30', leadsCreated: 15, leadsConverted: 6, admissionOffered: 4, closedWon: 2 },
-  { date: '3/31', leadsCreated: 18, leadsConverted: 8, admissionOffered: 5, closedWon: 3 },
-  { date: '4/01', leadsCreated: 22, leadsConverted: 10, admissionOffered: 7, closedWon: 4 },
-  { date: '4/02', leadsCreated: 20, leadsConverted: 9, admissionOffered: 6, closedWon: 3 },
-  { date: '4/03', leadsCreated: 24, leadsConverted: 12, admissionOffered: 8, closedWon: 5 },
-  { date: '4/04', leadsCreated: 19, leadsConverted: 8, admissionOffered: 5, closedWon: 2 },
-  { date: '4/05', leadsCreated: 17, leadsConverted: 7, admissionOffered: 4, closedWon: 2 },
+  { date: '3/30', leadsCreated: 15, leadsConverted: 6, admissionOffered: 4, closedWon: 2, arrAdded: 3.1 },
+  { date: '3/31', leadsCreated: 18, leadsConverted: 8, admissionOffered: 5, closedWon: 3, arrAdded: 4.2 },
+  { date: '4/01', leadsCreated: 22, leadsConverted: 10, admissionOffered: 7, closedWon: 4, arrAdded: 6.5 },
+  { date: '4/02', leadsCreated: 20, leadsConverted: 9, admissionOffered: 6, closedWon: 3, arrAdded: 5.8 },
+  { date: '4/03', leadsCreated: 24, leadsConverted: 12, admissionOffered: 8, closedWon: 5, arrAdded: 7.9 },
+  { date: '4/04', leadsCreated: 19, leadsConverted: 8, admissionOffered: 5, closedWon: 2, arrAdded: 4.8 },
+  { date: '4/05', leadsCreated: 17, leadsConverted: 7, admissionOffered: 4, closedWon: 2, arrAdded: 4.2 },
 ];
 
 // Trend data for line charts - weekly granularity
 const weeklyTrendData = [
-  { date: 'Week 12', leadsCreated: 85, leadsConverted: 38, admissionOffered: 25, closedWon: 14 },
-  { date: 'Week 13', leadsCreated: 95, leadsConverted: 42, admissionOffered: 28, closedWon: 15 },
-  { date: 'Week 14', leadsCreated: 105, leadsConverted: 48, admissionOffered: 32, closedWon: 18 },
-  { date: 'Week 15', leadsCreated: 112, leadsConverted: 52, admissionOffered: 35, closedWon: 20 },
-  { date: 'Week 16', leadsCreated: 120, leadsConverted: 58, admissionOffered: 38, closedWon: 22 },
-  { date: 'Week 17', leadsCreated: 115, leadsConverted: 55, admissionOffered: 36, closedWon: 21 },
+  { date: 'Week 12', leadsCreated: 85, leadsConverted: 38, admissionOffered: 25, closedWon: 14, arrAdded: 17.2 },
+  { date: 'Week 13', leadsCreated: 95, leadsConverted: 42, admissionOffered: 28, closedWon: 15, arrAdded: 19.5 },
+  { date: 'Week 14', leadsCreated: 105, leadsConverted: 48, admissionOffered: 32, closedWon: 18, arrAdded: 22.8 },
+  { date: 'Week 15', leadsCreated: 112, leadsConverted: 52, admissionOffered: 35, closedWon: 20, arrAdded: 25.2 },
+  { date: 'Week 16', leadsCreated: 120, leadsConverted: 58, admissionOffered: 38, closedWon: 22, arrAdded: 28.6 },
+  { date: 'Week 17', leadsCreated: 115, leadsConverted: 55, admissionOffered: 36, closedWon: 21, arrAdded: 27.1 },
 ];
 
 // Trend data for line charts - monthly granularity
 const monthlyTrendData = [
-  { date: 'Nov', leadsCreated: 320, leadsConverted: 150, admissionOffered: 100, closedWon: 55 },
-  { date: 'Dec', leadsCreated: 350, leadsConverted: 165, admissionOffered: 110, closedWon: 60 },
-  { date: 'Jan', leadsCreated: 380, leadsConverted: 175, admissionOffered: 120, closedWon: 65 },
-  { date: 'Feb', leadsCreated: 420, leadsConverted: 195, admissionOffered: 130, closedWon: 75 },
-  { date: 'Mar', leadsCreated: 450, leadsConverted: 210, admissionOffered: 145, closedWon: 82 },
-  { date: 'Apr', leadsCreated: 485, leadsConverted: 230, admissionOffered: 155, closedWon: 90 },
+  { date: 'Nov', leadsCreated: 320, leadsConverted: 150, admissionOffered: 100, closedWon: 55, arrAdded: 72.5 },
+  { date: 'Dec', leadsCreated: 350, leadsConverted: 165, admissionOffered: 110, closedWon: 60, arrAdded: 79.8 },
+  { date: 'Jan', leadsCreated: 380, leadsConverted: 175, admissionOffered: 120, closedWon: 65, arrAdded: 85.4 },
+  { date: 'Feb', leadsCreated: 420, leadsConverted: 195, admissionOffered: 130, closedWon: 75, arrAdded: 97.2 },
+  { date: 'Mar', leadsCreated: 450, leadsConverted: 210, admissionOffered: 145, closedWon: 82, arrAdded: 106.5 },
+  { date: 'Apr', leadsCreated: 485, leadsConverted: 230, admissionOffered: 155, closedWon: 90, arrAdded: 118.9 },
 ];
 
 // Sample metrics data
@@ -113,6 +113,13 @@ const admissionsMetrics = [
     weekToDate: { value: 16.7, change: +2.5 },
     last7Days: { value: 8.1, change: +4.8 },
     last28Days: { value: 28.5, change: -7.5 },
+  },
+  {
+    id: 'arr-added',
+    name: 'ARR Added',
+    weekToDate: { value: 27.2, change: +3.8 },
+    last7Days: { value: 12.5, change: +6.2 },
+    last28Days: { value: 105.8, change: +8.3 },
   },
 ];
 
@@ -294,7 +301,8 @@ const AdmissionsAnalytics = () => {
                 {columnData.map((item, index) => {
                   const value = metric.id === 'leads-created' ? item.leadsCreated :
                                metric.id === 'leads-converted' ? item.leadsConverted :
-                               metric.id === 'admission-offered' ? item.admissionOffered : item.closedWon;
+                               metric.id === 'admission-offered' ? item.admissionOffered :
+                               metric.id === 'arr-added' ? item.arrAdded : item.closedWon;
                   
                   // Calculate a random change percentage for demonstration purposes
                   // In real app, this would come from actual data comparison
@@ -319,7 +327,8 @@ const AdmissionsAnalytics = () => {
                         type="monotone" 
                         dataKey={metric.id === 'leads-created' ? 'leadsCreated' : 
                                metric.id === 'leads-converted' ? 'leadsConverted' : 
-                               metric.id === 'admission-offered' ? 'admissionOffered' : 'closedWon'} 
+                               metric.id === 'admission-offered' ? 'admissionOffered' :
+                               metric.id === 'arr-added' ? 'arrAdded' : 'closedWon'} 
                         stroke="#474b4f" 
                         strokeWidth={2} 
                         dot={false}
@@ -356,7 +365,7 @@ const AdmissionsAnalytics = () => {
         </Card>
         <Card className="bg-seasalt border border-platinum">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-slate-gray">Win Rate</CardTitle>
+            <CardTitle className="text-sm text-slate-gray">Total ARR</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-eerie-black">42.8%</div>
@@ -365,7 +374,7 @@ const AdmissionsAnalytics = () => {
         </Card>
         <Card className="bg-seasalt border border-platinum">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-slate-gray">Capacity Remaining</CardTitle>
+            <CardTitle className="text-sm text-slate-gray">ARPU</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-eerie-black">12 days</div>
@@ -401,77 +410,7 @@ const AdmissionsAnalytics = () => {
         </Card>
       </div>
 
-      {/* Tabs Section - Pipeline and Campus Distribution */}
-      <Tabs defaultValue="pipeline" className="mt-8">
-        <TabsList className="grid w-full grid-cols-2 bg-anti-flash">
-          <TabsTrigger value="pipeline" className="text-outer-space data-[state=active]:bg-seasalt">Pipeline</TabsTrigger>
-          <TabsTrigger value="campus" className="text-outer-space data-[state=active]:bg-seasalt">Campus Distribution</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="pipeline" className="mt-4">
-          <Card className="bg-seasalt border-platinum">
-            <CardHeader>
-              <CardTitle className="text-eerie-black">Pipeline Stages</CardTitle>
-              <CardDescription className="text-slate-gray">Current admissions pipeline by stage</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={openPipelineData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={false}
-                      outerRadius={130}
-                      fill="#474b4f"
-                      dataKey="value"
-                    >
-                      {openPipelineData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Legend wrapperStyle={{color: "#6b6e70"}} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="campus" className="mt-4">
-          <Card className="bg-seasalt border-platinum">
-            <CardHeader>
-              <CardTitle className="text-eerie-black">Campus Distribution</CardTitle>
-              <CardDescription className="text-slate-gray">Admissions by campus location</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={campusData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={false}
-                      outerRadius={130}
-                      fill="#474b4f"
-                      dataKey="value"
-                    >
-                      {campusData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Legend wrapperStyle={{color: "#6b6e70"}} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+
 
     </div>
   );
