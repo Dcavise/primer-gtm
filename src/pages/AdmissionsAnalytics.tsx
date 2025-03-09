@@ -244,13 +244,112 @@ const AdmissionsAnalytics = () => {
     // You can add additional logic here if needed
   }, [selectedCampus]);
 
-  // Simple function to format dates
-  const formatDateHeader = (dateString: string) => {
-    return dateString;
+  // Format SQL dates for display in column headers
+  // Format SQL date strings as MM/DD with hardcoding for monthly periods
+  const formatSqlDate = (dateString: string) => {
+    if (!dateString) return '';
+    
+    // For monthly periods, we can hardcode this since SQL returns the first day of each month
+    if (periodType === 'month') {
+      // Try to extract month from the date string directly
+      // Format will be like "2025-03-01 00:00:00+00"
+      try {
+        // Extract month and day part - expected format: yyyy-MM-dd
+        const datePart = dateString.split(' ')[0]; // Get "2025-03-01" part
+        const [year, month] = datePart.split('-');
+        
+        if (month) {
+          // Remove leading zero if present (e.g., "03" → "3")
+          const monthNumber = parseInt(month, 10);
+          return `${monthNumber}/1`; // Always show first day of month
+        }
+      } catch (e) {
+        console.error('Error extracting month:', e);
+      }
+    }
+    
+    // Fallback for non-monthly periods or if extraction fails
+    try {
+      const date = new Date(dateString);
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid date string:', dateString);
+        return 'Invalid';
+      }
+
+      // Get month and day
+      const month = date.getMonth() + 1; // 0-based index, so add 1
+      const day = date.getDate();
+      
+      // Format as MM/DD
+      return `${month}/${day}`;
+    } catch (e) {
+      console.error('Error formatting date:', e);
+      return 'Error';
+    }
   };
+
+  // Process data from SQL results in a consistent format
+  const leadsData = useMemo(() => {
+    if (!leadsCreatedData) return [];
+
+    console.log('Original SQL periods:', leadsCreatedData.periods);
+    
+    // Map the periods from leadsCreatedData to our expected format
+    // Each period is a string like "2025-03-01 00:00:00+00"
+    return leadsCreatedData.periods.map(period => {
+      return {
+        // Store original date string from SQL
+        originalDate: period,
+        // Use the lead count for this period
+        leadsCreated: leadsCreatedData.totals[period] || 0,
+        // Include the percentage change for this period
+        percentChange: leadsCreatedData.changes.percentage[period] || 0,
+        // Keep other metrics from sample data for now
+        leadsConverted: 0,
+        admissionOffered: 0,
+        closedWon: 0,
+        arrAdded: 0
+      };
+    // Sort by date, most recent first (for the 5 most recent periods)
+    }).sort((a, b) => new Date(b.originalDate).getTime() - new Date(a.originalDate).getTime());
+  }, [leadsCreatedData]);
 
   // Helper function to get appropriate data based on the selected date truncation
   const getDataByTruncation = () => {
+    // If we have real data from the hook, use it
+    if (leadsCreatedData && leadsData.length > 0) {
+      console.log('Selecting data to display from periods:', leadsData.map(d => d.originalDate));
+      
+      // Get up to 5 periods (or fewer if we don't have that many)
+      // Periods are already sorted most recent first from the leadsData useMemo
+      const dataToShow = leadsData.slice(0, 5);
+      
+      // Format the dates for display, ensuring the most recent is marked properly
+      const formattedData = dataToShow.map((item, index) => {
+        // Default format: MM/DD
+        let displayDate = formatSqlDate(item.originalDate);
+        
+        // Mark the most recent period (first item) as the current period
+        if (index === 0) {
+          if (periodType === 'day') displayDate = 'Today';
+          else if (periodType === 'week') displayDate = 'Week to Date';
+          else if (periodType === 'month') displayDate = 'Month to Date';
+        }
+        
+        return {
+          ...item,
+          date: displayDate
+        };
+      });
+      
+      // Return data with most recent first to oldest last, then reverse for display
+      // This ensures the "Current Period" always appears on the far right
+      return formattedData.reverse();
+    }
+    
+    // Fall back to sample data if no real data is available
     switch (dateTruncation) {
       case 'daily': {
         // Create a copy of the last 4 days of data so we have 5 total columns
@@ -260,21 +359,21 @@ const AdmissionsAnalytics = () => {
         return withToday;
       }
       case 'weekly': {
-        // Create a copy of the last 3 weeks of data (use the actual start dates from the data)
+        // Create a copy of the last 4 weeks of data (use the actual start dates from the data)
         const weeks = weeklyData.slice(-5, -1); // Getting 4 weeks excluding current
         // Add the current week as "Week to Date" for the last entry
         const withCurrentWeek = [...weeks, { ...weeklyData[weeklyData.length - 1], date: 'Week to Date' }];
         return withCurrentWeek;
       }
       case 'monthly': {
-        // Create a copy of the last 3 months of data (use the actual dates from the data)
+        // Create a copy of the last 4 months of data (use the actual dates from the data)
         const months = monthlyData.slice(-5, -1); // Getting 4 months excluding current
         // Add the current month as "Month to Date" for the last entry
         const withCurrentMonth = [...months, { ...monthlyData[monthlyData.length - 1], date: 'Month to Date' }];
         return withCurrentMonth;
       }
       default:
-        return dailyData.slice(-4);
+        return dailyData.slice(-5);
     }
   };
 
@@ -431,7 +530,10 @@ const AdmissionsAnalytics = () => {
           <div className="flex border-b pb-2 text-sm font-medium text-slate-gray">
             <div className="w-1/6"></div>
             {columnData.map((item, index) => (
-              <div key={index} className="w-1/6 text-center">{formatDateHeader(item.date)}</div>
+              <div key={index} className="w-1/6 text-center">
+                {/* Display the date, which is already formatted in getDataByTruncation */}
+                {item.date}
+              </div>
             ))}
             <div className="w-1/3 pr-2 pl-4 text-center">Trend</div>
           </div>

@@ -133,22 +133,18 @@ export function useLeadsCreated({
           console.warn('Edge function failed, falling back to direct SQL:', edgeFunctionError);
           
           // Fall back to direct SQL query if edge function fails
-          // For daily period, use DATE to match direct query results
-          // For weekly/monthly, use DATE_TRUNC for proper aggregation
-          const dateFunction = period === 'day' ? 'DATE' : 'DATE_TRUNC';
-          
           let query = `
             SELECT
-              ${dateFunction}(l.created_date) AS period_start,
+              DATE_TRUNC('${period}', l.created_date) AS period_start,
               COALESCE(l.preferred_campus_c, 'No Campus Match') AS campus_name,
-              COUNT(l.id) AS lead_count
+              COUNT(DISTINCT l.id) AS lead_count
             FROM
               fivetran_views.lead l
             WHERE
               l.created_date >= (CURRENT_DATE - INTERVAL '${lookbackUnits} ${period}')
           `;
           
-          console.log(`Using ${dateFunction} for date aggregation`);
+          console.log(`Using DATE_TRUNC for date aggregation`);
           
           console.log('Current date in SQL:', new Date().toISOString());
           console.log('Lookback interval:', `${lookbackUnits} ${period}`);
@@ -162,14 +158,16 @@ export function useLeadsCreated({
           // Different handling for specific campus vs. all campuses
           if (campusId !== null) {
             console.log(`- Length: ${campusId.length}`);
-            console.log(`- Whitespace check: "${campusId}" vs "${campusId.trim()}"`); 
+            console.log(`- Whitespace check: "${campusId}" vs "${campusId.trim()}"`);
             console.log(`- Has leading/trailing whitespace: ${campusId !== campusId.trim()}`);
             
             // Ensure we're properly escaping single quotes for SQL
             const escapedCampusId = campusId.replace(/'/g, "''");
             
             // Add campus filtering with case-insensitive matching
-            query += `AND l.preferred_campus_c ILIKE '${escapedCampusId}'`;
+            query += `
+            AND l.preferred_campus_c ILIKE '${escapedCampusId}'`;
+            
             console.log(`- Final SQL parameter (escaped): '${escapedCampusId}'`);
             console.log(`- SQL will use: AND preferred_campus_c ILIKE '${escapedCampusId}' (case-insensitive)`);
             console.log(`- This applies to ALL campus selections for consistent behavior`);
@@ -177,10 +175,10 @@ export function useLeadsCreated({
             // For 'all campuses', we don't add any WHERE clause for preferred_campus_c
             console.log(`- No campus filter added - will show all campuses`);
           }
-          // Add GROUP BY and ORDER BY clauses - match the date function in the SELECT
+          // Add GROUP BY and ORDER BY clauses - using DATE_TRUNC with the selected period
           query += `
             GROUP BY
-              ${dateFunction}(l.created_date), 
+              DATE_TRUNC('${period}', l.created_date), 
               l.preferred_campus_c
             ORDER BY
               period_start DESC
@@ -228,39 +226,31 @@ export function useLeadsCreated({
             
             // Using the helper function defined at the top level
             
-            // Direct fallback - create a dataset that matches the direct query results
-            console.log('Using mock data that matches direct query results');
-            const mockData = [
-              {
-                period_start: '2025-03-06',
-                campus_name: campusId || 'All Campuses',
-                lead_count: campusId === 'Birmingham' ? 7 : 47
-              },
-              {
-                period_start: '2025-03-05',
-                campus_name: campusId || 'All Campuses',
-                lead_count: campusId === 'Birmingham' ? 7 : 50
-              },
-              {
-                period_start: '2025-03-04',
-                campus_name: campusId || 'All Campuses',
-                lead_count: campusId === 'Birmingham' ? 4 : 30
-              },
-              {
-                period_start: '2025-03-03',
-                campus_name: campusId || 'All Campuses',
-                lead_count: campusId === 'Birmingham' ? 7 : 42
-              }
-            ];
-            console.log('Lead counts by date:', mockData.map(d => `${d.period_start}: ${d.lead_count}`).join(', '));
-            const directData = mockData;
+            // Execute SQL query directly through Supabase
+            console.log('Executing SQL query directly through Supabase...');
+            try {
+              // Make a direct SQL query with the Supabase client
+              const { data: directData, error: directError } = await supabase.rpc('execute_sql_query', {
+                query_text: query
+              });
               
-            // Using mock data, no error handling needed
-            
-            console.log('Direct query results:', directData?.length || 0, 'rows');
-            
-            // Process the data
-            responseData = processLeadMetrics(directData || [], period);
+              if (directError) {
+                console.error('Direct SQL query error:', directError);
+                throw directError;
+              }
+              
+              if (!directData || directData.length === 0) {
+                console.warn('No data returned from direct SQL query');
+                return processLeadMetrics([], period);
+              }
+              
+              console.log('Direct SQL query returned:', directData.length, 'rows');
+              return processLeadMetrics(directData, period);
+            } catch (error) {
+              console.error('All SQL query methods failed:', error);
+              // Return empty data structure when all methods fail
+              return processLeadMetrics([], period);
+            }
           } else {
             console.log('SQL RPC returned:', sqlData?.length || 0, 'rows');
             // Process the data ourselves
