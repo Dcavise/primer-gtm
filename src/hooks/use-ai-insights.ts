@@ -36,7 +36,7 @@ interface UseAiInsightsReturn {
 
 /**
  * Hook for generating AI-powered insights for property research
- * In a production environment, this would connect to an MCP server
+ * In a production environment, this would connect to an edge function
  * for more sophisticated AI analysis
  */
 export function useAiInsights(): UseAiInsightsReturn {
