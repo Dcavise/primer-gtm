@@ -1,6 +1,6 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase';
+import { supabase } from '@/integrations/supabase-client';
 import { Campus } from '@/types';
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
