@@ -133,10 +133,10 @@ export function useLeadsCreated({
           console.warn('Edge function failed, falling back to direct SQL:', edgeFunctionError);
           
           // Fall back to direct SQL query if edge function fails
-          // Use DATE() for consistent date handling across timezones
+          // Use DATE_TRUNC to respect the selected period type (day, week, month)
           let query = `
             SELECT
-              DATE(l.created_date) AS period_start,
+              DATE_TRUNC('${period}', l.created_date) AS period_start,
               COALESCE(l.preferred_campus_c, 'No Campus Match') AS campus_name,
               COUNT(DISTINCT l.id) AS lead_count
             FROM
@@ -172,10 +172,10 @@ export function useLeadsCreated({
             // For 'all campuses', we don't add any WHERE clause for preferred_campus_c
             console.log(`- No campus filter added - will show all campuses`);
           }
-          // Add GROUP BY and ORDER BY clauses - use DATE() for consistent grouping
+          // Add GROUP BY and ORDER BY clauses - match the DATE_TRUNC in the SELECT
           query += `
             GROUP BY
-              DATE(l.created_date), 
+              DATE_TRUNC('${period}', l.created_date), 
               l.preferred_campus_c
             ORDER BY
               period_start DESC
