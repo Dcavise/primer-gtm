@@ -9,6 +9,19 @@ export type LeadMetric = {
   lead_count: number;
 };
 
+// Helper function to convert period to milliseconds for date calculations
+function getMillisecondsForPeriod(period: string): number {
+  const DAY_IN_MS = 24 * 60 * 60 * 1000;
+  switch(period) {
+    case 'day': return DAY_IN_MS;
+    case 'week': return 7 * DAY_IN_MS;
+    case 'month': return 30 * DAY_IN_MS;
+    case 'quarter': return 90 * DAY_IN_MS;
+    case 'year': return 365 * DAY_IN_MS;
+    default: return 7 * DAY_IN_MS; // default to week
+  }
+};
+
 export type LeadMetricsResponse = {
   raw: LeadMetric[];
   periods: string[];
@@ -120,9 +133,10 @@ export function useLeadsCreated({
           console.warn('Edge function failed, falling back to direct SQL:', edgeFunctionError);
           
           // Fall back to direct SQL query if edge function fails
+          // Use DATE() for consistent date handling across timezones
           let query = `
             SELECT
-              DATE_TRUNC('${period}', l.created_date) AS period_start,
+              DATE(l.created_date) AS period_start,
               COALESCE(l.preferred_campus_c, 'No Campus Match') AS campus_name,
               COUNT(DISTINCT l.id) AS lead_count
             FROM
@@ -130,6 +144,10 @@ export function useLeadsCreated({
             WHERE
               l.created_date >= (CURRENT_DATE - INTERVAL '${lookbackUnits} ${period}')
           `;
+          
+          console.log('Current date in SQL:', new Date().toISOString());
+          console.log('Lookback interval:', `${lookbackUnits} ${period}`);
+          console.log('Expected date range: from', new Date(Date.now() - (lookbackUnits * getMillisecondsForPeriod(period))).toISOString(), 'to', new Date().toISOString());
           
           console.log(`%c 🔍 SQL FALLBACK CAMPUS FILTER`, 'background: #e0e0ff; color: #0000ff; font-weight: bold');
           console.log(`- Campus name parameter: "${campusId}"`);
@@ -154,14 +172,25 @@ export function useLeadsCreated({
             // For 'all campuses', we don't add any WHERE clause for preferred_campus_c
             console.log(`- No campus filter added - will show all campuses`);
           }
-          // Add GROUP BY and ORDER BY clauses
+          // Add GROUP BY and ORDER BY clauses - use DATE() for consistent grouping
           query += `
             GROUP BY
-              DATE_TRUNC('${period}', l.created_date), 
+              DATE(l.created_date), 
               l.preferred_campus_c
             ORDER BY
-              period_start
+              period_start DESC
           `;
+          
+          // Get exact dates for today and recent days for debugging
+          const today = new Date();
+          const yesterday = new Date(today);
+          yesterday.setDate(yesterday.getDate() - 1);
+          const dayBefore = new Date(today);
+          dayBefore.setDate(dayBefore.getDate() - 2);
+          
+          console.log('Today date:', today.toISOString().split('T')[0]);
+          console.log('Yesterday date:', yesterday.toISOString().split('T')[0]);
+          console.log('Day before yesterday:', dayBefore.toISOString().split('T')[0]);
           
           console.log(`FULL SQL QUERY: ${query}`);
           
@@ -176,17 +205,7 @@ export function useLeadsCreated({
             // If the RPC fails, try a direct query approach
             console.log('Attempting direct query as fallback...');
             
-            // Helper function to convert period to days for direct query
-            const getPeriodDays = (period: string, units: number) => {
-              switch(period) {
-                case 'day': return units;
-                case 'week': return units * 7;
-                case 'month': return units * 30;
-                case 'quarter': return units * 90;
-                case 'year': return units * 365;
-                default: return units * 7; // default to week
-              }
-            };
+            // Using the helper function defined at the top level
             
             // Direct fallback - create a manually processed dataset
             // Create a minimal dataset so the UI doesn't crash
