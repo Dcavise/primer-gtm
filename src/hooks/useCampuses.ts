@@ -13,21 +13,32 @@ export const CAMPUS_QUERY_KEY = ['campuses'] as const;
  * Fetch campuses function that can be used outside of React components
  */
 export async function fetchCampuses(): Promise<Campus[]> {
-  const { data, error } = await supabase
-    .from('campuses')
-    .select('*')
-    .order('campus_name', { ascending: true });
-  
-  if (error) {
-    handleError({
-      code: error.code,
-      message: error.message
-    }, false, { context: 'fetchCampuses' });
+  try {
+    // Get unique campus names directly from the lead table's preferred_campus_c field
+    const { data: campusData, error: campusError } = await supabase.rpc('execute_sql_query', {
+      query_text: `SELECT DISTINCT preferred_campus_c as campus_name
+                  FROM fivetran_views.lead
+                  WHERE preferred_campus_c IS NOT NULL
+                  ORDER BY preferred_campus_c`
+    });
     
-    throw new Error('Failed to fetch campuses data');
+    if (campusError) {
+      console.error('Error fetching campus data from lead table:', campusError);
+      throw new Error('Failed to fetch campus data');
+    }
+    
+    // Map results to the expected Campus interface format
+    const campuses = campusData.map(item => ({
+      campus_id: item.campus_name, // Use the campus name as the ID for filtering
+      campus_name: item.campus_name
+    }));
+    
+    console.log('Fetched', campuses.length, 'campuses from lead table');
+    return campuses;
+  } catch (err) {
+    console.error('Error in fetchCampuses:', err);
+    throw new Error('Failed to fetch campuses data: ' + (err instanceof Error ? err.message : String(err)));
   }
-  
-  return data || [];
 }
 
 /**

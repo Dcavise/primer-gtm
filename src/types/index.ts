@@ -12,11 +12,11 @@ export interface AddressSearchResult {
 export type SearchStatus = 'idle' | 'loading' | 'success' | 'error';
 
 export interface Campus {
-  id: string;
   campus_id: string;
   campus_name: string;
-  created_at: string;
-  updated_at: string;
+  id?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Fellow {

@@ -1,134 +1,135 @@
--- Simple function to count leads by date with minimal dependencies
+-- Enhanced function to count leads by date with period and campus filtering
+CREATE OR REPLACE FUNCTION public.get_lead_metrics(
+  time_period TEXT DEFAULT 'week',
+  lookback_units INTEGER DEFAULT 12,
+  campus_id TEXT DEFAULT NULL
+)
+RETURNS SETOF json
+LANGUAGE plpgsql
+SECURITY DEFINER AS $$
+DECLARE
+  schema_exists BOOLEAN;
+  fivetran_schema_exists BOOLEAN;
+  lead_view_exists BOOLEAN;
+  campus_view_exists BOOLEAN;
+  query_text TEXT;
+BEGIN
+  -- First check if fivetran_views schema exists
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.schemata WHERE schema_name = 'fivetran_views'
+  ) INTO fivetran_schema_exists;
+  
+  IF NOT fivetran_schema_exists THEN
+    RETURN QUERY SELECT json_build_object(
+      'error', 'fivetran_views schema does not exist',
+      'timestamp', NOW()
+    );
+    RETURN;
+  END IF;
+
+  -- Check if lead view exists
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.tables 
+    WHERE table_schema = 'fivetran_views' AND table_name = 'lead'
+  ) INTO lead_view_exists;
+  
+  IF NOT lead_view_exists THEN
+    RETURN QUERY SELECT json_build_object(
+      'error', 'fivetran_views.lead does not exist',
+      'timestamp', NOW()
+    );
+    RETURN;
+  END IF;
+  
+  -- Check if campus view exists
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.tables 
+    WHERE table_schema = 'fivetran_views' AND table_name = 'campuses'
+  ) INTO campus_view_exists;
+  
+  IF NOT campus_view_exists THEN
+    RETURN QUERY SELECT json_build_object(
+      'error', 'fivetran_views.campuses does not exist',
+      'timestamp', NOW()
+    );
+    RETURN;
+  END IF;
+  
+  -- Validate time_period parameter
+  IF time_period NOT IN ('day', 'week', 'month') THEN
+    RETURN QUERY SELECT json_build_object(
+      'error', 'Invalid time_period parameter. Must be one of: day, week, month',
+      'timestamp', NOW()
+    );
+    RETURN;
+  END IF;
+  
+  -- Build dynamic query for counting leads
+  query_text := format('
+    WITH lead_data AS (
+      SELECT
+        date_trunc(%L, l.createddate)::date as period_start,
+        COUNT(DISTINCT l.id) as lead_count,
+        CASE 
+          WHEN c.id IS NOT NULL THEN c.name
+          ELSE ''No Campus Match''
+        END as campus_name,
+        CASE 
+          WHEN c.id IS NOT NULL THEN c.id
+          ELSE NULL
+        END as campus_id
+      FROM
+        fivetran_views.lead l
+      LEFT JOIN
+        fivetran_views.campuses c ON 
+        (l.preferred_campus_c = c.name OR l.campus_c = c.id)
+      WHERE
+        l.createddate >= (CURRENT_DATE - (%L || '' %s'')::interval)
+        %s
+      GROUP BY
+        period_start, campus_name, c.id
+      ORDER BY
+        period_start DESC
+    )
+    SELECT json_build_object(
+      ''period_start'', ld.period_start,
+      ''period_type'', %L,
+      ''campus_name'', ld.campus_name,
+      ''campus_id'', ld.campus_id,
+      ''lead_count'', ld.lead_count
+    )
+    FROM lead_data ld
+    ORDER BY ld.period_start DESC, ld.lead_count DESC;
+  ', 
+    time_period, 
+    lookback_units, 
+    time_period, 
+    CASE WHEN campus_id IS NOT NULL THEN format(' AND (l.campus_c = %L OR c.id = %L)', campus_id, campus_id) ELSE '' END,
+    time_period
+  );
+  
+  -- Execute the query
+  RETURN QUERY EXECUTE query_text;
+END;
+$$;
+
+COMMENT ON FUNCTION public.get_lead_metrics IS 'Counts distinct leads grouped by day/week/month and campus, with filtering options';
+GRANT EXECUTE ON FUNCTION public.get_lead_metrics TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_lead_metrics TO service_role;
+
+-- Backward compatibility function
 CREATE OR REPLACE FUNCTION public.get_simple_lead_count_by_week(
   lookback_weeks integer DEFAULT 12
 )
 RETURNS SETOF json
 LANGUAGE plpgsql
 SECURITY DEFINER AS $$
-DECLARE
-  lead_table_columns text[];
-  date_column text;
-  query_text text;
-  schema_exists boolean;
 BEGIN
-  -- First check if salesforce schema exists
-  SELECT EXISTS (
-    SELECT 1 FROM information_schema.schemata WHERE schema_name = 'salesforce'
-  ) INTO schema_exists;
-  
-  IF NOT schema_exists THEN
-    RETURN QUERY SELECT json_build_object(
-      'error', 'Salesforce schema does not exist',
-      'timestamp', NOW()
-    );
-    RETURN;
-  END IF;
-
-  -- Check if lead table exists and get its columns
-  SELECT array_agg(column_name) INTO lead_table_columns
-  FROM information_schema.columns 
-  WHERE table_schema = 'salesforce' AND table_name = 'lead';
-  
-  IF lead_table_columns IS NULL THEN
-    -- Also try the public schema as a fallback
-    SELECT array_agg(column_name) INTO lead_table_columns
-    FROM information_schema.columns 
-    WHERE table_schema = 'public' AND table_name = 'lead';
-    
-    IF lead_table_columns IS NULL THEN
-      RETURN QUERY SELECT json_build_object(
-        'error', 'Lead table does not exist in salesforce or public schema',
-        'timestamp', NOW()
-      );
-      RETURN;
-    ELSE
-      -- Use public schema for the query
-      -- Find a suitable date column
-      IF 'created_date' = ANY(lead_table_columns) THEN
-        date_column := 'created_date';
-      ELSIF 'createddate' = ANY(lead_table_columns) THEN
-        date_column := 'createddate';
-      ELSIF 'systemmodstamp' = ANY(lead_table_columns) THEN
-        date_column := 'systemmodstamp';
-      ELSE
-        -- Return column list to help troubleshoot
-        RETURN QUERY SELECT json_build_object(
-          'error', 'No suitable date column found in public.lead table',
-          'available_columns', lead_table_columns,
-          'timestamp', NOW()
-        );
-        RETURN;
-      END IF;
-      
-      -- Build dynamic query using public schema
-      query_text := format('
-        WITH lead_weeks AS (
-          SELECT
-            date_trunc(''week'', %I)::date as week_start,
-            COUNT(*) as lead_count
-          FROM
-            public.lead
-          GROUP BY
-            week_start
-          ORDER BY
-            week_start DESC
-          LIMIT %L
-        )
-        SELECT json_build_object(
-          ''week_start'', lw.week_start,
-          ''lead_count'', lw.lead_count
-        )
-        FROM lead_weeks lw;
-      ', date_column, lookback_weeks);
-      
-      -- Execute the query
-      RETURN QUERY EXECUTE query_text;
-    END IF;
-  ELSE
-    -- Use salesforce schema
-    -- Find a suitable date column
-    IF 'created_date' = ANY(lead_table_columns) THEN
-      date_column := 'created_date';
-    ELSIF 'createddate' = ANY(lead_table_columns) THEN
-      date_column := 'createddate';
-    ELSIF 'systemmodstamp' = ANY(lead_table_columns) THEN
-      date_column := 'systemmodstamp';
-    ELSE
-      -- Return column list to help troubleshoot
-      RETURN QUERY SELECT json_build_object(
-        'error', 'No suitable date column found in salesforce.lead table',
-        'available_columns', lead_table_columns,
-        'timestamp', NOW()
-      );
-      RETURN;
-    END IF;
-    
-    -- Build dynamic query with salesforce schema
-    query_text := format('
-      WITH lead_weeks AS (
-        SELECT
-          date_trunc(''week'', %I)::date as week_start,
-          COUNT(*) as lead_count
-        FROM
-          salesforce.lead
-        GROUP BY
-          week_start
-        ORDER BY
-          week_start DESC
-        LIMIT %L
-      )
-      SELECT json_build_object(
-        ''week_start'', lw.week_start,
-        ''lead_count'', lw.lead_count
-      )
-      FROM lead_weeks lw;
-    ', date_column, lookback_weeks);
-    
-    -- Execute the query
-    RETURN QUERY EXECUTE query_text;
-  END IF;
+  -- Call the new function with week as time period
+  RETURN QUERY SELECT * FROM public.get_lead_metrics('week', lookback_weeks, NULL);
 END;
 $$;
-COMMENT ON FUNCTION public.get_simple_lead_count_by_week IS 'Simple count of leads grouped by week with minimal schema dependencies, checks both salesforce and public schemas';
+
+COMMENT ON FUNCTION public.get_simple_lead_count_by_week IS 'Compatibility wrapper for get_lead_metrics function';
 GRANT EXECUTE ON FUNCTION public.get_simple_lead_count_by_week TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_simple_lead_count_by_week TO service_role; 

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
@@ -6,6 +6,9 @@ import { GridList, GridListItem } from "../components/ui/grid-list";
 import { Button } from "../components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { useLeadsCreated } from "../hooks/useLeadsCreated";
+import { useCampuses } from "../hooks/useCampuses";
+import { Skeleton } from "../components/ui/skeleton";
 
 // Sample data for the charts
 const applicationData = [
@@ -134,9 +137,112 @@ const openPipelineData = [
 ];
 
 const AdmissionsAnalytics = () => {
-  // State for date truncation selection
+  // Convert string-based dateTruncation to hook's period type
   const [dateTruncation, setDateTruncation] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [selectedCampus, setSelectedCampus] = useState<string>('all');
+
+  // Map dateTruncation to period type for hook
+  const periodType = dateTruncation === 'daily' ? 'day' : 
+                     dateTruncation === 'weekly' ? 'week' : 'month';
+  
+  // Default lookback units based on period
+  const lookbackUnits = dateTruncation === 'daily' ? 30 : 
+                        dateTruncation === 'weekly' ? 12 : 6;
+  
+  // Fetch campus data for mapping between campus names and IDs
+  const { campuses, isLoading: loadingCampuses } = useCampuses();
+  
+  // For this simplified approach, the campus name IS the ID for filtering
+  const selectedCampusId = useMemo(() => {
+    // If 'all' is selected, return null to show all campuses
+    if (selectedCampus === 'all' || loadingCampuses) {
+      return null;
+    }
+    
+    // Check if we have any potential case or whitespace issues
+    const normalizedName = selectedCampus.trim();
+    
+    // No special case handling for any specific campus
+    // All campus names must exactly match the preferred_campus_c field value
+    
+    console.log(`Normalizing campus name: "${selectedCampus}" -> "${normalizedName}"`);
+    console.log(`🔍 This must match EXACTLY what's in the database preferred_campus_c field`);
+    console.log(`SQL will use: WHERE preferred_campus_c = '${normalizedName}'`);
+    
+    // The campus name itself is used for filtering in the SQL query
+    return normalizedName;
+  }, [selectedCampus, loadingCampuses]);
+  
+
+  
+  // Expanded debugging for campus selection
+  useEffect(() => {
+    console.log('%c Campus Selection Debug', 'background: #f0f0f0; color: #0000ff; font-size: 12px; font-weight: bold;');
+    console.log('Selected Campus Name:', selectedCampus);
+    console.log('Campus ID/Name for filtering:', selectedCampusId);
+    console.log('All available campuses:', campuses);
+    
+    // Log raw campus data to check exact naming
+    if (campuses.length > 0) {
+      console.table(campuses.map(c => ({
+        campus_id: c.campus_id,
+        campus_name: c.campus_name,
+        campus_name_length: c.campus_name.length,
+        trimmed_equal: c.campus_name.trim() === c.campus_name,
+        has_special_chars: /[^a-zA-Z0-9\s]/.test(c.campus_name)
+      })));
+    }
+  }, [selectedCampusId, selectedCampus, campuses]);
+  
+  // Fetch leads created data using the hook
+  const { 
+    data: leadsCreatedData, 
+    loading: loadingLeadsCreated, 
+    error: leadsCreatedError 
+  } = useLeadsCreated({
+    period: periodType,
+    lookbackUnits,
+    campusId: selectedCampusId
+  });
+  
+  // Additional debug info for active campus selection
+  // Placed after variable declarations to avoid lint errors
+  useEffect(() => {
+    // Only run this when data loads
+    if (!loadingLeadsCreated && leadsCreatedData) {
+      console.log('%c 📊 LOADED DATA CAMPUSES INSPECTION', 'background: #e0ffe0; color: #006600; font-weight: bold');
+      console.log('- Selected campus for filtering:', selectedCampusId);
+      console.log('- Available campuses in result data:', leadsCreatedData.campuses);
+      
+      // Check if our selected campus appears in the result data
+      if (selectedCampusId && !leadsCreatedData.campuses.includes(selectedCampusId)) {
+        console.warn(`⚠️ Selected campus "${selectedCampusId}" not found in results!`);
+        console.log('This suggests a name mismatch between UI and database');
+        
+        // Try to find similar campus names for debugging
+        const similarCampuses = leadsCreatedData.campuses.filter(c => 
+          c.toLowerCase().includes(selectedCampusId.toLowerCase().substring(0, 4)) ||
+          selectedCampusId.toLowerCase().includes(c.toLowerCase().substring(0, 4))
+        );
+        
+        if (similarCampuses.length > 0) {
+          console.log('Possible matches found:', similarCampuses);
+        }
+      }
+    }
+  }, [loadingLeadsCreated, leadsCreatedData, selectedCampusId]);
+  
+  // Debug campus selection and track changes to help identify navigation issues
+  console.log('%c 🏫 CAMPUS SELECTION INFO', 'background: #f0f0ff; color: #0000aa; font-weight: bold');
+  console.log('- UI Selection:', selectedCampus);
+  console.log('- Filter Parameter:', selectedCampusId); 
+  console.log('- Using "all campuses"?', selectedCampus === 'all');
+  
+  // Use useEffect to track state changes without triggering navigation
+  useEffect(() => {
+    console.log('Campus selection changed:', selectedCampus);
+    // You can add additional logic here if needed
+  }, [selectedCampus]);
 
   // Simple function to format dates
   const formatDateHeader = (dateString: string) => {
@@ -220,11 +326,13 @@ const AdmissionsAnalytics = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                       </svg>
                       <span>
-                        {selectedCampus === 'all' && 'All Campuses'}
-                        {selectedCampus === 'main' && 'Main Campus'}
-                        {selectedCampus === 'north' && 'North Campus'}
-                        {selectedCampus === 'south' && 'South Campus'}
-                        {selectedCampus === 'online' && 'Online'}
+                        {loadingLeadsCreated || loadingCampuses ? (
+                          <Skeleton className="h-5 w-24" />
+                        ) : (
+                          selectedCampus === 'all'
+                            ? 'All Campuses'
+                            : selectedCampus
+                        )}
                       </span>
                     </div>
                     <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" className="ml-2 h-4 w-4 shrink-0 opacity-50">
@@ -233,23 +341,58 @@ const AdmissionsAnalytics = () => {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="p-0 w-[300px]" align="start">
-                  <GridList 
-                    aria-label="Campus Selection"
-                    selectionMode="single"
-                    className="overflow-auto max-h-[200px]"
-                    selectedKeys={[selectedCampus]}
-                    onSelectionChange={(keys) => {
-                      if (keys && typeof keys === 'object' && 'size' in keys && keys.size > 0) {
-                        setSelectedCampus(Array.from(keys)[0] as string);
-                      }
-                    }}
-                  >
-                    <GridListItem id="all">All Campuses</GridListItem>
-                    <GridListItem id="main">Main Campus</GridListItem>
-                    <GridListItem id="north">North Campus</GridListItem>
-                    <GridListItem id="south">South Campus</GridListItem>
-                    <GridListItem id="online">Online</GridListItem>
-                  </GridList>
+                  {loadingLeadsCreated ? (
+                    <div className="p-4">
+                      <Skeleton className="h-6 w-full mb-2" />
+                      <Skeleton className="h-6 w-full mb-2" />
+                      <Skeleton className="h-6 w-full mb-2" />
+                      <Skeleton className="h-6 w-full" />
+                    </div>
+                  ) : (
+                     <div className="p-1 overflow-auto max-h-[300px]">
+                      {/* Simple list of campuses without GridList */}
+                      <div 
+                        className={`p-2 rounded cursor-pointer ${selectedCampus === 'all' ? 'bg-slate-100 font-medium' : 'hover:bg-slate-50'}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setSelectedCampus('all');
+                        }}
+                      >
+                        All Campuses
+                      </div>
+                      
+                      {/* Map through available campuses */}
+                      {campuses.map(campus => (
+                        <div 
+                          key={campus.campus_id}
+                          className={`p-2 rounded cursor-pointer ${selectedCampus === campus.campus_name ? 'bg-slate-100 font-medium' : 'hover:bg-slate-50'}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            // Log exact campus name to check for whitespace/special chars
+                          console.log(`Setting campus name to: "${campus.campus_name}", length: ${campus.campus_name.length}`);
+                          setSelectedCampus(campus.campus_name);
+                          }}
+                        >
+                          {campus.campus_name}
+                        </div>
+                      ))}
+                      
+                      {/* Debug campus data */}
+                      <div className="px-2 py-1 text-xs text-slate-400 border-t mt-2">
+                        Selected: {selectedCampus}
+                      </div>
+                      <div className="px-2 py-1 text-xs text-slate-400">
+                        Filter parameter: "{selectedCampusId || 'all'}"
+                      </div>
+                      {leadsCreatedData?.campuses && (
+                        <div className="px-2 py-1 text-xs text-slate-400 max-h-[60px] overflow-auto">
+                          <span className="font-semibold">DB Names:</span> {leadsCreatedData.campuses.join(', ')}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </PopoverContent>
               </Popover>
             </div>
@@ -299,43 +442,90 @@ const AdmissionsAnalytics = () => {
                 <div className="w-1/6 font-medium text-outer-space">{metric.name}</div>
                 
                 {columnData.map((item, index) => {
-                  const value = metric.id === 'leads-created' ? item.leadsCreated :
-                               metric.id === 'leads-converted' ? item.leadsConverted :
-                               metric.id === 'admission-offered' ? item.admissionOffered :
-                               metric.id === 'arr-added' ? item.arrAdded : item.closedWon;
-                  
-                  // Calculate a random change percentage for demonstration purposes
-                  // In real app, this would come from actual data comparison
-                  const change = (Math.random() * 20) - 10;
-                  
-                  return (
-                    <div key={index} className="w-1/6 text-center">
-                      <div className="font-semibold text-eerie-black">{formatValue(value)}</div>
-                      <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block ${getChangeColor(change)}`}>
-                        {formatChange(change)}%
+                  // For "leads-created" use real data if available
+                  if (metric.id === 'leads-created' && leadsCreatedData) {
+                    // Find the appropriate period data
+                    const periodIndex = Math.min(index, leadsCreatedData.periods.length - 1);
+                    const periodDate = leadsCreatedData.periods[periodIndex];
+                    
+                    // Get values from the real data if available
+                    const value = periodDate ? leadsCreatedData.totals[periodDate] : 0;
+                    const change = periodDate && leadsCreatedData.changes.percentage[periodDate] 
+                      ? leadsCreatedData.changes.percentage[periodDate] 
+                      : 0;
+                    
+                    return (
+                      <div key={index} className="w-1/6 text-center">
+                        {loadingLeadsCreated ? (
+                          <Skeleton className="h-8 w-16 mx-auto mb-2" />
+                        ) : (
+                          <>
+                            <div className="font-semibold text-eerie-black">{formatValue(value)}</div>
+                            <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block ${getChangeColor(change)}`}>
+                              {formatChange(change)}%
+                            </div>
+                          </>
+                        )}
                       </div>
-                    </div>
-                  );
+                    );
+                  } else {
+                    // For other metrics, continue using the mock data
+                    const value = metric.id === 'leads-converted' ? item.leadsConverted :
+                                 metric.id === 'admission-offered' ? item.admissionOffered :
+                                 metric.id === 'arr-added' ? item.arrAdded : item.closedWon;
+                    
+                    // Calculate a random change percentage for demonstration purposes
+                    const change = (Math.random() * 20) - 10;
+                    
+                    return (
+                      <div key={index} className="w-1/6 text-center">
+                        <div className="font-semibold text-eerie-black">{formatValue(value)}</div>
+                        <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block ${getChangeColor(change)}`}>
+                          {formatChange(change)}%
+                        </div>
+                      </div>
+                    );
+                  }
                 })}
                 
                 <div className="w-1/3 h-16 pl-4">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={monthlyTrendData}>
-                      <XAxis dataKey="date" hide />
-                      <YAxis hide />
-                      <Line 
-                        type="monotone" 
-                        dataKey={metric.id === 'leads-created' ? 'leadsCreated' : 
-                               metric.id === 'leads-converted' ? 'leadsConverted' : 
-                               metric.id === 'admission-offered' ? 'admissionOffered' :
-                               metric.id === 'arr-added' ? 'arrAdded' : 'closedWon'} 
-                        stroke="#474b4f" 
-                        strokeWidth={2} 
-                        dot={false}
-                        activeDot={false}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  {metric.id === 'leads-created' && leadsCreatedData ? (
+                    loadingLeadsCreated ? (
+                      <Skeleton className="h-16 w-full" />
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={leadsCreatedData.timeSeriesData}>
+                          <XAxis dataKey="period" hide />
+                          <YAxis hide />
+                          <Line 
+                            type="monotone" 
+                            dataKey="total" 
+                            stroke="#474b4f" 
+                            strokeWidth={2} 
+                            dot={false}
+                            activeDot={false}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    )
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={monthlyTrendData}>
+                        <XAxis dataKey="date" hide />
+                        <YAxis hide />
+                        <Line 
+                          type="monotone" 
+                          dataKey={metric.id === 'leads-converted' ? 'leadsConverted' : 
+                                 metric.id === 'admission-offered' ? 'admissionOffered' :
+                                 metric.id === 'arr-added' ? 'arrAdded' : 'closedWon'} 
+                          stroke="#474b4f" 
+                          strokeWidth={2} 
+                          dot={false}
+                          activeDot={false}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  )}
                 </div>
               </div>
             ))}
