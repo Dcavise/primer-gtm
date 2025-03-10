@@ -1,16 +1,24 @@
-import React, { useState } from 'react';
-import { Input } from '../components/ui/input';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
+import SearchBox from '../components/SearchBox';
+import { Search as SearchIcon, Users, Briefcase, Building } from 'lucide-react';
+import { useFamilyData } from '@/hooks/useFamilyData';
+import { FamilySearchResult } from '@/integrations/supabase-client';
 
 // Define search result item interface
 interface SearchResultItem {
-  id: number;
+  id: string | number; // Updated to accept both string and number IDs
   type: 'Family' | 'Student' | 'Campus';
   name: string;
   details: string;
+  familyIds?: { // Optional object to store all family ID formats for debugging
+    standard_id?: string;
+    family_id?: string;
+    alternate_id?: string;
+  };
 }
 
 // Define mock results interface
@@ -28,13 +36,50 @@ interface MockResultsData {
  */
 const Search = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTab, setSelectedTab] = useState('all');
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
+  // Removed tabs functionality to focus solely on family search
+  const [isSearchBoxOpen, setIsSearchBoxOpen] = useState(false);
   const navigate = useNavigate();
+  
+  // Use our custom hook for family data operations
+  const { 
+    loading: isSearching, 
+    error: searchError, 
+    searchResults: familySearchResults,
+    searchFamilies 
+  } = useFamilyData();
+  
+  // Transform family search results to match our SearchResultItem interface
+  const searchResults = useMemo(() => {
+    return familySearchResults.map(family => {
+      // Log the available IDs for debugging
+      const standardId = family.standard_id || '';
+      const familyId = family.family_id || '';
+      const alternateId = family.alternate_id || '';
+      
+      console.log('Family search result with IDs:', {
+        standard_id: standardId,
+        family_id: familyId,
+        alternate_id: alternateId
+      });
+      
+      return {
+        // Use the standardized ID as our primary ID for consistent navigation
+        id: standardId || familyId || alternateId,
+        // Store all IDs for debugging and fallback
+        familyIds: {
+          standard_id: standardId,
+          family_id: familyId,
+          alternate_id: alternateId
+        },
+        type: 'Family' as const,
+        name: family.family_name || 'Unnamed Family',
+        details: `Campus: ${family.current_campus_c || 'None'}, Contacts: ${family.contact_count || 0}, Opportunities: ${family.opportunity_count || 0}`
+      };
+    });
+  }, [familySearchResults]);
 
-  // Mock search results for demonstration
-  const mockResults: MockResultsData = {
+  // Mock search results for demonstration using useMemo to avoid re-creation on each render
+  const mockResults = useMemo<MockResultsData>(() => ({
     all: [
       { id: 1, type: 'Family', name: 'Smith Family', details: 'Parents: John & Jane Smith' },
       { id: 2, type: 'Student', name: 'Emily Johnson', details: 'Grade: 10, Campus: Main' },
@@ -52,39 +97,64 @@ const Search = () => {
       { id: 3, type: 'Campus', name: 'Downtown Campus', details: '120 Students Enrolled' },
       { id: 6, type: 'Campus', name: 'North Campus', details: '85 Students Enrolled' },
     ],
-  };
+  }), []);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearch = useCallback(async (query: string) => {
+    if (!query.trim()) return;
     
-    if (!searchQuery.trim()) return;
+    setSearchQuery(query);
     
-    setIsSearching(true);
-    
-    // Simulate API call with timeout
-    setTimeout(() => {
-      setSearchResults(mockResults[selectedTab as keyof typeof mockResults] || []);
-      setIsSearching(false);
-    }, 500);
-  };
-
-  const handleTabChange = (value: string) => {
-    setSelectedTab(value);
+    // Always search for families
+    await searchFamilies(query);
+  }, [searchFamilies]);
+  
+  // Effect to perform search when search query changes from SearchBox
+  useEffect(() => {
     if (searchQuery.trim()) {
-      setIsSearching(true);
-      // Simulate API call with timeout
-      setTimeout(() => {
-        setSearchResults(mockResults[value as keyof typeof mockResults] || []);
-        setIsSearching(false);
-      }, 300);
+      handleSearch(searchQuery);
     }
-  };
+  }, [searchQuery, handleSearch]);
+  
+  // Removed tab-change effect as we now only focus on family search
+  
+  // Add keyboard shortcut listener for 'k' to open search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only trigger if 'k' is pressed and no input/textarea is focused
+      if (
+        e.key === 'k' &&
+        document.activeElement?.tagName !== 'INPUT' &&
+        document.activeElement?.tagName !== 'TEXTAREA'
+      ) {
+        e.preventDefault();
+        setIsSearchBoxOpen(true);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Removed tab change handler as we now only focus on family search
 
   const handleResultClick = (result: SearchResultItem) => {
     // Navigate based on result type
     switch (result.type) {
       case 'Family':
-        navigate(`/family/${result.id}`);
+        // Using the new comprehensive family detail page with the standardized ID
+        // Log detailed information to help diagnose any ID format issues
+        console.log('Navigating to family detail with:', {
+          id: result.id,
+          allIds: result.familyIds
+        });
+        
+        if (!result.id) {
+          console.error('Cannot navigate - missing family ID', result);
+          alert('Error: Could not find a valid ID for this family');
+          return;
+        }
+        
+        navigate(`/family-detail/${result.id}`);
         break;
       case 'Student':
         // Replace with actual student profile route when available
@@ -104,39 +174,34 @@ const Search = () => {
       <h1 className="text-2xl font-semibold text-outer-space mb-6">Search</h1>
       
       <div className="mb-8">
-        <form onSubmit={handleSearch} className="flex gap-2">
-          <Input
-            placeholder="Search for families, students, or campuses..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1"
-          />
-          <Button type="submit" disabled={isSearching || !searchQuery.trim()}>
-            {isSearching ? 'Searching...' : 'Search'}
+        <div className="relative">
+          <Button 
+            variant="outline" 
+            className="flex w-full items-center justify-between py-5 px-4 shadow-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            onClick={() => setIsSearchBoxOpen(true)}
+          >
+            <div className="flex items-center text-gray-500">
+              <SearchIcon className="h-5 w-5 mr-2" />
+              <span>{searchQuery || 'Search for families, students, or campuses...'}</span>
+            </div>
+            <kbd className="hidden sm:inline-flex items-center rounded border border-gray-200 px-2 py-1 text-xs font-medium text-gray-400">
+              Press K
+            </kbd>
           </Button>
-        </form>
+        </div>
+        
+        {/* SearchBox Component */}
+        <SearchBox 
+          isOpen={isSearchBoxOpen} 
+          onClose={() => setIsSearchBoxOpen(false)}
+          onSearch={setSearchQuery}
+          initialQuery={searchQuery}
+        />
       </div>
 
-      <Tabs defaultValue="all" className="mb-6" onValueChange={handleTabChange}>
-        <TabsList>
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="families">Families</TabsTrigger>
-          <TabsTrigger value="students">Students</TabsTrigger>
-          <TabsTrigger value="campuses">Campuses</TabsTrigger>
-        </TabsList>
-        <TabsContent value="all" className="mt-4">
-          <h2 className="text-lg font-medium text-outer-space mb-4">All Results</h2>
-        </TabsContent>
-        <TabsContent value="families" className="mt-4">
-          <h2 className="text-lg font-medium text-outer-space mb-4">Family Results</h2>
-        </TabsContent>
-        <TabsContent value="students" className="mt-4">
-          <h2 className="text-lg font-medium text-outer-space mb-4">Student Results</h2>
-        </TabsContent>
-        <TabsContent value="campuses" className="mt-4">
-          <h2 className="text-lg font-medium text-outer-space mb-4">Campus Results</h2>
-        </TabsContent>
-      </Tabs>
+      <div className="mb-6">
+        <h2 className="text-lg font-medium text-outer-space mb-4">Family Results</h2>
+      </div>
 
       {searchQuery.trim() && (
         <div className="grid gap-4">
@@ -152,6 +217,21 @@ const Search = () => {
                 onClick={() => handleResultClick(result)}
               >
                 <div className="flex items-start">
+                  <div className="flex-shrink-0 mr-4">
+                    {result.type === 'Family' ? (
+                      <div className="bg-blue-100 p-2 rounded-full">
+                        <Users className="h-5 w-5 text-blue-600" />
+                      </div>
+                    ) : result.type === 'Student' ? (
+                      <div className="bg-green-100 p-2 rounded-full">
+                        <Briefcase className="h-5 w-5 text-green-600" />
+                      </div>
+                    ) : (
+                      <div className="bg-purple-100 p-2 rounded-full">
+                        <Building className="h-5 w-5 text-purple-600" />
+                      </div>
+                    )}
+                  </div>
                   <div className="flex-1">
                     <div className="text-sm text-slate-gray mb-1">{result.type}</div>
                     <h3 className="text-lg font-medium text-outer-space">{result.name}</h3>
@@ -164,8 +244,14 @@ const Search = () => {
               </Card>
             ))
           ) : (
-            <div className="text-center py-8 text-slate-gray">
-              No results found for "{searchQuery}"
+            <div className="text-center py-8">
+              <p className="text-slate-gray">No results found for "{searchQuery}"</p>
+              <p className="text-sm text-slate-gray mt-1">Try a different search term or category</p>
+              {searchError && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-md text-red-600 text-sm">
+                  Error: {searchError}
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -1,17 +1,18 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
-import App from './App.tsx'
+import App from './App'
 import './index.css'
-import NotFound from './pages/NotFound.tsx'
+import NotFound from './pages/NotFound'
 import { logger } from './utils/logger'
 import { toast } from 'sonner'
 import { getAuthenticatedRoutes } from './features/registry'
 import MainLayout from './features/common/components/MainLayout'
-import Dashboard from './pages/Dashboard.tsx'
-import GridListDemoPage from './pages/GridListDemoPage.tsx'
-import FamilyProfile from './pages/FamilyProfile.tsx'
-import Search from './pages/Search.tsx'
+import Dashboard from './pages/Dashboard'
+import GridListDemoPage from './pages/GridListDemoPage'
+import FamilyProfile from './pages/FamilyProfile'
+import FamilyDetail from './pages/FamilyDetail'
+import Search from './pages/Search'
 
 // Global error boundary component
 class ErrorBoundary extends React.Component<
@@ -112,6 +113,11 @@ const router = createBrowserRouter([
           {
             path: "family/:familyId",
             element: <FamilyProfile />,
+          },
+          // Family Detail Page (using the new comprehensive view)
+          {
+            path: "family-detail/:familyId",
+            element: <FamilyDetail />,
           },
           // Search Page
           {

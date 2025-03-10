@@ -1,8 +1,25 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { X, Search, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { X, Search, ArrowRight, Users, Briefcase, Building } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase-client';
+import debounce from 'lodash.debounce';
 
+// Search result interface for dynamic search results
 interface SearchResult {
+  id: string;
+  title: string;
+  description: string;
+  category: 'Family' | 'Student' | 'Campus';
+  url: string;
+  extraData?: {
+    contact_count?: number;
+    opportunity_count?: number;
+    current_campus_c?: string;
+  };
+}
+
+// Interface for local search data format from JSON
+interface LocalSearchItem {
   id: string;
   title: string;
   description: string;
@@ -10,12 +27,23 @@ interface SearchResult {
   url: string;
 }
 
+// Interface for family search results from Supabase
+interface FamilySearchResult {
+  family_id: string;
+  family_name: string;
+  current_campus_c: string;
+  contact_count: number;
+  opportunity_count: number;
+}
+
 interface SearchBoxProps {
   isOpen: boolean;
   onClose: () => void;
+  onSearch?: (query: string) => void;
+  initialQuery?: string;
 }
 
-const SearchBox: React.FC<SearchBoxProps> = ({ isOpen, onClose }) => {
+const SearchBox: React.FC<SearchBoxProps> = ({ isOpen, onClose, onSearch, initialQuery = '' }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -29,38 +57,102 @@ const SearchBox: React.FC<SearchBoxProps> = ({ isOpen, onClose }) => {
       setTimeout(() => {
         searchInputRef.current?.focus();
       }, 100);
-      setSearchQuery('');
+      // Use initialQuery if provided, otherwise clear the search
+      setSearchQuery(initialQuery || '');
       setSelectedIndex(0);
     }
-  }, [isOpen]);
+  }, [isOpen, initialQuery]);
 
-  useEffect(() => {
-    // Fetch search results when query changes
-    const fetchResults = async () => {
-      if (!searchQuery.trim()) {
+  // Create a debounced version of the search function to avoid making too many requests
+  // Using a memoized debounced function for search
+  const fetchResultsWithDebounce = useCallback((query: string) => {
+    // Create the debounced function inside the callback to avoid ESLint warnings
+    const debouncedFn = debounce(async (searchTerm: string) => {
+      if (!query.trim()) {
         setResults([]);
         return;
       }
 
       setLoading(true);
       try {
-        const response = await fetch('/assets/data/searchbox.json');
-        const data: SearchResult[] = await response.json();
-        
-        // Filter results based on search query and exclude campus staff profiles
-        const filteredResults = data.filter(item => {
-          // First, check if it's a campus staff profile (if so, exclude it)
-          if (item.category.toLowerCase().includes('campus staff')) {
-            return false;
+        // Use the searchFamilies method from the supabase client
+        let familyData = [];
+        try {
+          // Use the searchFamilies helper method which properly handles the schema
+          console.log(`Attempting to search for families with term: "${query}"`);
+          const { success, data, error } = await supabase.searchFamilies(query);
+          
+          if (!success || error) {
+            console.warn('Error searching families:', error);
+            // Log more detailed error information if it's a JSON string
+            try {
+              const errorObj = typeof error === 'string' ? JSON.parse(error) : error;
+              console.warn('Detailed error info:', errorObj);
+            } catch (e) {
+              // If it's not valid JSON, just log as-is
+              console.warn('Error details:', error);
+            }
+            throw new Error(typeof error === 'string' ? error : 'Search failed');
           }
           
-          // Then, check if it matches the search query
-          return item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                 item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                 item.category.toLowerCase().includes(searchQuery.toLowerCase());
-        });
+          console.log(`Search successful, found ${data?.length || 0} results`);
+          familyData = data || [];
+        } catch (searchError) {
+          console.error('All database search attempts failed, falling back to local data:', searchError);
+          // Fall back to local data if RPC fails
+          const response = await fetch('/assets/data/searchbox.json');
+          const localData = await response.json();
+          
+          // Using the LocalSearchItem interface defined at the top of the file
+          
+          // Filter results based on search query and exclude campus staff profiles
+          familyData = localData.filter((item: LocalSearchItem) => {
+            // First, check if it's a campus staff profile (if so, exclude it)
+            if (item.category.toLowerCase().includes('campus staff')) {
+              return false;
+            }
+            
+            // Then, check if it matches the search query
+            return item.title.toLowerCase().includes(query.toLowerCase()) || 
+                  item.description.toLowerCase().includes(query.toLowerCase()) ||
+                  item.category.toLowerCase().includes(query.toLowerCase());
+          });
+        }
+
+        // Check if we're dealing with local data or RPC data
+        const isLocalData = familyData.length > 0 && 'title' in familyData[0];
         
-        setResults(filteredResults);
+        // Convert family results to the SearchResult format
+        // Using the LocalSearchItem interface defined at the top of the file
+        
+        const familyResults: SearchResult[] = isLocalData 
+          ? familyData.map((item: LocalSearchItem) => ({
+              id: item.id,
+              title: item.title,
+              description: item.description,
+              category: item.category.includes('Family') ? 'Family' : 
+                       item.category.includes('Student') ? 'Student' : 'Campus',
+              url: item.url
+            }))
+          : (familyData || []).map((family: FamilySearchResult) => ({
+          id: family.family_id,
+          title: family.family_name || 'Unnamed Family',
+          description: `Campus: ${family.current_campus_c || 'None'}, Contacts: ${family.contact_count || 0}, Opportunities: ${family.opportunity_count || 0}`,
+          category: 'Family',
+          url: `/family-detail/${family.family_id}`,
+          extraData: family
+        }));
+
+        // In the future, you could add more searches here, such as:
+        // const { data: studentData } = await supabase.rpc('search_students', { search_term: query });
+        // const { data: campusData } = await supabase.rpc('search_campuses', { search_term: query });
+        
+        // Combine all results (for now, just families)
+        const allResults = [...familyResults];
+        
+        console.log('Search results:', allResults.length, 'items found');
+        
+        setResults(allResults);
         setSelectedIndex(0); // Reset selection when results change
       } catch (error) {
         console.error('Error fetching search results:', error);
@@ -68,10 +160,43 @@ const SearchBox: React.FC<SearchBoxProps> = ({ isOpen, onClose }) => {
       } finally {
         setLoading(false);
       }
-    };
+    }, 300);
+    
+    // Execute the debounced function
+    debouncedFn(query);
+    
+    // Return the cancel function for cleanup
+    return debouncedFn.cancel;
+  }, [] // No dependencies needed here since we're using useState setters which are stable
+  );
+  
+  // Simple wrapper for the debounced function that returns the cancel function
+  const debouncedSearch = useCallback((query: string) => {
+    return fetchResultsWithDebounce(query);
+  }, [fetchResultsWithDebounce]);
 
-    fetchResults();
-  }, [searchQuery]);
+  // Call the debounced search function when the search query changes
+  useEffect(() => {
+    let cancelFn: (() => void) | undefined;
+    
+    if (searchQuery.trim()) {
+      // Store the cancel function returned by fetchResultsWithDebounce
+      cancelFn = debouncedSearch(searchQuery);
+      
+      // If onSearch callback is provided, call it with the current query
+      // This helps to synchronize the search query with the parent component
+      if (onSearch) {
+        onSearch(searchQuery);
+      }
+    } else {
+      setResults([]);
+    }
+    
+    // Cancel the debounced function when the component unmounts or search query changes
+    return () => {
+      if (cancelFn) cancelFn();
+    };
+  }, [searchQuery, debouncedSearch, onSearch, fetchResultsWithDebounce]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -104,7 +229,11 @@ const SearchBox: React.FC<SearchBoxProps> = ({ isOpen, onClose }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, results, selectedIndex, navigate, onClose]);
 
-  const handleItemClick = (url: string) => {
+  const handleItemClick = (url: string, result: SearchResult) => {
+    // If a search callback is provided, call it with the current query
+    if (onSearch) {
+      onSearch(searchQuery);
+    }
     navigate(url);
     onClose();
   };
@@ -157,10 +286,25 @@ const SearchBox: React.FC<SearchBoxProps> = ({ isOpen, onClose }) => {
                 className={`p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 ${
                   index === selectedIndex ? 'bg-blue-50' : ''
                 }`}
-                onClick={() => handleItemClick(result.url)}
+                onClick={() => handleItemClick(result.url, result)}
                 onMouseEnter={() => setSelectedIndex(index)}
               >
                 <div className="flex items-start">
+                  <div className="flex-shrink-0 mr-3">
+                    {result.category === 'Family' ? (
+                      <div className="bg-blue-100 p-2 rounded-full">
+                        <Users className="h-4 w-4 text-blue-600" />
+                      </div>
+                    ) : result.category === 'Student' ? (
+                      <div className="bg-green-100 p-2 rounded-full">
+                        <Briefcase className="h-4 w-4 text-green-600" />
+                      </div>
+                    ) : (
+                      <div className="bg-purple-100 p-2 rounded-full">
+                        <Building className="h-4 w-4 text-purple-600" />
+                      </div>
+                    )}
+                  </div>
                   <div className="flex-1">
                     <div className="font-medium">{result.title}</div>
                     <div className="text-sm text-gray-500">{result.description}</div>
