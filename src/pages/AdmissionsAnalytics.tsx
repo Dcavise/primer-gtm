@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 // Import individual UI components
 import { Card } from "../components/ui/card";
 import { CardContent } from "../components/ui/card";
@@ -17,6 +17,7 @@ import { useFormattedConvertedLeadsMetrics } from "../hooks/useFormattedConverte
 import { useFormattedClosedWonMetrics } from "../hooks/useFormattedClosedWonMetrics";
 import { useFormattedArrMetrics } from "../hooks/useFormattedArrMetrics";
 import { useTotalEnrolled } from "../hooks/useTotalEnrolled";
+import { useGradeBandEnrollment } from "../hooks/useGradeBandEnrollment";
 import { LoadingState } from "../components/LoadingState";
 import ErrorState from "../components/ErrorState";
 
@@ -91,6 +92,33 @@ const AdmissionsAnalytics = () => {
   } = useTotalEnrolled({
     campusId: campusFilter
   });
+  
+  // Fetch grade band enrollment data
+  const {
+    data: gradeBandData,
+    loading: loadingGradeBand,
+    error: gradeBandError
+  } = useGradeBandEnrollment({
+    campusId: campusFilter
+  });
+  
+  // Debug gradeBandData
+  useEffect(() => {
+    console.log('%c Grade Band Data in component:', 'color: purple; font-weight: bold', {
+      gradeBandData,
+      loadingGradeBand,
+      gradeBandError,
+      dataLength: gradeBandData?.length || 0,
+      campusFilter
+    });
+    
+    // Check if data is in the expected format
+    if (gradeBandData) {
+      gradeBandData.forEach((item, index) => {
+        console.log(`Grade band item ${index}:`, item);
+      });
+    }
+  }, [gradeBandData, loadingGradeBand, gradeBandError, campusFilter]);
   
   // Fetch leads metrics from the formatted Supabase view
   const { 
@@ -382,8 +410,8 @@ const AdmissionsAnalytics = () => {
   }, [arrMetricsData, loadingArrMetrics, periodType]);
   
   // If there's an error, show error state
-  if (metricsError || convertedMetricsError || closedWonMetricsError || arrMetricsError || totalEnrolledError) {
-    return <ErrorState message="Failed to load admissions data" error={metricsError || convertedMetricsError || closedWonMetricsError || arrMetricsError || totalEnrolledError} />;
+  if (metricsError || convertedMetricsError || closedWonMetricsError || arrMetricsError || totalEnrolledError || gradeBandError) {
+    return <ErrorState message="Failed to load admissions data" error={metricsError || convertedMetricsError || closedWonMetricsError || arrMetricsError || totalEnrolledError || gradeBandError} />;
   }
   
   return (
@@ -480,9 +508,9 @@ const AdmissionsAnalytics = () => {
         </div>
       </Card>
       
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        {/* Total Enrolled KPI Card */}
+      {/* Enrollment Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        {/* 25/26 Enrolled KPI Card */}
         <Card className="border border-platinum bg-white overflow-hidden rounded-lg shadow-sm">
           <div className="flex flex-col space-y-1.5 p-6 pb-2" data-component-name="_c2">
             <h3 className="font-semibold tracking-tight text-sm text-slate-gray" data-component-name="_c4">25/26 Enrolled</h3>
@@ -494,6 +522,59 @@ const AdmissionsAnalytics = () => {
               <div className="text-2xl font-bold">{totalEnrolledCount}</div>
             )}
             <p className="text-xs text-slate-gray mt-1">School Year 25/26</p>
+          </CardContent>
+        </Card>
+
+        {/* Grade Band Enrollment Table */}
+        <Card className="border border-platinum bg-white overflow-hidden rounded-lg shadow-sm">
+          <div className="flex flex-col space-y-1.5 p-6 pb-2">
+            <h3 className="font-semibold tracking-tight text-sm text-slate-gray">Grade Band Enrollment</h3>
+          </div>
+          <CardContent>
+            {loadingGradeBand ? (
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-full" />
+                <Skeleton className="h-6 w-full" />
+                <Skeleton className="h-6 w-full" />
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left pb-2 font-medium text-slate-gray">Grade Band</th>
+                      <th className="text-right pb-2 font-medium text-slate-gray">Students</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {gradeBandData && Array.isArray(gradeBandData) && gradeBandData.length > 0 ? (
+                      gradeBandData.map((item, index) => {
+                        // Ensure item has the expected structure
+                        if (!item || typeof item !== 'object') {
+                          console.error('Invalid grade band item structure:', item);
+                          return null;
+                        }
+                        
+                        // Extract values with fallbacks
+                        const gradeBand = item.grade_band || 'Unknown';
+                        const count = typeof item.enrollment_count === 'number' ? item.enrollment_count : 0;
+                        
+                        return (
+                          <tr key={index} className="border-b border-platinum last:border-0">
+                            <td className="py-2 text-left font-medium">{gradeBand}</td>
+                            <td className="py-2 text-right">{count}</td>
+                          </tr>
+                        );
+                      }).filter(Boolean) // Remove any null items
+                    ) : (
+                      <tr className="border-b border-platinum">
+                        <td colSpan={2} className="py-2 text-center text-slate-gray">No data available</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
