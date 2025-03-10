@@ -627,7 +627,7 @@ class SupabaseUnifiedClient {
       
       try {
         logger.debug('Executing direct SQL query on comprehensive_family_records');
-        const { data, error } = await this.regular.rpc('execute_sql_query', { query });
+        const { data, error } = await this.regular.rpc('execute_sql_query', { query_text: query });
         
         if (error) {
           logger.error('Failed to fetch family record using SQL query', error);
