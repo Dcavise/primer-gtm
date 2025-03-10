@@ -238,30 +238,33 @@ const AdmissionsAnalytics = () => {
       // Create the base object with common properties
       const baseObject = {
         period: date.toISOString(),
-        date: displayDate,
-        percentChange: 0
+        date: displayDate
       };
       
       // Add the metric-specific property
       if (metricType === 'leads') {
         result.push({
           ...baseObject,
-          leadsCreated: 0
+          leadsCreated: 0,
+          percentChange: 0
         });
       } else if (metricType === 'converted') {
         result.push({
           ...baseObject,
-          leadsConverted: 0
+          leadsConverted: 0,
+          percentChange: 0
         });
       } else if (metricType === 'closedWon') {
         result.push({
           ...baseObject,
-          closedWon: 0
+          closedWon: 0,
+          percentChange: 0
         });
       } else if (metricType === 'arr') {
         result.push({
           ...baseObject,
-          arrAmount: 0
+          arrAmount: 0,
+          percentChange: 0
         });
       }
     }
@@ -269,25 +272,65 @@ const AdmissionsAnalytics = () => {
     return result;
   };
   
+  // Get a unified list of all periods from all data sources
+  const allPeriods = useMemo(() => {
+    // Collect all unique periods from all data sources
+    const periodSet = new Set<string>();
+    
+    // Add periods from leads metrics
+    if (metricsData && !loadingMetrics && metricsData.periods.length > 0) {
+      metricsData.periods.forEach(period => periodSet.add(period));
+    }
+    
+    // Add periods from converted leads metrics
+    if (convertedMetricsData && !loadingConvertedMetrics && convertedMetricsData.periods.length > 0) {
+      convertedMetricsData.periods.forEach(period => periodSet.add(period));
+    }
+    
+    // Add periods from closed won metrics
+    if (closedWonMetricsData && !loadingClosedWonMetrics && closedWonMetricsData.periods.length > 0) {
+      closedWonMetricsData.periods.forEach(period => periodSet.add(period));
+    }
+    
+    // Add periods from ARR metrics
+    if (arrMetricsData && !loadingArrMetrics && arrMetricsData.periods.length > 0) {
+      arrMetricsData.periods.forEach(period => periodSet.add(period));
+    }
+    
+    // Convert to array and sort
+    const allPeriodsArray = Array.from(periodSet);
+    
+    // If we have periods, sort them by date (newest first)
+    if (allPeriodsArray.length > 0) {
+      allPeriodsArray.sort((a, b) => {
+        const dateA = new Date(a);
+        const dateB = new Date(b);
+        return dateB.getTime() - dateA.getTime();
+      });
+      
+      // Return only the 5 most recent periods
+      return allPeriodsArray.slice(0, 5);
+    }
+    
+    // If no periods found, return empty array
+    return [];
+  }, [
+    metricsData, loadingMetrics,
+    convertedMetricsData, loadingConvertedMetrics,
+    closedWonMetricsData, loadingClosedWonMetrics,
+    arrMetricsData, loadingArrMetrics
+  ]);
+
   // Process data for the column display
   const columnData = useMemo(() => {
-    if (!metricsData || loadingMetrics) {
+    if (!metricsData || loadingMetrics || allPeriods.length === 0) {
       return generateDefaultDateColumns(periodType, 'leads');
     }
-    
-    // If we have no periods (empty data), return default columns
-    if (metricsData.periods.length === 0) {
-      return generateDefaultDateColumns(periodType, 'leads');
-    }
-    
-    // Get up to 5 most recent periods from metricsData.periods
-    // The data is already sorted most recent first from the SQL query
-    const recentPeriods = [...metricsData.periods].slice(0, 5);
     
     // Map periods to display format
-    return recentPeriods.map((period, index) => {
+    return allPeriods.map((period, index) => {
       // Find the formatted date for this period
-      const periodItem = metricsData.timeSeriesData.find(item => item.period === period);
+      const periodItem = metricsData?.timeSeriesData?.find(item => item.period === period);
       let displayDate = periodItem?.formatted_date || '';
       
       // For the most recent period, use a special label
@@ -299,32 +342,23 @@ const AdmissionsAnalytics = () => {
       
       return {
         period,
-        date: displayDate,
-        leadsCreated: metricsData.totals[period] ?? 0,
-        percentChange: metricsData.changes.percentage[period] ?? 0
+        date: displayDate || period, // Fallback to period if formatted_date is not available
+        leadsCreated: metricsData?.totals?.[period] ?? 0,
+        percentChange: metricsData?.changes?.percentage?.[period] ?? 0
       };
-    }); // Keep original SQL order (most recent first, left-to-right)
-  }, [metricsData, loadingMetrics, periodType]);
+    });
+  }, [metricsData, loadingMetrics, periodType, allPeriods]);
 
   // Process data for the converted leads display
   const convertedColumnData = useMemo(() => {
-    if (!convertedMetricsData || loadingConvertedMetrics) {
+    if (!convertedMetricsData || loadingConvertedMetrics || allPeriods.length === 0) {
       return generateDefaultDateColumns(periodType, 'converted');
     }
-    
-    // If we have no periods (empty data), return default columns
-    if (convertedMetricsData.periods.length === 0) {
-      return generateDefaultDateColumns(periodType, 'converted');
-    }
-    
-    // Get up to 5 most recent periods from convertedMetricsData.periods
-    // The data is already sorted most recent first from the SQL query
-    const recentPeriods = [...convertedMetricsData.periods].slice(0, 5);
     
     // Map periods to display format
-    return recentPeriods.map((period, index) => {
+    return allPeriods.map((period, index) => {
       // Find the formatted date for this period
-      const periodItem = convertedMetricsData.timeSeriesData.find(item => item.period === period);
+      const periodItem = convertedMetricsData?.timeSeriesData?.find(item => item.period === period);
       let displayDate = periodItem?.formatted_date || '';
       
       // For the most recent period, use a special label
@@ -336,32 +370,23 @@ const AdmissionsAnalytics = () => {
       
       return {
         period,
-        date: displayDate,
-        leadsConverted: convertedMetricsData.totals[period] ?? 0,
-        percentChange: convertedMetricsData.changes.percentage[period] ?? 0
+        date: displayDate || period, // Fallback to period if formatted_date is not available
+        leadsConverted: convertedMetricsData?.totals?.[period] ?? 0,
+        percentChange: convertedMetricsData?.changes?.percentage?.[period] ?? 0
       };
     });
-  }, [convertedMetricsData, loadingConvertedMetrics, periodType]);
+  }, [convertedMetricsData, loadingConvertedMetrics, periodType, allPeriods]);
   
   // Process data for the closed won display
   const closedWonColumnData = useMemo(() => {
-    if (!closedWonMetricsData || loadingClosedWonMetrics) {
+    if (!closedWonMetricsData || loadingClosedWonMetrics || allPeriods.length === 0) {
       return generateDefaultDateColumns(periodType, 'closedWon');
     }
-    
-    // If we have no periods (empty data), return default columns
-    if (closedWonMetricsData.periods.length === 0) {
-      return generateDefaultDateColumns(periodType, 'closedWon');
-    }
-    
-    // Get up to 5 most recent periods from closedWonMetricsData.periods
-    // The data is already sorted most recent first from the SQL query
-    const recentPeriods = [...closedWonMetricsData.periods].slice(0, 5);
     
     // Map periods to display format
-    return recentPeriods.map((period, index) => {
+    return allPeriods.map((period, index) => {
       // Find the formatted date for this period
-      const periodItem = closedWonMetricsData.timeSeriesData.find(item => item.period === period);
+      const periodItem = closedWonMetricsData?.timeSeriesData?.find(item => item.period === period);
       let displayDate = periodItem?.formatted_date || '';
       
       // For the most recent period, use a special label
@@ -373,32 +398,23 @@ const AdmissionsAnalytics = () => {
       
       return {
         period,
-        date: displayDate,
-        closedWon: closedWonMetricsData.totals[period] ?? 0,
-        percentChange: closedWonMetricsData.changes.percentage[period] ?? 0
+        date: displayDate || period, // Fallback to period if formatted_date is not available
+        closedWon: closedWonMetricsData?.totals?.[period] ?? 0,
+        percentChange: closedWonMetricsData?.changes?.percentage?.[period] ?? 0
       };
     });
-  }, [closedWonMetricsData, loadingClosedWonMetrics, periodType]);
+  }, [closedWonMetricsData, loadingClosedWonMetrics, periodType, allPeriods]);
   
   // Process data for the ARR display
   const arrColumnData = useMemo(() => {
-    if (!arrMetricsData || loadingArrMetrics) {
+    if (!arrMetricsData || loadingArrMetrics || allPeriods.length === 0) {
       return generateDefaultDateColumns(periodType, 'arr');
     }
-    
-    // If we have no periods (empty data), return default columns
-    if (arrMetricsData.periods.length === 0) {
-      return generateDefaultDateColumns(periodType, 'arr');
-    }
-    
-    // Get up to 5 most recent periods from arrMetricsData.periods
-    // The data is already sorted most recent first from the SQL query
-    const recentPeriods = [...arrMetricsData.periods].slice(0, 5);
     
     // Map periods to display format
-    return recentPeriods.map((period, index) => {
+    return allPeriods.map((period, index) => {
       // Find the formatted date for this period
-      const periodItem = arrMetricsData.timeSeriesData.find(item => item.period === period);
+      const periodItem = arrMetricsData?.timeSeriesData?.find(item => item.period === period);
       let displayDate = periodItem?.formatted_date || '';
       
       // For the most recent period, use a special label
@@ -410,12 +426,12 @@ const AdmissionsAnalytics = () => {
       
       return {
         period,
-        date: displayDate,
-        arrAmount: arrMetricsData.totals[period] ?? 0,
-        percentChange: arrMetricsData.changes.percentage[period] ?? 0
+        date: displayDate || period, // Fallback to period if formatted_date is not available
+        arrAmount: arrMetricsData?.totals?.[period] ?? 0,
+        percentChange: arrMetricsData?.changes?.percentage?.[period] ?? 0
       };
     });
-  }, [arrMetricsData, loadingArrMetrics, periodType]);
+  }, [arrMetricsData, loadingArrMetrics, periodType, allPeriods]);
   
   // If there's an error, show error state
   if (metricsError || convertedMetricsError || closedWonMetricsError || arrMetricsError || totalEnrolledError || gradeBandError) {
@@ -520,12 +536,14 @@ const AdmissionsAnalytics = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         {/* 25/26 Enrolled KPI Card */}
         <Card className="border border-platinum bg-white overflow-hidden rounded-lg shadow-sm">
-          <div className="flex flex-col space-y-1.5 p-6 pb-2" data-component-name="_c2">
+          <div className="flex flex-col space-y-1.5 p-6 pb-2 text-center" data-component-name="_c2">
             <h3 className="font-semibold tracking-tight text-sm text-slate-gray" data-component-name="_c4">25/26 Enrolled</h3>
           </div>
-          <CardContent>
+          <CardContent className="text-center">
             {loadingTotalEnrolled ? (
-              <Skeleton className="h-8 w-24" />
+              <div className="flex justify-center">
+                <Skeleton className="h-8 w-24" />
+              </div>
             ) : (
               <div className="text-2xl font-bold">{totalEnrolledCount}</div>
             )}
@@ -614,7 +632,7 @@ const AdmissionsAnalytics = () => {
               {/* Reverse column data for display to show older periods on the left */}
               {[...columnData].reverse().map((item, index) => (
                 <div key={index} className="w-1/6 text-center">
-                  {item.date}
+                  {item.date || 'N/A'}
                 </div>
               ))}
               <div className="w-1/3 pr-2 pl-4 text-center">Trend</div>
@@ -629,9 +647,9 @@ const AdmissionsAnalytics = () => {
                 {/* Reverse column data for display to show older periods on the left */}
                 {[...columnData].reverse().map((item, index) => (
                   <div key={index} className="w-1/6 text-center">
-                    <div className="font-semibold text-eerie-black">{formatValue(item.leadsCreated)}</div>
-                    <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block ${getChangeColor(item.percentChange)}`}>
-                      {formatChange(item.percentChange)}%
+                    <div className="font-semibold text-eerie-black">{formatValue(item.leadsCreated ?? 0)}</div>
+                    <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block ${getChangeColor(item.percentChange ?? 0)}`}>
+                      {formatChange(item.percentChange ?? 0)}%
                     </div>
                   </div>
                 ))}
@@ -677,9 +695,9 @@ const AdmissionsAnalytics = () => {
                 {/* Reverse column data for display to show older periods on the left */}
                 {[...convertedColumnData].reverse().map((item, index) => (
                   <div key={index} className="w-1/6 text-center">
-                    <div className="font-semibold text-eerie-black">{formatValue(item.leadsConverted)}</div>
-                    <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block ${getChangeColor(item.percentChange)}`}>
-                      {formatChange(item.percentChange)}%
+                    <div className="font-semibold text-eerie-black">{formatValue(item.leadsConverted ?? 0)}</div>
+                    <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block ${getChangeColor(item.percentChange ?? 0)}`}>
+                      {formatChange(item.percentChange ?? 0)}%
                     </div>
                   </div>
                 ))}
@@ -726,9 +744,9 @@ const AdmissionsAnalytics = () => {
                 {/* Reverse column data for display to show older periods on the left */}
                 {[...closedWonColumnData].reverse().map((item, index) => (
                   <div key={index} className="w-1/6 text-center">
-                    <div className="font-semibold text-eerie-black">{formatValue(item.closedWon)}</div>
-                    <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block ${getChangeColor(item.percentChange)}`}>
-                      {formatChange(item.percentChange)}%
+                    <div className="font-semibold text-eerie-black">{formatValue(item.closedWon ?? 0)}</div>
+                    <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block ${getChangeColor(item.percentChange ?? 0)}`}>
+                      {formatChange(item.percentChange ?? 0)}%
                     </div>
                   </div>
                 ))}
@@ -775,9 +793,9 @@ const AdmissionsAnalytics = () => {
                 {/* Reverse column data for display to show older periods on the left */}
                 {[...arrColumnData].reverse().map((item, index) => (
                   <div key={index} className="w-1/6 text-center">
-                    <div className="font-semibold text-eerie-black">{formatValue(item.arrAmount, true)}</div>
-                    <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block ${getChangeColor(item.percentChange)}`}>
-                      {formatChange(item.percentChange)}%
+                    <div className="font-semibold text-eerie-black">{formatValue(item.arrAmount ?? 0, true)}</div>
+                    <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block ${getChangeColor(item.percentChange ?? 0)}`}>
+                      {formatChange(item.percentChange ?? 0)}%
                     </div>
                   </div>
                 ))}
