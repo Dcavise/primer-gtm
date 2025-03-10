@@ -21,6 +21,7 @@ export interface FamilyRecord {
   opportunity_lead_notes: string[];
   opportunity_family_interview_notes: string[];
   opportunity_created_dates: string[];
+  opportunity_record_types?: string[]; // Added record types field
   tuition_offer_ids: string[];
   tuition_offer_statuses: string[];
   tuition_offer_family_contributions: number[];

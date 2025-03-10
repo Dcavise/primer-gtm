@@ -198,7 +198,24 @@ const FamilyDetail: React.FC = () => {
         <TabsContent value="opportunities" className="mt-6">
           <div className="space-y-4">
             {family.opportunity_count > 0 ? (
-              family.opportunity_ids.map((id, index) => (
+              family.opportunity_ids.map((id, index) => {
+                // Map record type IDs to display names
+                const getRecordTypeDisplayName = (recordTypeId: string | undefined) => {
+                  if (!recordTypeId) return 'Unknown';
+                  switch (recordTypeId) {
+                    case '012Dn000000ZzP9IAK':
+                      return 'New Enrollment';
+                    case '012Dn000000a9ncIAA':
+                      return 'Re-enrollment';
+                    default:
+                      return recordTypeId;
+                  }
+                };
+                
+                const recordType = family.opportunity_record_types?.[index];
+                const recordTypeDisplay = getRecordTypeDisplayName(recordType);
+                
+                return (
                 <Card key={id}>
                   <CardHeader>
                     <CardTitle>{family.opportunity_names[index] || 'Unnamed Opportunity'}</CardTitle>
@@ -214,6 +231,11 @@ const FamilyDetail: React.FC = () => {
                       {family.opportunity_campuses[index] && (
                         <Badge variant="secondary" className="ml-2">
                           {family.opportunity_campuses[index]}
+                        </Badge>
+                      )}
+                      {recordType && (
+                        <Badge variant="outline" className="ml-2 bg-blue-100">
+                          {recordTypeDisplay}
                         </Badge>
                       )}
                     </CardDescription>
@@ -247,7 +269,8 @@ const FamilyDetail: React.FC = () => {
                     )}
                   </CardContent>
                 </Card>
-              ))
+              );
+              })
             ) : (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">No opportunities found for this family.</p>
