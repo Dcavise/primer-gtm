@@ -485,7 +485,7 @@ const AdmissionsAnalytics = () => {
         {/* Total Enrolled KPI Card */}
         <Card className="border border-platinum bg-white overflow-hidden rounded-lg shadow-sm">
           <div className="flex flex-col space-y-1.5 p-6 pb-2" data-component-name="_c2">
-            <h3 className="font-semibold tracking-tight text-sm text-slate-gray" data-component-name="_c4">Total Enrolled</h3>
+            <h3 className="font-semibold tracking-tight text-sm text-slate-gray" data-component-name="_c4">25/26 Enrolled</h3>
           </div>
           <CardContent>
             {loadingTotalEnrolled ? (
@@ -762,46 +762,6 @@ const AdmissionsAnalytics = () => {
             </div>
           </div>
         )}
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card className="bg-seasalt border border-platinum">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-slate-gray">Total Enrolled</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-eerie-black">555</div>
-            <div className="text-sm text-green-600">+12% from last period</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-seasalt border border-platinum">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-slate-gray">Admission Offered</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-eerie-black">62.4%</div>
-            <div className="text-sm text-green-600">+5% from last period</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-seasalt border border-platinum">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-slate-gray">Total ARR</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-eerie-black">42.8%</div>
-            <div className="text-sm text-red-600">-2% from last period</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-seasalt border border-platinum">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-slate-gray">ARPU</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-eerie-black">12 days</div>
-            <div className="text-sm text-green-600">-3 days from last period</div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Pipeline Chart */}

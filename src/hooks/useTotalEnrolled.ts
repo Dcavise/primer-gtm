@@ -15,10 +15,10 @@ type TotalEnrolledResponse = {
 
 /**
  * Hook to fetch the total number of enrolled students
- * Specifically counts distinct opportunities where:
- * - stage_name = 'Closed Won'
- * - school_year_c = '25/26'
- * - With optional campus filtering
+ * Counts distinct opportunities that:
+ * - Have stage_name = 'Closed Won'
+ * - Have school_year_c = '25/26'
+ * With optional campus filtering
  */
 export function useTotalEnrolled({
   campusId = null,
@@ -39,15 +39,12 @@ export function useTotalEnrolled({
       try {
         setLoading(true);
         
-        // Build the query to count distinct IDs from opportunities
+        // Build the query to count distinct opportunity IDs
         let query = `
-          SELECT
-            COUNT(DISTINCT id) as total_enrolled
-          FROM
-            fivetran_views.opportunity
-          WHERE
-            stage_name = 'Closed Won'
-            AND school_year_c = '25/26'
+          SELECT COUNT(DISTINCT id) as enrolled_count
+          FROM fivetran_views.opportunity
+          WHERE stage_name = 'Closed Won'
+          AND school_year_c = '25/26'
         `;
         
         // Add campus filter if provided
@@ -57,7 +54,7 @@ export function useTotalEnrolled({
           query += ` AND preferred_campus_c = '${escapedCampusId}'`;
         }
         
-        console.log('EXECUTING TOTAL ENROLLED COUNT QUERY:');
+        console.log('EXECUTING TOTAL ENROLLED QUERY:');
         console.log(query);
         
         // Execute the query
@@ -82,7 +79,7 @@ export function useTotalEnrolled({
         }
         
         // Extract the count from the first row
-        const enrolledCount = Number(rawData[0].total_enrolled) || 0;
+        const enrolledCount = Number(rawData[0].enrolled_count) || 0;
         setCount(enrolledCount);
         setError(null);
       } catch (err) {
