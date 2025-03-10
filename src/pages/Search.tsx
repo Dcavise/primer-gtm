@@ -259,7 +259,7 @@ const Search = () => {
             searchResults.map((result) => (
               <Card 
                 key={result.id} 
-                className={`p-4 hover:shadow-md cursor-pointer transition-shadow ${result.hasWonOpportunities ? 'border-l-4 border-l-green-500' : ''}`}
+                className={`p-5 hover:shadow-md cursor-pointer transition-shadow ${result.hasWonOpportunities ? 'border-l-4 border-l-green-500' : ''}`}
                 onClick={() => handleResultClick(result)}
               >
                 <div className="flex items-start">
@@ -279,16 +279,25 @@ const Search = () => {
                     )}
                   </div>
                   <div className="flex-1">
-                    <div className="flex items-center text-sm text-slate-gray mb-1">
+                    {/* Type and badges row */}
+                    <div className="flex items-center text-sm text-slate-gray mb-2">
                       <span>{result.type}</span>
                       {result.hasWonOpportunities && (
                         <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">Won Opportunity</span>
                       )}
                     </div>
-                    <h3 className="text-lg font-medium text-outer-space">{result.name}</h3>
-                    <p className="text-slate-gray mt-1">{result.details}</p>
+                    
+                    {/* Enhanced household name - increased size and weight */}
+                    <h3 className="text-xl font-bold text-outer-space mb-3">{result.name}</h3>
+                    
+                    {/* Key details with subtle divider */}
+                    <div className="border-b border-gray-100 pb-2 mb-2">
+                      <p className="text-slate-gray">{result.details}</p>
+                    </div>
+                    
+                    {/* Opportunity details in a visually distinct section */}
                     {result.hasWonOpportunities && result.wonOpportunityDetails && (
-                      <div className="mt-2">
+                      <div className="mt-3 bg-gray-50 p-2 rounded-md">
                         {result.wonOpportunityDetails.schoolYears.length > 0 && (
                           <p className="text-sm text-green-700">
                             <span className="font-medium">School Year:</span> {result.wonOpportunityDetails.schoolYears.join(', ')}
@@ -307,7 +316,7 @@ const Search = () => {
                       </div>
                     )}
                   </div>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" className="self-start mt-2">
                     View
                   </Button>
                 </div>
