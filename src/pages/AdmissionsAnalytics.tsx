@@ -533,8 +533,8 @@ const AdmissionsAnalytics = () => {
       </Card>
       
       {/* Enrollment Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        {/* 25/26 Enrolled KPI Card */}
+      <div className={`grid grid-cols-1 ${selectedCampus !== 'all' ? 'md:grid-cols-2' : ''} gap-4 mb-8`}>
+        {/* 25/26 Enrolled KPI Card - Full width when All Campuses selected */}
         <Card className="border border-platinum bg-white overflow-hidden rounded-lg shadow-sm">
           <div className="flex flex-col space-y-1.5 p-6 pb-2 text-center" data-component-name="_c2">
             <h3 className="font-semibold tracking-tight text-sm text-slate-gray" data-component-name="_c4">25/26 Enrolled</h3>
@@ -551,12 +551,13 @@ const AdmissionsAnalytics = () => {
           </CardContent>
         </Card>
 
-        {/* Grade Band Enrollment Table */}
-        <Card className="border border-platinum bg-white overflow-hidden rounded-lg shadow-sm">
-          <div className="flex flex-col space-y-1.5 p-6 pb-2">
-            <h3 className="font-semibold tracking-tight text-sm text-slate-gray">Grade Band Enrollment</h3>
-          </div>
-          <CardContent>
+        {/* Grade Band Enrollment Table - Only visible when a specific campus is selected */}
+        {selectedCampus !== 'all' && (
+          <Card className="border border-platinum bg-white overflow-hidden rounded-lg shadow-sm">
+            <div className="flex flex-col space-y-1.5 p-6 pb-2">
+              <h3 className="font-semibold tracking-tight text-sm text-slate-gray">Grade Band Enrollment</h3>
+            </div>
+            <CardContent>
             {loadingGradeBand ? (
               <div className="space-y-2">
                 <Skeleton className="h-6 w-full" />
@@ -616,6 +617,7 @@ const AdmissionsAnalytics = () => {
             )}
           </CardContent>
         </Card>
+        )}
       </div>
       
       {/* Metrics Table */}
