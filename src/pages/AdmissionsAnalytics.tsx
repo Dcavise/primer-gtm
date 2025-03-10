@@ -10,7 +10,7 @@ import { Popover } from "../components/ui/popover";
 import { PopoverContent } from "../components/ui/popover";
 import { PopoverTrigger } from "../components/ui/popover";
 import { Skeleton } from "../components/ui/skeleton";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { useCampuses } from "../hooks/useCampuses";
 import { useFormattedLeadsMetrics } from "../hooks/useFormattedLeadsMetrics";
 import { useFormattedConvertedLeadsMetrics } from "../hooks/useFormattedConvertedLeadsMetrics";
@@ -21,13 +21,6 @@ import { useGradeBandEnrollment } from "../hooks/useGradeBandEnrollment";
 import { LoadingState } from "../components/LoadingState";
 import ErrorState from "../components/ErrorState";
 
-// Sample open pipeline data for UI demonstration
-const openPipelineData = [
-  { name: 'Family Interview', value: 85, fill: '#474b4f' },
-  { name: 'Awaiting Documents', value: 65, fill: '#6b6e70' },
-  { name: 'Admission Offered', value: 45, fill: '#86888a' },
-  { name: 'Closed Won', value: 30, fill: '#a9aaab' },
-];
 
 // Sample metrics data for non-lead metrics
 const admissionsMetrics = [
@@ -439,11 +432,11 @@ const AdmissionsAnalytics = () => {
   }
   
   return (
-    <div className="container mx-auto py-6 px-8 max-w-7xl bg-seasalt" data-component-name="AdmissionsAnalytics">
+    <div className="container mx-auto py-6 px-8 max-w-7xl bg-gray-50" data-component-name="AdmissionsAnalytics">
       {/* Dashboard header */}
-      <Card className="mb-8 border border-platinum bg-seasalt overflow-hidden rounded-lg shadow-sm">
+      <Card className="mb-8 border border-platinum bg-white overflow-hidden rounded-lg shadow-sm">
         <div className="px-0">
-          <div className="flex flex-wrap items-center justify-between p-5 bg-seasalt">
+          <div className="flex flex-wrap items-center justify-between p-5 bg-white">
             {/* Campus Selection */}
             <div className="w-full md:w-1/3 mb-3 md:mb-0 md:mr-4">
               <Popover>
@@ -535,27 +528,27 @@ const AdmissionsAnalytics = () => {
       {/* Enrollment Section */}
       <div className={`grid grid-cols-1 ${selectedCampus !== 'all' ? 'md:grid-cols-2' : ''} gap-4 mb-8`}>
         {/* 25/26 Enrolled KPI Card - Full width when All Campuses selected */}
-        <Card className="border border-platinum bg-white overflow-hidden rounded-lg shadow-sm">
-          <div className="flex flex-col space-y-1.5 p-6 pb-2 text-center" data-component-name="_c2">
-            <h3 className="font-semibold tracking-tight text-sm text-slate-gray" data-component-name="_c4">25/26 Enrolled</h3>
+        <Card className="border border-platinum bg-white overflow-hidden rounded-lg shadow-sm h-full">
+          <div className="flex flex-col items-center justify-center h-full py-5">
+            <h3 className="text-lg font-semibold tracking-tight text-slate-gray text-center mb-2" data-component-name="_c4">25/26 Enrolled</h3>
+            
+            <div className="flex flex-col items-center justify-center py-4">
+              {loadingTotalEnrolled ? (
+                <Skeleton className="h-12 w-28" />
+              ) : (
+                <div className="text-5xl font-bold text-outer-space text-center">{totalEnrolledCount}</div>
+              )}
+            </div>
+            
+            <p className="text-sm text-slate-gray font-medium text-center mt-0">School Year 25/26</p>
           </div>
-          <CardContent className="text-center">
-            {loadingTotalEnrolled ? (
-              <div className="flex justify-center">
-                <Skeleton className="h-8 w-24" />
-              </div>
-            ) : (
-              <div className="text-2xl font-bold">{totalEnrolledCount}</div>
-            )}
-            <p className="text-xs text-slate-gray mt-1">School Year 25/26</p>
-          </CardContent>
         </Card>
 
         {/* Grade Band Enrollment Table - Only visible when a specific campus is selected */}
         {selectedCampus !== 'all' && (
           <Card className="border border-platinum bg-white overflow-hidden rounded-lg shadow-sm">
             <div className="flex flex-col space-y-1.5 p-6 pb-2">
-              <h3 className="font-semibold tracking-tight text-sm text-slate-gray">Grade Band Enrollment</h3>
+              <h3 className="text-lg font-semibold tracking-tight text-slate-gray">Grade Band Enrollment</h3>
             </div>
             <CardContent>
             {loadingGradeBand ? (
@@ -569,10 +562,10 @@ const AdmissionsAnalytics = () => {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left pb-2 font-medium text-slate-gray">Grade Band</th>
-                      <th className="text-right pb-2 font-medium text-slate-gray">Students</th>
-                      <th className="text-right pb-2 font-medium text-slate-gray">Capacity</th>
-                      <th className="text-right pb-2 font-medium text-slate-gray">% Full</th>
+                      <th className="text-left pb-2 font-medium text-slate-gray text-base">Grade Band</th>
+                      <th className="text-right pb-2 font-medium text-slate-gray text-base">Students</th>
+                      <th className="text-right pb-2 font-medium text-slate-gray text-base">Capacity</th>
+                      <th className="text-right pb-2 font-medium text-slate-gray text-base">% Full</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -621,7 +614,7 @@ const AdmissionsAnalytics = () => {
       </div>
       
       {/* Metrics Table */}
-      <div className="mb-8 bg-seasalt rounded-lg border border-platinum shadow-sm">
+      <div className="mb-8 bg-white rounded-lg border border-platinum shadow-sm">
         {loadingMetrics || loadingConvertedMetrics || loadingClosedWonMetrics || loadingArrMetrics ? (
           <div className="p-4">
             <LoadingState />
@@ -629,11 +622,11 @@ const AdmissionsAnalytics = () => {
         ) : (
           <div className="px-4 py-4">
             {/* Table Header */}
-            <div className="flex border-b pb-2 text-sm font-medium text-slate-gray">
-              <div className="w-1/6"></div>
+            <div className="flex border-b pb-3 mb-2 text-base font-medium text-slate-gray bg-gray-50 p-2 rounded-t">
+              <div className="w-1/6 pl-2">Metric</div>
               {/* Reverse column data for display to show older periods on the left */}
               {[...columnData].reverse().map((item, index) => (
-                <div key={index} className="w-1/6 text-center">
+                <div key={index} className="w-1/6 text-center font-medium">
                   {item.date || 'N/A'}
                 </div>
               ))}
@@ -643,14 +636,14 @@ const AdmissionsAnalytics = () => {
             {/* Table Body */}
             <div className="flex flex-col divide-y">
               {/* Leads Created Row - Always uses real data */}
-              <div className="flex py-3 items-center">
-                <div className="w-1/6 font-medium text-outer-space">Leads Created</div>
+              <div className="flex py-3 items-center border-b border-platinum hover:bg-gray-50">
+                <div className="w-1/6 font-medium text-outer-space text-sm">Leads Created</div>
                 
                 {/* Reverse column data for display to show older periods on the left */}
                 {[...columnData].reverse().map((item, index) => (
                   <div key={index} className="w-1/6 text-center">
-                    <div className="font-semibold text-eerie-black">{formatValue(item.leadsCreated ?? 0)}</div>
-                    <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block ${getChangeColor(item.percentChange ?? 0)}`}>
+                    <div className="font-semibold text-eerie-black text-lg">{formatValue(item.leadsCreated ?? 0)}</div>
+                    <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block font-medium ${getChangeColor(item.percentChange ?? 0)}`}>
                       {formatChange(item.percentChange ?? 0)}%
                     </div>
                   </div>
@@ -691,14 +684,14 @@ const AdmissionsAnalytics = () => {
               </div>
               
               {/* Leads Converted Row - Uses real data */}
-              <div className="flex py-3 items-center">
-                <div className="w-1/6 font-medium text-outer-space">Leads Converted</div>
+              <div className="flex py-3 items-center border-b border-platinum hover:bg-gray-50">
+                <div className="w-1/6 font-medium text-outer-space text-sm">Leads Converted</div>
                 
                 {/* Reverse column data for display to show older periods on the left */}
                 {[...convertedColumnData].reverse().map((item, index) => (
                   <div key={index} className="w-1/6 text-center">
-                    <div className="font-semibold text-eerie-black">{formatValue(item.leadsConverted ?? 0)}</div>
-                    <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block ${getChangeColor(item.percentChange ?? 0)}`}>
+                    <div className="font-semibold text-eerie-black text-lg">{formatValue(item.leadsConverted ?? 0)}</div>
+                    <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block font-medium ${getChangeColor(item.percentChange ?? 0)}`}>
                       {formatChange(item.percentChange ?? 0)}%
                     </div>
                   </div>
@@ -740,14 +733,14 @@ const AdmissionsAnalytics = () => {
               
               {/* Other Metrics Rows - Using sample data */}
               {/* New Closed Won Row - Uses real data */}
-              <div className="flex py-3 items-center">
-                <div className="w-1/6 font-medium text-outer-space">New Closed Won</div>
+              <div className="flex py-3 items-center border-b border-platinum hover:bg-gray-50">
+                <div className="w-1/6 font-medium text-outer-space text-sm">New Closed Won</div>
                 
                 {/* Reverse column data for display to show older periods on the left */}
                 {[...closedWonColumnData].reverse().map((item, index) => (
                   <div key={index} className="w-1/6 text-center">
-                    <div className="font-semibold text-eerie-black">{formatValue(item.closedWon ?? 0)}</div>
-                    <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block ${getChangeColor(item.percentChange ?? 0)}`}>
+                    <div className="font-semibold text-eerie-black text-lg">{formatValue(item.closedWon ?? 0)}</div>
+                    <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block font-medium ${getChangeColor(item.percentChange ?? 0)}`}>
                       {formatChange(item.percentChange ?? 0)}%
                     </div>
                   </div>
@@ -789,14 +782,14 @@ const AdmissionsAnalytics = () => {
               
               {/* Other Metrics Rows - Using sample data */}
               {/* ARR Added Row - Uses real data */}
-              <div className="flex py-3 items-center">
-                <div className="w-1/6 font-medium text-outer-space">ARR Added</div>
+              <div className="flex py-3 items-center hover:bg-gray-50">
+                <div className="w-1/6 font-medium text-outer-space text-sm">ARR Added</div>
                 
                 {/* Reverse column data for display to show older periods on the left */}
                 {[...arrColumnData].reverse().map((item, index) => (
                   <div key={index} className="w-1/6 text-center">
-                    <div className="font-semibold text-eerie-black">{formatValue(item.arrAmount ?? 0, true)}</div>
-                    <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block ${getChangeColor(item.percentChange ?? 0)}`}>
+                    <div className="font-semibold text-eerie-black text-lg">{formatValue(item.arrAmount ?? 0, true)}</div>
+                    <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block font-medium ${getChangeColor(item.percentChange ?? 0)}`}>
                       {formatChange(item.percentChange ?? 0)}%
                     </div>
                   </div>
@@ -843,8 +836,8 @@ const AdmissionsAnalytics = () => {
                 metric.id !== 'closed-won' && 
                 metric.id !== 'arr-added'
               ).map((metric) => (
-                <div key={metric.id} className="flex py-3 items-center">
-                  <div className="w-1/6 font-medium text-outer-space">{metric.name}</div>
+                <div key={metric.id} className="flex py-3 items-center border-b border-platinum hover:bg-gray-50">
+                  <div className="w-1/6 font-medium text-outer-space text-sm">{metric.name}</div>
                   
                   {/* Generate mock data cells based on period type - reversed for display */}
                   {[...columnData].reverse().map((_, index) => {
@@ -884,33 +877,6 @@ const AdmissionsAnalytics = () => {
             </div>
           </div>
         )}
-      </div>
-
-      {/* Pipeline Chart */}
-      <div className="mb-6">
-        <Card className="bg-seasalt border-platinum">
-          <CardHeader>
-            <CardTitle>Pipeline</CardTitle>
-            <CardDescription>Pipeline stages from Family Interview to Closed Won</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={openPipelineData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#d2d3d4" />
-                  <XAxis dataKey="name" tick={{fill: "#6b6e70"}} />
-                  <YAxis tick={{fill: "#6b6e70"}} />
-                  <Tooltip />
-                  <Legend wrapperStyle={{color: "#6b6e70"}} />
-                  <Bar dataKey="value" fill="#474b4f" name="Count" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
