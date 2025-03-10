@@ -296,7 +296,12 @@ const Search = () => {
                         )}
                         {result.wonOpportunityDetails.campuses.length > 0 && (
                           <p className="text-sm text-green-700">
-                            <span className="font-medium">Campus:</span> {result.wonOpportunityDetails.campuses.join(', ')}
+                            <span className="font-medium">Campus:</span> {
+                              // Map campus IDs to names or use 'Unknown Campus' if no mapping exists
+                              result.wonOpportunityDetails.campuses.map(campusId => 
+                                campusMap[campusId] || 'Unknown Campus'
+                              ).join(', ')
+                            }
                           </p>
                         )}
                       </div>
