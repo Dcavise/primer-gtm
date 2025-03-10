@@ -98,9 +98,10 @@ const Search = () => {
         }
       });
       
-      // Get campus name from campus map, or use ID with a note if name not found
+      // Get campus name from campus map, but don't display raw IDs even if name not found
       const campusId = family.current_campus_c || '';
-      const campusName = campusId ? (campusMap[campusId] || `${campusId} (ID only)`) : 'None';
+      // Instead of showing the ID, just show 'Unknown Campus' if mapping not found
+      const campusName = campusId ? (campusMap[campusId] || 'Unknown Campus') : 'None';
       
       return {
         // Use the standardized ID as our primary ID for consistent navigation
