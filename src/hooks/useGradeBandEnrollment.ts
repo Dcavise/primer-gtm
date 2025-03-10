@@ -33,74 +33,111 @@ export const useGradeBandEnrollment = ({ campusId }: GradeBandEnrollmentProps): 
         setLoading(true);
         setError(null);
 
-        // Use the new grade_band_enrollment_summary view
-        let query = `
-          SELECT 
-            grade_band, 
-            SUM(enrollment_count) AS enrollment_count 
-          FROM 
-            fivetran_views.grade_band_enrollment_summary
-        `;
+        console.log('Using grade_enrollment_summary view with campus filter:', campusId);
+        
+        // Query the view directly
+        let query;
+        let rawData;
+        let queryError;
 
-        // Add campus filter if provided
-        if (campusId !== null) {
-          // Ensure we're properly escaping single quotes for SQL
-          const escapedCampusId = campusId.replace(/'/g, "''");
-          query += ` WHERE preferred_campus_c = '${escapedCampusId}'`;
+        if (campusId) {
+          // Get data for specific campus - using SQL to specify schema
+          const query = `
+            SELECT 
+              grade, 
+              campus, 
+              enrollment_count 
+            FROM 
+              fivetran_views.grade_enrollment_summary 
+            WHERE 
+              campus = '${campusId?.replace(/'/g, "''")}'
+          `;
+          
+          const { data, error } = await supabase.rpc('execute_sql_query', {
+            query_text: query
+          });
+
+          rawData = data;
+          queryError = error;
+        } else {
+          // Get data for all campuses - using SQL to sum up the counts
+          const query = `
+            SELECT 
+              grade, 
+              SUM(enrollment_count) as enrollment_count 
+            FROM 
+              fivetran_views.grade_enrollment_summary 
+            GROUP BY 
+              grade
+          `;
+          
+          const { data, error } = await supabase.rpc('execute_sql_query', {
+            query_text: query
+          });
+
+          rawData = data;
+          queryError = error;
         }
 
-        // Complete the query with GROUP BY and ORDER BY
-        query += `
-          GROUP BY 
-            grade_band, 
-            sort_order 
-          ORDER BY 
-            sort_order;
-        `;
-        
-        console.log('%c EXECUTING GRADE BAND ENROLLMENT QUERY:', 'color: blue; font-weight: bold');
-        console.log(query);
+        console.log('Query response:', { rawData, queryError });
 
-        const { data: rawData, error: queryError } = await supabase.rpc('execute_sql_query', { query_text: query });
-        
-        console.log('%c Grade band query response:', 'color: green; font-weight: bold', { rawData, queryError });
-        console.log('Raw data type:', typeof rawData, Array.isArray(rawData));
-        if (rawData) {
-          console.log('Raw data length:', rawData.length);
-          if (rawData.length > 0) {
-            console.log('First item:', rawData[0]);
-          }
-        }
-        
         if (queryError) {
-          console.error('Query error details:', queryError);
           throw new Error(`SQL query error: ${queryError.message || 'Unknown error'}`);
         }
-        
-        // Check if we have valid data
-        if (!rawData || !Array.isArray(rawData) || rawData.length === 0) {
-          console.warn('No data returned from grade band query');
-          setData([]);
-          setError(null);
-          setLoading(false);
-          return;
+
+        // Process the returned data and group into bands
+        const gradeBandCounts: Record<string, number> = {
+          'K-2': 0, 
+          '3-5': 0, 
+          '6-8': 0
+        };
+
+        if (rawData && Array.isArray(rawData) && rawData.length > 0) {
+          // Group the individual grades into bands - more robust handling of grade formats
+          rawData.forEach(item => {
+            const grade = String(item.grade).trim(); // Ensure grade is a string and trim whitespace
+            const count = parseInt(String(item.enrollment_count), 10) || 0;
+            
+            // Normalize grade - handle 'k', 'K', '0', 'TK', etc.
+            const normalizedGrade = grade.toUpperCase();
+            
+            if (['K', 'TK', '0', '1', '2'].includes(normalizedGrade)) {
+              console.log(`Grade ${grade} mapped to K-2 band with count ${count}`);
+              gradeBandCounts['K-2'] += count;
+            } else if (['3', '4', '5'].includes(normalizedGrade)) {
+              console.log(`Grade ${grade} mapped to 3-5 band with count ${count}`);
+              gradeBandCounts['3-5'] += count;
+            } else if (['6', '7', '8'].includes(normalizedGrade)) {
+              console.log(`Grade ${grade} mapped to 6-8 band with count ${count}`);
+              gradeBandCounts['6-8'] += count;
+            } else {
+              console.log(`Grade ${grade} not mapped to any band`);
+            }
+          });
         }
         
-        // Parse and format the data
-        const formattedData = rawData.map((item: { grade_band: string; enrollment_count: string }) => {
-          // Ensure we have a clean grade band label
-          const gradeBand = item.grade_band?.trim() || 'Unknown';
-          // Convert enrollment count to a number and default to 0 if conversion fails
-          const count = Number(item.enrollment_count) || 0;
-          
-          return {
-            grade_band: gradeBand,
-            enrollment_count: count
-          };
+        // Convert to array format
+        const resultData: GradeBandEnrollmentItem[] = Object.entries(gradeBandCounts).map(
+          ([grade_band, enrollment_count]) => ({ grade_band, enrollment_count })
+        );
+
+        // Make sure we have entries for all expected grade bands, even if no data was returned
+        const defaultGradeBands = ['K-2', '3-5', '6-8'];
+        const finalData = defaultGradeBands.map(band => {
+          const existingData = resultData.find(item => item.grade_band === band);
+          if (existingData) {
+            return existingData;
+          } else {
+            console.log(`No data found for grade band: ${band}, adding with count 0`);
+            return {
+              grade_band: band,
+              enrollment_count: 0
+            };
+          }
         });
         
-        console.log('Formatted grade band data:', formattedData);
-        setData(formattedData);
+        console.log('Final grade band data:', finalData);
+        setData(finalData);
       } catch (err) {
         console.error('Error fetching grade band enrollment data:', err);
         // Create a new error with a more helpful message
@@ -118,3 +155,4 @@ export const useGradeBandEnrollment = ({ campusId }: GradeBandEnrollmentProps): 
 
   return { data, loading, error };
 };
+

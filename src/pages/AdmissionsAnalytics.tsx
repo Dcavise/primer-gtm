@@ -102,6 +102,14 @@ const AdmissionsAnalytics = () => {
     campusId: campusFilter
   });
   
+  // Immediately log the grade band data after fetching
+  console.log('%c Grade Band Data READY TO USE:', 'color: red; font-weight: bold;', {
+    gradeBandData,
+    loadingGradeBand,
+    gradeBandError,
+    campusFilter
+  });
+  
   // Debug gradeBandData
   useEffect(() => {
     console.log('%c Grade Band Data in component:', 'color: purple; font-weight: bold', {
@@ -544,33 +552,46 @@ const AdmissionsAnalytics = () => {
                     <tr className="border-b">
                       <th className="text-left pb-2 font-medium text-slate-gray">Grade Band</th>
                       <th className="text-right pb-2 font-medium text-slate-gray">Students</th>
+                      <th className="text-right pb-2 font-medium text-slate-gray">Capacity</th>
+                      <th className="text-right pb-2 font-medium text-slate-gray">% Full</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {gradeBandData && Array.isArray(gradeBandData) && gradeBandData.length > 0 ? (
-                      gradeBandData.map((item, index) => {
-                        // Ensure item has the expected structure
-                        if (!item || typeof item !== 'object') {
-                          console.error('Invalid grade band item structure:', item);
-                          return null;
-                        }
+                    {/* Dynamic grade band data that responds to campus selection */}
+                    {['K-2', '3-5', '6-8'].map((band) => {
+                      // Find the matching data item, if it exists
+                      const dataItem = gradeBandData && Array.isArray(gradeBandData) 
+                        ? gradeBandData.find(item => item?.grade_band === band)
+                        : null;
                         
-                        // Extract values with fallbacks
-                        const gradeBand = item.grade_band || 'Unknown';
-                        const count = typeof item.enrollment_count === 'number' ? item.enrollment_count : 0;
-                        
-                        return (
-                          <tr key={index} className="border-b border-platinum last:border-0">
-                            <td className="py-2 text-left font-medium">{gradeBand}</td>
-                            <td className="py-2 text-right">{count}</td>
-                          </tr>
-                        );
-                      }).filter(Boolean) // Remove any null items
-                    ) : (
-                      <tr className="border-b border-platinum">
-                        <td colSpan={2} className="py-2 text-center text-slate-gray">No data available</td>
-                      </tr>
-                    )}
+                      // Get count from data or default to 0
+                      const count = dataItem && typeof dataItem.enrollment_count === 'number'
+                        ? dataItem.enrollment_count
+                        : 0;
+                      
+                      // Calculate percentage of capacity
+                      const capacity = 25; // Hardcoded capacity per grade band
+                      const percentFull = Math.round((count / capacity) * 100);
+                      
+                      // Determine color based on percentage full
+                      const colorClass = 
+                        percentFull >= 90 ? 'bg-red-100 text-red-800' : 
+                        percentFull >= 75 ? 'bg-amber-100 text-amber-800' : 
+                        'bg-green-100 text-green-800';
+                      
+                      return (
+                        <tr key={band} className="border-b border-platinum last:border-0">
+                          <td className="py-2 text-left font-medium">{band}</td>
+                          <td className="py-2 text-right">{count}</td>
+                          <td className="py-2 text-right">{capacity}</td>
+                          <td className="py-2 text-right">
+                            <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${colorClass}`}>
+                              {percentFull}%
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
