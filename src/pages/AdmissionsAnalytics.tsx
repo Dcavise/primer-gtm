@@ -660,7 +660,7 @@ const AdmissionsAnalytics = () => {
                 <div className="w-1/3 h-16 pl-4">
                   <ResponsiveContainer width="100%" height="100%">
                     {metricsData?.timeSeriesData && metricsData.timeSeriesData.length > 0 ? (
-                      <LineChart data={metricsData.timeSeriesData}>
+                      <LineChart data={metricsData.timeSeriesData.filter(item => allPeriods.includes(item.period))}>
                         <XAxis dataKey="formatted_date" hide />
                         <YAxis hide />
                         <Line 
@@ -668,8 +668,8 @@ const AdmissionsAnalytics = () => {
                           dataKey="total" 
                           stroke="#474b4f" 
                           strokeWidth={2} 
-                          dot={false}
-                          activeDot={false}
+                          dot={{ r: 3, fill: "#474b4f", strokeWidth: 0 }}
+                          activeDot={{ r: 4, fill: "#474b4f", stroke: "#fff", strokeWidth: 1 }}
                         />
                       </LineChart>
                     ) : (
@@ -681,8 +681,8 @@ const AdmissionsAnalytics = () => {
                           dataKey="total" 
                           stroke="#474b4f" 
                           strokeWidth={2} 
-                          dot={false}
-                          activeDot={false}
+                          dot={{ r: 3, fill: "#474b4f", strokeWidth: 0 }}
+                          activeDot={{ r: 4, fill: "#474b4f", stroke: "#fff", strokeWidth: 1 }}
                         />
                       </LineChart>
                     )}
@@ -708,7 +708,7 @@ const AdmissionsAnalytics = () => {
                 <div className="w-1/3 h-16 pl-4">
                   <ResponsiveContainer width="100%" height="100%">
                     {convertedMetricsData?.timeSeriesData && convertedMetricsData.timeSeriesData.length > 0 ? (
-                      <LineChart data={convertedMetricsData.timeSeriesData}>
+                      <LineChart data={convertedMetricsData.timeSeriesData.filter(item => allPeriods.includes(item.period))}>
                         <XAxis dataKey="formatted_date" hide />
                         <YAxis hide />
                         <Line 
@@ -716,8 +716,8 @@ const AdmissionsAnalytics = () => {
                           dataKey="total" 
                           stroke="#474b4f" 
                           strokeWidth={2} 
-                          dot={false}
-                          activeDot={false}
+                          dot={{ r: 3, fill: "#474b4f", strokeWidth: 0 }}
+                          activeDot={{ r: 4, fill: "#474b4f", stroke: "#fff", strokeWidth: 1 }}
                         />
                       </LineChart>
                     ) : (
@@ -729,8 +729,8 @@ const AdmissionsAnalytics = () => {
                           dataKey="total" 
                           stroke="#474b4f" 
                           strokeWidth={2} 
-                          dot={false}
-                          activeDot={false}
+                          dot={{ r: 3, fill: "#474b4f", strokeWidth: 0 }}
+                          activeDot={{ r: 4, fill: "#474b4f", stroke: "#fff", strokeWidth: 1 }}
                         />
                       </LineChart>
                     )}
@@ -757,7 +757,7 @@ const AdmissionsAnalytics = () => {
                 <div className="w-1/3 h-16 pl-4">
                   <ResponsiveContainer width="100%" height="100%">
                     {closedWonMetricsData?.timeSeriesData && closedWonMetricsData.timeSeriesData.length > 0 ? (
-                      <LineChart data={closedWonMetricsData.timeSeriesData}>
+                      <LineChart data={closedWonMetricsData.timeSeriesData.filter(item => allPeriods.includes(item.period))}>
                         <XAxis dataKey="formatted_date" hide />
                         <YAxis hide />
                         <Line 
@@ -765,8 +765,8 @@ const AdmissionsAnalytics = () => {
                           dataKey="total" 
                           stroke="#474b4f" 
                           strokeWidth={2} 
-                          dot={false}
-                          activeDot={false}
+                          dot={{ r: 3, fill: "#474b4f", strokeWidth: 0 }}
+                          activeDot={{ r: 4, fill: "#474b4f", stroke: "#fff", strokeWidth: 1 }}
                         />
                       </LineChart>
                     ) : (
@@ -778,8 +778,8 @@ const AdmissionsAnalytics = () => {
                           dataKey="total" 
                           stroke="#474b4f" 
                           strokeWidth={2} 
-                          dot={false}
-                          activeDot={false}
+                          dot={{ r: 3, fill: "#474b4f", strokeWidth: 0 }}
+                          activeDot={{ r: 4, fill: "#474b4f", stroke: "#fff", strokeWidth: 1 }}
                         />
                       </LineChart>
                     )}
@@ -806,7 +806,7 @@ const AdmissionsAnalytics = () => {
                 <div className="w-1/3 h-16 pl-4">
                   <ResponsiveContainer width="100%" height="100%">
                     {arrMetricsData?.timeSeriesData && arrMetricsData.timeSeriesData.length > 0 ? (
-                      <LineChart data={arrMetricsData.timeSeriesData}>
+                      <LineChart data={arrMetricsData.timeSeriesData.filter(item => allPeriods.includes(item.period))}>
                         <XAxis dataKey="formatted_date" hide />
                         <YAxis hide />
                         <Line 
@@ -814,8 +814,8 @@ const AdmissionsAnalytics = () => {
                           dataKey="total" 
                           stroke="#474b4f" 
                           strokeWidth={2} 
-                          dot={false}
-                          activeDot={false}
+                          dot={{ r: 3, fill: "#474b4f", strokeWidth: 0 }}
+                          activeDot={{ r: 4, fill: "#474b4f", stroke: "#fff", strokeWidth: 1 }}
                         />
                       </LineChart>
                     ) : (
@@ -827,8 +827,8 @@ const AdmissionsAnalytics = () => {
                           dataKey="total" 
                           stroke="#474b4f" 
                           strokeWidth={2} 
-                          dot={false}
-                          activeDot={false}
+                          dot={{ r: 3, fill: "#474b4f", strokeWidth: 0 }}
+                          activeDot={{ r: 4, fill: "#474b4f", stroke: "#fff", strokeWidth: 1 }}
                         />
                       </LineChart>
                     )}
@@ -865,7 +865,7 @@ const AdmissionsAnalytics = () => {
                   {/* Trend Line Chart */}
                   <div className="w-1/3 h-16 pl-4">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={metricsData?.timeSeriesData}>
+                      <LineChart data={metricsData?.timeSeriesData.filter(item => allPeriods.includes(item.period))}>
                         <XAxis dataKey="formatted_date" hide />
                         <YAxis hide />
                         <Line 
@@ -873,8 +873,8 @@ const AdmissionsAnalytics = () => {
                           dataKey="total" 
                           stroke="#474b4f" 
                           strokeWidth={2} 
-                          dot={false}
-                          activeDot={false}
+                          dot={{ r: 3, fill: "#474b4f", strokeWidth: 0 }}
+                          activeDot={{ r: 4, fill: "#474b4f", stroke: "#fff", strokeWidth: 1 }}
                         />
                       </LineChart>
                     </ResponsiveContainer>

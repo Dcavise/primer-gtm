@@ -235,10 +235,11 @@ function calculatePeriodChanges(periods: string[], totals: Record<string, number
   const rawChanges: Record<string, number> = {};
   const percentageChanges: Record<string, number> = {};
   
-  // Calculate changes for each period except the first (oldest)
-  for (let i = 1; i < periods.length; i++) {
+  // Calculate changes for each period except the last (newest)
+  // Note: periods are sorted newest to oldest, so periods[0] is the most recent period
+  for (let i = 0; i < periods.length - 1; i++) {
     const currentPeriod = periods[i];
-    const previousPeriod = periods[i - 1];
+    const previousPeriod = periods[i + 1]; // The previous period is actually next in our array (older)
     
     // Calculate raw change
     const currentTotal = totals[currentPeriod] || 0;
@@ -257,7 +258,7 @@ function calculatePeriodChanges(periods: string[], totals: Record<string, number
   
   // Handle the oldest period (no previous period to compare to)
   if (periods.length > 0) {
-    const oldestPeriod = periods[0];
+    const oldestPeriod = periods[periods.length - 1];
     rawChanges[oldestPeriod] = 0;
     percentageChanges[oldestPeriod] = 0;
   }

@@ -5,6 +5,7 @@ import {
   FormattedLeadsResponse, 
   UseFormattedLeadsOptions 
 } from './useFormattedLeadsMetrics';
+import { calculatePeriodChanges } from '../utils/dateUtils';
 
 /**
  * Hook to fetch pre-formatted converted lead metrics from Supabase views
@@ -219,38 +220,4 @@ function processFormattedMetrics(rawData: FormattedLeadMetric[], period: string)
   };
 }
 
-// Helper to calculate period-over-period changes
-function calculatePeriodChanges(periods: string[], totals: Record<string, number>) {
-  // Initialize changes objects
-  const rawChanges: Record<string, number> = {};
-  const percentageChanges: Record<string, number> = {};
-  
-  // Calculate changes for each period except the first (oldest)
-  for (let i = 1; i < periods.length; i++) {
-    const currentPeriod = periods[i];
-    const previousPeriod = periods[i - 1];
-    
-    // Calculate raw change
-    const currentTotal = totals[currentPeriod] || 0;
-    const previousTotal = totals[previousPeriod] || 0;
-    const rawChange = currentTotal - previousTotal;
-    
-    // Calculate percentage change
-    const percentageChange = previousTotal === 0 
-      ? 0 // Avoid division by zero
-      : (rawChange / previousTotal) * 100;
-    
-    // Store the changes
-    rawChanges[currentPeriod] = rawChange;
-    percentageChanges[currentPeriod] = percentageChange;
-  }
-  
-  // Handle the oldest period (no previous period to compare to)
-  if (periods.length > 0) {
-    const oldestPeriod = periods[0];
-    rawChanges[oldestPeriod] = 0;
-    percentageChanges[oldestPeriod] = 0;
-  }
-  
-  return { raw: rawChanges, percentage: percentageChanges };
-}
+

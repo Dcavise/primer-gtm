@@ -43,6 +43,10 @@ export function formatPeriodDate(date: string, period: PeriodType): string {
 /**
  * Calculates period-over-period changes
  * Used for both count-based metrics and monetary metrics
+ * 
+ * @param periods Array of period dates sorted newest to oldest
+ * @param totals Record of total values for each period
+ * @returns Object containing raw changes and percentage changes
  */
 export function calculatePeriodChanges(
   periods: string[], 
@@ -56,10 +60,11 @@ export function calculatePeriodChanges(
     return { raw, percentage };
   }
   
-  // For each period except the first (oldest)
-  for (let i = 1; i < periods.length; i++) {
-    const currentPeriod = periods[i];
-    const previousPeriod = periods[i-1];
+  // For each period except the last (oldest)
+  // Note: periods array is sorted newest first (periods[0] is most recent)
+  for (let i = 0; i < periods.length - 1; i++) {
+    const currentPeriod = periods[i];      // Newer period
+    const previousPeriod = periods[i+1];   // Older period (next in array)
     
     const currentValue = totals[currentPeriod] || 0;
     const previousValue = totals[previousPeriod] || 0;
@@ -67,7 +72,7 @@ export function calculatePeriodChanges(
     // Raw change
     raw[currentPeriod] = currentValue - previousValue;
     
-    // Percentage change
+    // Percentage change: (current-previous)/previous
     if (previousValue === 0) {
       // If previous value is 0, we can't calculate percentage change
       percentage[currentPeriod] = currentValue > 0 ? 100 : 0;
@@ -78,7 +83,7 @@ export function calculatePeriodChanges(
   
   // Handle the oldest period (no previous period to compare to)
   if (periods.length > 0) {
-    const oldestPeriod = periods[0];
+    const oldestPeriod = periods[periods.length - 1];
     raw[oldestPeriod] = 0;
     percentage[oldestPeriod] = 0;
   }
