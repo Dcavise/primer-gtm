@@ -1,5 +1,15 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../integrations/supabase-client';
+import { 
+  PeriodType, 
+  PeriodChanges,
+  getViewSuffix,
+  getIntervalUnit,
+  getPeriodDateFilter,
+  calculatePeriodChanges,
+  getSortedPeriods,
+  getUniqueCampuses
+} from '../utils/dateUtils';
 
 export type FormattedLeadMetric = {
   period_type: string;
@@ -17,10 +27,7 @@ export type FormattedLeadsResponse = {
   campusTotals: Record<string, number>;
   latestPeriod: string | null;
   latestTotal: number;
-  changes: {
-    raw: Record<string, number>;
-    percentage: Record<string, number>;
-  };
+  changes: PeriodChanges;
   timeSeriesData: Array<{
     period: string;
     formatted_date: string;
@@ -32,7 +39,7 @@ export type FormattedLeadsResponse = {
 };
 
 export type UseFormattedLeadsOptions = {
-  period?: 'day' | 'week' | 'month';
+  period?: PeriodType;
   lookbackUnits?: number;
   campusId?: string | null;
   enabled?: boolean;
@@ -66,9 +73,8 @@ export function useFormattedLeadsMetrics({
         
         // Build the query using the period-specific lead metrics view
         // Each view contains pre-formatted data for that period type
-        const viewName = 
-          period === 'day' ? 'lead_metrics_daily' : 
-          period === 'week' ? 'lead_metrics_weekly' : 'lead_metrics_monthly';
+        const viewSuffix = getViewSuffix(period);
+        const viewName = `lead_metrics_${viewSuffix}`;
           
         let query = `
           SELECT
@@ -91,9 +97,9 @@ export function useFormattedLeadsMetrics({
         
         // Add date filter based on lookback units
         // Note: The views already include date filters, but we'll add this for extra control
-        const intervalUnit = period === 'day' ? 'day' : period === 'week' ? 'week' : 'month';
+        const dateFilter = getPeriodDateFilter(period, lookbackUnits);
         query += `
-          AND period_date >= DATE_TRUNC('${intervalUnit}', CURRENT_DATE) - INTERVAL '${lookbackUnits} ${intervalUnit}'
+          AND period_date >= ${dateFilter}
           ORDER BY period_date DESC
         `;
         
@@ -163,7 +169,7 @@ export function useFormattedLeadsMetrics({
 }
 
 // Helper function to create an empty response with the correct structure
-function createEmptyResponse(period: string): FormattedLeadsResponse {
+function createEmptyResponse(period: PeriodType): FormattedLeadsResponse {
   return { 
     periods: [], 
     campuses: [], 
@@ -180,15 +186,12 @@ function createEmptyResponse(period: string): FormattedLeadsResponse {
 }
 
 // Process the raw data into the expected format for the UI
-function processFormattedMetrics(rawData: FormattedLeadMetric[], period: string): FormattedLeadsResponse {
+function processFormattedMetrics(rawData: FormattedLeadMetric[], period: PeriodType): FormattedLeadsResponse {
   // Get unique periods, sorted by date (newest to oldest)
-  // This matches the DESC order from our SQL query
-  const periods = [...new Set(rawData.map(item => item.period_date))]
-    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+  const periods = getSortedPeriods(rawData);
   
   // Get unique campuses
-  const campuses = [...new Set(rawData.map(item => item.campus_name))]
-    .filter(name => name !== 'No Campus Match');
+  const campuses = getUniqueCampuses(rawData);
   
   // Calculate period totals
   const totals = periods.reduce((acc, period) => {
@@ -234,7 +237,8 @@ function processFormattedMetrics(rawData: FormattedLeadMetric[], period: string)
   };
   
   // Get the latest period and its total
-  const latestPeriod = periods.length > 0 ? periods[periods.length - 1] : null;
+  // If periods are sorted newest to oldest, the first item is the most recent
+  const latestPeriod = periods.length > 0 ? periods[0] : null;
   const latestTotal = latestPeriod ? totals[latestPeriod] : 0;
   
   return {
@@ -250,37 +254,4 @@ function processFormattedMetrics(rawData: FormattedLeadMetric[], period: string)
     getLeadCount,
     periodType: period
   };
-}
-
-// Helper to calculate period-over-period changes
-function calculatePeriodChanges(periods: string[], totals: Record<string, number>) {
-  const raw: Record<string, number> = {};
-  const percentage: Record<string, number> = {};
-  
-  // Need at least 2 periods to calculate changes
-  if (periods.length < 2) {
-    return { raw, percentage };
-  }
-  
-  // For each period after the first, calculate the change from the previous period
-  for (let i = 1; i < periods.length; i++) {
-    const currentPeriod = periods[i];
-    const previousPeriod = periods[i-1];
-    
-    const currentValue = totals[currentPeriod];
-    const previousValue = totals[previousPeriod];
-    
-    // Raw change
-    raw[currentPeriod] = currentValue - previousValue;
-    
-    // Percentage change
-    if (previousValue === 0) {
-      // If previous value is 0, we can't calculate percentage change
-      percentage[currentPeriod] = currentValue > 0 ? 100 : 0;
-    } else {
-      percentage[currentPeriod] = ((currentValue - previousValue) / previousValue) * 100;
-    }
-  }
-  
-  return { raw, percentage };
 }
