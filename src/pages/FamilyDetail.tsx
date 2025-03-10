@@ -122,7 +122,12 @@ const FamilyDetail: React.FC = () => {
                       <div>
                         <p className="font-medium">Latest Opportunity</p>
                         <p className="text-muted-foreground">
-                          {family.opportunity_names[0] || 'Unnamed Opportunity'} - {family.opportunity_stages[0] || 'Unknown Stage'}
+                          {family.opportunity_names[0] || 'Unnamed Opportunity'} - 
+                          {(() => {
+                            // Simply use the actual stage name or default to 'New Application'
+                            const rawStage = family.opportunity_stages[0];
+                            return rawStage ? rawStage.trim() : 'New Application';
+                          })()}
                         </p>
                       </div>
                     </li>
@@ -198,7 +203,19 @@ const FamilyDetail: React.FC = () => {
         <TabsContent value="opportunities" className="mt-6">
           <div className="space-y-4">
             {family.opportunity_count > 0 ? (
-              family.opportunity_ids.map((id, index) => {
+              // Map opportunity data and provide defaults for missing values
+              family.opportunity_ids
+                .map((id, index) => ({
+                  id,
+                  index,
+                  // Use a default stage value if missing instead of filtering
+                  stage: family.opportunity_stages[index] || 'New Application',
+                  name: family.opportunity_names[index],
+                  recordType: family.opportunity_record_types?.[index],
+                  grade: family.opportunity_grades?.[index],
+                  campus: family.opportunity_campuses?.[index]
+                }))
+                .map(({id, index, stage, name, recordType, grade, campus}) => {
                 // Map record type IDs to display names
                 const getRecordTypeDisplayName = (recordTypeId: string | undefined) => {
                   if (!recordTypeId) return 'Unknown';
@@ -212,25 +229,43 @@ const FamilyDetail: React.FC = () => {
                   }
                 };
                 
-                const recordType = family.opportunity_record_types?.[index];
+                // Use the recordType passed from our filtered data
                 const recordTypeDisplay = getRecordTypeDisplayName(recordType);
+                
+                // Normalize stage value to handle case sensitivity and whitespace
+                const rawStage = stage;
+                console.log('Raw opportunity stage:', rawStage); // Debug the raw stage value
+                
+                // Simply trim the stage name - now we're getting the actual values from the database
+                // If stage is undefined, use 'New Application' as a default
+                const normalizedStage = rawStage ? rawStage.trim() : 'New Application';
+                
+                console.log('Normalized stage:', normalizedStage);
                 
                 return (
                 <Card key={id}>
                   <CardHeader>
-                    <CardTitle>{family.opportunity_names[index] || 'Unnamed Opportunity'}</CardTitle>
+                    <CardTitle>{name || 'Unnamed Opportunity'}</CardTitle>
                     <CardDescription>
-                      <Badge variant={family.opportunity_stages[index]?.toLowerCase().includes('closed') ? 'destructive' : 'default'}>
-                        {family.opportunity_stages[index] || 'Unknown Stage'}
+                      <Badge variant={
+                        normalizedStage === 'Closed Won' ? 'success' :
+                        normalizedStage === 'Closed Lost' ? 'destructive' :
+                        normalizedStage === 'Family Interview' ? 'secondary' :
+                        normalizedStage === 'Awaiting Documents' ? 'default' :
+                        normalizedStage === 'Education Review' ? 'secondary' :
+                        normalizedStage === 'Admission Offered' ? 'default' :
+                        normalizedStage ? 'outline' : 'outline'
+                      }>
+                        {normalizedStage || 'New Application'}
                       </Badge>
-                      {family.opportunity_grades[index] && (
+                      {grade && (
                         <Badge variant="outline" className="ml-2">
-                          Grade: {family.opportunity_grades[index]}
+                          Grade: {grade}
                         </Badge>
                       )}
-                      {family.opportunity_campuses[index] && (
+                      {campus && (
                         <Badge variant="secondary" className="ml-2">
-                          {family.opportunity_campuses[index]}
+                          {campus}
                         </Badge>
                       )}
                       {recordType && (
@@ -282,7 +317,13 @@ const FamilyDetail: React.FC = () => {
         <TabsContent value="tuition" className="mt-6">
           <div className="space-y-4">
             {family.tuition_offer_count > 0 ? (
-              family.tuition_offer_ids.map((id, index) => (
+              family.tuition_offer_ids
+                .map((id, index) => ({ id, index }))
+                .filter(item => {
+                  const status = family.tuition_offer_statuses[item.index];
+                  return status && (status.includes('Active') || status.includes('Open'));
+                })
+                .map(({ id, index }) => (
                 <Card key={id}>
                   <CardHeader>
                     <CardTitle className="text-lg">Tuition Offer #{index + 1}</CardTitle>

@@ -517,9 +517,12 @@ class SupabaseUnifiedClient {
         (Array.isArray(family.opportunity_campuses) ? 
           (family.opportunity_campuses as string[]).filter(Boolean) : []) : [];
       
+      // Process opportunity stages with better validation and trimming
       const opportunityStages = family.opportunity_stages ? 
         (Array.isArray(family.opportunity_stages) ? 
-          (family.opportunity_stages as string[]).filter(Boolean) : []) : [];
+          (family.opportunity_stages as string[])
+            .map(stage => typeof stage === 'string' ? stage.trim() : stage) // Trim whitespace
+            .filter(Boolean) : []) : [];
       
       // Log the array values for debugging
       logger.debug('Array values from search result:', {
@@ -563,10 +566,63 @@ class SupabaseUnifiedClient {
       logger.debug(`Fetching family record for ID: ${familyId}`);
       
       // Query the comprehensive_family_records table directly
+      // Query explicitly specifying each field to ensure proper data retrieval
+      // First get the base family data from comprehensive_family_records
       const query = `
-        SELECT * FROM fivetran_views.comprehensive_family_records
-        WHERE family_id = '${familyId}' OR pdc_family_id_c = '${familyId}'
-        LIMIT 1
+        WITH family_data AS (
+          SELECT 
+            family_id,
+            family_name,
+            pdc_family_id_c,
+            current_campus_c,
+            contact_ids,
+            contact_first_names,
+            contact_last_names,
+            contact_phones,
+            contact_emails,
+            contact_last_activity_dates,
+            opportunity_ids,
+            opportunity_names,
+            opportunity_grades,
+            opportunity_campuses,
+            opportunity_lead_notes,
+            opportunity_family_interview_notes,
+            opportunity_created_dates,
+            opportunity_record_types,
+            tuition_offer_ids,
+            tuition_offer_statuses,
+            tuition_offer_family_contributions,
+            tuition_offer_state_scholarships,
+            contact_count,
+            opportunity_count,
+            tuition_offer_count
+          FROM fivetran_views.comprehensive_family_records
+          WHERE family_id = '${familyId}' OR pdc_family_id_c = '${familyId}'
+          LIMIT 1
+        ),
+        -- Now get the actual stage names directly from the opportunity table
+        -- We'll get them in a way that preserves the exact order as in opportunity_ids
+        opportunity_stages AS (
+          SELECT 
+            array_agg(s.stage ORDER BY ids.index) as opportunity_stages
+          FROM family_data fd,
+          LATERAL (
+            SELECT 
+              UNNEST(fd.opportunity_ids) as opp_id,
+              generate_subscripts(fd.opportunity_ids, 1) as index
+          ) ids
+          LEFT JOIN LATERAL (
+            SELECT 
+              o.stage_name as stage
+            FROM fivetran_views.opportunity o
+            WHERE o.id = ids.opp_id
+          ) s ON true
+        )
+        SELECT 
+          fd.*,
+          COALESCE(os.opportunity_stages, ARRAY[]::text[]) as opportunity_stages
+        FROM family_data fd
+        LEFT JOIN opportunity_stages os ON true
       `;
       
       try {
@@ -585,6 +641,97 @@ class SupabaseUnifiedClient {
         
         // If data is an array, return the first item
         const familyRecord = Array.isArray(data) ? data[0] : data;
+        
+        // Print raw data for debugging
+        logger.debug('Raw family record from database:', familyRecord);
+        
+        // Debug opportunity stages specifically
+        if (familyRecord && familyRecord.opportunity_stages) {
+          logger.debug('Raw opportunity stages before processing:', {
+            type: typeof familyRecord.opportunity_stages,
+            isArray: Array.isArray(familyRecord.opportunity_stages),
+            value: familyRecord.opportunity_stages,
+            length: Array.isArray(familyRecord.opportunity_stages) ? familyRecord.opportunity_stages.length : 'N/A'
+          });
+        } else {
+          logger.debug('No opportunity_stages field found in the family record');
+        }
+        
+        // Clean opportunity stages data
+        if (familyRecord && Array.isArray(familyRecord.opportunity_stages)) {
+          // Store original values for comparison
+          const originalStages = [...familyRecord.opportunity_stages];
+          
+          // Process the stages with improved handling for known stage values
+          familyRecord.opportunity_stages = familyRecord.opportunity_stages
+            .map(stage => {
+              // Convert stage to string and trim if it's a string
+              const cleanedStage = typeof stage === 'string' ? stage.trim() : String(stage || '').trim();
+              
+              // Log initial cleaning
+              logger.debug(`Stage initial cleaning: '${stage}' -> '${cleanedStage}'`);
+              
+              // Check for codes or partial matches that might indicate known stages
+              // This helps when the database has abbreviated codes or formatting issues
+              let normalizedStage = cleanedStage;
+              
+              // Common stage name variations to normalize
+              const stageMapping = {
+                // Handle 'Family Interview' variations
+                'family': 'Family Interview',
+                'family int': 'Family Interview',
+                'family interview': 'Family Interview',
+                'interview': 'Family Interview',
+                
+                // Handle 'Awaiting Documents' variations
+                'await': 'Awaiting Documents',
+                'awaiting': 'Awaiting Documents',
+                'awaiting doc': 'Awaiting Documents',
+                'awaiting documents': 'Awaiting Documents',
+                'documents': 'Awaiting Documents',
+                
+                // Handle 'Education Review' variations
+                'ed review': 'Education Review',
+                'edu': 'Education Review',
+                'education': 'Education Review',
+                'education review': 'Education Review',
+                'review': 'Education Review',
+                
+                // Handle 'Admission Offered' variations
+                'admission': 'Admission Offered',
+                'admission offered': 'Admission Offered',
+                'admit': 'Admission Offered',
+                'offered': 'Admission Offered',
+                
+                // Handle 'Closed Won/Lost' variations
+                'closed w': 'Closed Won',
+                'won': 'Closed Won',
+                'closed won': 'Closed Won',
+                'closed l': 'Closed Lost',
+                'lost': 'Closed Lost',
+                'closed lost': 'Closed Lost'
+              };
+              
+              // Try to match against our known variations
+              const lowerStage = cleanedStage.toLowerCase();
+              for (const [key, value] of Object.entries(stageMapping)) {
+                if (lowerStage === key || lowerStage.includes(key)) {
+                  normalizedStage = value;
+                  logger.debug(`Stage normalized from '${cleanedStage}' to '${normalizedStage}' based on pattern match`);
+                  break;
+                }
+              }
+              
+              return normalizedStage;
+            })
+            .filter(Boolean); // Remove empty strings
+          
+          // Log the stages before and after cleaning for comparison
+          logger.debug('Opportunity stages comparison:', {
+            before: originalStages,
+            after: familyRecord.opportunity_stages
+          });
+        }
         
         // Add standard ID fields for consistency
         const processedRecord = {
