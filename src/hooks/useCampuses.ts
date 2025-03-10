@@ -16,7 +16,7 @@ export async function fetchCampuses(): Promise<Campus[]> {
   try {
     // Get unique campus names directly from the lead table's preferred_campus_c field
     const { data: campusData, error: campusError } = await supabase.rpc('execute_sql_query', {
-      query_text: `SELECT DISTINCT preferred_campus_c as campus_name
+      sql_query: `SELECT DISTINCT preferred_campus_c as campus_name
                   FROM fivetran_views.lead
                   WHERE preferred_campus_c IS NOT NULL
                   ORDER BY preferred_campus_c`
@@ -27,8 +27,14 @@ export async function fetchCampuses(): Promise<Campus[]> {
       throw new Error('Failed to fetch campus data');
     }
     
+    // Check if campusData is an array before mapping
+    if (!campusData || !Array.isArray(campusData)) {
+      console.error('Invalid campus data format:', campusData);
+      return [];
+    }
+    
     // Map results to the expected Campus interface format
-    const campuses = campusData.map(item => ({
+    const campuses = campusData.map((item: { campus_name: string }) => ({
       campus_id: item.campus_name, // Use the campus name as the ID for filtering
       campus_name: item.campus_name
     }));

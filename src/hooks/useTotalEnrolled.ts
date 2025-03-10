@@ -57,9 +57,9 @@ export function useTotalEnrolled({
         console.log('EXECUTING TOTAL ENROLLED QUERY:');
         console.log(query);
         
-        // Execute the query
+        // Execute the query - use the function directly with no schema prefix
         const { data: rawData, error: queryError } = await supabase.rpc('execute_sql_query', {
-          query_text: query
+          sql_query: query  // Using the correct parameter name 'sql_query' instead of 'query_text'
         });
         
         console.log('Total enrolled query response:', { rawData, queryError });
