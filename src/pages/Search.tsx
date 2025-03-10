@@ -83,7 +83,7 @@ const Search = () => {
   
   // Opportunity status options
   const opportunityStatusOptions = [
-    { value: 'won', label: 'Won Opportunities' },
+    { value: 'active', label: 'Active Families' },
     { value: 'all', label: 'All Families' }
   ];
   
@@ -126,8 +126,19 @@ const Search = () => {
         }
         
         // Opportunity status filter
-        if (selectedOpportunityStatus === 'won') {
-          if (!family.opportunity_is_won_flags || !family.opportunity_is_won_flags.some(isWon => isWon === true)) {
+        if (selectedOpportunityStatus === 'active') {
+          // Check if family has at least one won opportunity for the 25/26 school year
+          if (!family.opportunity_is_won_flags || !family.opportunity_school_years) {
+            return false;
+          }
+          
+          // Check for at least one opportunity that is won AND for school year 25/26
+          const hasActiveOpportunity = family.opportunity_is_won_flags.some((isWon, index) => {
+            return isWon === true && 
+                   family.opportunity_school_years[index] === '25/26';
+          });
+          
+          if (!hasActiveOpportunity) {
             return false;
           }
         }
@@ -146,26 +157,27 @@ const Search = () => {
         alternate_id: alternateId
       });
       
-      // Find the indices of won opportunities
-      const wonOpportunityIndices: number[] = [];
-      if (Array.isArray(family.opportunity_is_won_flags)) {
+      // Find the indices of active opportunities (won AND in 25/26 school year)
+      const activeOpportunityIndices: number[] = [];
+      if (Array.isArray(family.opportunity_is_won_flags) && Array.isArray(family.opportunity_school_years)) {
         family.opportunity_is_won_flags.forEach((isWon, index) => {
-          if (isWon === true) {
-            wonOpportunityIndices.push(index);
+          // Check both conditions: is_won = true AND school_year = '25/26'
+          if (isWon === true && family.opportunity_school_years[index] === '25/26') {
+            activeOpportunityIndices.push(index);
           }
         });
       }
       
-      // Get details of won opportunities
-      const wonSchoolYears: string[] = [];
-      const wonCampuses: string[] = [];
+      // Get details of active opportunities
+      const activeSchoolYears: string[] = [];
+      const activeCampuses: string[] = [];
       
-      wonOpportunityIndices.forEach(index => {
+      activeOpportunityIndices.forEach(index => {
         if (Array.isArray(family.opportunity_school_years) && family.opportunity_school_years[index]) {
-          wonSchoolYears.push(family.opportunity_school_years[index]);
+          activeSchoolYears.push(family.opportunity_school_years[index]);
         }
         if (Array.isArray(family.opportunity_campuses) && family.opportunity_campuses[index]) {
-          wonCampuses.push(family.opportunity_campuses[index]);
+          activeCampuses.push(family.opportunity_campuses[index]);
         }
       });
       
@@ -186,10 +198,10 @@ const Search = () => {
         type: 'Family' as const,
         name: family.family_name || 'Unnamed Family',
         details: `Campus: ${campusName}`,
-        hasWonOpportunities: wonOpportunityIndices.length > 0,
-        wonOpportunityDetails: wonOpportunityIndices.length > 0 ? {
-          schoolYears: wonSchoolYears,
-          campuses: wonCampuses
+        hasWonOpportunities: activeOpportunityIndices.length > 0,
+        wonOpportunityDetails: activeOpportunityIndices.length > 0 ? {
+          schoolYears: activeSchoolYears,
+          campuses: activeCampuses
         } : undefined
       };
     });
@@ -418,9 +430,9 @@ const Search = () => {
                 )}
                 {selectedOpportunityStatus && (
                   <Badge variant="outline" className="bg-emerald-50 text-emerald-700 flex items-center gap-1">
-                    {selectedOpportunityStatus === 'won' ? (
+                    {selectedOpportunityStatus === 'active' ? (
                       <>
-                        <Award className="h-3 w-3" /> Won Opportunities Only
+                        <Award className="h-3 w-3" /> Active Families Only
                       </>
                     ) : (
                       <>
@@ -472,7 +484,7 @@ const Search = () => {
                       <span>{result.type}</span>
                       {result.hasWonOpportunities && (
                         <span className="ml-2 px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-medium rounded-full shadow-sm flex items-center gap-1">
-                          <Award className="h-3 w-3" /> Won Opportunity
+                          <Award className="h-3 w-3" /> Active
                         </span>
                       )}
                     </div>
@@ -491,45 +503,7 @@ const Search = () => {
                       </div>
                     </div>
                     
-                    {/* Opportunity details in a visually distinct section */}
-                    {result.hasWonOpportunities && result.wonOpportunityDetails && (
-                      <div className="mt-3 p-3 rounded-md shadow-sm border border-gray-100 overflow-hidden">
-                        {/* Colored banner based on school year */}
-                        <div className="-m-3 mb-2 p-2 pl-3 flex items-center text-white font-medium" 
-                          style={{
-                            background: result.wonOpportunityDetails.schoolYears.includes('24/25') 
-                              ? 'linear-gradient(to right, #4ade80, #22c55e)' 
-                              : result.wonOpportunityDetails.schoolYears.includes('25/26') 
-                                ? 'linear-gradient(to right, #60a5fa, #3b82f6)' 
-                                : result.wonOpportunityDetails.schoolYears.includes('23/24')
-                                  ? 'linear-gradient(to right, #f97316, #ea580c)'
-                                  : 'linear-gradient(to right, #a855f7, #8b5cf6)'
-                          }}>
-                          <Calendar className="h-4 w-4 mr-2" /> School Year Information
-                        </div>
-                        {result.wonOpportunityDetails.schoolYears.length > 0 && (
-                          <p className="text-sm flex items-center mb-2">
-                            <span className="font-medium mr-2">School Year:</span>
-                            {result.wonOpportunityDetails.schoolYears.map((year, idx) => (
-                              <span key={idx} className={`ml-1 px-2 py-0.5 rounded text-xs font-medium ${getSchoolYearClasses(year)}`}>
-                                {year}
-                              </span>
-                            ))}
-                          </p>
-                        )}
-                        {result.wonOpportunityDetails.campuses.length > 0 && (
-                          <p className="text-sm flex items-center">
-                            <MapPin className="h-4 w-4 text-gray-500 mr-2" />
-                            <span className="font-medium mr-1">Campus:</span> {
-                              // Map campus IDs to names or use 'Unknown Campus' if no mapping exists
-                              result.wonOpportunityDetails.campuses.map(campusId => 
-                                campusMap[campusId] || 'Unknown Campus'
-                              ).join(', ')
-                            }
-                          </p>
-                        )}
-                      </div>
-                    )}
+                    {/* Removed the School Year Information section as requested */}
                   </div>
                   <Button variant="ghost" size="sm" className="self-start mt-2 hover:bg-blue-50 hover:text-blue-600 transition-colors">
                     View
