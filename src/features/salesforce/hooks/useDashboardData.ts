@@ -1,5 +1,5 @@
 import { useQuery, useQueries } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase-client';
+import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 import { WeeklyLeadCount } from './useLeadsStats';
 import { EmploymentStatusCount } from './useFellowsStats';
@@ -48,7 +48,7 @@ export function useDashboardData(selectedCampusIds: string[]): DashboardDataResu
       {
         queryKey: ['weeklyLeads', { campusIds: selectedCampusIds }],
         queryFn: async (): Promise<WeeklyLeadCount[]> => {
-          const { data, error } = await supabase.rpc(
+          const { data, error } = await supabase.executeRPC(
             'get_weekly_lead_counts', 
             { 
               start_date: fourWeeksAgo.toISOString().split('T')[0],
@@ -71,7 +71,7 @@ export function useDashboardData(selectedCampusIds: string[]): DashboardDataResu
       {
         queryKey: ['fellows', { campusIds: selectedCampusIds }],
         queryFn: async () => {
-          let query = supabase
+          let query = supabase.regular
             .from('fellows')
             .select('*', { count: 'exact' })
             .not('fte_employment_status', 'eq', 'Exiting')
@@ -112,7 +112,7 @@ export function useDashboardData(selectedCampusIds: string[]): DashboardDataResu
       {
         queryKey: ['activeOpportunities', { campusIds: selectedCampusIds }],
         queryFn: async () => {
-          let query = supabase
+          let query = supabase.regular
             .from('opportunity')
             .select('*', { count: 'exact' })
             .eq('is_closed', false);
@@ -134,7 +134,7 @@ export function useDashboardData(selectedCampusIds: string[]): DashboardDataResu
       {
         queryKey: ['closedWonOpportunities', { campusIds: selectedCampusIds }],
         queryFn: async () => {
-          let query = supabase
+          let query = supabase.regular
             .from('opportunity')
             .select('*', { count: 'exact' })
             .eq('is_closed', true)
@@ -157,7 +157,7 @@ export function useDashboardData(selectedCampusIds: string[]): DashboardDataResu
       {
         queryKey: ['opportunityStages', { campusIds: selectedCampusIds }],
         queryFn: async () => {
-          let query = supabase
+          let query = supabase.regular
             .from('opportunity')
             .select('stage_name')
             .eq('is_closed', false);

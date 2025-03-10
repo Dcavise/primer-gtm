@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase-client';
+import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 
 interface UseSupabaseQueryOptions<T> {
@@ -76,7 +76,7 @@ export function useSupabaseQuery<T>(options: UseSupabaseQueryOptions<T> = {}) {
     params: Record<string, any> = {}
   ): Promise<R | null> => {
     return executeQuery(
-      () => supabase.rpc(functionName, params),
+      () => supabase.executeRPC(functionName, params),
       `rpc.${functionName}`
     );
   }, [executeQuery]);
@@ -93,7 +93,7 @@ export function useSupabaseQuery<T>(options: UseSupabaseQueryOptions<T> = {}) {
   ): Promise<R | null> => {
     return executeQuery(
       () => {
-        const query = supabase.from(tableName);
+        const query = supabase.regular.from(tableName);
         return queryBuilder(query);
       },
       `query.${tableName}`

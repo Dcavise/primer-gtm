@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase-client';
+import { supabase } from '@/integrations/supabase';
 import { Campus } from '@/types';
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
@@ -12,37 +12,21 @@ export const CAMPUS_QUERY_KEY = ['campuses'] as const;
  * Fetch campuses function that can be used outside of React components
  */
 export async function fetchCampuses(): Promise<Campus[]> {
-  try {
-    // Get unique campus names directly from the lead table's preferred_campus_c field
-    const { data: campusData, error: campusError } = await supabase.rpc('execute_sql_query', {
-      query: `SELECT DISTINCT preferred_campus_c as campus_name
-              FROM fivetran_views.lead
-              WHERE preferred_campus_c IS NOT NULL
-              ORDER BY preferred_campus_c`
-    });
-    
-    if (campusError) {
-      logger.error('Error fetching campus data from lead table:', campusError);
-      throw new Error('Failed to fetch campus data');
-    }
-    
-    // Map results to the expected Campus interface format
-    const campuses = campusData.map(item => ({
-      campus_id: item.campus_name, // Use the campus name as the ID for filtering
-      campus_name: item.campus_name,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }));
-    
-    logger.debug('Fetched', campuses.length, 'campuses from lead table');
-    return campuses;
-  } catch (err) {
-    logger.error('Error in fetchCampuses:', err);
+  const { data, error } = await supabase
+    .from('campuses')
+    .select('*')
+    .order('campus_name', { ascending: true });
+  
+  if (error) {
     handleError({
-      message: 'Failed to fetch campuses data: ' + (err instanceof Error ? err.message : String(err))
+      code: error.code,
+      message: error.message
     }, false, { context: 'fetchCampuses' });
+    
     throw new Error('Failed to fetch campuses data');
   }
+  
+  return data || [];
 }
 
 /**
