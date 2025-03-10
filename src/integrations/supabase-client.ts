@@ -223,6 +223,10 @@ class SupabaseUnifiedClient {
     try {
       logger.info(`Searching for families with term: ${searchTerm}`);
       
+      // Create a Map to store unique families by ID
+      const familyMap = new Map<string, FamilySearchResult>();
+      let foundResults = false;
+      
       // First try the dedicated search_families_consistent RPC function
       try {
         logger.debug(`Trying to use search_families_consistent RPC with term: '${searchTerm}'`);
@@ -234,170 +238,239 @@ class SupabaseUnifiedClient {
           // Success with RPC - process the data
           logger.debug('Successfully retrieved data from search_families_consistent RPC');
           const processedResults = this.processSearchResults(rpcData as Record<string, unknown>[]);
-          logger.debug(`Found ${processedResults.length} families matching '${searchTerm}'`);
-          return { success: true, data: processedResults, error: null };
+          
+          // Add to unique family map
+          processedResults.forEach(family => {
+            if (family.family_id) {
+              familyMap.set(family.family_id, family);
+            }
+          });
+          
+          foundResults = true;
+          logger.debug(`Found ${processedResults.length} families from search_families_consistent`);
         } else {
           // RPC had an error, log and continue to fallback
           logger.warn(`Error using search_families_consistent RPC: ${rpcError?.message}`, rpcError);
           logger.debug('Falling back to regular search_families');
-          
-          // Try the regular search_families function
-          const { data: regData, error: regError } = await this.regular.rpc('search_families', { 
-            search_term: searchTerm
-          });
-          
-          if (!regError && regData) {
-            logger.debug('Successfully retrieved data from search_families RPC');
-            const processedResults = this.processSearchResults(regData as Record<string, unknown>[]);
-            logger.debug(`Found ${processedResults.length} families matching '${searchTerm}'`);
-            return { success: true, data: processedResults, error: null };
-          } else {
-            logger.warn(`Error using search_families RPC: ${regError?.message}`, regError);
-            logger.debug('Falling back to direct SQL query');
-          }
         }
       } catch (rpcSearchError) {
         logger.warn('search_families_consistent RPC failed', rpcSearchError);
         // Continue to next approach
       }
       
-      // Fallback: Try SQL query using execute_sql_query RPC
+      // Try the regular search_families function
       try {
-        // Use the correct table name based on the schema information
-        const sqlQuery = `
-          SELECT 
-            family_id,
-            family_name,
-            pdc_family_id_c, 
-            current_campus_c,
-            contact_count,
-            opportunity_count,
-            opportunity_is_won_flags,
-            ARRAY[''] as opportunity_school_years,
-            opportunity_preferred_campuses as opportunity_campuses,
-            opportunity_stages
-          FROM 
-            fivetran_views.comprehensive_family_records
-          WHERE 
-            family_name ILIKE '%${searchTerm}%' OR
-            current_campus_c ILIKE '%${searchTerm}%' OR
-            EXISTS (
-                SELECT 1 
-                FROM generate_subscripts(contact_last_names, 1) AS i 
-                WHERE 
-                    contact_last_names[i] ILIKE '%${searchTerm}%' OR
-                    contact_emails[i] ILIKE '%${searchTerm}%' OR
-                    contact_phones[i] ILIKE '%${searchTerm}%'
-            )
-          LIMIT 20
-        `;
+        const { data: regData, error: regError } = await this.regular.rpc('search_families', { 
+          search_term: searchTerm
+        });
         
-        logger.debug('Executing family search query using execute_sql_query RPC');
-        const { data, error } = await this.regular.rpc('execute_sql_query', { query: sqlQuery });
-        
-        if (error) {
-          logger.warn(`Error executing SQL query: ${error.message}`, error);
-          // Continue to next approach
+        if (!regError && regData) {
+          logger.debug('Successfully retrieved data from search_families RPC');
+          const processedResults = this.processSearchResults(regData as Record<string, unknown>[]);
+          
+          // Add to unique family map
+          processedResults.forEach(family => {
+            if (family.family_id && !familyMap.has(family.family_id)) {
+              familyMap.set(family.family_id, family);
+            }
+          });
+          
+          foundResults = true;
+          logger.debug(`Found ${processedResults.length} families from search_families`);
         } else {
-          // The execute_sql_query RPC returns results in a 'rows' property
-          logger.debug(`Raw result data:`, data);
+          logger.warn(`Error using search_families RPC: ${regError?.message}`, regError);
+          logger.debug('Falling back to direct SQL query');
+        }
+      } catch (regSearchError) {
+        logger.warn('search_families RPC failed', regSearchError);
+        // Continue to SQL fallback
+      }
+      
+      // Fallback: Try SQL query using execute_sql_query RPC if we haven't found results yet
+      if (!foundResults) {
+        try {
+          // Use the correct table name based on the schema information
+          const sqlQuery = `
+            SELECT 
+              family_id,
+              family_name,
+              pdc_family_id_c, 
+              current_campus_c,
+              contact_count,
+              opportunity_count,
+              opportunity_is_won_flags,
+              ARRAY[''] as opportunity_school_years,
+              opportunity_preferred_campuses as opportunity_campuses,
+              opportunity_stages
+            FROM 
+              fivetran_views.comprehensive_family_records
+            WHERE 
+              family_name ILIKE '%${searchTerm}%' OR
+              current_campus_c ILIKE '%${searchTerm}%' OR
+              EXISTS (
+                  SELECT 1 
+                  FROM generate_subscripts(contact_last_names, 1) AS i 
+                  WHERE 
+                      contact_last_names[i] ILIKE '%${searchTerm}%' OR
+                      contact_emails[i] ILIKE '%${searchTerm}%' OR
+                      contact_phones[i] ILIKE '%${searchTerm}%'
+              )
+            LIMIT 20
+          `;
           
-          // Better handling of response structure
-          let resultRows: Record<string, unknown>[] = [];
+          logger.debug('Executing family search query using execute_sql_query RPC');
+          const { data, error } = await this.regular.rpc('execute_sql_query', { query: sqlQuery });
           
-          if (data) {
-            if (Array.isArray(data)) {
-              resultRows = data;
-              logger.debug(`Data is direct array with ${data.length} items`);
-            } else if (typeof data === 'object') {
-              if ('rows' in data && Array.isArray(data.rows)) {
-                resultRows = data.rows as Record<string, unknown>[];
-                logger.debug(`Data has rows array with ${resultRows.length} items`);
-              } else if ('result' in data && Array.isArray(data.result)) {
-                resultRows = data.result as Record<string, unknown>[];
-                logger.debug(`Data has result array with ${resultRows.length} items`);
-              } else {
-                // Last attempt - check if it's a single object that should be wrapped in array
-                logger.debug(`Data is object without standard array property, keys:`, Object.keys(data));
-                if (Object.keys(data).length > 0) {
-                  resultRows = [data as Record<string, unknown>];
+          if (error) {
+            logger.warn(`Error executing SQL query: ${error.message}`, error);
+          } else {
+            // The execute_sql_query RPC returns results in a 'rows' property
+            logger.debug(`Raw result data:`, data);
+            
+            // Better handling of response structure
+            let resultRows: Record<string, unknown>[] = [];
+            
+            if (data) {
+              if (Array.isArray(data)) {
+                resultRows = data;
+                logger.debug(`Data is direct array with ${data.length} items`);
+              } else if (typeof data === 'object') {
+                if ('rows' in data && Array.isArray(data.rows)) {
+                  resultRows = data.rows as Record<string, unknown>[];
+                  logger.debug(`Data has rows array with ${resultRows.length} items`);
+                } else if ('result' in data && Array.isArray(data.result)) {
+                  resultRows = data.result as Record<string, unknown>[];
+                  logger.debug(`Data has result array with ${resultRows.length} items`);
+                } else {
+                  // Last attempt - check if it's a single object that should be wrapped in array
+                  logger.debug(`Data is object without standard array property, keys:`, Object.keys(data));
+                  if (Object.keys(data).length > 0) {
+                    resultRows = [data as Record<string, unknown>];
+                  }
                 }
               }
             }
+            
+            logger.debug(`Raw result structure:`, typeof data, Array.isArray(data) ? 'is array' : 'not array', `Extracted ${resultRows.length} rows`);
+            
+            // Process the results to add standardized IDs
+            const processedResults = this.processSearchResults(resultRows);
+            
+            // Add to unique family map
+            processedResults.forEach(family => {
+              if (family.family_id && !familyMap.has(family.family_id)) {
+                familyMap.set(family.family_id, family);
+              }
+            });
+            
+            foundResults = true;
+            logger.debug(`Found ${processedResults.length} families from comprehensive_family_records SQL query`);
+          }
+        } catch (sqlRpcError) {
+          logger.warn('execute_sql_query RPC failed', sqlRpcError);
+          // Continue to next approach
+        }
+      }
+      
+      // Last resort: direct POST request - only if no results found yet
+      if (!foundResults) {
+        try {
+          logger.debug('Attempting direct POST request to execute_sql_query');
+          
+          // Use family_standard_ids table as a last resort
+          const sqlQuery = `
+            SELECT 
+              family_id,
+              family_name,
+              pdc_family_id_c, 
+              current_campus_c,
+              contact_count,
+              opportunity_count,
+              ARRAY[false]::boolean[] as opportunity_is_won_flags,
+              ARRAY['']::text[] as opportunity_school_years,
+              ARRAY['']::text[] as opportunity_campuses,
+              ARRAY['']::text[] as opportunity_stages
+            FROM 
+              fivetran_views.family_standard_ids
+            WHERE 
+              family_name ILIKE '%${searchTerm}%' OR
+              current_campus_c ILIKE '%${searchTerm}%'
+            LIMIT 20
+          `;
+          
+          const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/execute_sql_query`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+            },
+            body: JSON.stringify({
+              query: sqlQuery
+            })
+          });
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            logger.warn(`Error with direct SQL POST: ${response.status} - ${errorText}`);
+            throw new Error(`SQL query failed: ${response.status} - ${errorText}`);
           }
           
-          logger.debug(`Raw result structure:`, typeof data, Array.isArray(data) ? 'is array' : 'not array', `Extracted ${resultRows.length} rows`);
+          const data = await response.json();
+          
+          // Get the rows from the response if available
+          const resultRows = data && typeof data === 'object' && 'rows' in data ? 
+                            (data.rows as Record<string, unknown>[]) : 
+                            (Array.isArray(data) ? data : []) as Record<string, unknown>[];
           
           // Process the results to add standardized IDs
           const processedResults = this.processSearchResults(resultRows);
-          logger.debug(`Found ${processedResults.length} families matching '${searchTerm}'`);
-          return { success: true, data: processedResults, error: null };
+          
+          // Add to unique family map
+          processedResults.forEach(family => {
+            if (family.family_id && !familyMap.has(family.family_id)) {
+              familyMap.set(family.family_id, family);
+            }
+          });
+          
+          foundResults = true;
+          logger.debug(`Found ${processedResults.length} families via direct POST request`);
+        } catch (fetchError) {
+          logger.error('Final fallback family search failed', fetchError);
+          // If we have no other results, return this error
+          if (familyMap.size === 0) {
+            return { success: false, data: [], error: String(fetchError) };
+          }
         }
-      } catch (sqlRpcError) {
-        logger.warn('execute_sql_query RPC failed', sqlRpcError);
-        // Continue to next approach
       }
       
-      // Last resort: direct POST request
-      try {
-        logger.debug('Attempting direct POST request to execute_sql_query');
-        
-        // Use family_standard_ids table as a last resort
-        const sqlQuery = `
-          SELECT 
-            family_id,
-            family_name,
-            pdc_family_id_c, 
-            current_campus_c,
-            contact_count,
-            opportunity_count,
-            ARRAY[false]::boolean[] as opportunity_is_won_flags,
-            ARRAY['']::text[] as opportunity_school_years,
-            ARRAY['']::text[] as opportunity_campuses,
-            ARRAY['']::text[] as opportunity_stages
-          FROM 
-            fivetran_views.family_standard_ids
-          WHERE 
-            family_name ILIKE '%${searchTerm}%' OR
-            current_campus_c ILIKE '%${searchTerm}%'
-          LIMIT 20
-        `;
-        
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/execute_sql_query`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-          },
-          body: JSON.stringify({
-            query: sqlQuery
-          })
-        });
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          logger.warn(`Error with direct SQL POST: ${response.status} - ${errorText}`);
-          throw new Error(`SQL query failed: ${response.status} - ${errorText}`);
+      // Convert the Map values to an array for the final results
+      const uniqueResults = Array.from(familyMap.values());
+      
+      // Filter results to only include families with specific opportunity stages
+      const targetStages = [
+        "Family Interview",
+        "Awaiting Documents",
+        "Admission Offered",
+        "Education Review",
+        "Closed Won"
+      ];
+      
+      const filteredResults = uniqueResults.filter(family => {
+        // Check if the family has any opportunities with the target stages
+        if (!family.opportunity_stages || !Array.isArray(family.opportunity_stages)) {
+          return false;
         }
         
-        const data = await response.json();
-        
-        // Get the rows from the response if available
-        const resultRows = data && typeof data === 'object' && 'rows' in data ? 
-          (data.rows as Record<string, unknown>[]) : 
-          (Array.isArray(data) ? data : []);
-        
-        const processedResults = this.processSearchResults(resultRows);
-        return { success: true, data: processedResults, error: null };
-      } catch (directError) {
-        logger.warn('Direct POST request failed', directError);
-        // All approaches failed, return empty results
-        return { success: false, data: [], error: JSON.stringify(directError) };
-      }
+        // Look for any opportunity stage that matches one of our target stages
+        return family.opportunity_stages.some(stage => 
+          stage && targetStages.includes(stage)
+        );
+      });
       
-      // If all approaches fail but don't throw, return empty results
-      return { success: false, data: [], error: 'No search results found' };
+      logger.debug(`Filtered from ${uniqueResults.length} to ${filteredResults.length} families with specific opportunity stages`);
+      logger.debug(`Returning ${filteredResults.length} unique families matching '${searchTerm}' with specific opportunity stages`);
+      return { success: true, data: filteredResults, error: null };
     } catch (err: unknown) {
       // Provide detailed error information
       const errorObj = err instanceof Error ? 
@@ -414,7 +487,7 @@ class SupabaseUnifiedClient {
    * @param results Raw results from the database query
    * @returns Processed results with standardized IDs
    */
-  private processSearchResults(results: Record<string, unknown>[]): FamilySearchResult[] {
+  public processSearchResults(results: Record<string, unknown>[]): FamilySearchResult[] {
     if (!Array.isArray(results)) {
       logger.warn('Expected array of results but received:', typeof results, results);
       return [];
