@@ -309,6 +309,12 @@ class SupabaseUnifiedClient {
               current_campus_c ILIKE '%${searchTerm}%' OR
               EXISTS (
                   SELECT 1 
+                  FROM generate_subscripts(opportunity_names, 1) AS i 
+                  WHERE 
+                      opportunity_names[i] ILIKE '%${searchTerm}%'
+              ) OR
+              EXISTS (
+                  SELECT 1 
                   FROM generate_subscripts(contact_last_names, 1) AS i 
                   WHERE 
                       contact_last_names[i] ILIKE '%${searchTerm}%' OR
@@ -394,7 +400,13 @@ class SupabaseUnifiedClient {
               fivetran_views.family_standard_ids
             WHERE 
               family_name ILIKE '%${searchTerm}%' OR
-              current_campus_c ILIKE '%${searchTerm}%'
+              current_campus_c ILIKE '%${searchTerm}%' OR
+              EXISTS (
+                  SELECT 1 
+                  FROM generate_subscripts(opportunity_names, 1) AS i 
+                  WHERE 
+                      opportunity_names[i] ILIKE '%${searchTerm}%'
+              )
             LIMIT 20
           `;
           
