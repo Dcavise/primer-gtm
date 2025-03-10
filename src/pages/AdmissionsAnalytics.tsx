@@ -16,6 +16,7 @@ import { useFormattedLeadsMetrics } from "../hooks/useFormattedLeadsMetrics";
 import { useFormattedConvertedLeadsMetrics } from "../hooks/useFormattedConvertedLeadsMetrics";
 import { useFormattedClosedWonMetrics } from "../hooks/useFormattedClosedWonMetrics";
 import { useFormattedArrMetrics } from "../hooks/useFormattedArrMetrics";
+import { useTotalEnrolled } from "../hooks/useTotalEnrolled";
 import { LoadingState } from "../components/LoadingState";
 import ErrorState from "../components/ErrorState";
 
@@ -60,13 +61,16 @@ const admissionsMetrics = [
 ];
 
 const AdmissionsAnalytics = () => {
-  // State for period selection
+  // State for period selection - isolated to this component only
   const [periodType, setPeriodType] = useState<'day' | 'week' | 'month'>('week');
   const [selectedCampus, setSelectedCampus] = useState<string>('all');
   
-  // Default lookback units based on period
+  // Default lookback units based on period - specific to this component
   const lookbackUnits = periodType === 'day' ? 30 : 
                        periodType === 'week' ? 12 : 6;
+                       
+  // This serves as documentation that the period selection is exclusive to this component
+  // while the campus filter is global and can be used by other components
   
   // Fetch campus data for dropdown
   const { campuses, isLoading: loadingCampuses } = useCampuses();
@@ -78,6 +82,15 @@ const AdmissionsAnalytics = () => {
     }
     return selectedCampus.trim(); // Remove any whitespace
   }, [selectedCampus, loadingCampuses]);
+  
+  // Fetch total enrolled count based on the campus filter
+  const { 
+    count: totalEnrolledCount, 
+    loading: loadingTotalEnrolled, 
+    error: totalEnrolledError 
+  } = useTotalEnrolled({
+    campusId: campusFilter
+  });
   
   // Fetch leads metrics from the formatted Supabase view
   const { 
@@ -124,25 +137,112 @@ const AdmissionsAnalytics = () => {
   });
   
   // Helper to format values for display
-  const formatValue = (value: number) => {
-    return value >= 1000 ? `${(value / 1000).toFixed(1)}k` : value.toFixed(1);
+  const formatValue = (value: number | null | undefined, isARR: boolean = false) => {
+    // Check for null, undefined, NaN, 0, or empty string converted to a number
+    if (value === null || value === undefined || isNaN(Number(value)) || Number(value) === 0) {
+      return isARR ? '$0' : '0';
+    }
+    
+    const numValue = Number(value);
+    
+    if (isARR) {
+      // Format ARR values with $ and 'k' for thousands
+      return numValue >= 1000 
+        ? `$${(numValue / 1000).toFixed(1)}k` 
+        : `$${numValue.toFixed(0)}`;
+    } else {
+      // Format all other metrics with just the number and 'k' for thousands
+      return numValue >= 1000 
+        ? `${(numValue / 1000).toFixed(1)}k` 
+        : `${numValue.toFixed(0)}`;
+    }
   };
 
   // Helper to format change percentages
   const formatChange = (change: number) => {
-    const sign = change > 0 ? '+' : '';
-    const value = Number.isNaN(change) ? 0 : change;
-    return `${sign}${value.toFixed(1)}`;
+    // Check for null, undefined, or NaN
+    if (change === null || change === undefined || Number.isNaN(change)) {
+      return '0.0';
+    }
+    
+    const numChange = Number(change);
+    const sign = numChange > 0 ? '+' : '';
+    return `${sign}${numChange.toFixed(1)}`;
   };
 
   // Helper to get appropriate color class for change values
   const getChangeColor = (change: number) => {
     return change >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
   };
+
+  // Generate default date columns based on period type and metric type
+  const generateDefaultDateColumns = (periodType: 'day' | 'week' | 'month', metricType: 'leads' | 'converted' | 'closedWon' | 'arr' = 'leads') => {
+    const today = new Date();
+    const result = [];
+    
+    for (let i = 0; i < 5; i++) {
+      const date = new Date(today);
+      
+      if (periodType === 'day') {
+        date.setDate(date.getDate() - i);
+      } else if (periodType === 'week') {
+        date.setDate(date.getDate() - (i * 7));
+      } else { // month
+        date.setMonth(date.getMonth() - i);
+      }
+      
+      let displayDate = `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}/${date.getFullYear().toString().slice(2)}`;
+      
+      if (i === 0) {
+        if (periodType === 'day') displayDate = 'Today';
+        else if (periodType === 'week') displayDate = 'Week to Date';
+        else if (periodType === 'month') displayDate = 'Month to Date';
+      }
+      
+      // Create the base object with common properties
+      const baseObject = {
+        period: date.toISOString(),
+        date: displayDate,
+        percentChange: 0
+      };
+      
+      // Add the metric-specific property
+      if (metricType === 'leads') {
+        result.push({
+          ...baseObject,
+          leadsCreated: 0
+        });
+      } else if (metricType === 'converted') {
+        result.push({
+          ...baseObject,
+          leadsConverted: 0
+        });
+      } else if (metricType === 'closedWon') {
+        result.push({
+          ...baseObject,
+          closedWon: 0
+        });
+      } else if (metricType === 'arr') {
+        result.push({
+          ...baseObject,
+          arrAmount: 0
+        });
+      }
+    }
+    
+    return result;
+  };
   
   // Process data for the column display
   const columnData = useMemo(() => {
-    if (!metricsData || loadingMetrics) return [];
+    if (!metricsData || loadingMetrics) {
+      return generateDefaultDateColumns(periodType, 'leads');
+    }
+    
+    // If we have no periods (empty data), return default columns
+    if (metricsData.periods.length === 0) {
+      return generateDefaultDateColumns(periodType, 'leads');
+    }
     
     // Get up to 5 most recent periods from metricsData.periods
     // The data is already sorted most recent first from the SQL query
@@ -164,15 +264,22 @@ const AdmissionsAnalytics = () => {
       return {
         period,
         date: displayDate,
-        leadsCreated: metricsData.totals[period] || 0,
-        percentChange: metricsData.changes.percentage[period] || 0
+        leadsCreated: metricsData.totals[period] ?? 0,
+        percentChange: metricsData.changes.percentage[period] ?? 0
       };
     }); // Keep original SQL order (most recent first, left-to-right)
   }, [metricsData, loadingMetrics, periodType]);
 
   // Process data for the converted leads display
   const convertedColumnData = useMemo(() => {
-    if (!convertedMetricsData || loadingConvertedMetrics) return [];
+    if (!convertedMetricsData || loadingConvertedMetrics) {
+      return generateDefaultDateColumns(periodType, 'converted');
+    }
+    
+    // If we have no periods (empty data), return default columns
+    if (convertedMetricsData.periods.length === 0) {
+      return generateDefaultDateColumns(periodType, 'converted');
+    }
     
     // Get up to 5 most recent periods from convertedMetricsData.periods
     // The data is already sorted most recent first from the SQL query
@@ -194,15 +301,22 @@ const AdmissionsAnalytics = () => {
       return {
         period,
         date: displayDate,
-        leadsConverted: convertedMetricsData.totals[period] || 0,
-        percentChange: convertedMetricsData.changes.percentage[period] || 0
+        leadsConverted: convertedMetricsData.totals[period] ?? 0,
+        percentChange: convertedMetricsData.changes.percentage[period] ?? 0
       };
     });
   }, [convertedMetricsData, loadingConvertedMetrics, periodType]);
   
   // Process data for the closed won display
   const closedWonColumnData = useMemo(() => {
-    if (!closedWonMetricsData || loadingClosedWonMetrics) return [];
+    if (!closedWonMetricsData || loadingClosedWonMetrics) {
+      return generateDefaultDateColumns(periodType, 'closedWon');
+    }
+    
+    // If we have no periods (empty data), return default columns
+    if (closedWonMetricsData.periods.length === 0) {
+      return generateDefaultDateColumns(periodType, 'closedWon');
+    }
     
     // Get up to 5 most recent periods from closedWonMetricsData.periods
     // The data is already sorted most recent first from the SQL query
@@ -224,15 +338,22 @@ const AdmissionsAnalytics = () => {
       return {
         period,
         date: displayDate,
-        closedWon: closedWonMetricsData.totals[period] || 0,
-        percentChange: closedWonMetricsData.changes.percentage[period] || 0
+        closedWon: closedWonMetricsData.totals[period] ?? 0,
+        percentChange: closedWonMetricsData.changes.percentage[period] ?? 0
       };
     });
   }, [closedWonMetricsData, loadingClosedWonMetrics, periodType]);
   
   // Process data for the ARR display
   const arrColumnData = useMemo(() => {
-    if (!arrMetricsData || loadingArrMetrics) return [];
+    if (!arrMetricsData || loadingArrMetrics) {
+      return generateDefaultDateColumns(periodType, 'arr');
+    }
+    
+    // If we have no periods (empty data), return default columns
+    if (arrMetricsData.periods.length === 0) {
+      return generateDefaultDateColumns(periodType, 'arr');
+    }
     
     // Get up to 5 most recent periods from arrMetricsData.periods
     // The data is already sorted most recent first from the SQL query
@@ -254,19 +375,19 @@ const AdmissionsAnalytics = () => {
       return {
         period,
         date: displayDate,
-        arrAmount: arrMetricsData.totals[period] || 0,
-        percentChange: arrMetricsData.changes.percentage[period] || 0
+        arrAmount: arrMetricsData.totals[period] ?? 0,
+        percentChange: arrMetricsData.changes.percentage[period] ?? 0
       };
     });
   }, [arrMetricsData, loadingArrMetrics, periodType]);
   
   // If there's an error, show error state
-  if (metricsError || convertedMetricsError || closedWonMetricsError || arrMetricsError) {
-    return <ErrorState message="Failed to load admissions data" error={metricsError || convertedMetricsError || closedWonMetricsError || arrMetricsError} />;
+  if (metricsError || convertedMetricsError || closedWonMetricsError || arrMetricsError || totalEnrolledError) {
+    return <ErrorState message="Failed to load admissions data" error={metricsError || convertedMetricsError || closedWonMetricsError || arrMetricsError || totalEnrolledError} />;
   }
   
   return (
-    <div className="container mx-auto py-6 px-8 max-w-7xl bg-seasalt">
+    <div className="container mx-auto py-6 px-8 max-w-7xl bg-seasalt" data-component-name="AdmissionsAnalytics">
       {/* Dashboard header */}
       <Card className="mb-8 border border-platinum bg-seasalt overflow-hidden rounded-lg shadow-sm">
         <div className="px-0">
@@ -331,8 +452,8 @@ const AdmissionsAnalytics = () => {
               </Popover>
             </div>
 
-            {/* Period Type Selection */}
-            <div className="flex space-x-2">
+            {/* Period Type Selection - THIS FILTER IS EXCLUSIVE TO ADMISSIONS ANALYTICS */}
+            <div className="flex space-x-2" data-isolated-filter="true">
               <button 
                 className={`px-4 py-2 rounded-md ${periodType === 'day' ? 'text-seasalt' : 'bg-seasalt text-outer-space border border-platinum'}`}
                 style={periodType === 'day' ? { backgroundColor: '#474b4f' } : {}}
@@ -358,6 +479,24 @@ const AdmissionsAnalytics = () => {
           </div>
         </div>
       </Card>
+      
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        {/* Total Enrolled KPI Card */}
+        <Card className="border border-platinum bg-white overflow-hidden rounded-lg shadow-sm">
+          <div className="flex flex-col space-y-1.5 p-6 pb-2" data-component-name="_c2">
+            <h3 className="font-semibold tracking-tight text-sm text-slate-gray" data-component-name="_c4">Total Enrolled</h3>
+          </div>
+          <CardContent>
+            {loadingTotalEnrolled ? (
+              <Skeleton className="h-8 w-24" />
+            ) : (
+              <div className="text-2xl font-bold">{totalEnrolledCount}</div>
+            )}
+            <p className="text-xs text-slate-gray mt-1">School Year 25/26</p>
+          </CardContent>
+        </Card>
+      </div>
       
       {/* Metrics Table */}
       <div className="mb-8 bg-seasalt rounded-lg border border-platinum shadow-sm">
@@ -398,18 +537,33 @@ const AdmissionsAnalytics = () => {
                 {/* Leads Created Trend */}
                 <div className="w-1/3 h-16 pl-4">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={metricsData?.timeSeriesData}>
-                      <XAxis dataKey="formatted_date" hide />
-                      <YAxis hide />
-                      <Line 
-                        type="monotone" 
-                        dataKey="total" 
-                        stroke="#474b4f" 
-                        strokeWidth={2} 
-                        dot={false}
-                        activeDot={false}
-                      />
-                    </LineChart>
+                    {metricsData?.timeSeriesData && metricsData.timeSeriesData.length > 0 ? (
+                      <LineChart data={metricsData.timeSeriesData}>
+                        <XAxis dataKey="formatted_date" hide />
+                        <YAxis hide />
+                        <Line 
+                          type="monotone" 
+                          dataKey="total" 
+                          stroke="#474b4f" 
+                          strokeWidth={2} 
+                          dot={false}
+                          activeDot={false}
+                        />
+                      </LineChart>
+                    ) : (
+                      <LineChart data={[{formatted_date: '', total: 0}]}>
+                        <XAxis dataKey="formatted_date" hide />
+                        <YAxis hide />
+                        <Line 
+                          type="monotone" 
+                          dataKey="total" 
+                          stroke="#474b4f" 
+                          strokeWidth={2} 
+                          dot={false}
+                          activeDot={false}
+                        />
+                      </LineChart>
+                    )}
                   </ResponsiveContainer>
                 </div>
               </div>
@@ -431,18 +585,33 @@ const AdmissionsAnalytics = () => {
                 {/* Leads Converted Trend */}
                 <div className="w-1/3 h-16 pl-4">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={convertedMetricsData?.timeSeriesData}>
-                      <XAxis dataKey="formatted_date" hide />
-                      <YAxis hide />
-                      <Line 
-                        type="monotone" 
-                        dataKey="total" 
-                        stroke="#474b4f" 
-                        strokeWidth={2} 
-                        dot={false}
-                        activeDot={false}
-                      />
-                    </LineChart>
+                    {convertedMetricsData?.timeSeriesData && convertedMetricsData.timeSeriesData.length > 0 ? (
+                      <LineChart data={convertedMetricsData.timeSeriesData}>
+                        <XAxis dataKey="formatted_date" hide />
+                        <YAxis hide />
+                        <Line 
+                          type="monotone" 
+                          dataKey="total" 
+                          stroke="#474b4f" 
+                          strokeWidth={2} 
+                          dot={false}
+                          activeDot={false}
+                        />
+                      </LineChart>
+                    ) : (
+                      <LineChart data={[{formatted_date: '', total: 0}]}>
+                        <XAxis dataKey="formatted_date" hide />
+                        <YAxis hide />
+                        <Line 
+                          type="monotone" 
+                          dataKey="total" 
+                          stroke="#474b4f" 
+                          strokeWidth={2} 
+                          dot={false}
+                          activeDot={false}
+                        />
+                      </LineChart>
+                    )}
                   </ResponsiveContainer>
                 </div>
               </div>
@@ -465,18 +634,33 @@ const AdmissionsAnalytics = () => {
                 {/* New Closed Won Trend */}
                 <div className="w-1/3 h-16 pl-4">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={closedWonMetricsData?.timeSeriesData}>
-                      <XAxis dataKey="formatted_date" hide />
-                      <YAxis hide />
-                      <Line 
-                        type="monotone" 
-                        dataKey="total" 
-                        stroke="#474b4f" 
-                        strokeWidth={2} 
-                        dot={false}
-                        activeDot={false}
-                      />
-                    </LineChart>
+                    {closedWonMetricsData?.timeSeriesData && closedWonMetricsData.timeSeriesData.length > 0 ? (
+                      <LineChart data={closedWonMetricsData.timeSeriesData}>
+                        <XAxis dataKey="formatted_date" hide />
+                        <YAxis hide />
+                        <Line 
+                          type="monotone" 
+                          dataKey="total" 
+                          stroke="#474b4f" 
+                          strokeWidth={2} 
+                          dot={false}
+                          activeDot={false}
+                        />
+                      </LineChart>
+                    ) : (
+                      <LineChart data={[{formatted_date: '', total: 0}]}>
+                        <XAxis dataKey="formatted_date" hide />
+                        <YAxis hide />
+                        <Line 
+                          type="monotone" 
+                          dataKey="total" 
+                          stroke="#474b4f" 
+                          strokeWidth={2} 
+                          dot={false}
+                          activeDot={false}
+                        />
+                      </LineChart>
+                    )}
                   </ResponsiveContainer>
                 </div>
               </div>
@@ -489,7 +673,7 @@ const AdmissionsAnalytics = () => {
                 {/* Reverse column data for display to show older periods on the left */}
                 {[...arrColumnData].reverse().map((item, index) => (
                   <div key={index} className="w-1/6 text-center">
-                    <div className="font-semibold text-eerie-black">${(item.arrAmount >= 1000) ? (item.arrAmount / 1000).toFixed(1) + 'k' : item.arrAmount.toFixed(0)}</div>
+                    <div className="font-semibold text-eerie-black">{formatValue(item.arrAmount, true)}</div>
                     <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block ${getChangeColor(item.percentChange)}`}>
                       {formatChange(item.percentChange)}%
                     </div>
@@ -499,18 +683,33 @@ const AdmissionsAnalytics = () => {
                 {/* ARR Added Trend */}
                 <div className="w-1/3 h-16 pl-4">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={arrMetricsData?.timeSeriesData}>
-                      <XAxis dataKey="formatted_date" hide />
-                      <YAxis hide />
-                      <Line 
-                        type="monotone" 
-                        dataKey="total" 
-                        stroke="#474b4f" 
-                        strokeWidth={2} 
-                        dot={false}
-                        activeDot={false}
-                      />
-                    </LineChart>
+                    {arrMetricsData?.timeSeriesData && arrMetricsData.timeSeriesData.length > 0 ? (
+                      <LineChart data={arrMetricsData.timeSeriesData}>
+                        <XAxis dataKey="formatted_date" hide />
+                        <YAxis hide />
+                        <Line 
+                          type="monotone" 
+                          dataKey="total" 
+                          stroke="#474b4f" 
+                          strokeWidth={2} 
+                          dot={false}
+                          activeDot={false}
+                        />
+                      </LineChart>
+                    ) : (
+                      <LineChart data={[{formatted_date: '', total: 0}]}>
+                        <XAxis dataKey="formatted_date" hide />
+                        <YAxis hide />
+                        <Line 
+                          type="monotone" 
+                          dataKey="total" 
+                          stroke="#474b4f" 
+                          strokeWidth={2} 
+                          dot={false}
+                          activeDot={false}
+                        />
+                      </LineChart>
+                    )}
                   </ResponsiveContainer>
                 </div>
               </div>
