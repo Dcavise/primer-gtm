@@ -229,8 +229,8 @@ class SupabaseUnifiedClient {
       
       // First try the dedicated search_families_consistent RPC function
       try {
-        logger.debug(`Trying to use search_families_consistent RPC with term: '${searchTerm}'`);
-        const { data: rpcData, error: rpcError } = await this.regular.rpc('search_families_consistent', { 
+        logger.debug(`Trying to use fivetran_views.search_families_consistent RPC with term: '${searchTerm}'`);
+        const { data: rpcData, error: rpcError } = await this.regular.rpc('fivetran_views.search_families_consistent', { 
           search_term: searchTerm
         });
         
@@ -260,7 +260,7 @@ class SupabaseUnifiedClient {
       
       // Try the regular search_families function
       try {
-        const { data: regData, error: regError } = await this.regular.rpc('search_families', { 
+        const { data: regData, error: regError } = await this.regular.rpc('fivetran_views.search_families', { 
           search_term: searchTerm
         });
         
@@ -318,8 +318,8 @@ class SupabaseUnifiedClient {
             LIMIT 20
           `;
           
-          logger.debug('Executing family search query using execute_sql_query RPC');
-          const { data, error } = await this.regular.rpc('execute_sql_query', { query: sqlQuery });
+          logger.debug('Executing family search query using fivetran_views.execute_sql_query RPC');
+          const { data, error } = await this.regular.rpc('fivetran_views.execute_sql_query', { query: sqlQuery });
           
           if (error) {
             logger.warn(`Error executing SQL query: ${error.message}`, error);
@@ -398,7 +398,7 @@ class SupabaseUnifiedClient {
             LIMIT 20
           `;
           
-          const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/execute_sql_query`, {
+          const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/fivetran_views.execute_sql_query`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -747,7 +747,7 @@ class SupabaseUnifiedClient {
         logger.warn('RPC execute_sql_query failed, trying direct POST request', sqlError);
         
         try {
-          const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/execute_sql_query`, {
+          const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/fivetran_views.execute_sql_query`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
