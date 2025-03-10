@@ -1,101 +1,31 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
-import { GridList, GridListItem } from "../components/ui/grid-list";
+import React, { useState, useMemo } from 'react';
+// Import individual UI components
+import { Card } from "../components/ui/card";
+import { CardContent } from "../components/ui/card";
+import { CardHeader } from "../components/ui/card";
+import { CardTitle } from "../components/ui/card";
+import { CardDescription } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { useLeadsCreated } from "../hooks/useLeadsCreated";
-import { useCampuses } from "../hooks/useCampuses";
+import { Popover } from "../components/ui/popover";
+import { PopoverContent } from "../components/ui/popover";
+import { PopoverTrigger } from "../components/ui/popover";
 import { Skeleton } from "../components/ui/skeleton";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { useCampuses } from "../hooks/useCampuses";
+import { useFormattedLeadsMetrics } from "../hooks/useFormattedLeadsMetrics";
+import { LoadingState } from "../components/LoadingState";
+import ErrorState from "../components/ErrorState";
 
-// Sample data for the charts
-const applicationData = [
-  { name: 'Mar 1', applications: 65, acceptances: 40, enrollments: 30, trend: 55 },
-  { name: 'Mar 2', applications: 80, acceptances: 45, enrollments: 35, trend: 60 },
-  { name: 'Mar 3', applications: 95, acceptances: 60, enrollments: 45, trend: 67 },
-  { name: 'Mar 4', applications: 120, acceptances: 75, enrollments: 50, trend: 80 },
-  { name: 'Mar 5', applications: 105, acceptances: 65, enrollments: 48, trend: 90 },
-  { name: 'Mar 6', applications: 90, acceptances: 55, enrollments: 40, trend: 85 },
-  { name: 'Mar 7', applications: 110, acceptances: 70, enrollments: 52, trend: 95 },
+// Sample open pipeline data for UI demonstration
+const openPipelineData = [
+  { name: 'Family Interview', value: 85, fill: '#474b4f' },
+  { name: 'Awaiting Documents', value: 65, fill: '#6b6e70' },
+  { name: 'Admission Offered', value: 45, fill: '#86888a' },
+  { name: 'Closed Won', value: 30, fill: '#a9aaab' },
 ];
 
-const campusData = [
-  { name: 'Main Campus', value: 45 },
-  { name: 'North Campus', value: 25 },
-  { name: 'Online', value: 20 },
-  { name: 'South Campus', value: 10 },
-];
-
-// Daily data for metrics charts - using actual dates from early March 2025
-const dailyData = [
-  { date: '3/2', leadsCreated: 15, leadsConverted: 6, admissionOffered: 4, closedWon: 2, arrAdded: 3.2 },
-  { date: '3/3', leadsCreated: 18, leadsConverted: 8, admissionOffered: 5, closedWon: 3, arrAdded: 4.5 },
-  { date: '3/4', leadsCreated: 22, leadsConverted: 10, admissionOffered: 7, closedWon: 4, arrAdded: 6.8 },
-  { date: '3/5', leadsCreated: 20, leadsConverted: 9, admissionOffered: 6, closedWon: 3, arrAdded: 5.2 },
-  { date: '3/6', leadsCreated: 24, leadsConverted: 12, admissionOffered: 8, closedWon: 5, arrAdded: 7.5 },
-  { date: '3/7', leadsCreated: 19, leadsConverted: 8, admissionOffered: 5, closedWon: 2, arrAdded: 4.9 },
-];
-
-// Weekly data for metrics charts - using actual week start dates
-const weeklyData = [
-  { date: '2/7', leadsCreated: 95, leadsConverted: 42, admissionOffered: 28, closedWon: 15, arrAdded: 18.5 },  // 4 weeks ago
-  { date: '2/14', leadsCreated: 105, leadsConverted: 48, admissionOffered: 32, closedWon: 18, arrAdded: 22.3 }, // 3 weeks ago
-  { date: '2/21', leadsCreated: 112, leadsConverted: 52, admissionOffered: 35, closedWon: 20, arrAdded: 25.8 }, // 2 weeks ago
-  { date: '2/28', leadsCreated: 120, leadsConverted: 58, admissionOffered: 38, closedWon: 22, arrAdded: 28.6 }, // 1 week ago
-  { date: '3/7', leadsCreated: 115, leadsConverted: 55, admissionOffered: 36, closedWon: 21, arrAdded: 27.2 },  // current week
-];
-
-// Monthly data for metrics charts - using first day of the month
-const monthlyData = [
-  { date: '11/1', leadsCreated: 380, leadsConverted: 175, admissionOffered: 120, closedWon: 65, arrAdded: 85.6 },  // 4 months ago
-  { date: '12/1', leadsCreated: 420, leadsConverted: 195, admissionOffered: 130, closedWon: 75, arrAdded: 97.5 },  // 3 months ago
-  { date: '1/1', leadsCreated: 450, leadsConverted: 210, admissionOffered: 145, closedWon: 82, arrAdded: 105.2 },   // 2 months ago
-  { date: '2/1', leadsCreated: 485, leadsConverted: 230, admissionOffered: 155, closedWon: 90, arrAdded: 115.8 },   // 1 month ago
-  { date: '3/1', leadsCreated: 320, leadsConverted: 150, admissionOffered: 100, closedWon: 55, arrAdded: 75.5 },   // current month
-];
-
-// Trend data for line charts - daily granularity
-const dailyTrendData = [
-  { date: '3/30', leadsCreated: 15, leadsConverted: 6, admissionOffered: 4, closedWon: 2, arrAdded: 3.1 },
-  { date: '3/31', leadsCreated: 18, leadsConverted: 8, admissionOffered: 5, closedWon: 3, arrAdded: 4.2 },
-  { date: '4/01', leadsCreated: 22, leadsConverted: 10, admissionOffered: 7, closedWon: 4, arrAdded: 6.5 },
-  { date: '4/02', leadsCreated: 20, leadsConverted: 9, admissionOffered: 6, closedWon: 3, arrAdded: 5.8 },
-  { date: '4/03', leadsCreated: 24, leadsConverted: 12, admissionOffered: 8, closedWon: 5, arrAdded: 7.9 },
-  { date: '4/04', leadsCreated: 19, leadsConverted: 8, admissionOffered: 5, closedWon: 2, arrAdded: 4.8 },
-  { date: '4/05', leadsCreated: 17, leadsConverted: 7, admissionOffered: 4, closedWon: 2, arrAdded: 4.2 },
-];
-
-// Trend data for line charts - weekly granularity
-const weeklyTrendData = [
-  { date: 'Week 12', leadsCreated: 85, leadsConverted: 38, admissionOffered: 25, closedWon: 14, arrAdded: 17.2 },
-  { date: 'Week 13', leadsCreated: 95, leadsConverted: 42, admissionOffered: 28, closedWon: 15, arrAdded: 19.5 },
-  { date: 'Week 14', leadsCreated: 105, leadsConverted: 48, admissionOffered: 32, closedWon: 18, arrAdded: 22.8 },
-  { date: 'Week 15', leadsCreated: 112, leadsConverted: 52, admissionOffered: 35, closedWon: 20, arrAdded: 25.2 },
-  { date: 'Week 16', leadsCreated: 120, leadsConverted: 58, admissionOffered: 38, closedWon: 22, arrAdded: 28.6 },
-  { date: 'Week 17', leadsCreated: 115, leadsConverted: 55, admissionOffered: 36, closedWon: 21, arrAdded: 27.1 },
-];
-
-// Trend data for line charts - monthly granularity
-const monthlyTrendData = [
-  { date: 'Nov', leadsCreated: 320, leadsConverted: 150, admissionOffered: 100, closedWon: 55, arrAdded: 72.5 },
-  { date: 'Dec', leadsCreated: 350, leadsConverted: 165, admissionOffered: 110, closedWon: 60, arrAdded: 79.8 },
-  { date: 'Jan', leadsCreated: 380, leadsConverted: 175, admissionOffered: 120, closedWon: 65, arrAdded: 85.4 },
-  { date: 'Feb', leadsCreated: 420, leadsConverted: 195, admissionOffered: 130, closedWon: 75, arrAdded: 97.2 },
-  { date: 'Mar', leadsCreated: 450, leadsConverted: 210, admissionOffered: 145, closedWon: 82, arrAdded: 106.5 },
-  { date: 'Apr', leadsCreated: 485, leadsConverted: 230, admissionOffered: 155, closedWon: 90, arrAdded: 118.9 },
-];
-
-// Sample metrics data
+// Sample metrics data for non-lead metrics
 const admissionsMetrics = [
-  {
-    id: 'leads-created',
-    name: 'Leads Created',
-    weekToDate: { value: 128.0, change: -4.2 },
-    last7Days: { value: 58.5, change: -18.6 },
-    last28Days: { value: 230.7, change: +6.6 },
-  },
   {
     id: 'leads-converted',
     name: 'Leads Converted',
@@ -126,258 +56,38 @@ const admissionsMetrics = [
   },
 ];
 
-const COLORS = ['#474b4f', '#6b6e70', '#86888a', '#a9aaab'];
-
-// Sample open pipeline data
-const openPipelineData = [
-  { name: 'Family Interview', value: 85, fill: '#474b4f' },
-  { name: 'Awaiting Documents', value: 65, fill: '#6b6e70' },
-  { name: 'Admission Offered', value: 45, fill: '#86888a' },
-  { name: 'Closed Won', value: 30, fill: '#a9aaab' },
-];
-
 const AdmissionsAnalytics = () => {
-  // Convert string-based dateTruncation to hook's period type
-  const [dateTruncation, setDateTruncation] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  // State for period selection
+  const [periodType, setPeriodType] = useState<'day' | 'week' | 'month'>('week');
   const [selectedCampus, setSelectedCampus] = useState<string>('all');
-
-  // Map dateTruncation to period type for hook
-  const periodType = dateTruncation === 'daily' ? 'day' : 
-                     dateTruncation === 'weekly' ? 'week' : 'month';
   
   // Default lookback units based on period
-  const lookbackUnits = dateTruncation === 'daily' ? 30 : 
-                        dateTruncation === 'weekly' ? 12 : 6;
+  const lookbackUnits = periodType === 'day' ? 30 : 
+                       periodType === 'week' ? 12 : 6;
   
-  // Fetch campus data for mapping between campus names and IDs
+  // Fetch campus data for dropdown
   const { campuses, isLoading: loadingCampuses } = useCampuses();
   
-  // For this simplified approach, the campus name IS the ID for filtering
-  const selectedCampusId = useMemo(() => {
-    // If 'all' is selected, return null to show all campuses
+  // For filtering by campus, we use the campus name itself
+  const campusFilter = useMemo(() => {
     if (selectedCampus === 'all' || loadingCampuses) {
       return null;
     }
-    
-    // Check if we have any potential case or whitespace issues
-    const normalizedName = selectedCampus.trim();
-    
-    // No special case handling for any specific campus
-    // All campus names must exactly match the preferred_campus_c field value
-    
-    console.log(`Normalizing campus name: "${selectedCampus}" -> "${normalizedName}"`);
-    console.log(`🔍 This must match EXACTLY what's in the database preferred_campus_c field`);
-    console.log(`SQL will use: WHERE preferred_campus_c = '${normalizedName}'`);
-    
-    // The campus name itself is used for filtering in the SQL query
-    return normalizedName;
+    return selectedCampus.trim(); // Remove any whitespace
   }, [selectedCampus, loadingCampuses]);
   
-
-  
-  // Expanded debugging for campus selection
-  useEffect(() => {
-    console.log('%c Campus Selection Debug', 'background: #f0f0f0; color: #0000ff; font-size: 12px; font-weight: bold;');
-    console.log('Selected Campus Name:', selectedCampus);
-    console.log('Campus ID/Name for filtering:', selectedCampusId);
-    console.log('All available campuses:', campuses);
-    
-    // Log raw campus data to check exact naming
-    if (campuses.length > 0) {
-      console.table(campuses.map(c => ({
-        campus_id: c.campus_id,
-        campus_name: c.campus_name,
-        campus_name_length: c.campus_name.length,
-        trimmed_equal: c.campus_name.trim() === c.campus_name,
-        has_special_chars: /[^a-zA-Z0-9\s]/.test(c.campus_name)
-      })));
-    }
-  }, [selectedCampusId, selectedCampus, campuses]);
-  
-  // Fetch leads created data using the hook
+  // Fetch leads metrics from the formatted Supabase view
   const { 
-    data: leadsCreatedData, 
-    loading: loadingLeadsCreated, 
-    error: leadsCreatedError 
-  } = useLeadsCreated({
+    data: metricsData, 
+    loading: loadingMetrics, 
+    error: metricsError 
+  } = useFormattedLeadsMetrics({
     period: periodType,
     lookbackUnits,
-    campusId: selectedCampusId
+    campusId: campusFilter
   });
   
-  // Additional debug info for active campus selection
-  // Placed after variable declarations to avoid lint errors
-  useEffect(() => {
-    // Only run this when data loads
-    if (!loadingLeadsCreated && leadsCreatedData) {
-      console.log('%c 📊 LOADED DATA CAMPUSES INSPECTION', 'background: #e0ffe0; color: #006600; font-weight: bold');
-      console.log('- Selected campus for filtering:', selectedCampusId);
-      console.log('- Available campuses in result data:', leadsCreatedData.campuses);
-      
-      // Check if our selected campus appears in the result data
-      if (selectedCampusId && !leadsCreatedData.campuses.includes(selectedCampusId)) {
-        console.warn(`⚠️ Selected campus "${selectedCampusId}" not found in results!`);
-        console.log('This suggests a name mismatch between UI and database');
-        
-        // Try to find similar campus names for debugging
-        const similarCampuses = leadsCreatedData.campuses.filter(c => 
-          c.toLowerCase().includes(selectedCampusId.toLowerCase().substring(0, 4)) ||
-          selectedCampusId.toLowerCase().includes(c.toLowerCase().substring(0, 4))
-        );
-        
-        if (similarCampuses.length > 0) {
-          console.log('Possible matches found:', similarCampuses);
-        }
-      }
-    }
-  }, [loadingLeadsCreated, leadsCreatedData, selectedCampusId]);
-  
-  // Debug campus selection and track changes to help identify navigation issues
-  console.log('%c 🏫 CAMPUS SELECTION INFO', 'background: #f0f0ff; color: #0000aa; font-weight: bold');
-  console.log('- UI Selection:', selectedCampus);
-  console.log('- Filter Parameter:', selectedCampusId); 
-  console.log('- Using "all campuses"?', selectedCampus === 'all');
-  
-  // Use useEffect to track state changes without triggering navigation
-  useEffect(() => {
-    console.log('Campus selection changed:', selectedCampus);
-    // You can add additional logic here if needed
-  }, [selectedCampus]);
-
-  // Format SQL dates for display in column headers
-  // Format SQL date strings as MM/DD with hardcoding for monthly periods
-  const formatSqlDate = (dateString: string) => {
-    if (!dateString) return '';
-    
-    // For monthly periods, we can hardcode this since SQL returns the first day of each month
-    if (periodType === 'month') {
-      // Try to extract month from the date string directly
-      // Format will be like "2025-03-01 00:00:00+00"
-      try {
-        // Extract month and day part - expected format: yyyy-MM-dd
-        const datePart = dateString.split(' ')[0]; // Get "2025-03-01" part
-        const [year, month] = datePart.split('-');
-        
-        if (month) {
-          // Remove leading zero if present (e.g., "03" → "3")
-          const monthNumber = parseInt(month, 10);
-          return `${monthNumber}/1`; // Always show first day of month
-        }
-      } catch (e) {
-        console.error('Error extracting month:', e);
-      }
-    }
-    
-    // Fallback for non-monthly periods or if extraction fails
-    try {
-      const date = new Date(dateString);
-      
-      // Check if date is valid
-      if (isNaN(date.getTime())) {
-        console.warn('Invalid date string:', dateString);
-        return 'Invalid';
-      }
-
-      // Get month and day
-      const month = date.getMonth() + 1; // 0-based index, so add 1
-      const day = date.getDate();
-      
-      // Format as MM/DD
-      return `${month}/${day}`;
-    } catch (e) {
-      console.error('Error formatting date:', e);
-      return 'Error';
-    }
-  };
-
-  // Process data from SQL results in a consistent format
-  const leadsData = useMemo(() => {
-    if (!leadsCreatedData) return [];
-
-    console.log('Original SQL periods:', leadsCreatedData.periods);
-    
-    // Map the periods from leadsCreatedData to our expected format
-    // Each period is a string like "2025-03-01 00:00:00+00"
-    return leadsCreatedData.periods.map(period => {
-      return {
-        // Store original date string from SQL
-        originalDate: period,
-        // Use the lead count for this period
-        leadsCreated: leadsCreatedData.totals[period] || 0,
-        // Include the percentage change for this period
-        percentChange: leadsCreatedData.changes.percentage[period] || 0,
-        // Keep other metrics from sample data for now
-        leadsConverted: 0,
-        admissionOffered: 0,
-        closedWon: 0,
-        arrAdded: 0
-      };
-    // Sort by date, most recent first (for the 5 most recent periods)
-    }).sort((a, b) => new Date(b.originalDate).getTime() - new Date(a.originalDate).getTime());
-  }, [leadsCreatedData]);
-
-  // Helper function to get appropriate data based on the selected date truncation
-  const getDataByTruncation = () => {
-    // If we have real data from the hook, use it
-    if (leadsCreatedData && leadsData.length > 0) {
-      console.log('Selecting data to display from periods:', leadsData.map(d => d.originalDate));
-      
-      // Get up to 5 periods (or fewer if we don't have that many)
-      // Periods are already sorted most recent first from the leadsData useMemo
-      const dataToShow = leadsData.slice(0, 5);
-      
-      // Format the dates for display, ensuring the most recent is marked properly
-      const formattedData = dataToShow.map((item, index) => {
-        // Default format: MM/DD
-        let displayDate = formatSqlDate(item.originalDate);
-        
-        // Mark the most recent period (first item) as the current period
-        if (index === 0) {
-          if (periodType === 'day') displayDate = 'Today';
-          else if (periodType === 'week') displayDate = 'Week to Date';
-          else if (periodType === 'month') displayDate = 'Month to Date';
-        }
-        
-        return {
-          ...item,
-          date: displayDate
-        };
-      });
-      
-      // Return data with most recent first to oldest last, then reverse for display
-      // This ensures the "Current Period" always appears on the far right
-      return formattedData.reverse();
-    }
-    
-    // Fall back to sample data if no real data is available
-    switch (dateTruncation) {
-      case 'daily': {
-        // Create a copy of the last 4 days of data so we have 5 total columns
-        const days = dailyData.slice(-5, -1);
-        // Add today as "Today" for the last entry
-        const withToday = [...days, { ...dailyData[dailyData.length - 1], date: 'Today' }];
-        return withToday;
-      }
-      case 'weekly': {
-        // Create a copy of the last 4 weeks of data (use the actual start dates from the data)
-        const weeks = weeklyData.slice(-5, -1); // Getting 4 weeks excluding current
-        // Add the current week as "Week to Date" for the last entry
-        const withCurrentWeek = [...weeks, { ...weeklyData[weeklyData.length - 1], date: 'Week to Date' }];
-        return withCurrentWeek;
-      }
-      case 'monthly': {
-        // Create a copy of the last 4 months of data (use the actual dates from the data)
-        const months = monthlyData.slice(-5, -1); // Getting 4 months excluding current
-        // Add the current month as "Month to Date" for the last entry
-        const withCurrentMonth = [...months, { ...monthlyData[monthlyData.length - 1], date: 'Month to Date' }];
-        return withCurrentMonth;
-      }
-      default:
-        return dailyData.slice(-5);
-    }
-  };
-
-  // Helper to format values
+  // Helper to format values for display
   const formatValue = (value: number) => {
     return value >= 1000 ? `${(value / 1000).toFixed(1)}k` : value.toFixed(1);
   };
@@ -390,29 +100,52 @@ const AdmissionsAnalytics = () => {
   };
 
   // Helper to get appropriate color class for change values
-  // Keeping red/green indicators for changes as requested
   const getChangeColor = (change: number) => {
     return change >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
   };
+  
+  // Process data for the column display
+  const columnData = useMemo(() => {
+    if (!metricsData || loadingMetrics) return [];
+    
+    // Get up to 5 most recent periods from metricsData.periods
+    // The data is already sorted most recent first from the SQL query
+    const recentPeriods = [...metricsData.periods].slice(0, 5);
+    
+    // Map periods to display format
+    return recentPeriods.map((period, index) => {
+      // Find the formatted date for this period
+      const periodItem = metricsData.timeSeriesData.find(item => item.period === period);
+      let displayDate = periodItem?.formatted_date || '';
+      
+      // For the most recent period, use a special label
+      if (index === 0) {
+        if (periodType === 'day') displayDate = 'Today';
+        else if (periodType === 'week') displayDate = 'Week to Date';
+        else if (periodType === 'month') displayDate = 'Month to Date';
+      }
+      
+      return {
+        period,
+        date: displayDate,
+        leadsCreated: metricsData.totals[period] || 0,
+        percentChange: metricsData.changes.percentage[period] || 0
+      };
+    }); // Keep original SQL order (most recent first, left-to-right)
+  }, [metricsData, loadingMetrics, periodType]);
 
-  // Helper function to get appropriate trend data based on the selected date truncation
-  const getTrendDataByTruncation = () => {
-    return dailyTrendData;
-  };
-
-  // Generate dynamic column headers based on the selected date truncation
-  const columnData = getDataByTruncation();
-  const currentTrendData = getTrendDataByTruncation();
-
+  // If there's an error, show error state
+  if (metricsError) {
+    return <ErrorState message="Failed to load admissions data" error={metricsError} />;
+  }
+  
   return (
     <div className="container mx-auto py-6 px-8 max-w-7xl bg-seasalt">
-      {/* Dashboard header with improved design */}
+      {/* Dashboard header */}
       <Card className="mb-8 border border-platinum bg-seasalt overflow-hidden rounded-lg shadow-sm">
         <div className="px-0">
-
-          
           <div className="flex flex-wrap items-center justify-between p-5 bg-seasalt">
-            {/* Campus Selection using GridList within a Popover - Extended Width */}
+            {/* Campus Selection */}
             <div className="w-full md:w-1/3 mb-3 md:mb-0 md:mr-4">
               <Popover>
                 <PopoverTrigger asChild>
@@ -425,7 +158,7 @@ const AdmissionsAnalytics = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                       </svg>
                       <span>
-                        {loadingLeadsCreated || loadingCampuses ? (
+                        {loadingMetrics || loadingCampuses ? (
                           <Skeleton className="h-5 w-24" />
                         ) : (
                           selectedCampus === 'all'
@@ -440,82 +173,58 @@ const AdmissionsAnalytics = () => {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="p-0 w-[300px]" align="start">
-                  {loadingLeadsCreated ? (
+                  {loadingMetrics ? (
                     <div className="p-4">
-                      <Skeleton className="h-6 w-full mb-2" />
                       <Skeleton className="h-6 w-full mb-2" />
                       <Skeleton className="h-6 w-full mb-2" />
                       <Skeleton className="h-6 w-full" />
                     </div>
                   ) : (
-                     <div className="p-1 overflow-auto max-h-[300px]">
-                      {/* Simple list of campuses without GridList */}
+                    <div className="p-1 overflow-auto max-h-[300px]">
+                      {/* All Campuses option */}
                       <div 
                         className={`p-2 rounded cursor-pointer ${selectedCampus === 'all' ? 'bg-slate-100 font-medium' : 'hover:bg-slate-50'}`}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setSelectedCampus('all');
-                        }}
+                        onClick={() => setSelectedCampus('all')}
                       >
                         All Campuses
                       </div>
                       
-                      {/* Map through available campuses */}
+                      {/* Campus list */}
                       {campuses.map(campus => (
                         <div 
                           key={campus.campus_id}
                           className={`p-2 rounded cursor-pointer ${selectedCampus === campus.campus_name ? 'bg-slate-100 font-medium' : 'hover:bg-slate-50'}`}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            // Log exact campus name to check for whitespace/special chars
-                          console.log(`Setting campus name to: "${campus.campus_name}", length: ${campus.campus_name.length}`);
-                          setSelectedCampus(campus.campus_name);
-                          }}
+                          onClick={() => setSelectedCampus(campus.campus_name)}
                         >
                           {campus.campus_name}
                         </div>
                       ))}
-                      
-                      {/* Debug campus data */}
-                      <div className="px-2 py-1 text-xs text-slate-400 border-t mt-2">
-                        Selected: {selectedCampus}
-                      </div>
-                      <div className="px-2 py-1 text-xs text-slate-400">
-                        Filter parameter: "{selectedCampusId || 'all'}"
-                      </div>
-                      {leadsCreatedData?.campuses && (
-                        <div className="px-2 py-1 text-xs text-slate-400 max-h-[60px] overflow-auto">
-                          <span className="font-semibold">DB Names:</span> {leadsCreatedData.campuses.join(', ')}
-                        </div>
-                      )}
                     </div>
                   )}
                 </PopoverContent>
               </Popover>
             </div>
 
-            {/* Truncation Options */}
+            {/* Period Type Selection */}
             <div className="flex space-x-2">
               <button 
-                className={`px-4 py-2 rounded-md ${dateTruncation === 'daily' ? 'text-seasalt' : 'bg-seasalt text-outer-space border border-platinum'}`}
-                style={dateTruncation === 'daily' ? { backgroundColor: '#474b4f' } : {}}
-                onClick={() => setDateTruncation('daily')}
+                className={`px-4 py-2 rounded-md ${periodType === 'day' ? 'text-seasalt' : 'bg-seasalt text-outer-space border border-platinum'}`}
+                style={periodType === 'day' ? { backgroundColor: '#474b4f' } : {}}
+                onClick={() => setPeriodType('day')}
               >
                 Daily
               </button>
               <button 
-                className={`px-4 py-2 rounded-md ${dateTruncation === 'weekly' ? 'text-seasalt' : 'bg-seasalt text-outer-space border border-platinum'}`}
-                style={dateTruncation === 'weekly' ? { backgroundColor: '#474b4f' } : {}}
-                onClick={() => setDateTruncation('weekly')}
+                className={`px-4 py-2 rounded-md ${periodType === 'week' ? 'text-seasalt' : 'bg-seasalt text-outer-space border border-platinum'}`}
+                style={periodType === 'week' ? { backgroundColor: '#474b4f' } : {}}
+                onClick={() => setPeriodType('week')}
               >
                 Weekly
               </button>
               <button 
-                className={`px-4 py-2 rounded-md ${dateTruncation === 'monthly' ? 'text-seasalt' : 'bg-seasalt text-outer-space border border-platinum'}`}
-                style={dateTruncation === 'monthly' ? { backgroundColor: '#474b4f' } : {}}
-                onClick={() => setDateTruncation('monthly')}
+                className={`px-4 py-2 rounded-md ${periodType === 'month' ? 'text-seasalt' : 'bg-seasalt text-outer-space border border-platinum'}`}
+                style={periodType === 'month' ? { backgroundColor: '#474b4f' } : {}}
+                onClick={() => setPeriodType('month')}
               >
                 Monthly
               </button>
@@ -524,59 +233,77 @@ const AdmissionsAnalytics = () => {
         </div>
       </Card>
       
-      {/* Metrics Section */}
+      {/* Metrics Table */}
       <div className="mb-8 bg-seasalt rounded-lg border border-platinum shadow-sm">
-        <div className="px-4 py-4">
-          <div className="flex border-b pb-2 text-sm font-medium text-slate-gray">
-            <div className="w-1/6"></div>
-            {columnData.map((item, index) => (
-              <div key={index} className="w-1/6 text-center">
-                {/* Display the date, which is already formatted in getDataByTruncation */}
-                {item.date}
-              </div>
-            ))}
-            <div className="w-1/3 pr-2 pl-4 text-center">Trend</div>
+        {loadingMetrics ? (
+          <div className="p-4">
+            <LoadingState />
           </div>
-          
-          <div className="flex flex-col divide-y">
-            {admissionsMetrics.map((metric) => (
-              <div key={metric.id} className="flex py-3 items-center">
-                <div className="w-1/6 font-medium text-outer-space">{metric.name}</div>
+        ) : (
+          <div className="px-4 py-4">
+            {/* Table Header */}
+            <div className="flex border-b pb-2 text-sm font-medium text-slate-gray">
+              <div className="w-1/6"></div>
+              {/* Reverse column data for display to show older periods on the left */}
+              {[...columnData].reverse().map((item, index) => (
+                <div key={index} className="w-1/6 text-center">
+                  {item.date}
+                </div>
+              ))}
+              <div className="w-1/3 pr-2 pl-4 text-center">Trend</div>
+            </div>
+            
+            {/* Table Body */}
+            <div className="flex flex-col divide-y">
+              {/* Leads Created Row - Always uses real data */}
+              <div className="flex py-3 items-center">
+                <div className="w-1/6 font-medium text-outer-space">Leads Created</div>
                 
-                {columnData.map((item, index) => {
-                  // For "leads-created" use real data if available
-                  if (metric.id === 'leads-created' && leadsCreatedData) {
-                    // Find the appropriate period data
-                    const periodIndex = Math.min(index, leadsCreatedData.periods.length - 1);
-                    const periodDate = leadsCreatedData.periods[periodIndex];
+                {/* Reverse column data for display to show older periods on the left */}
+                {[...columnData].reverse().map((item, index) => (
+                  <div key={index} className="w-1/6 text-center">
+                    <div className="font-semibold text-eerie-black">{formatValue(item.leadsCreated)}</div>
+                    <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block ${getChangeColor(item.percentChange)}`}>
+                      {formatChange(item.percentChange)}%
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Leads Created Trend */}
+                <div className="w-1/3 h-16 pl-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={metricsData?.timeSeriesData}>
+                      <XAxis dataKey="formatted_date" hide />
+                      <YAxis hide />
+                      <Line 
+                        type="monotone" 
+                        dataKey="total" 
+                        stroke="#474b4f" 
+                        strokeWidth={2} 
+                        dot={false}
+                        activeDot={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              
+              {/* Other Metrics Rows - Using sample data */}
+              {admissionsMetrics.map((metric) => (
+                <div key={metric.id} className="flex py-3 items-center">
+                  <div className="w-1/6 font-medium text-outer-space">{metric.name}</div>
+                  
+                  {/* Generate mock data cells based on period type - reversed for display */}
+                  {[...columnData].reverse().map((_, index) => {
+                    // Generate a random value and change for demonstration
+                    const value = metric.id === 'leads-converted' ? 
+                      Math.floor(Math.random() * 30) + 10 :
+                      metric.id === 'admission-offered' ? 
+                        Math.floor(Math.random() * 20) + 5 :
+                        metric.id === 'arr-added' ? 
+                          Math.floor(Math.random() * 50) + 20 : 
+                          Math.floor(Math.random() * 15) + 5;
                     
-                    // Get values from the real data if available
-                    const value = periodDate ? leadsCreatedData.totals[periodDate] : 0;
-                    const change = periodDate && leadsCreatedData.changes.percentage[periodDate] 
-                      ? leadsCreatedData.changes.percentage[periodDate] 
-                      : 0;
-                    
-                    return (
-                      <div key={index} className="w-1/6 text-center">
-                        {loadingLeadsCreated ? (
-                          <Skeleton className="h-8 w-16 mx-auto mb-2" />
-                        ) : (
-                          <>
-                            <div className="font-semibold text-eerie-black">{formatValue(value)}</div>
-                            <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block ${getChangeColor(change)}`}>
-                              {formatChange(change)}%
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    );
-                  } else {
-                    // For other metrics, continue using the mock data
-                    const value = metric.id === 'leads-converted' ? item.leadsConverted :
-                                 metric.id === 'admission-offered' ? item.admissionOffered :
-                                 metric.id === 'arr-added' ? item.arrAdded : item.closedWon;
-                    
-                    // Calculate a random change percentage for demonstration purposes
                     const change = (Math.random() * 20) - 10;
                     
                     return (
@@ -587,39 +314,17 @@ const AdmissionsAnalytics = () => {
                         </div>
                       </div>
                     );
-                  }
-                })}
-                
-                <div className="w-1/3 h-16 pl-4">
-                  {metric.id === 'leads-created' && leadsCreatedData ? (
-                    loadingLeadsCreated ? (
-                      <Skeleton className="h-16 w-full" />
-                    ) : (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={leadsCreatedData.timeSeriesData}>
-                          <XAxis dataKey="period" hide />
-                          <YAxis hide />
-                          <Line 
-                            type="monotone" 
-                            dataKey="total" 
-                            stroke="#474b4f" 
-                            strokeWidth={2} 
-                            dot={false}
-                            activeDot={false}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    )
-                  ) : (
+                  })}
+                  
+                  {/* Trend Line Chart */}
+                  <div className="w-1/3 h-16 pl-4">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={monthlyTrendData}>
-                        <XAxis dataKey="date" hide />
+                      <LineChart data={metricsData?.timeSeriesData}>
+                        <XAxis dataKey="formatted_date" hide />
                         <YAxis hide />
                         <Line 
                           type="monotone" 
-                          dataKey={metric.id === 'leads-converted' ? 'leadsConverted' : 
-                                 metric.id === 'admission-offered' ? 'admissionOffered' :
-                                 metric.id === 'arr-added' ? 'arrAdded' : 'closedWon'} 
+                          dataKey="total" 
                           stroke="#474b4f" 
                           strokeWidth={2} 
                           dot={false}
@@ -627,12 +332,12 @@ const AdmissionsAnalytics = () => {
                         />
                       </LineChart>
                     </ResponsiveContainer>
-                  )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* KPI Cards */}
@@ -675,7 +380,7 @@ const AdmissionsAnalytics = () => {
         </Card>
       </div>
 
-      {/* Charts */}
+      {/* Pipeline Chart */}
       <div className="mb-6">
         <Card className="bg-seasalt border-platinum">
           <CardHeader>
@@ -701,9 +406,6 @@ const AdmissionsAnalytics = () => {
           </CardContent>
         </Card>
       </div>
-
-
-
     </div>
   );
 };
