@@ -24,22 +24,31 @@ This document provides a comprehensive overview of the refactoring work done to 
 - Created find-unused.js script to help identify unused files and imports
 - Updated CLAUDE.md with improved project structure documentation
 
+### 5. Salesforce Feature Consolidation (Latest)
+- Moved all Salesforce-related components from `/src/components/salesforce/` to `/src/features/salesforce/components/`
+- Created a unified `useFormattedMetrics` hook that replaces multiple duplicated hooks
+- Created backward compatibility wrappers for existing code
+- Consolidated duplicate utility functions into a unified Salesforce service
+- Improved error handling and logging across Salesforce-related code
+- Created proper module exports through index files for easier imports
+- Added types for better type safety and consistency
+
 ## Recommendations for Future Improvements
 
-### 1. Move Domain-Specific Components to Features
+### 1. Move Remaining Domain-Specific Components to Features
 Move the following component groups to their respective feature directories:
-- `/src/components/salesforce/*` → `/src/features/salesforce/components/`
 - `/src/components/auth/*` → `/src/features/auth/components/`
+- Completed: ✅ Salesforce components moved to `/src/features/salesforce/components/`
 
-### 2. Organize Hooks by Feature
+### 2. Continue Organizing Hooks by Feature
 Continue moving feature-specific hooks to their respective feature directories:
-- `/src/hooks/use-salesforce-*.ts` → `/src/features/salesforce/hooks/`
+- Completed: ✅ Salesforce metrics hooks moved to `/src/features/salesforce/hooks/`
 - `/src/hooks/use-*-stats.ts` → `/src/features/admissionsAnalytics/hooks/`
 
 ### 3. Eliminate Duplicate Supabase Files
 There are multiple Supabase client implementations which should be consolidated:
-- Unify admin-client.ts and client.ts into a single client with proper role switching
-- Create a single exports file for all Supabase functionality
+- Continue with unifying admin-client.ts and client.ts into a single client with proper role switching
+- Partially Completed: ✅ Created consolidated supabase-client.ts, but some legacy files remain
 
 ### 4. Code Cleanup
 - Run the find-unused.js script to identify and remove unused files
@@ -61,18 +70,22 @@ There are multiple Supabase client implementations which should be consolidated:
 ## Implementation Plan
 
 1. Start with small, contained changes first:
-   - Continue moving components to their feature directories
-   - Update imports to use new locations
-   - Clean up console.log usage
+   - ✅ Move components to their feature directories
+   - ✅ Update imports to use new locations
+   - ✅ Clean up console.log usage
+   - ✅ Consolidate duplicate code
 
 2. Tackle larger refactorings next:
-   - Consolidate Supabase clients
-   - Implement real authentication
+   - ✅ Consolidate Salesforce metrics hooks into a unified hook
+   - ✅ Create a unified Salesforce service
+   - ⏳ Finish Supabase client consolidation
+   - ⏳ Implement real authentication
 
 3. Finally, add proper testing and documentation:
-   - Add test coverage
-   - Document architecture decisions
-   - Create proper error handling guidelines
+   - ⏳ Add test coverage
+   - ✅ Document refactoring decisions in REFACTORING.md
+   - ✅ Create proper error handling with logger utility
+   - ⏳ Add input validation to all functions
 
 ## Best Practices for Future Development
 
@@ -82,3 +95,7 @@ There are multiple Supabase client implementations which should be consolidated:
 4. Always use path aliases (@/) for imports
 5. Use React.FC<Props> type for all components
 6. Follow feature-based organization for all new code
+7. Use the consolidated useFormattedMetrics hook for all metrics data
+8. Use the salesforceService for Salesforce data access
+9. Create shared types for better type safety
+10. Use index.ts files for easier exports and imports

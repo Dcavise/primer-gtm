@@ -1,12 +1,12 @@
 
 import React, { useMemo, memo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Campus } from '@/hooks/salesforce/types';
+import { Campus } from '@/features/salesforce/hooks/types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { useDashboardCharts } from '@/hooks/salesforce/useDashboardCharts';
+import { useDashboardCharts } from '@/features/salesforce/hooks/useDashboardCharts';
 import { chartColors } from '@/utils/chartColors';
 
 interface StatsCardGridProps {

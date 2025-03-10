@@ -1,3 +1,4 @@
+import salesforceService from '@/features/salesforce/services/salesforce-service';
 import { supabase } from '@/integrations/supabase-client';
 import { logger } from '@/utils/logger';
 import { toast } from '@/hooks/use-toast';
@@ -7,10 +8,10 @@ import { toast } from '@/hooks/use-toast';
  */
 export const testSalesforceConnection = async () => {
   try {
-    logger.info('Testing Salesforce connection using unified client...');
+    logger.info('Testing Salesforce connection using salesforce service...');
     
-    // Use the unified client's testConnection method
-    const connectionResult = await supabase.testConnection();
+    // Use the service's testConnection method
+    const connectionResult = await salesforceService.testConnection();
     
     if (!connectionResult.success) {
       logger.error('Connection test failed:', connectionResult.error);
@@ -23,25 +24,45 @@ export const testSalesforceConnection = async () => {
       };
     }
     
-    // Check if we can access the lead table via RPC
-    const { success, data, error, usingAdminClient } = await supabase.querySalesforceTable('lead', 1);
-    
-    // Format the results in the expected structure for backward compatibility
-    return {
-      regularClient: { 
-        success: connectionResult.publicSchema, 
-        error: null, 
-        data: { publicSchema: connectionResult.publicSchema }
-      },
-      adminClient: { 
-        success: success, 
-        error: error, 
-        data: data ? { leadTableAccess: true } : null
-      },
-      salesforceAccess: success,
-      usingAdminClient: usingAdminClient || false,
-      tables: success ? ['lead'] : []
-    };
+    // Check if we can access the lead table 
+    if (connectionResult.leadTableAccessible) {
+      // Troubleshoot to get table list
+      const { fivetranTables = [] } = await salesforceService.troubleshootSchemaAccess();
+      const tables = fivetranTables.map((table: any) => table.table_name);
+      
+      // Format the results in the expected structure for backward compatibility
+      return {
+        regularClient: { 
+          success: connectionResult.publicSchema, 
+          error: null, 
+          data: { publicSchema: connectionResult.publicSchema }
+        },
+        adminClient: { 
+          success: connectionResult.fivetranViewsSchema, 
+          error: null, 
+          data: connectionResult.leadTableAccessible ? { leadTableAccess: true } : null
+        },
+        salesforceAccess: connectionResult.fivetranViewsSchema,
+        usingAdminClient: false,
+        tables: tables.length > 0 ? tables : ['lead'] // Fallback to at least showing lead
+      };
+    } else {
+      return {
+        regularClient: { 
+          success: connectionResult.publicSchema, 
+          error: null, 
+          data: { publicSchema: connectionResult.publicSchema }
+        },
+        adminClient: { 
+          success: false, 
+          error: new Error("Cannot access lead table"), 
+          data: null
+        },
+        salesforceAccess: false,
+        usingAdminClient: false,
+        tables: []
+      };
+    }
   } catch (error) {
     logger.error('Error testing Salesforce connection:', error);
     return {
@@ -61,11 +82,11 @@ export const getSampleLeads = async (limit = 5) => {
   try {
     logger.info(`Fetching sample of ${limit} Salesforce leads`);
     
-    // Use the unified client's querySalesforceTable method
-    const { success, data, error, usingAdminClient } = await supabase.querySalesforceTable('lead', limit);
+    // Use the service's querySalesforceTable method
+    const { success, data, error } = await salesforceService.querySalesforceTable('lead', limit);
     
     if (success && data) {
-      logger.info(`Successfully fetched ${Array.isArray(data) ? data.length : 0} leads${usingAdminClient ? ' (using admin client)' : ''}`);
+      logger.info(`Successfully fetched ${Array.isArray(data) ? data.length : 0} leads`);
       return { success: true, error: null, data };
     }
     
