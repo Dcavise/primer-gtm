@@ -319,7 +319,7 @@ class SupabaseUnifiedClient {
           `;
           
           logger.debug('Executing family search query using execute_sql_query RPC');
-          const { data, error } = await this.regular.rpc('execute_sql_query', { query: sqlQuery });
+          const { data, error } = await this.regular.rpc('execute_sql_query', { query_text: sqlQuery });
           
           if (error) {
             logger.warn(`Error executing SQL query: ${error.message}`, error);
@@ -406,7 +406,7 @@ class SupabaseUnifiedClient {
               'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
             },
             body: JSON.stringify({
-              query: sqlQuery
+              query_text: sqlQuery
             })
           });
           
