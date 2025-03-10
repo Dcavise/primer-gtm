@@ -14,6 +14,11 @@ interface SearchResultItem {
   type: 'Family' | 'Student' | 'Campus';
   name: string;
   details: string;
+  hasWonOpportunities?: boolean; // Flag indicating if family has won opportunities
+  wonOpportunityDetails?: {
+    schoolYears: string[];
+    campuses: string[];
+  }; // Details of won opportunities
   familyIds?: { // Optional object to store all family ID formats for debugging
     standard_id?: string;
     family_id?: string;
@@ -37,7 +42,7 @@ interface MockResultsData {
 const Search = () => {
   const [searchQuery, setSearchQuery] = useState('');
   // Removed tabs functionality to focus solely on family search
-  const [isSearchBoxOpen, setIsSearchBoxOpen] = useState(false);
+  // Removed search box toggle since it's now always visible
   const navigate = useNavigate();
   
   // Use our custom hook for family data operations
@@ -62,6 +67,29 @@ const Search = () => {
         alternate_id: alternateId
       });
       
+      // Find the indices of won opportunities
+      const wonOpportunityIndices: number[] = [];
+      if (Array.isArray(family.opportunity_is_won_flags)) {
+        family.opportunity_is_won_flags.forEach((isWon, index) => {
+          if (isWon === true) {
+            wonOpportunityIndices.push(index);
+          }
+        });
+      }
+      
+      // Get details of won opportunities
+      const wonSchoolYears: string[] = [];
+      const wonCampuses: string[] = [];
+      
+      wonOpportunityIndices.forEach(index => {
+        if (Array.isArray(family.opportunity_school_years) && family.opportunity_school_years[index]) {
+          wonSchoolYears.push(family.opportunity_school_years[index]);
+        }
+        if (Array.isArray(family.opportunity_campuses) && family.opportunity_campuses[index]) {
+          wonCampuses.push(family.opportunity_campuses[index]);
+        }
+      });
+      
       return {
         // Use the standardized ID as our primary ID for consistent navigation
         id: standardId || familyId || alternateId,
@@ -73,7 +101,12 @@ const Search = () => {
         },
         type: 'Family' as const,
         name: family.family_name || 'Unnamed Family',
-        details: `Campus: ${family.current_campus_c || 'None'}, Contacts: ${family.contact_count || 0}, Opportunities: ${family.opportunity_count || 0}`
+        details: `Campus: ${family.current_campus_c || 'None'}, Contacts: ${family.contact_count || 0}, Opportunities: ${family.opportunity_count || 0}`,
+        hasWonOpportunities: wonOpportunityIndices.length > 0,
+        wonOpportunityDetails: wonOpportunityIndices.length > 0 ? {
+          schoolYears: wonSchoolYears,
+          campuses: wonCampuses
+        } : undefined
       };
     });
   }, [familySearchResults]);
@@ -117,23 +150,7 @@ const Search = () => {
   
   // Removed tab-change effect as we now only focus on family search
   
-  // Add keyboard shortcut listener for 'k' to open search
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Only trigger if 'k' is pressed and no input/textarea is focused
-      if (
-        e.key === 'k' &&
-        document.activeElement?.tagName !== 'INPUT' &&
-        document.activeElement?.tagName !== 'TEXTAREA'
-      ) {
-        e.preventDefault();
-        setIsSearchBoxOpen(true);
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  // Removed keyboard shortcut listener since search is now always visible
 
   // Removed tab change handler as we now only focus on family search
 
@@ -174,33 +191,15 @@ const Search = () => {
       <h1 className="text-2xl font-semibold text-outer-space mb-6">Search</h1>
       
       <div className="mb-8">
-        <div className="relative">
-          <Button 
-            variant="outline" 
-            className="flex w-full items-center justify-between py-5 px-4 shadow-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            onClick={() => setIsSearchBoxOpen(true)}
-          >
-            <div className="flex items-center text-gray-500">
-              <SearchIcon className="h-5 w-5 mr-2" />
-              <span>{searchQuery || 'Search for families, students, or campuses...'}</span>
-            </div>
-            <kbd className="hidden sm:inline-flex items-center rounded border border-gray-200 px-2 py-1 text-xs font-medium text-gray-400">
-              Press K
-            </kbd>
-          </Button>
-        </div>
-        
-        {/* SearchBox Component */}
+        {/* Inline SearchBox Component */}
         <SearchBox 
-          isOpen={isSearchBoxOpen} 
-          onClose={() => setIsSearchBoxOpen(false)}
+          isOpen={true} 
+          onClose={() => {}} 
           onSearch={setSearchQuery}
           initialQuery={searchQuery}
+          inline={true}
+          hideResults={true}
         />
-      </div>
-
-      <div className="mb-6">
-        <h2 className="text-lg font-medium text-outer-space mb-4">Family Results</h2>
       </div>
 
       {searchQuery.trim() && (
@@ -213,7 +212,7 @@ const Search = () => {
             searchResults.map((result) => (
               <Card 
                 key={result.id} 
-                className="p-4 hover:shadow-md cursor-pointer transition-shadow"
+                className={`p-4 hover:shadow-md cursor-pointer transition-shadow ${result.hasWonOpportunities ? 'border-l-4 border-l-green-500' : ''}`}
                 onClick={() => handleResultClick(result)}
               >
                 <div className="flex items-start">
@@ -233,9 +232,28 @@ const Search = () => {
                     )}
                   </div>
                   <div className="flex-1">
-                    <div className="text-sm text-slate-gray mb-1">{result.type}</div>
+                    <div className="flex items-center text-sm text-slate-gray mb-1">
+                      <span>{result.type}</span>
+                      {result.hasWonOpportunities && (
+                        <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">Won Opportunity</span>
+                      )}
+                    </div>
                     <h3 className="text-lg font-medium text-outer-space">{result.name}</h3>
                     <p className="text-slate-gray mt-1">{result.details}</p>
+                    {result.hasWonOpportunities && result.wonOpportunityDetails && (
+                      <div className="mt-2">
+                        {result.wonOpportunityDetails.schoolYears.length > 0 && (
+                          <p className="text-sm text-green-700">
+                            <span className="font-medium">School Year:</span> {result.wonOpportunityDetails.schoolYears.join(', ')}
+                          </p>
+                        )}
+                        {result.wonOpportunityDetails.campuses.length > 0 && (
+                          <p className="text-sm text-green-700">
+                            <span className="font-medium">Campus:</span> {result.wonOpportunityDetails.campuses.join(', ')}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <Button variant="ghost" size="sm">
                     View

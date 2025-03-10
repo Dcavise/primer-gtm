@@ -41,9 +41,11 @@ interface SearchBoxProps {
   onClose: () => void;
   onSearch?: (query: string) => void;
   initialQuery?: string;
+  inline?: boolean; // Prop to determine if the search box should be inline
+  hideResults?: boolean; // Prop to hide search results from displaying in the component
 }
 
-const SearchBox: React.FC<SearchBoxProps> = ({ isOpen, onClose, onSearch, initialQuery = '' }) => {
+const SearchBox: React.FC<SearchBoxProps> = ({ isOpen, onClose, onSearch, initialQuery = '', inline = false, hideResults = false }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -238,47 +240,63 @@ const SearchBox: React.FC<SearchBoxProps> = ({ isOpen, onClose, onSearch, initia
     onClose();
   };
 
-  if (!isOpen) return null;
+  // If not open and not inline, return null
+  if (!isOpen && !inline) return null;
 
-  // Add blur and animation effects
+  // Determine the container component and its props based on inline mode
+  const OuterContainer = inline ? 'div' : 'div';
+  const outerContainerProps = inline
+    ? { className: 'w-full' }
+    : {
+        className: 'fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/40 transition-all duration-200 ease-in-out',
+        onClick: onClose,
+        style: { animation: 'fadeIn 0.15s ease-in-out' }
+      };
+
+  // Determine the inner container component and its props
+  const innerContainerProps = inline
+    ? {
+        className: 'w-full bg-white rounded-lg overflow-hidden border border-gray-200'
+      }
+    : {
+        className: 'w-full max-w-xl bg-white rounded-lg shadow-xl overflow-hidden border border-gray-200 transform transition-all duration-200',
+        style: { animation: 'scaleIn 0.15s ease-out' },
+        onClick: (e: React.MouseEvent) => e.stopPropagation()
+      };
+
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/40 transition-all duration-200 ease-in-out"
-      onClick={onClose}
-      style={{ animation: 'fadeIn 0.15s ease-in-out' }}
-    >
-      <div 
-        className="w-full max-w-xl bg-white rounded-lg shadow-xl overflow-hidden border border-gray-200 transform transition-all duration-200"
-        style={{ animation: 'scaleIn 0.15s ease-out' }}
-        onClick={(e) => e.stopPropagation()}
-      >
+    <OuterContainer {...outerContainerProps}>
+      <div {...innerContainerProps}>
         <div className="flex items-center p-3 border-b">
           <Search className="h-5 w-5 text-gray-400 mr-2" />
           <input
             ref={searchInputRef}
             type="text"
             className="flex-1 outline-none bg-transparent"
-            placeholder="Search..."
+            placeholder="Search for families..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <button 
-            className="p-1 rounded-full hover:bg-gray-100"
-            onClick={onClose}
-          >
-            <X className="h-5 w-5 text-gray-400" />
-          </button>
+          {!inline && (
+            <button 
+              className="p-1 rounded-full hover:bg-gray-100"
+              onClick={onClose}
+            >
+              <X className="h-5 w-5 text-gray-400" />
+            </button>
+          )}
         </div>
         
-        {loading && (
+        {/* Only show loading, no results message, and results list if hideResults is false */}
+        {!hideResults && loading && (
           <div className="p-4 text-center text-gray-500">Loading...</div>
         )}
         
-        {!loading && results.length === 0 && searchQuery && (
+        {!hideResults && !loading && results.length === 0 && searchQuery && (
           <div className="p-4 text-center text-gray-500">No results found</div>
         )}
         
-        {!loading && results.length > 0 && (
+        {!hideResults && !loading && results.length > 0 && (
           <ul className="max-h-80 overflow-y-auto">
             {results.map((result, index) => (
               <li 
@@ -317,15 +335,17 @@ const SearchBox: React.FC<SearchBoxProps> = ({ isOpen, onClose, onSearch, initia
           </ul>
         )}
         
-        <div className="p-2 text-xs text-gray-400 bg-gray-50 border-t border-gray-100">
-          <div className="flex justify-between">
-            <span>Press <kbd className="px-2 py-1 bg-gray-100 rounded border">↑</kbd> <kbd className="px-2 py-1 bg-gray-100 rounded border">↓</kbd> to navigate</span>
-            <span><kbd className="px-2 py-1 bg-gray-100 rounded border">Enter</kbd> to select</span>
-            <span><kbd className="px-2 py-1 bg-gray-100 rounded border">Esc</kbd> to close</span>
+        {!inline && (
+          <div className="p-2 text-xs text-gray-400 bg-gray-50 border-t border-gray-100">
+            <div className="flex justify-between">
+              <span>Press <kbd className="px-2 py-1 bg-gray-100 rounded border">↑</kbd> <kbd className="px-2 py-1 bg-gray-100 rounded border">↓</kbd> to navigate</span>
+              <span><kbd className="px-2 py-1 bg-gray-100 rounded border">Enter</kbd> to select</span>
+              <span><kbd className="px-2 py-1 bg-gray-100 rounded border">Esc</kbd> to close</span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
-    </div>
+    </OuterContainer>
   );
 };
 

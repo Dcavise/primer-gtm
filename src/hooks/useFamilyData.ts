@@ -42,6 +42,10 @@ export interface FamilySearchResult {
   current_campus_c: string;
   contact_count: number;
   opportunity_count: number;
+  opportunity_is_won_flags?: boolean[]; // Array of booleans indicating if any opportunity is won
+  opportunity_school_years?: string[]; // Array of school years for opportunities
+  opportunity_campuses?: string[]; // Array of campuses for opportunities
+  opportunity_stages?: string[]; // Array of stages for opportunities
 }
 
 // Define the return type for the hook
