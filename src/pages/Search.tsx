@@ -250,7 +250,7 @@ const Search = () => {
       </div>
 
       {searchQuery.trim() && (
-        <div className="grid gap-4">
+        <div className="grid gap-6">
           {isSearching ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-outer-space"></div>
@@ -259,31 +259,31 @@ const Search = () => {
             searchResults.map((result) => (
               <Card 
                 key={result.id} 
-                className={`p-5 hover:shadow-md cursor-pointer transition-shadow ${result.hasWonOpportunities ? 'border-l-4 border-l-green-500' : ''}`}
+                className={`p-5 bg-white hover:shadow-lg cursor-pointer transition-all duration-200 border border-gray-100 ${result.hasWonOpportunities ? 'border-l-4 border-l-green-500' : ''}`}
                 onClick={() => handleResultClick(result)}
               >
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 mr-4">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0">
                     {result.type === 'Family' ? (
-                      <div className="bg-blue-100 p-2 rounded-full">
+                      <div className="bg-blue-100 p-3 rounded-full shadow-sm">
                         <Users className="h-5 w-5 text-blue-600" />
                       </div>
                     ) : result.type === 'Student' ? (
-                      <div className="bg-green-100 p-2 rounded-full">
+                      <div className="bg-green-100 p-3 rounded-full shadow-sm">
                         <Briefcase className="h-5 w-5 text-green-600" />
                       </div>
                     ) : (
-                      <div className="bg-purple-100 p-2 rounded-full">
+                      <div className="bg-purple-100 p-3 rounded-full shadow-sm">
                         <Building className="h-5 w-5 text-purple-600" />
                       </div>
                     )}
                   </div>
                   <div className="flex-1">
                     {/* Type and badges row */}
-                    <div className="flex items-center text-sm text-slate-gray mb-2">
+                    <div className="flex items-center text-sm text-slate-gray mb-3">
                       <span>{result.type}</span>
                       {result.hasWonOpportunities && (
-                        <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">Won Opportunity</span>
+                        <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full shadow-sm">Won Opportunity</span>
                       )}
                     </div>
                     
@@ -291,13 +291,13 @@ const Search = () => {
                     <h3 className="text-xl font-bold text-outer-space mb-3">{result.name}</h3>
                     
                     {/* Key details with subtle divider */}
-                    <div className="border-b border-gray-100 pb-2 mb-2">
-                      <p className="text-slate-gray">{result.details}</p>
+                    <div className="border-b border-gray-100 pb-3 mb-3">
+                      <p className="text-slate-gray leading-relaxed">{result.details}</p>
                     </div>
                     
                     {/* Opportunity details in a visually distinct section */}
                     {result.hasWonOpportunities && result.wonOpportunityDetails && (
-                      <div className="mt-3 bg-gray-50 p-2 rounded-md">
+                      <div className="mt-3 bg-gray-50 p-3 rounded-md shadow-sm border border-gray-100">
                         {result.wonOpportunityDetails.schoolYears.length > 0 && (
                           <p className="text-sm text-green-700">
                             <span className="font-medium">School Year:</span> {result.wonOpportunityDetails.schoolYears.join(', ')}
@@ -316,7 +316,7 @@ const Search = () => {
                       </div>
                     )}
                   </div>
-                  <Button variant="ghost" size="sm" className="self-start mt-2">
+                  <Button variant="ghost" size="sm" className="self-start mt-2 hover:bg-blue-50 hover:text-blue-600 transition-colors">
                     View
                   </Button>
                 </div>
