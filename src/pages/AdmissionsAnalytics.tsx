@@ -489,7 +489,7 @@ const AdmissionsAnalytics = () => {
                 {/* Reverse column data for display to show older periods on the left */}
                 {[...arrColumnData].reverse().map((item, index) => (
                   <div key={index} className="w-1/6 text-center">
-                    <div className="font-semibold text-eerie-black">${formatValue(item.arrAmount)}</div>
+                    <div className="font-semibold text-eerie-black">${(item.arrAmount >= 1000) ? (item.arrAmount / 1000).toFixed(1) + 'k' : item.arrAmount.toFixed(0)}</div>
                     <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block ${getChangeColor(item.percentChange)}`}>
                       {formatChange(item.percentChange)}%
                     </div>

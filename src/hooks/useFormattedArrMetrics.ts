@@ -8,7 +8,7 @@ import {
 
 // Interface for raw ARR metrics from Supabase views
 interface FormattedArrMetric extends Omit<FormattedLeadMetric, 'lead_count'> {
-  arr_amount: number;
+  total_contribution: number;
 }
 
 /**
@@ -39,8 +39,8 @@ export function useFormattedArrMetrics({
         
         // Build the query using the period-specific ARR metrics view
         const viewName = 
-          period === 'day' ? 'arr_added_daily' : 
-          period === 'week' ? 'arr_added_weekly' : 'arr_added_monthly';
+          period === 'day' ? 'arr_metrics_daily' : 
+          period === 'week' ? 'arr_metrics_weekly' : 'arr_metrics_monthly';
           
         let query = `
           SELECT
@@ -48,7 +48,7 @@ export function useFormattedArrMetrics({
             period_date,
             formatted_date,
             campus_name,
-            arr_amount
+            total_contribution
           FROM
             fivetran_views.${viewName}
           WHERE 1=1
@@ -101,7 +101,7 @@ export function useFormattedArrMetrics({
           formatted_date: item.formatted_date,
           // Default to "All Campuses" if campus_name is missing
           campus_name: item.campus_name || "All Campuses",
-          arr_amount: Number(item.arr_amount)
+          total_contribution: Number(item.total_contribution)
         }));
         
         // If we still have no data after normalization, return empty response
@@ -157,7 +157,7 @@ function processFormattedMetrics(rawData: FormattedArrMetric[], period: string):
   // We'll treat the ARR amount as if it were a "lead_count" for compatibility
   const mappedData = rawData.map(item => ({
     ...item,
-    lead_count: item.arr_amount
+    lead_count: item.total_contribution
   })) as unknown as FormattedLeadMetric[];
   
   // Get unique periods, sorted by date (newest to oldest)
@@ -209,7 +209,7 @@ function processFormattedMetrics(rawData: FormattedArrMetric[], period: string):
       item.period_date === periodDate && 
       item.campus_name === campusName
     );
-    return match ? Number(match.arr_amount) : 0;
+    return match ? Number(match.total_contribution) : 0;
   };
   
   // Get the latest period and its total
