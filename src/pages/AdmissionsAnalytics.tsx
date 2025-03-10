@@ -15,6 +15,7 @@ import { useCampuses } from "../hooks/useCampuses";
 import { useFormattedLeadsMetrics } from "../hooks/useFormattedLeadsMetrics";
 import { useFormattedConvertedLeadsMetrics } from "../hooks/useFormattedConvertedLeadsMetrics";
 import { useFormattedClosedWonMetrics } from "../hooks/useFormattedClosedWonMetrics";
+import { useFormattedArrMetrics } from "../hooks/useFormattedArrMetrics";
 import { LoadingState } from "../components/LoadingState";
 import ErrorState from "../components/ErrorState";
 
@@ -106,6 +107,17 @@ const AdmissionsAnalytics = () => {
     loading: loadingClosedWonMetrics, 
     error: closedWonMetricsError 
   } = useFormattedClosedWonMetrics({
+    period: periodType,
+    lookbackUnits,
+    campusId: campusFilter
+  });
+  
+  // Fetch ARR metrics from the Supabase view
+  const { 
+    data: arrMetricsData, 
+    loading: loadingArrMetrics, 
+    error: arrMetricsError 
+  } = useFormattedArrMetrics({
     period: periodType,
     lookbackUnits,
     campusId: campusFilter
@@ -218,9 +230,39 @@ const AdmissionsAnalytics = () => {
     });
   }, [closedWonMetricsData, loadingClosedWonMetrics, periodType]);
   
+  // Process data for the ARR display
+  const arrColumnData = useMemo(() => {
+    if (!arrMetricsData || loadingArrMetrics) return [];
+    
+    // Get up to 5 most recent periods from arrMetricsData.periods
+    // The data is already sorted most recent first from the SQL query
+    const recentPeriods = [...arrMetricsData.periods].slice(0, 5);
+    
+    // Map periods to display format
+    return recentPeriods.map((period, index) => {
+      // Find the formatted date for this period
+      const periodItem = arrMetricsData.timeSeriesData.find(item => item.period === period);
+      let displayDate = periodItem?.formatted_date || '';
+      
+      // For the most recent period, use a special label
+      if (index === 0) {
+        if (periodType === 'day') displayDate = 'Today';
+        else if (periodType === 'week') displayDate = 'Week to Date';
+        else if (periodType === 'month') displayDate = 'Month to Date';
+      }
+      
+      return {
+        period,
+        date: displayDate,
+        arrAmount: arrMetricsData.totals[period] || 0,
+        percentChange: arrMetricsData.changes.percentage[period] || 0
+      };
+    });
+  }, [arrMetricsData, loadingArrMetrics, periodType]);
+  
   // If there's an error, show error state
-  if (metricsError || convertedMetricsError || closedWonMetricsError) {
-    return <ErrorState message="Failed to load admissions data" error={metricsError || convertedMetricsError || closedWonMetricsError} />;
+  if (metricsError || convertedMetricsError || closedWonMetricsError || arrMetricsError) {
+    return <ErrorState message="Failed to load admissions data" error={metricsError || convertedMetricsError || closedWonMetricsError || arrMetricsError} />;
   }
   
   return (
@@ -319,7 +361,7 @@ const AdmissionsAnalytics = () => {
       
       {/* Metrics Table */}
       <div className="mb-8 bg-seasalt rounded-lg border border-platinum shadow-sm">
-        {loadingMetrics ? (
+        {loadingMetrics || loadingConvertedMetrics || loadingClosedWonMetrics || loadingArrMetrics ? (
           <div className="p-4">
             <LoadingState />
           </div>
@@ -440,17 +482,53 @@ const AdmissionsAnalytics = () => {
               </div>
               
               {/* Other Metrics Rows - Using sample data */}
-              {admissionsMetrics.filter(metric => metric.id !== 'leads-converted' && metric.id !== 'admission-offered' && metric.id !== 'closed-won').map((metric) => (
+              {/* ARR Added Row - Uses real data */}
+              <div className="flex py-3 items-center">
+                <div className="w-1/6 font-medium text-outer-space">ARR Added</div>
+                
+                {/* Reverse column data for display to show older periods on the left */}
+                {[...arrColumnData].reverse().map((item, index) => (
+                  <div key={index} className="w-1/6 text-center">
+                    <div className="font-semibold text-eerie-black">${formatValue(item.arrAmount)}</div>
+                    <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block ${getChangeColor(item.percentChange)}`}>
+                      {formatChange(item.percentChange)}%
+                    </div>
+                  </div>
+                ))}
+                
+                {/* ARR Added Trend */}
+                <div className="w-1/3 h-16 pl-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={arrMetricsData?.timeSeriesData}>
+                      <XAxis dataKey="formatted_date" hide />
+                      <YAxis hide />
+                      <Line 
+                        type="monotone" 
+                        dataKey="total" 
+                        stroke="#474b4f" 
+                        strokeWidth={2} 
+                        dot={false}
+                        activeDot={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              
+              {/* Any other metrics rows - Using sample data */}
+              {admissionsMetrics.filter(metric => 
+                metric.id !== 'leads-converted' && 
+                metric.id !== 'admission-offered' && 
+                metric.id !== 'closed-won' && 
+                metric.id !== 'arr-added'
+              ).map((metric) => (
                 <div key={metric.id} className="flex py-3 items-center">
                   <div className="w-1/6 font-medium text-outer-space">{metric.name}</div>
                   
                   {/* Generate mock data cells based on period type - reversed for display */}
                   {[...columnData].reverse().map((_, index) => {
                     // Generate a random value and change for demonstration
-                    const value = metric.id === 'arr-added' ? 
-                      Math.floor(Math.random() * 50) + 20 : 
-                      Math.floor(Math.random() * 15) + 5;
-                    
+                    const value = Math.floor(Math.random() * 15) + 5;
                     const change = (Math.random() * 20) - 10;
                     
                     return (
