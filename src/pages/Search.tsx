@@ -128,7 +128,7 @@ const Search = () => {
         },
         type: 'Family' as const,
         name: family.family_name || 'Unnamed Family',
-        details: `Campus: ${campusName}, Contacts: ${family.contact_count || 0}, Opportunities: ${family.opportunity_count || 0}`,
+        details: `Campus: ${campusName}`,
         hasWonOpportunities: wonOpportunityIndices.length > 0,
         wonOpportunityDetails: wonOpportunityIndices.length > 0 ? {
           schoolYears: wonSchoolYears,
@@ -309,34 +309,11 @@ const Search = () => {
                     {/* Key details with subtle divider */}
                     <div className="border-b border-gray-100 pb-3 mb-3">
                       <div className="flex flex-col gap-2">
-                        {/* Parse and display details with icons */}
-                        {result.details.split(', ').map((detail, index) => {
-                          // Extract the different parts of the details
-                          if (detail.startsWith('Campus:')) {
-                            return (
-                              <div key={index} className="flex items-center">
-                                <MapPin className="h-4 w-4 text-gray-500 mr-2" />
-                                <span className="text-slate-gray">{detail.replace('Campus:', '').trim()}</span>
-                              </div>
-                            );
-                          } else if (detail.startsWith('Contacts:')) {
-                            return (
-                              <div key={index} className="flex items-center">
-                                <Phone className="h-4 w-4 text-gray-500 mr-2" />
-                                <span className="text-slate-gray">{detail}</span>
-                              </div>
-                            );
-                          } else if (detail.startsWith('Opportunities:')) {
-                            return (
-                              <div key={index} className="flex items-center">
-                                <Briefcase className="h-4 w-4 text-gray-500 mr-2" />
-                                <span className="text-slate-gray">{detail}</span>
-                              </div>
-                            );
-                          } else {
-                            return <span key={index} className="text-slate-gray">{detail}</span>;
-                          }
-                        })}
+                        {/* Display campus with icon */}
+                        <div className="flex items-center">
+                          <MapPin className="h-4 w-4 text-gray-500 mr-2" />
+                          <span className="text-slate-gray">{result.details.replace('Campus:', '').trim()}</span>
+                        </div>
                       </div>
                     </div>
                     
