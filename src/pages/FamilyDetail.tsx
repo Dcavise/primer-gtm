@@ -57,7 +57,6 @@ const FamilyDetail: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold">{family.family_name}</h1>
           <div className="flex items-center mt-2">
-            <Badge variant="outline" className="mr-2">{family.current_campus_c || 'No Campus Assigned'}</Badge>
             <Badge variant="secondary" className="mr-2">
               <span>{family.contact_count} Contact{family.contact_count !== 1 ? 's' : ''}</span>
             </Badge>
@@ -88,7 +87,8 @@ const FamilyDetail: React.FC = () => {
                 <CardTitle className="text-sm font-medium">Family ID</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-lg">{family.pdc_family_id_c || 'N/A'}</p>
+                {/* Family ID removed */}
+                <p className="text-lg">Family Record</p>
               </CardContent>
             </Card>
             <Card>
@@ -258,21 +258,19 @@ const FamilyDetail: React.FC = () => {
                       }>
                         {normalizedStage || 'New Application'}
                       </Badge>
+                      {/* Grade information is displayed as text rather than badge */}
                       {grade && (
-                        <Badge variant="outline" className="ml-2">
+                        <span className="text-sm ml-2 text-gray-600">
                           Grade: {grade}
-                        </Badge>
+                        </span>
                       )}
+                      {/* Campus badge remains visible as it's a name, not an ID */}
                       {campus && (
                         <Badge variant="secondary" className="ml-2">
                           {campus}
                         </Badge>
                       )}
-                      {recordType && (
-                        <Badge variant="outline" className="ml-2 bg-blue-100">
-                          {recordTypeDisplay}
-                        </Badge>
-                      )}
+                      {/* Record type badge removed */}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
