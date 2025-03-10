@@ -364,7 +364,7 @@ const AdmissionsAnalytics = () => {
               </div>
               
               {/* Other Metrics Rows - Using sample data */}
-              {admissionsMetrics.filter(metric => metric.id !== 'leads-converted').map((metric) => (
+              {admissionsMetrics.filter(metric => metric.id !== 'leads-converted' && metric.id !== 'admission-offered').map((metric) => (
                 <div key={metric.id} className="flex py-3 items-center">
                   <div className="w-1/6 font-medium text-outer-space">{metric.name}</div>
                   
