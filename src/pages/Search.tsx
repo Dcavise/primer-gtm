@@ -7,6 +7,13 @@ import SearchBox from '../components/SearchBox';
 import { Search as SearchIcon, Users, Briefcase, Building } from 'lucide-react';
 import { useFamilyData } from '@/hooks/useFamilyData';
 import { FamilySearchResult } from '@/integrations/supabase-client';
+import { supabase } from '@/integrations/supabase-client';
+
+// Define interface for campus data returned from RPC
+interface CampusData {
+  id: string;
+  name: string;
+}
 
 // Define search result item interface
 interface SearchResultItem {
@@ -44,6 +51,7 @@ const Search = () => {
   // Removed tabs functionality to focus solely on family search
   // Removed search box toggle since it's now always visible
   const navigate = useNavigate();
+  const [campusMap, setCampusMap] = useState<Record<string, string>>({});
   
   // Use our custom hook for family data operations
   const { 
@@ -90,6 +98,10 @@ const Search = () => {
         }
       });
       
+      // Get campus name from campus map, or use ID with a note if name not found
+      const campusId = family.current_campus_c || '';
+      const campusName = campusId ? (campusMap[campusId] || `${campusId} (ID only)`) : 'None';
+      
       return {
         // Use the standardized ID as our primary ID for consistent navigation
         id: standardId || familyId || alternateId,
@@ -101,7 +113,7 @@ const Search = () => {
         },
         type: 'Family' as const,
         name: family.family_name || 'Unnamed Family',
-        details: `Campus: ${family.current_campus_c || 'None'}, Contacts: ${family.contact_count || 0}, Opportunities: ${family.opportunity_count || 0}`,
+        details: `Campus: ${campusName}, Contacts: ${family.contact_count || 0}, Opportunities: ${family.opportunity_count || 0}`,
         hasWonOpportunities: wonOpportunityIndices.length > 0,
         wonOpportunityDetails: wonOpportunityIndices.length > 0 ? {
           schoolYears: wonSchoolYears,
@@ -109,7 +121,7 @@ const Search = () => {
         } : undefined
       };
     });
-  }, [familySearchResults]);
+  }, [familySearchResults, campusMap]);
 
   // Mock search results for demonstration using useMemo to avoid re-creation on each render
   const mockResults = useMemo<MockResultsData>(() => ({
@@ -147,6 +159,40 @@ const Search = () => {
       handleSearch(searchQuery);
     }
   }, [searchQuery, handleSearch]);
+
+  // Fetch campus data from fivetran_views.campus_c
+  useEffect(() => {
+    const fetchCampusData = async () => {
+      try {
+        // Use the RPC function to access the fivetran_views schema
+        // Call the function directly without schema qualification as per user memories
+        const { data, error } = await supabase
+          .rpc('query_campus_data');
+
+        if (error) {
+          console.error('Error fetching campus data:', error);
+          return;
+        }
+
+        if (data && Array.isArray(data)) {
+          // Create a map of campus IDs to campus names
+          const campusMapping: Record<string, string> = {};
+          // With the new function, data is now a simpler array of objects with id and name
+          (data as CampusData[]).forEach((campus) => {
+            if (campus && campus.id && campus.name) {
+              campusMapping[campus.id] = campus.name;
+            }
+          });
+          setCampusMap(campusMapping);
+          console.log('Campus mapping loaded:', Object.keys(campusMapping).length, 'campuses');
+        }
+      } catch (error) {
+        console.error('Failed to fetch campus data:', error);
+      }
+    };
+
+    fetchCampusData();
+  }, []);
   
   // Removed tab-change effect as we now only focus on family search
   
