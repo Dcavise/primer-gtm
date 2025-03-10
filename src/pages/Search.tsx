@@ -4,7 +4,7 @@ import { Card } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
 import SearchBox from '../components/SearchBox';
-import { Search as SearchIcon, Users, Briefcase, Building } from 'lucide-react';
+import { Search as SearchIcon, Users, Briefcase, Building, MapPin, Phone, Calendar, Award } from 'lucide-react';
 import { useFamilyData } from '@/hooks/useFamilyData';
 import { FamilySearchResult } from '@/integrations/supabase-client';
 import { supabase } from '@/integrations/supabase-client';
@@ -41,6 +41,20 @@ interface MockResultsData {
   campuses: SearchResultItem[];
   [key: string]: SearchResultItem[];
 }
+
+// Helper function to get appropriate CSS classes for school year badges
+const getSchoolYearClasses = (year: string): string => {
+  switch (year) {
+    case '23/24':
+      return 'bg-orange-100 text-orange-800';
+    case '24/25':
+      return 'bg-green-100 text-green-800';
+    case '25/26':
+      return 'bg-blue-100 text-blue-800';
+    default:
+      return 'bg-purple-100 text-purple-800';
+  }
+};
 
 /**
  * Search page component
@@ -283,7 +297,9 @@ const Search = () => {
                     <div className="flex items-center text-sm text-slate-gray mb-3">
                       <span>{result.type}</span>
                       {result.hasWonOpportunities && (
-                        <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full shadow-sm">Won Opportunity</span>
+                        <span className="ml-2 px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-medium rounded-full shadow-sm flex items-center gap-1">
+                          <Award className="h-3 w-3" /> Won Opportunity
+                        </span>
                       )}
                     </div>
                     
@@ -292,20 +308,68 @@ const Search = () => {
                     
                     {/* Key details with subtle divider */}
                     <div className="border-b border-gray-100 pb-3 mb-3">
-                      <p className="text-slate-gray leading-relaxed">{result.details}</p>
+                      <div className="flex flex-col gap-2">
+                        {/* Parse and display details with icons */}
+                        {result.details.split(', ').map((detail, index) => {
+                          // Extract the different parts of the details
+                          if (detail.startsWith('Campus:')) {
+                            return (
+                              <div key={index} className="flex items-center">
+                                <MapPin className="h-4 w-4 text-gray-500 mr-2" />
+                                <span className="text-slate-gray">{detail.replace('Campus:', '').trim()}</span>
+                              </div>
+                            );
+                          } else if (detail.startsWith('Contacts:')) {
+                            return (
+                              <div key={index} className="flex items-center">
+                                <Phone className="h-4 w-4 text-gray-500 mr-2" />
+                                <span className="text-slate-gray">{detail}</span>
+                              </div>
+                            );
+                          } else if (detail.startsWith('Opportunities:')) {
+                            return (
+                              <div key={index} className="flex items-center">
+                                <Briefcase className="h-4 w-4 text-gray-500 mr-2" />
+                                <span className="text-slate-gray">{detail}</span>
+                              </div>
+                            );
+                          } else {
+                            return <span key={index} className="text-slate-gray">{detail}</span>;
+                          }
+                        })}
+                      </div>
                     </div>
                     
                     {/* Opportunity details in a visually distinct section */}
                     {result.hasWonOpportunities && result.wonOpportunityDetails && (
-                      <div className="mt-3 bg-gray-50 p-3 rounded-md shadow-sm border border-gray-100">
+                      <div className="mt-3 p-3 rounded-md shadow-sm border border-gray-100 overflow-hidden">
+                        {/* Colored banner based on school year */}
+                        <div className="-m-3 mb-2 p-2 pl-3 flex items-center text-white font-medium" 
+                          style={{
+                            background: result.wonOpportunityDetails.schoolYears.includes('24/25') 
+                              ? 'linear-gradient(to right, #4ade80, #22c55e)' 
+                              : result.wonOpportunityDetails.schoolYears.includes('25/26') 
+                                ? 'linear-gradient(to right, #60a5fa, #3b82f6)' 
+                                : result.wonOpportunityDetails.schoolYears.includes('23/24')
+                                  ? 'linear-gradient(to right, #f97316, #ea580c)'
+                                  : 'linear-gradient(to right, #a855f7, #8b5cf6)'
+                          }}>
+                          <Calendar className="h-4 w-4 mr-2" /> School Year Information
+                        </div>
                         {result.wonOpportunityDetails.schoolYears.length > 0 && (
-                          <p className="text-sm text-green-700">
-                            <span className="font-medium">School Year:</span> {result.wonOpportunityDetails.schoolYears.join(', ')}
+                          <p className="text-sm flex items-center mb-2">
+                            <span className="font-medium mr-2">School Year:</span>
+                            {result.wonOpportunityDetails.schoolYears.map((year, idx) => (
+                              <span key={idx} className={`ml-1 px-2 py-0.5 rounded text-xs font-medium ${getSchoolYearClasses(year)}`}>
+                                {year}
+                              </span>
+                            ))}
                           </p>
                         )}
                         {result.wonOpportunityDetails.campuses.length > 0 && (
-                          <p className="text-sm text-green-700">
-                            <span className="font-medium">Campus:</span> {
+                          <p className="text-sm flex items-center">
+                            <MapPin className="h-4 w-4 text-gray-500 mr-2" />
+                            <span className="font-medium mr-1">Campus:</span> {
                               // Map campus IDs to names or use 'Unknown Campus' if no mapping exists
                               result.wonOpportunityDetails.campuses.map(campusId => 
                                 campusMap[campusId] || 'Unknown Campus'
