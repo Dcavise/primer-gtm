@@ -24,7 +24,13 @@ export const useSidebar = () => {
   if (!context) {
     throw new Error("useSidebar must be used within a SidebarProvider");
   }
-  return context;
+  
+  // Always force sidebar to be expanded regardless of actual state
+  return {
+    ...context,
+    open: true,
+    setOpen: (_: boolean) => { /* No-op function to prevent sidebar collapse */ }
+  };
 };
 
 /**
@@ -42,10 +48,12 @@ export const SidebarProvider = ({
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
   animate?: boolean;
 }) => {
-  const [openState, setOpenState] = useState(false);
+  // Always keep sidebar expanded and ignore any props trying to collapse it
+  const [openState, setOpenState] = useState(true);
 
-  const open = openProp !== undefined ? openProp : openState;
-  const setOpen = setOpenProp !== undefined ? setOpenProp : setOpenState;
+  // Force open to always be true regardless of props
+  const open = true;
+  const setOpen = (_: boolean) => { /* No-op function */ };
 
   return (
     <SidebarContext.Provider value={{ open, setOpen, animate }}>

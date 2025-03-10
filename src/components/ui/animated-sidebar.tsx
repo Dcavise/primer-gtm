@@ -4,7 +4,7 @@ import { cn } from "@/utils/cn";
 import { Link as RouterLink, LinkProps, useLocation } from "react-router-dom";
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X, LayoutDashboard, Users, FileText, HelpCircle, Settings, Building, UserRound } from "lucide-react";
+import { Menu, X, LayoutDashboard, Users, FileText, HelpCircle, Settings, Building, UserRound, Search } from "lucide-react";
 import { useSidebar, SidebarProvider } from "./sidebar-context";
 import { getNavigationFeatures } from "@/features/registry";
 
@@ -59,6 +59,8 @@ const getNavItemIcon = (path: string) => {
     return <Building className="h-5 w-5 flex-shrink-0" />;
   } else if (path.includes('campus-staff')) {
     return <UserRound className="h-5 w-5 flex-shrink-0" />;
+  } else if (path.includes('search')) {
+    return <Search className="h-5 w-5 flex-shrink-0" />;
   } else {
     return <Settings className="h-5 w-5 flex-shrink-0" />;
   }
@@ -76,12 +78,17 @@ export const DesktopSidebar = ({
   const navItems = features.flatMap(feature => feature.navItems || [])
     .sort((a, b) => (a.order || 999) - (b.order || 999));
   
-  // Create navigation links for the sidebar including Dashboard
+  // Create navigation links for the sidebar including Dashboard and Search
   const sidebarLinks = [
     {
       label: "Dashboard",
       href: "/dashboard",
       icon: getNavItemIcon('/dashboard')
+    },
+    {
+      label: "Search",
+      href: "/search",
+      icon: getNavItemIcon('/search')
     },
     // Map the rest of the nav items
     ...navItems
@@ -102,8 +109,8 @@ export const DesktopSidebar = ({
       animate={{
         width: animate ? (open ? "280px" : "60px") : "280px",
       }}
-      onMouseEnter={() => animate && setOpen(true)}
-      onMouseLeave={() => animate && setOpen(false)}
+      onMouseEnter={() => animate && typeof setOpen === 'function' && setOpen(true)}
+      onMouseLeave={() => animate && typeof setOpen === 'function' && setOpen(false)}
       {...props}
     >
       {/* Logo */}
@@ -182,12 +189,17 @@ export const MobileSidebar = ({
   const navItems = features.flatMap(feature => feature.navItems || [])
     .sort((a, b) => (a.order || 999) - (b.order || 999));
   
-  // Create navigation links for the sidebar including Dashboard
+  // Create navigation links for the sidebar including Dashboard and Search
   const sidebarLinks = [
     {
       label: "Dashboard",
       href: "/dashboard",
       icon: getNavItemIcon('/dashboard')
+    },
+    {
+      label: "Search",
+      href: "/search",
+      icon: getNavItemIcon('/search')
     },
     // Map the rest of the nav items
     ...navItems
@@ -210,7 +222,7 @@ export const MobileSidebar = ({
         <div className="flex justify-end z-20 w-full">
           <Menu
             className="text-gray-700 cursor-pointer"
-            onClick={() => setOpen(!open)}
+            onClick={() => typeof setOpen === 'function' && setOpen(!open)}
           />
         </div>
         <AnimatePresence>
@@ -230,7 +242,7 @@ export const MobileSidebar = ({
             >
               <div
                 className="absolute right-6 top-6 z-50 text-gray-700 cursor-pointer"
-                onClick={() => setOpen(!open)}
+                onClick={() => typeof setOpen === 'function' && setOpen(!open)}
               >
                 <X />
               </div>

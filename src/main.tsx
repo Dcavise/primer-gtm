@@ -11,6 +11,7 @@ import MainLayout from './features/common/components/MainLayout'
 import Dashboard from './pages/Dashboard.tsx'
 import GridListDemoPage from './pages/GridListDemoPage.tsx'
 import FamilyProfile from './pages/FamilyProfile.tsx'
+import Search from './pages/Search.tsx'
 
 // Global error boundary component
 class ErrorBoundary extends React.Component<
@@ -111,6 +112,11 @@ const router = createBrowserRouter([
           {
             path: "family/:familyId",
             element: <FamilyProfile />,
+          },
+          // Search Page
+          {
+            path: "search",
+            element: <Search />,
           },
           // Include all other routes from features
           ...getAuthenticatedRoutes()
