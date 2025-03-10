@@ -4,10 +4,12 @@ import { Card } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
 import SearchBox from '../components/SearchBox';
-import { Search as SearchIcon, Users, Briefcase, Building, MapPin, Phone, Calendar, Award } from 'lucide-react';
+import { Search as SearchIcon, Users, Briefcase, Building, MapPin, Phone, Calendar, Award, Filter, X } from 'lucide-react';
 import { useFamilyData } from '@/hooks/useFamilyData';
-import { FamilySearchResult } from '@/integrations/supabase-client';
-import { supabase } from '@/integrations/supabase-client';
+import { FamilySearchResult, supabase } from '@/integrations/supabase-client';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useCampuses } from '@/hooks/useCampuses';
 
 // Define interface for campus data returned from RPC
 interface CampusData {
@@ -67,6 +69,24 @@ const Search = () => {
   const navigate = useNavigate();
   const [campusMap, setCampusMap] = useState<Record<string, string>>({});
   
+  // Filter states
+  const [selectedCampus, setSelectedCampus] = useState<string>('');
+  const [selectedSchoolYear, setSelectedSchoolYear] = useState<string>('');
+  const [selectedOpportunityStatus, setSelectedOpportunityStatus] = useState<string>('');
+  const [filtersVisible, setFiltersVisible] = useState(false);
+  
+  // Get campus data
+  const { data: campuses = [], isLoading: isLoadingCampuses } = useCampuses();
+  
+  // School year options
+  const schoolYearOptions = ['23/24', '24/25', '25/26'];
+  
+  // Opportunity status options
+  const opportunityStatusOptions = [
+    { value: 'won', label: 'Won Opportunities' },
+    { value: 'all', label: 'All Families' }
+  ];
+  
   // Use our custom hook for family data operations
   const { 
     loading: isSearching, 
@@ -75,9 +95,46 @@ const Search = () => {
     searchFamilies 
   } = useFamilyData();
   
+  // Toggle filters visibility
+  const toggleFilters = () => {
+    setFiltersVisible(!filtersVisible);
+  };
+  
+  // Reset all filters
+  const resetFilters = () => {
+    setSelectedCampus('');
+    setSelectedSchoolYear('');
+    setSelectedOpportunityStatus('');
+  };
+  
   // Transform family search results to match our SearchResultItem interface
   const searchResults = useMemo(() => {
-    return familySearchResults.map(family => {
+    // Apply filters to the search results
+    return (familySearchResults || [])
+      .filter(family => {
+        if (!family) return false;
+        
+        // Campus filter
+        if (selectedCampus && family.current_campus_c) {
+          const campusName = campusMap?.[family.current_campus_c] || 'Unknown Campus';
+          if (campusName !== selectedCampus) return false;
+        }
+        
+        // School year filter
+        if (selectedSchoolYear && Array.isArray(family.opportunity_school_years)) {
+          if (!family.opportunity_school_years.includes(selectedSchoolYear)) return false;
+        }
+        
+        // Opportunity status filter
+        if (selectedOpportunityStatus === 'won') {
+          if (!family.opportunity_is_won_flags || !family.opportunity_is_won_flags.some(isWon => isWon === true)) {
+            return false;
+          }
+        }
+        
+        return true;
+      })
+      .map(family => {
       // Log the available IDs for debugging
       const standardId = family.standard_id || '';
       const familyId = family.family_id || '';
@@ -136,7 +193,7 @@ const Search = () => {
         } : undefined
       };
     });
-  }, [familySearchResults, campusMap]);
+  }, [familySearchResults, campusMap, selectedCampus, selectedSchoolYear, selectedOpportunityStatus]);
 
   // Mock search results for demonstration using useMemo to avoid re-creation on each render
   const mockResults = useMemo<MockResultsData>(() => ({
@@ -249,22 +306,139 @@ const Search = () => {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <h1 className="text-2xl font-semibold text-outer-space mb-6">Search</h1>
-      
-      <div className="mb-8">
-        {/* Inline SearchBox Component */}
-        <SearchBox 
-          isOpen={true} 
-          onClose={() => {}} 
-          onSearch={setSearchQuery}
-          initialQuery={searchQuery}
-          inline={true}
-          hideResults={true}
-        />
-      </div>
+      <div className="flex flex-col gap-6">
+        <h1 className="text-3xl font-bold text-outer-space">Search</h1>
+        
+        <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
+          <div className="flex items-center">
+            <div className="flex items-center gap-2">
+              <SearchIcon className="h-5 w-5 text-slate-gray" />
+              <span className="text-xl font-semibold text-outer-space">Find Families</span>
+            </div>
+          </div>
+          
+          {/* Inline SearchBox Component */}
+          <SearchBox 
+            isOpen={true} 
+            onClose={() => {}} 
+            onSearch={setSearchQuery}
+            initialQuery={searchQuery}
+            inline={true}
+            hideResults={true}
+          />
+          
+          {/* Filters section */}
+          {filtersVisible && (
+            <div className="p-4 border rounded-md bg-gray-50 space-y-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-medium text-outer-space">Filters</h3>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={resetFilters}
+                  className="text-sm text-slate-gray hover:text-red-600"
+                >
+                  Reset
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Campus filter */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-gray">Campus</label>
+                  <Select value={selectedCampus} onValueChange={setSelectedCampus}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="All Campuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Campuses</SelectItem>
+                      {campuses?.map((campus) => (
+                        <SelectItem key={campus.campus_id} value={campus.campus_name}>
+                          {campus.campus_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* School Year filter */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-gray">School Year</label>
+                  <Select value={selectedSchoolYear} onValueChange={setSelectedSchoolYear}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="All School Years" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All School Years</SelectItem>
+                      {schoolYearOptions.map((year) => (
+                        <SelectItem key={year} value={year}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Opportunity Status filter */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-gray">Opportunity Status</label>
+                  <Select value={selectedOpportunityStatus} onValueChange={setSelectedOpportunityStatus}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="All Statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Statuses</SelectItem>
+                      {opportunityStatusOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              {/* Active filters display */}
+              <div className="flex flex-wrap gap-2 mt-2">
+                {selectedCampus && (
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 flex items-center gap-1">
+                    <MapPin className="h-3 w-3" /> Campus: {selectedCampus}
+                    <button className="ml-1" onClick={() => setSelectedCampus('')}>
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                )}
+                {selectedSchoolYear && (
+                  <Badge variant="outline" className={`flex items-center gap-1 ${getSchoolYearClasses(selectedSchoolYear)}`}>
+                    <Calendar className="h-3 w-3" /> School Year: {selectedSchoolYear}
+                    <button className="ml-1" onClick={(e) => { e.preventDefault(); setSelectedSchoolYear(''); }}>
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                )}
+                {selectedOpportunityStatus && (
+                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700 flex items-center gap-1">
+                    {selectedOpportunityStatus === 'won' ? (
+                      <>
+                        <Award className="h-3 w-3" /> Won Opportunities Only
+                      </>
+                    ) : (
+                      <>
+                        <Users className="h-3 w-3" /> All Families
+                      </>
+                    )}
+                    <button className="ml-1" onClick={() => setSelectedOpportunityStatus('')}>
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
-      {searchQuery.trim() && (
-        <div className="grid gap-6">
+        {searchQuery.trim() && (
+          <div className="grid gap-6">
           {isSearching ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-outer-space"></div>
@@ -374,8 +548,9 @@ const Search = () => {
               )}
             </div>
           )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

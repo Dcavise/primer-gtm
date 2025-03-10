@@ -16,7 +16,7 @@ export async function fetchCampuses(): Promise<Campus[]> {
   try {
     // Get unique campus names directly from the lead table's preferred_campus_c field
     const { data: campusData, error: campusError } = await supabase.rpc('execute_sql_query', {
-      sql_query: `SELECT DISTINCT preferred_campus_c as campus_name
+      query_text: `SELECT DISTINCT preferred_campus_c as campus_name
                   FROM fivetran_views.lead
                   WHERE preferred_campus_c IS NOT NULL
                   ORDER BY preferred_campus_c`
