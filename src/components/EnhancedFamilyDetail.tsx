@@ -723,6 +723,17 @@ const EnhancedFamilyDetail: React.FC = () => {
                   {familyRecord.current_campus_name || "Not Assigned"}
                 </span>
               </Badge>
+              
+              {/* Students Count Badge */}
+              <Badge
+                variant="outline"
+                className="flex items-center gap-1 py-1.5 pl-2 pr-3 border-muted/40"
+              >
+                <GraduationCap className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-sm font-medium">
+                  {mergedStudents?.length || 0} Students
+                </span>
+              </Badge>
             </div>
           </div>
 
@@ -743,48 +754,106 @@ const EnhancedFamilyDetail: React.FC = () => {
                   Parent Contact Information
                 </h3>
                 {familyRecord.contacts && familyRecord.contacts.length > 0 ? (
-                  <div className="space-y-4">
-                    {familyRecord.contacts.map((contact) => (
-                      <div
-                        key={contact.id}
-                        className="p-4 rounded-lg bg-card border border-muted/20 hover:border-muted/50 transition-colors"
-                      >
-                        <div className="flex items-start">
-                          <Avatar className="h-12 w-12 mr-4">
-                            <div className="bg-primary text-primary-foreground rounded-full h-12 w-12 flex items-center justify-center">
-                              {contact.first_name?.[0] || ""}
-                              {contact.last_name?.[0] || ""}
+                  familyRecord.contacts.length > 1 ? (
+                    // Use tabs when there are multiple parent contacts
+                    <Tabs defaultValue={familyRecord.contacts[0].id} className="w-full">
+                      <TabsList className="grid" style={{ gridTemplateColumns: `repeat(${Math.min(familyRecord.contacts.length, 3)}, 1fr)` }}>
+                        {familyRecord.contacts.map((contact) => (
+                          <TabsTrigger key={`tab-${contact.id}`} value={contact.id}>
+                            {contact.first_name} {contact.last_name}
+                          </TabsTrigger>
+                        ))}
+                      </TabsList>
+                      
+                      {familyRecord.contacts.map((contact) => (
+                        <TabsContent key={`content-${contact.id}`} value={contact.id} className="mt-4">
+                          <div
+                            className="p-4 rounded-lg bg-card border border-muted/20 hover:border-muted/50 transition-colors"
+                            data-component-name="EnhancedFamilyDetail"
+                          >
+                            <div className="flex items-start" data-component-name="EnhancedFamilyDetail">
+                              <Avatar className="h-12 w-12 mr-4">
+                                <div className="bg-primary text-primary-foreground rounded-full h-12 w-12 flex items-center justify-center" data-component-name="EnhancedFamilyDetail">
+                                  {contact.first_name?.[0] || ""}
+                                  {contact.last_name?.[0] || ""}
+                                </div>
+                              </Avatar>
+                              <div>
+                                <h4 className="font-medium">
+                                  {contact.first_name} {contact.last_name}
+                                </h4>
+                                <div className="space-y-2 mt-2">
+                                  {contact.phone && (
+                                    <div className="flex items-center">
+                                      <PhoneIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                                      <span>{contact.phone}</span>
+                                    </div>
+                                  )}
+                                  {contact.email && (
+                                    <div className="flex items-center">
+                                      <MailIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                                      <span>{contact.email}</span>
+                                    </div>
+                                  )}
+                                  {contact.last_activity_date && (
+                                    <div className="flex items-center">
+                                      <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                                      <span>Last Activity: {new Date(contact.last_activity_date).toLocaleDateString()}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                          </Avatar>
-                          <div>
-                            <h4 className="font-medium">
-                              {contact.first_name} {contact.last_name}
-                            </h4>
-                            <div className="space-y-2 mt-2">
-                              {contact.phone && (
-                                <div className="flex items-center">
-                                  <PhoneIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                                  <span>{contact.phone}</span>
-                                </div>
-                              )}
-                              {contact.email && (
-                                <div className="flex items-center">
-                                  <MailIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                                  <span>{contact.email}</span>
-                                </div>
-                              )}
-                              {contact.last_activity_date && (
-                                <div className="flex items-center">
-                                  <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                                  <span>Last Activity: {new Date(contact.last_activity_date).toLocaleDateString()}</span>
-                                </div>
-                              )}
+                          </div>
+                        </TabsContent>
+                      ))}
+                    </Tabs>
+                  ) : (
+                    // Original single contact display
+                    <div className="space-y-4">
+                      {familyRecord.contacts.map((contact) => (
+                        <div
+                          key={contact.id}
+                          className="p-4 rounded-lg bg-card border border-muted/20 hover:border-muted/50 transition-colors"
+                          data-component-name="EnhancedFamilyDetail"
+                        >
+                          <div className="flex items-start" data-component-name="EnhancedFamilyDetail">
+                            <Avatar className="h-12 w-12 mr-4">
+                              <div className="bg-primary text-primary-foreground rounded-full h-12 w-12 flex items-center justify-center" data-component-name="EnhancedFamilyDetail">
+                                {contact.first_name?.[0] || ""}
+                                {contact.last_name?.[0] || ""}
+                              </div>
+                            </Avatar>
+                            <div>
+                              <h4 className="font-medium">
+                                {contact.first_name} {contact.last_name}
+                              </h4>
+                              <div className="space-y-2 mt-2">
+                                {contact.phone && (
+                                  <div className="flex items-center">
+                                    <PhoneIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                                    <span>{contact.phone}</span>
+                                  </div>
+                                )}
+                                {contact.email && (
+                                  <div className="flex items-center">
+                                    <MailIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                                    <span>{contact.email}</span>
+                                  </div>
+                                )}
+                                {contact.last_activity_date && (
+                                  <div className="flex items-center">
+                                    <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                                    <span>Last Activity: {new Date(contact.last_activity_date).toLocaleDateString()}</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )
                 ) : (
                   <div className="text-muted-foreground italic p-4 bg-muted/10 rounded-lg border border-muted/20">
                     No parent contacts found
