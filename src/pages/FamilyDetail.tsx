@@ -59,13 +59,17 @@ const extractStudentName = (opportunityName: string): string => {
  * - "Y23/24" from "Cameron Abreu - G0 - Y23/24"
  * - "2023-2024" from school_year_c field
  */
+/**
+ * Extract school year from opportunity name or school_year_c field
+ * and return in the standard format (YYYY-YYYY)
+ */
 const extractSchoolYear = (
   opportunityName: string,
   schoolYearField?: string,
 ): string => {
   // First try to use the school_year_c field if available
   if (schoolYearField) {
-    return schoolYearField;
+    return formatSchoolYear(schoolYearField);
   }
 
   // Otherwise try to extract from the opportunity name
@@ -82,6 +86,65 @@ const extractSchoolYear = (
   }
 
   return "";
+};
+
+/**
+ * Format school year consistently regardless of input format
+ * Converts various formats to a standardized display format
+ */
+const formatSchoolYearForDisplay = (schoolYear: string | undefined): string => {
+  if (!schoolYear) return "";
+  
+  // Already in short format like "24/25"
+  if (/^\d{2}\/\d{2}$/.test(schoolYear)) {
+    return schoolYear;
+  }
+  
+  // Format like "Y24/25"
+  const yearPatternShort = /Y(\d{2})\/(\d{2})/;
+  let match = schoolYear.match(yearPatternShort);
+  if (match && match.length >= 3) {
+    return `${match[1]}/${match[2]}`;
+  }
+  
+  // Format like "2024-2025"
+  const yearPatternLong = /(\d{4})[^\d](\d{4})/;
+  match = schoolYear.match(yearPatternLong);
+  if (match && match.length >= 3) {
+    return `${match[1].slice(-2)}/${match[2].slice(-2)}`;
+  }
+  
+  // If we can't parse it, return as is
+  return schoolYear;
+};
+
+/**
+ * Standardize school year to YYYY-YYYY format for internal use
+ */
+const formatSchoolYear = (schoolYear: string | undefined): string => {
+  if (!schoolYear) return "";
+  
+  // Already in full format like "2024-2025"
+  if (/^\d{4}[^\d]\d{4}$/.test(schoolYear)) {
+    return schoolYear;
+  }
+  
+  // Format like "24/25"
+  const shortYearPattern = /^(\d{2})\/(\d{2})$/;
+  let match = schoolYear.match(shortYearPattern);
+  if (match && match.length >= 3) {
+    return `20${match[1]}-20${match[2]}`;
+  }
+  
+  // Format like "Y24/25"
+  const yearPatternWithY = /Y(\d{2})\/(\d{2})/;
+  match = schoolYear.match(yearPatternWithY);
+  if (match && match.length >= 3) {
+    return `20${match[1]}-20${match[2]}`;
+  }
+  
+  // If we can't parse it, return as is
+  return schoolYear;
 };
 
 /**
@@ -491,21 +554,45 @@ const FamilyDetail: React.FC = () => {
                       // Map record type IDs to display names
                       const getRecordTypeDisplayName = (
                         recordTypeId: string | undefined,
+                        stageName?: string,
+                        opportunityName?: string
                       ) => {
-                        if (!recordTypeId) return "Unknown";
-                        switch (recordTypeId) {
-                          case "012Dn000000ZzP9IAK":
-                            return "New Enrollment";
-                          case "012Dn000000a9ncIAA":
-                            return "Re-enrollment";
-                          default:
-                            return recordTypeId;
+                        // Try to use record type ID if available
+                        if (recordTypeId) {
+                          switch (recordTypeId) {
+                            case "012Dn000000ZzP9IAK":
+                              return "New Enrollment";
+                            case "012Dn000000a9ncIAA":
+                              return "Re-enrollment";
+                            // Add other record type IDs if known
+                            default:
+                              // Fall through to inference methods
+                              break;
+                          }
                         }
+                        
+                        // Try to infer from opportunity name if it contains enrollment type info
+                        if (opportunityName) {
+                          if (opportunityName.includes(" - R ") || opportunityName.toLowerCase().includes("re-enroll")) {
+                            return "Re-enrollment";
+                          }
+                          if (opportunityName.includes(" - N ") || opportunityName.toLowerCase().includes("new enroll")) {
+                            return "New Enrollment";
+                          }
+                        }
+                        
+                        // If other methods fail, infer from stage
+                        if (stageName && stageName.toLowerCase().includes("re-enroll")) {
+                          return "Re-enrollment";
+                        }
+                        
+                        // Default to Enrollment
+                        return "Enrollment";
                       };
 
-                      // Use the recordType passed from our filtered data
+                      // Use the recordType passed from our filtered data with fallbacks
                       const recordTypeDisplay =
-                        getRecordTypeDisplayName(recordType);
+                        getRecordTypeDisplayName(recordType, stage, name);
 
                       // Normalize stage value to handle case sensitivity and whitespace
                       const normalizedStage = stage
@@ -525,8 +612,8 @@ const FamilyDetail: React.FC = () => {
                               {(familyRecord.opportunity_school_years?.[index] || 
                                (name ? extractSchoolYear(name) : "")) && recordTypeDisplay ? (
                                 <>
-                                  {familyRecord.opportunity_school_years?.[index] || 
-                                   (name ? extractSchoolYear(name) : "")} {recordTypeDisplay}
+                                  {formatSchoolYearForDisplay(familyRecord.opportunity_school_years?.[index] || 
+                                   (name ? extractSchoolYear(name) : ""))} {recordTypeDisplay}
                                 </>
                               ) : (
                                 `Opportunity ${index + 1}`
@@ -643,6 +730,26 @@ const FamilyDetail: React.FC = () => {
                                             : "Unknown"}
                                         </p>
                                       </div>
+                                      
+                                      <div className="mt-2">
+                                        <h5 className="text-xs font-medium text-muted-foreground">Record Type ID (Debug)</h5>
+                                        <p className="text-xs font-mono bg-gray-50 p-1 rounded">
+                                          {recordType || "Missing"}
+                                        </p>
+                                        <p className="text-xs font-mono mt-1">
+                                          Display: {recordTypeDisplay}
+                                        </p>
+                                      </div>
+                                      
+                                      <div className="mt-2">
+                                        <h5 className="text-xs font-medium text-muted-foreground">School Year (Debug)</h5>
+                                        <p className="text-xs font-mono bg-gray-50 p-1 rounded">
+                                          Raw: {familyRecord.opportunity_school_years?.[index] || "Missing"}<br/>
+                                          Extracted: {name ? extractSchoolYear(name) : "Missing"}<br/>
+                                          Display Format: {formatSchoolYearForDisplay(familyRecord.opportunity_school_years?.[index] || 
+                                           (name ? extractSchoolYear(name) : ""))}
+                                        </p>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
@@ -698,21 +805,45 @@ const FamilyDetail: React.FC = () => {
                 // Map record type IDs to display names
                 const getRecordTypeDisplayName = (
                   recordTypeId: string | undefined,
+                  stageName?: string,
+                  opportunityName?: string
                 ) => {
-                  if (!recordTypeId) return "Unknown";
-                  switch (recordTypeId) {
-                    case "012Dn000000ZzP9IAK":
-                      return "New Enrollment";
-                    case "012Dn000000a9ncIAA":
-                      return "Re-enrollment";
-                    default:
-                      return recordTypeId;
+                  // Try to use record type ID if available
+                  if (recordTypeId) {
+                    switch (recordTypeId) {
+                      case "012Dn000000ZzP9IAK":
+                        return "New Enrollment";
+                      case "012Dn000000a9ncIAA":
+                        return "Re-enrollment";
+                      // Add other record type IDs if known
+                      default:
+                        // Fall through to inference methods
+                        break;
+                    }
                   }
+                  
+                  // Try to infer from opportunity name if it contains enrollment type info
+                  if (opportunityName) {
+                    if (opportunityName.includes(" - R ") || opportunityName.toLowerCase().includes("re-enroll")) {
+                      return "Re-enrollment";
+                    }
+                    if (opportunityName.includes(" - N ") || opportunityName.toLowerCase().includes("new enroll")) {
+                      return "New Enrollment";
+                    }
+                  }
+                  
+                  // If other methods fail, infer from stage
+                  if (stageName && stageName.toLowerCase().includes("re-enroll")) {
+                    return "Re-enrollment";
+                  }
+                  
+                  // Default to Enrollment
+                  return "Enrollment";
                 };
 
-                // Use the recordType passed from our filtered data
+                // Use the recordType passed from our filtered data with fallbacks
                 const recordTypeDisplay =
-                  getRecordTypeDisplayName(recordType);
+                  getRecordTypeDisplayName(recordType, stage, name);
 
                 // Normalize stage value to handle case sensitivity and whitespace
                 const normalizedStage = stage
@@ -732,8 +863,8 @@ const FamilyDetail: React.FC = () => {
                         {(familyRecord.opportunity_school_years?.[index] || 
                          (name ? extractSchoolYear(name) : "")) && recordTypeDisplay ? (
                           <>
-                            {familyRecord.opportunity_school_years?.[index] || 
-                             (name ? extractSchoolYear(name) : "")} {recordTypeDisplay}
+                            {formatSchoolYearForDisplay(familyRecord.opportunity_school_years?.[index] || 
+                             (name ? extractSchoolYear(name) : ""))} {recordTypeDisplay}
                           </>
                         ) : (
                           `Opportunity ${index + 1}`
@@ -848,6 +979,26 @@ const FamilyDetail: React.FC = () => {
                                     {familyRecord.opportunity_created_dates[index] 
                                       ? new Date(familyRecord.opportunity_created_dates[index]).toLocaleDateString() 
                                       : "Unknown"}
+                                  </p>
+                                </div>
+                                
+                                <div className="mt-2">
+                                  <h5 className="text-xs font-medium text-muted-foreground">Record Type ID (Debug)</h5>
+                                  <p className="text-xs font-mono bg-gray-50 p-1 rounded">
+                                    {recordType || "Missing"}
+                                  </p>
+                                  <p className="text-xs font-mono mt-1">
+                                    Display: {recordTypeDisplay}
+                                  </p>
+                                </div>
+                                
+                                <div className="mt-2">
+                                  <h5 className="text-xs font-medium text-muted-foreground">School Year (Debug)</h5>
+                                  <p className="text-xs font-mono bg-gray-50 p-1 rounded">
+                                    Raw: {familyRecord.opportunity_school_years?.[index] || "Missing"}<br/>
+                                    Extracted: {name ? extractSchoolYear(name) : "Missing"}<br/>
+                                    Display Format: {formatSchoolYearForDisplay(familyRecord.opportunity_school_years?.[index] || 
+                                     (name ? extractSchoolYear(name) : ""))}
                                   </p>
                                 </div>
                               </div>
