@@ -1,9 +1,8 @@
-
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronsUpDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { BooleanStatus } from '@/types/realEstate';
+import { BooleanStatus } from "@/types/realEstate";
 
 // Valid options for this enum
 const BOOLEAN_STATUS_OPTIONS: BooleanStatus[] = ["true", "false", "unknown"];
@@ -11,37 +10,41 @@ const BOOLEAN_STATUS_OPTIONS: BooleanStatus[] = ["true", "false", "unknown"];
 // Props type to maintain compatibility with existing implementation
 interface BooleanStatusSelectorProps {
   value: BooleanStatus | null | undefined;
-  onValueChange: (value: BooleanStatus | '') => void;
+  onValueChange: (value: BooleanStatus | "") => void;
   className?: string;
   disabled?: boolean;
 }
 
-export function BooleanStatusSelector({ 
-  value, 
-  onValueChange, 
+export function BooleanStatusSelector({
+  value,
+  onValueChange,
   className,
-  disabled = false
+  disabled = false,
 }: BooleanStatusSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
-  
+
   // Display value
   const displayValue = value || "Select status";
-  
+
   // Format status for display (capitalize first letter)
   const formatStatus = (status: string) => {
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
-  
+
   // Get the appropriate color for the status
   const getStatusColor = (status: BooleanStatus): string => {
     switch (status) {
-      case 'true': return 'bg-[#2CA02C] text-white';
-      case 'false': return 'bg-[#D62728] text-white';
-      case 'unknown': return 'bg-[#6c757d] text-white';
-      default: return '';
+      case "true":
+        return "bg-[#2CA02C] text-white";
+      case "false":
+        return "bg-[#D62728] text-white";
+      case "unknown":
+        return "bg-[#6c757d] text-white";
+      default:
+        return "";
     }
   };
-  
+
   // Handle status selection
   const handleSelect = (status: BooleanStatus) => {
     onValueChange(status);
@@ -50,7 +53,7 @@ export function BooleanStatusSelector({
 
   // Handle clear
   const handleClear = () => {
-    onValueChange('');
+    onValueChange("");
     setIsOpen(false);
   };
 
@@ -69,7 +72,7 @@ export function BooleanStatusSelector({
         {value ? formatStatus(displayValue) : displayValue}
         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
       </Button>
-      
+
       {/* Dropdown menu */}
       {isOpen && (
         <div className="absolute z-10 mt-1 w-full rounded-md border bg-popover shadow-md">
@@ -80,20 +83,22 @@ export function BooleanStatusSelector({
                 className={cn(
                   "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none",
                   "hover:bg-accent hover:text-accent-foreground",
-                  value === status ? "bg-accent text-accent-foreground" : ""
+                  value === status ? "bg-accent text-accent-foreground" : "",
                 )}
                 onClick={() => handleSelect(status)}
               >
                 <Check
                   className={cn(
                     "mr-2 h-4 w-4",
-                    value === status ? "opacity-100" : "opacity-0"
+                    value === status ? "opacity-100" : "opacity-0",
                   )}
                 />
-                <span className={cn(
-                  "px-2 py-0.5 rounded text-xs font-medium mr-2",
-                  getStatusColor(status)
-                )}>
+                <span
+                  className={cn(
+                    "px-2 py-0.5 rounded text-xs font-medium mr-2",
+                    getStatusColor(status),
+                  )}
+                >
                   {formatStatus(status)}
                 </span>
               </div>

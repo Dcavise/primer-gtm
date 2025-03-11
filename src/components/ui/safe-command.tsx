@@ -1,6 +1,6 @@
-import React, { forwardRef } from 'react';
-import { Command as CommandPrimitive } from 'cmdk';
-import { cn } from '@/lib/utils';
+import React, { forwardRef } from "react";
+import { Command as CommandPrimitive } from "cmdk";
+import { cn } from "@/lib/utils";
 import {
   CommandDialog,
   CommandEmpty,
@@ -9,8 +9,8 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-  CommandShortcut
-} from '@/components/ui/command';
+  CommandShortcut,
+} from "@/components/ui/command";
 
 // Safer version of Command that handles undefined items
 const SafeCommand = forwardRef<
@@ -21,28 +21,26 @@ const SafeCommand = forwardRef<
   const safeChildren = React.useMemo(() => {
     // If children is undefined or null, return an empty array
     if (!children) return [];
-    
+
     // If children is already an array, filter out undefined/null items
     if (Array.isArray(children)) {
-      return children.filter(child => child != null);
+      return children.filter((child) => child != null);
     }
-    
+
     // Otherwise, just return the single child in an array
     return [children];
   }, [children]);
-  
+
   return (
     <CommandPrimitive
       ref={ref}
       className={cn(
         "flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground",
-        className
+        className,
       )}
       {...props}
     >
-      <div className="flex flex-col overflow-hidden p-1">
-        {safeChildren}
-      </div>
+      <div className="flex flex-col overflow-hidden p-1">{safeChildren}</div>
     </CommandPrimitive>
   );
 });
@@ -59,5 +57,5 @@ export {
   CommandItem,
   CommandList,
   CommandSeparator,
-  CommandShortcut
+  CommandShortcut,
 };

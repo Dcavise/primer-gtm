@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React, { Suspense } from "react";
 
 interface LazyLoadProps {
   children: React.ReactNode;
@@ -10,9 +10,7 @@ interface LazyLoadProps {
  */
 export function LazyLoad({ children, fallback }: LazyLoadProps) {
   return (
-    <Suspense fallback={fallback || <DefaultFallback />}>
-      {children}
-    </Suspense>
+    <Suspense fallback={fallback || <DefaultFallback />}>{children}</Suspense>
   );
 }
 
@@ -34,10 +32,10 @@ function DefaultFallback() {
  */
 export function createLazyComponent<T extends React.ComponentType<any>>(
   importFn: () => Promise<{ default: T }>,
-  fallback?: React.ReactNode
+  fallback?: React.ReactNode,
 ) {
   const LazyComponent = React.lazy(importFn);
-  
+
   return (props: React.ComponentProps<T>) => (
     <LazyLoad fallback={fallback}>
       <LazyComponent {...props} />
@@ -48,12 +46,12 @@ export function createLazyComponent<T extends React.ComponentType<any>>(
 /**
  * Create a lazy loaded route component
  */
-export function LazyRoute({ 
-  component: Component, 
-  fallback 
-}: { 
-  component: React.LazyExoticComponent<React.ComponentType<any>>, 
-  fallback?: React.ReactNode 
+export function LazyRoute({
+  component: Component,
+  fallback,
+}: {
+  component: React.LazyExoticComponent<React.ComponentType<any>>;
+  fallback?: React.ReactNode;
 }) {
   return (
     <LazyLoad fallback={fallback}>
@@ -65,6 +63,8 @@ export function LazyRoute({
 /**
  * Helper function to create lazy loaded routes
  */
-export function lazyLoad(importFn: () => Promise<{ default: React.ComponentType<any> }>) {
+export function lazyLoad(
+  importFn: () => Promise<{ default: React.ComponentType<any> }>,
+) {
   return React.lazy(importFn);
-} 
+}

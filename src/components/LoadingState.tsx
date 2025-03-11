@@ -1,4 +1,3 @@
-
 import { cn } from "@/lib/utils";
 
 interface LoadingStateProps {
@@ -7,7 +6,11 @@ interface LoadingStateProps {
   showSpinner?: boolean;
 }
 
-export const LoadingState = ({ className, message = "Loading...", showSpinner = false }: LoadingStateProps) => {
+export const LoadingState = ({
+  className,
+  message = "Loading...",
+  showSpinner = false,
+}: LoadingStateProps) => {
   return (
     <div className={cn("w-full flex flex-col gap-4", className)}>
       {showSpinner ? (
@@ -20,7 +23,7 @@ export const LoadingState = ({ className, message = "Loading...", showSpinner = 
           {message && <div className="sr-only">{message}</div>}
         </div>
       )}
-      
+
       {!showSpinner && (
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -32,4 +35,4 @@ export const LoadingState = ({ className, message = "Loading...", showSpinner = 
       )}
     </div>
   );
-}
+};

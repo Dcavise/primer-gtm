@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState } from "react";
 
 interface LayoutContextProps {
   showUserProfile: boolean;
@@ -7,14 +7,18 @@ interface LayoutContextProps {
 
 const LayoutContext = createContext<LayoutContextProps | undefined>(undefined);
 
-export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [showUserProfile, setShowUserProfile] = useState(true);
 
   return (
-    <LayoutContext.Provider value={{
-      showUserProfile,
-      setShowUserProfile
-    }}>
+    <LayoutContext.Provider
+      value={{
+        showUserProfile,
+        setShowUserProfile,
+      }}
+    >
       {children}
     </LayoutContext.Provider>
   );
@@ -23,7 +27,7 @@ export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 export const useLayout = (): LayoutContextProps => {
   const context = useContext(LayoutContext);
   if (context === undefined) {
-    throw new Error('useLayout must be used within a LayoutProvider');
+    throw new Error("useLayout must be used within a LayoutProvider");
   }
   return context;
 };

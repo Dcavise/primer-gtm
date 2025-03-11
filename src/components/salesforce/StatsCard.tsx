@@ -1,7 +1,6 @@
-
-import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { LucideIcon } from 'lucide-react';
+import React from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { LucideIcon } from "lucide-react";
 
 interface StatsCardProps {
   title: string;
@@ -12,17 +11,17 @@ interface StatsCardProps {
   onClick?: () => void;
 }
 
-export const StatsCard: React.FC<StatsCardProps> = ({ 
-  title, 
-  value, 
-  description, 
+export const StatsCard: React.FC<StatsCardProps> = ({
+  title,
+  value,
+  description,
   icon: Icon,
-  className = '',
-  onClick
+  className = "",
+  onClick,
 }) => {
   return (
-    <Card 
-      className={`${className} ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`} 
+    <Card
+      className={`${className} ${onClick ? "cursor-pointer hover:shadow-md transition-shadow" : ""}`}
       onClick={onClick}
     >
       <CardHeader className="pb-2">
@@ -36,9 +35,7 @@ export const StatsCard: React.FC<StatsCardProps> = ({
           <Icon className="h-5 w-5 text-muted-foreground" />
         </div>
         {description && (
-          <p className="text-xs text-muted-foreground mt-2">
-            {description}
-          </p>
+          <p className="text-xs text-muted-foreground mt-2">{description}</p>
         )}
       </CardContent>
     </Card>

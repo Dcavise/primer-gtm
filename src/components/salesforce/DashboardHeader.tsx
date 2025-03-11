@@ -1,15 +1,14 @@
-
-import React from 'react';
-import { formatDate } from '@/utils/format';
+import React from "react";
+import { formatDate } from "@/utils/format";
 
 interface DashboardHeaderProps {
   title: string;
   lastRefreshed: Date | null;
 }
 
-export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ 
-  title, 
-  lastRefreshed
+export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
+  title,
+  lastRefreshed,
 }) => {
   return (
     <div className="flex justify-between items-center mb-6">

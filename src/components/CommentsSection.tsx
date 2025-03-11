@@ -1,12 +1,11 @@
-
-import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase-client';
-import Comment, { CommentData } from './Comment';
-import CommentForm from './CommentForm';
-import { MessageSquare } from 'lucide-react';
-import { Separator } from './ui/separator';
-import { useAuth } from '@/contexts/AuthContext';
-import { LoadingState } from './LoadingState';
+import React, { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase-client";
+import Comment, { CommentData } from "./Comment";
+import CommentForm from "./CommentForm";
+import { MessageSquare } from "lucide-react";
+import { Separator } from "./ui/separator";
+import { useAuth } from "@/contexts/AuthContext";
+import { LoadingState } from "./LoadingState";
 
 interface CommentsSectionProps {
   propertyId: number;
@@ -21,60 +20,64 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ propertyId }) => {
   const fetchComments = async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       // Fetch comments with user profile info
       const { data: commentsData, error: commentsError } = await supabase
-        .from('property_comments')
-        .select(`
+        .from("property_comments")
+        .select(
+          `
           *,
           user:user_id (
             full_name,
             email
           )
-        `)
-        .eq('property_id', propertyId)
-        .order('created_at', { ascending: false });
-      
+        `,
+        )
+        .eq("property_id", propertyId)
+        .order("created_at", { ascending: false });
+
       if (commentsError) throw commentsError;
-      
+
       // Fetch mentions for all comments
       if (commentsData && commentsData.length > 0) {
-        const commentIds = commentsData.map(comment => comment.id);
-        
+        const commentIds = commentsData.map((comment) => comment.id);
+
         const { data: mentionsData, error: mentionsError } = await supabase
-          .from('comment_mentions')
-          .select(`
+          .from("comment_mentions")
+          .select(
+            `
             *,
             profile:user_id (
               full_name,
               email
             )
-          `)
-          .in('comment_id', commentIds);
-        
+          `,
+          )
+          .in("comment_id", commentIds);
+
         if (mentionsError) {
-          console.error('Error fetching mentions:', mentionsError);
+          console.error("Error fetching mentions:", mentionsError);
         }
-        
+
         // Add mentions to their respective comments
         if (mentionsData) {
-          const commentsWithMentions = commentsData.map(comment => {
+          const commentsWithMentions = commentsData.map((comment) => {
             const commentMentions = mentionsData
-              .filter(mention => mention.comment_id === comment.id)
-              .map(mention => ({
+              .filter((mention) => mention.comment_id === comment.id)
+              .map((mention) => ({
                 id: mention.id,
                 user_id: mention.user_id,
                 full_name: mention.profile?.full_name,
-                email: mention.profile?.email
+                email: mention.profile?.email,
               }));
-            
+
             return {
               ...comment,
-              mentions: commentMentions
+              mentions: commentMentions,
             };
           });
-          
+
           setComments(commentsWithMentions);
         } else {
           setComments(commentsData);
@@ -83,8 +86,8 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ propertyId }) => {
         setComments([]);
       }
     } catch (err) {
-      console.error('Error loading comments:', err);
-      setError('Failed to load comments');
+      console.error("Error loading comments:", err);
+      setError("Failed to load comments");
     } finally {
       setIsLoading(false);
     }
@@ -100,9 +103,9 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ propertyId }) => {
         <MessageSquare className="h-5 w-5 mr-2" />
         <h3 className="text-xl font-medium">Comments</h3>
       </div>
-      
+
       <Separator />
-      
+
       {user ? (
         <CommentForm propertyId={propertyId} onCommentAdded={fetchComments} />
       ) : (
@@ -110,7 +113,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ propertyId }) => {
           Please sign in to add comments
         </div>
       )}
-      
+
       <div className="space-y-4 mt-6">
         {isLoading ? (
           <LoadingState message="Loading comments..." />
@@ -121,9 +124,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ propertyId }) => {
             No comments yet. Be the first to comment!
           </div>
         ) : (
-          comments.map((comment) => (
-            <Comment key={comment.id} data={comment} />
-          ))
+          comments.map((comment) => <Comment key={comment.id} data={comment} />)
         )}
       </div>
     </div>

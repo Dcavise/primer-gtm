@@ -1,6 +1,6 @@
-import React from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { DatabaseConnectionAlert } from './salesforce/DatabaseConnectionAlert';
+import React from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { DatabaseConnectionAlert } from "./salesforce/DatabaseConnectionAlert";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   // Temporarily bypass authentication checks
   // const { user, loading, databaseConnected, schemaStatus } = useAuth();
-  
+
   // Always render children without authentication checks
   return (
     <>

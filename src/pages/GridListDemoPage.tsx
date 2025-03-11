@@ -1,12 +1,18 @@
 import React from "react";
 import { GridListDemo } from "@/components/ui/grid-list-demo";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 const GridListDemoPage: React.FC = () => {
   return (
     <div className="container mx-auto py-10 px-4">
       <h1 className="text-3xl font-bold mb-8">GridList Component Demo</h1>
-      
+
       <div className="grid gap-8">
         <Card>
           <CardHeader>
@@ -30,13 +36,14 @@ const GridListDemoPage: React.FC = () => {
           <CardContent>
             <div className="space-y-4">
               <p>
-                The GridList component is built on top of react-aria-components and provides a 
-                fully accessible grid list with keyboard navigation, selection support, and more.
+                The GridList component is built on top of react-aria-components
+                and provides a fully accessible grid list with keyboard
+                navigation, selection support, and more.
               </p>
-              
+
               <div className="p-4 bg-muted rounded-md">
                 <pre className="text-sm">
-{`import { GridList, GridListItem } from "@/components/ui/grid-list"
+                  {`import { GridList, GridListItem } from "@/components/ui/grid-list"
 
 // Basic usage
 <GridList aria-label="Favorite pokemon" selectionMode="multiple">

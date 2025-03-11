@@ -1,4 +1,3 @@
-
 export interface RealEstateProperty {
   id: number;
   created_at: string;
@@ -28,17 +27,17 @@ export interface RealEstateProperty {
 }
 
 // This precisely matches the enum defined in Supabase
-export type PropertyPhase = 
-  | '0. New Site'
-  | '1. Initial Diligence'
-  | '2. Survey'
-  | '3. Test Fit'
-  | '4. Plan Production'
-  | '5. Permitting'
-  | '6. Construction'
-  | '7. Set Up'
-  | 'Hold'
-  | 'Deprioritize';
+export type PropertyPhase =
+  | "0. New Site"
+  | "1. Initial Diligence"
+  | "2. Survey"
+  | "3. Test Fit"
+  | "4. Plan Production"
+  | "5. Permitting"
+  | "6. Construction"
+  | "7. Set Up"
+  | "Hold"
+  | "Deprioritize";
 
 // Define type aliases for the enum values to improve code readability
 export type BooleanStatus = "true" | "false" | "unknown" | null;

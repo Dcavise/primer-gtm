@@ -1,17 +1,17 @@
-import React from 'react';
-import { Code2, Code } from 'lucide-react';
-import { useDeveloperMode } from '@/contexts/DeveloperModeContext';
-import { Button } from '@/components/ui/button';
+import React from "react";
+import { Code2, Code } from "lucide-react";
+import { useDeveloperMode } from "@/contexts/DeveloperModeContext";
+import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from "@/components/ui/tooltip";
 
 /**
  * Developer Mode Toggle Component
- * 
+ *
  * Provides a visual toggle for enabling/disabling developer mode
  * When enabled, mock data will be used throughout the application
  */
@@ -22,11 +22,11 @@ export const DeveloperModeToggle: React.FC = () => {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button 
-            variant={isDeveloperMode ? "default" : "outline"} 
-            size="sm" 
+          <Button
+            variant={isDeveloperMode ? "default" : "outline"}
+            size="sm"
             onClick={toggleDeveloperMode}
-            className={`relative ${isDeveloperMode ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'text-gray-500'}`}
+            className={`relative ${isDeveloperMode ? "bg-amber-600 hover:bg-amber-700 text-white" : "text-gray-500"}`}
           >
             {isDeveloperMode ? (
               <>
@@ -39,7 +39,7 @@ export const DeveloperModeToggle: React.FC = () => {
                 <span className="text-xs">Dev Mode</span>
               </>
             )}
-            
+
             {isDeveloperMode && (
               <span className="absolute -top-1 -right-1 flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -50,12 +50,12 @@ export const DeveloperModeToggle: React.FC = () => {
         </TooltipTrigger>
         <TooltipContent>
           <p className="text-sm">
-            {isDeveloperMode 
-              ? 'Disable developer mode (using mock data)' 
-              : 'Enable developer mode to use mock data'}
+            {isDeveloperMode
+              ? "Disable developer mode (using mock data)"
+              : "Enable developer mode to use mock data"}
           </p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
-}; 
+};

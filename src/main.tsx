@@ -1,18 +1,22 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
-import App from './App'
-import './index.css'
-import NotFound from './pages/NotFound'
-import { logger } from './utils/logger'
-import { toast } from 'sonner'
-import { getAuthenticatedRoutes } from './features/registry'
-import MainLayout from './features/common/components/MainLayout'
-import Dashboard from './pages/Dashboard'
-import GridListDemoPage from './pages/GridListDemoPage'
-import FamilyProfile from './pages/FamilyProfile'
-import FamilyDetail from './pages/FamilyDetail'
-import Search from './pages/Search'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import {
+  createBrowserRouter,
+  RouterProvider,
+  Navigate,
+} from "react-router-dom";
+import App from "./App";
+import "./index.css";
+import NotFound from "./pages/NotFound";
+import { logger } from "./utils/logger";
+import { toast } from "sonner";
+import { getAuthenticatedRoutes } from "./features/registry";
+import MainLayout from "./features/common/components/MainLayout";
+import Dashboard from "./pages/Dashboard";
+import GridListDemoPage from "./pages/GridListDemoPage";
+import FamilyProfile from "./pages/FamilyProfile";
+import FamilyDetail from "./pages/FamilyDetail";
+import Search from "./pages/Search";
 
 // Global error boundary component
 class ErrorBoundary extends React.Component<
@@ -29,13 +33,13 @@ class ErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    logger.error('Application error:', error);
-    logger.error('Error info:', errorInfo);
+    logger.error("Application error:", error);
+    logger.error("Error info:", errorInfo);
   }
 
   handleResetError = () => {
     this.setState({ hasError: false, error: null });
-    window.location.href = '/';
+    window.location.href = "/";
   };
 
   render() {
@@ -50,7 +54,7 @@ class ErrorBoundary extends React.Component<
               An unexpected error occurred. Please try refreshing the page.
             </p>
             <pre className="bg-platinum p-3 rounded text-sm overflow-auto max-h-40 mb-4">
-              {this.state.error?.message || 'Unknown error'}
+              {this.state.error?.message || "Unknown error"}
             </pre>
             <button
               onClick={this.handleResetError}
@@ -68,17 +72,17 @@ class ErrorBoundary extends React.Component<
 }
 
 // Initialize error handlers
-window.addEventListener('unhandledrejection', (event) => {
-  logger.error('Unhandled Promise Rejection:', event.reason);
-  
+window.addEventListener("unhandledrejection", (event) => {
+  logger.error("Unhandled Promise Rejection:", event.reason);
+
   // Show a generic error toast for unhandled rejections
   const errorMessage = event.reason?.message || String(event.reason);
-  toast.error('An error occurred', {
-    description: 'Please try again',
+  toast.error("An error occurred", {
+    description: "Please try again",
     action: {
-      label: 'Refresh',
-      onClick: () => window.location.reload()
-    }
+      label: "Refresh",
+      onClick: () => window.location.reload(),
+    },
   });
 });
 
@@ -92,9 +96,9 @@ const router = createBrowserRouter([
       // Dashboard is the main page (redirect to dashboard)
       {
         index: true,
-        element: <Navigate to="/dashboard" replace />
+        element: <Navigate to="/dashboard" replace />,
       },
-      
+
       // All routes wrapped in MainLayout (auth has been removed)
       {
         element: <MainLayout />,
@@ -125,18 +129,18 @@ const router = createBrowserRouter([
             element: <Search />,
           },
           // Include all other routes from features
-          ...getAuthenticatedRoutes()
-        ]
-      }
-    ]
-  }
+          ...getAuthenticatedRoutes(),
+        ],
+      },
+    ],
+  },
 ]);
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <ErrorBoundary>
-      <RouterProvider 
-        router={router} 
+      <RouterProvider
+        router={router}
         fallbackElement={
           <div className="flex items-center justify-center h-screen">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-outer-space"></div>
@@ -145,4 +149,4 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       />
     </ErrorBoundary>
   </React.StrictMode>,
-)
+);

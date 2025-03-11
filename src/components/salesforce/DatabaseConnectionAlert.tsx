@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, CheckCircle } from 'lucide-react';
-import { testSalesforceConnection } from '@/utils/test-salesforce';
+import React, { useEffect, useState } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, CheckCircle } from "lucide-react";
+import { testSalesforceConnection } from "@/utils/test-salesforce";
 
 export const DatabaseConnectionAlert: React.FC = () => {
   const [connectionStatus, setConnectionStatus] = useState<{
@@ -23,8 +23,10 @@ export const DatabaseConnectionAlert: React.FC = () => {
         setConnectionStatus({
           loading: false,
           connected: results.salesforceAccess,
-          method: results.usingAdminClient ? 'Admin Client' : 'Regular Client',
-          error: results.salesforceAccess ? null : 'Could not access Salesforce data tables',
+          method: results.usingAdminClient ? "Admin Client" : "Regular Client",
+          error: results.salesforceAccess
+            ? null
+            : "Could not access Salesforce data tables",
         });
       } catch (error) {
         setConnectionStatus({
@@ -55,7 +57,9 @@ export const DatabaseConnectionAlert: React.FC = () => {
     return (
       <Alert className="bg-green-50 border-green-200">
         <CheckCircle className="h-4 w-4 text-green-500" />
-        <AlertTitle className="text-green-700">Connected to Salesforce Data</AlertTitle>
+        <AlertTitle className="text-green-700">
+          Connected to Salesforce Data
+        </AlertTitle>
         <AlertDescription className="text-green-600">
           Connected to Salesforce data tables using {connectionStatus.method}.
         </AlertDescription>
@@ -68,7 +72,9 @@ export const DatabaseConnectionAlert: React.FC = () => {
       <AlertCircle className="h-4 w-4" />
       <AlertTitle>Connection failed</AlertTitle>
       <AlertDescription>
-        {connectionStatus.error?.message || String(connectionStatus.error) || 'Could not access Salesforce data tables'}
+        {connectionStatus.error?.message ||
+          String(connectionStatus.error) ||
+          "Could not access Salesforce data tables"}
       </AlertDescription>
     </Alert>
   );

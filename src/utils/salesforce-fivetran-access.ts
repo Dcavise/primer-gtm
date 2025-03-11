@@ -1,12 +1,12 @@
 /**
  * Salesforce Data Access Module for Fivetran Views
- * 
+ *
  * This module provides direct access to Salesforce data via the fivetran_views schema
  * replacing the previous approach that used the salesforce schema.
  */
 
-import { supabase } from '@/integrations/supabase-client';
-import { logger } from '@/utils/logger';
+import { supabase } from "@/integrations/supabase-client";
+import { logger } from "@/utils/logger";
 
 /**
  * Query a Salesforce table via fivetran_views
@@ -16,25 +16,27 @@ import { logger } from '@/utils/logger';
  */
 export const querySalesforceTable = async (tableName: string, limit = 100) => {
   logger.info(`Querying Salesforce table: ${tableName} with limit ${limit}`);
-  
+
   try {
-    const { data, error } = await supabase.rpc('execute_sql_query', {
-      query_text: `SELECT * FROM fivetran_views.${tableName} LIMIT ${limit}`
+    const { data, error } = await supabase.rpc("execute_sql_query", {
+      query_text: `SELECT * FROM fivetran_views.${tableName} LIMIT ${limit}`,
     });
-    
+
     if (error) {
       logger.error(`Error querying Salesforce table ${tableName}:`, error);
       return { success: false, data: null, error };
     }
-    
-    logger.info(`Successfully queried ${tableName}, got ${data?.length || 0} records`);
+
+    logger.info(
+      `Successfully queried ${tableName}, got ${data?.length || 0} records`,
+    );
     return { success: true, data, error: null };
   } catch (error) {
     logger.error(`Exception querying Salesforce table ${tableName}:`, error);
-    return { 
-      success: false, 
-      data: null, 
-      error: error instanceof Error ? error : new Error(String(error))
+    return {
+      success: false,
+      data: null,
+      error: error instanceof Error ? error : new Error(String(error)),
     };
   }
 };
@@ -46,9 +48,15 @@ export const querySalesforceTable = async (tableName: string, limit = 100) => {
  * @param campusId Optional campus ID to filter by
  * @returns Weekly lead count data
  */
-export const getWeeklyLeadCounts = async (startDate: string, endDate: string, campusId: string | null = null) => {
-  logger.info(`Getting weekly lead counts from ${startDate} to ${endDate}, campus: ${campusId || 'all'}`);
-  
+export const getWeeklyLeadCounts = async (
+  startDate: string,
+  endDate: string,
+  campusId: string | null = null,
+) => {
+  logger.info(
+    `Getting weekly lead counts from ${startDate} to ${endDate}, campus: ${campusId || "all"}`,
+  );
+
   try {
     // Build the query based on parameters
     let query = `
@@ -59,12 +67,12 @@ export const getWeeklyLeadCounts = async (startDate: string, endDate: string, ca
         FROM fivetran_views.lead l
         WHERE l.createddate BETWEEN '${startDate}' AND '${endDate}'
     `;
-    
+
     // Add campus filter if provided
     if (campusId) {
       query += ` AND l.campus_c = '${campusId}'`;
     }
-    
+
     // Finish the query
     query += `
         GROUP BY date_trunc('week', l.createddate)
@@ -72,24 +80,24 @@ export const getWeeklyLeadCounts = async (startDate: string, endDate: string, ca
       )
       SELECT * FROM weekly_data
     `;
-    
-    const { data, error } = await supabase.rpc('execute_sql_query', {
-      query_text: query
+
+    const { data, error } = await supabase.rpc("execute_sql_query", {
+      query_text: query,
     });
-    
+
     if (error) {
-      logger.error('Error getting weekly lead counts:', error);
+      logger.error("Error getting weekly lead counts:", error);
       return { success: false, data: null, error };
     }
-    
+
     logger.info(`Got ${data?.length || 0} weeks of lead count data`);
     return { success: true, data, error: null };
   } catch (error) {
-    logger.error('Exception getting weekly lead counts:', error);
-    return { 
-      success: false, 
-      data: null, 
-      error: error instanceof Error ? error : new Error(String(error))
+    logger.error("Exception getting weekly lead counts:", error);
+    return {
+      success: false,
+      data: null,
+      error: error instanceof Error ? error : new Error(String(error)),
     };
   }
 };
@@ -99,8 +107,8 @@ export const getWeeklyLeadCounts = async (startDate: string, endDate: string, ca
  * @returns Lead count by campus
  */
 export const getLeadSummaryByCampus = async () => {
-  logger.info('Getting lead summary by campus');
-  
+  logger.info("Getting lead summary by campus");
+
   try {
     const query = `
       SELECT
@@ -112,24 +120,24 @@ export const getLeadSummaryByCampus = async () => {
       GROUP BY c.name, c.state
       ORDER BY lead_count DESC
     `;
-    
-    const { data, error } = await supabase.rpc('execute_sql_query', {
-      query_text: query
+
+    const { data, error } = await supabase.rpc("execute_sql_query", {
+      query_text: query,
     });
-    
+
     if (error) {
-      logger.error('Error getting lead summary by campus:', error);
+      logger.error("Error getting lead summary by campus:", error);
       return { success: false, data: null, error };
     }
-    
+
     logger.info(`Got lead summary for ${data?.length || 0} campuses`);
     return { success: true, data, error: null };
   } catch (error) {
-    logger.error('Exception getting lead summary by campus:', error);
-    return { 
-      success: false, 
-      data: null, 
-      error: error instanceof Error ? error : new Error(String(error))
+    logger.error("Exception getting lead summary by campus:", error);
+    return {
+      success: false,
+      data: null,
+      error: error instanceof Error ? error : new Error(String(error)),
     };
   }
 };
@@ -139,49 +147,56 @@ export const getLeadSummaryByCampus = async () => {
  * @returns Connection test results
  */
 export const testFivetranConnection = async () => {
-  logger.info('Testing connection to fivetran_views schema');
-  
+  logger.info("Testing connection to fivetran_views schema");
+
   try {
     // Check if fivetran_views schema exists
-    const { data: schemaData, error: schemaError } = await supabase.rpc('execute_sql_query', {
-      query_text: `SELECT EXISTS(
+    const { data: schemaData, error: schemaError } = await supabase.rpc(
+      "execute_sql_query",
+      {
+        query_text: `SELECT EXISTS(
         SELECT 1 FROM information_schema.schemata 
         WHERE schema_name = 'fivetran_views'
-      )`
-    });
-    
-    const schemaExists = !schemaError && 
-                        schemaData && 
-                        schemaData.length > 0 && 
-                        schemaData[0].exists;
-    
+      )`,
+      },
+    );
+
+    const schemaExists =
+      !schemaError &&
+      schemaData &&
+      schemaData.length > 0 &&
+      schemaData[0].exists;
+
     if (!schemaExists) {
-      return { 
-        success: false, 
+      return {
+        success: false,
         fivetranViewsExists: false,
-        error: schemaError || new Error('fivetran_views schema does not exist')
+        error: schemaError || new Error("fivetran_views schema does not exist"),
       };
     }
-    
+
     // Check if lead table exists
-    const { data: tableData, error: tableError } = await supabase.rpc('execute_sql_query', {
-      query_text: `SELECT COUNT(*) FROM fivetran_views.lead LIMIT 1`
-    });
-    
+    const { data: tableData, error: tableError } = await supabase.rpc(
+      "execute_sql_query",
+      {
+        query_text: `SELECT COUNT(*) FROM fivetran_views.lead LIMIT 1`,
+      },
+    );
+
     const leadTableAccessible = !tableError && tableData;
-    
+
     return {
       success: true,
       fivetranViewsExists: true,
       leadTableAccessible,
-      rowCount: leadTableAccessible ? tableData[0].count : 0
+      rowCount: leadTableAccessible ? tableData[0].count : 0,
     };
   } catch (error) {
-    logger.error('Exception testing fivetran connection:', error);
-    return { 
-      success: false, 
+    logger.error("Exception testing fivetran connection:", error);
+    return {
+      success: false,
       fivetranViewsExists: false,
-      error: error instanceof Error ? error : new Error(String(error))
+      error: error instanceof Error ? error : new Error(String(error)),
     };
   }
 };

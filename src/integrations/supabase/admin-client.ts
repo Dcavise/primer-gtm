@@ -1,5 +1,5 @@
 // Re-export the admin client from the main client
-import { supabase } from './client';
+import { supabase } from "./client";
 
 // Export the admin client
 export const supabaseAdminClient = supabase.admin;
@@ -8,4 +8,4 @@ export const supabaseAdminClient = supabase.admin;
 export const hasAdminAccess = () => supabase.hasAdminAccess();
 
 // Export default for convenience
-export default supabaseAdminClient; 
+export default supabaseAdminClient;

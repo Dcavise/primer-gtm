@@ -1,6 +1,5 @@
-
-import { Campus } from '@/types';
-import { CampusSelector as FeatureCampusSelector } from '@/features/salesforce/components/CampusSelector';
+import { Campus } from "@/types";
+import { CampusSelector as FeatureCampusSelector } from "@/features/salesforce/components/CampusSelector";
 
 /**
  * @deprecated Use the CampusSelector from @/features/salesforce/components/CampusSelector instead.

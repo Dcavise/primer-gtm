@@ -1,30 +1,39 @@
-
-import React, { useState } from 'react';
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import React, { useState } from "react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Check, ChevronsUpDown } from "lucide-react";
-import { 
-  SafeCommand as Command, 
-  CommandEmpty, 
-  CommandGroup, 
-  CommandInput, 
-  CommandItem 
+import {
+  SafeCommand as Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
 } from "@/components/ui/safe-command";
 import { cn } from "@/lib/utils";
-import { ErrorBoundary } from '@/components/error-boundary';
-import { PropertyPhase } from '@/types/realEstate';
-import { VALID_PHASES, getPhaseColorClass } from './PhaseSelector';
+import { ErrorBoundary } from "@/components/error-boundary";
+import { PropertyPhase } from "@/types/realEstate";
+import { VALID_PHASES, getPhaseColorClass } from "./PhaseSelector";
 
 // Type for props
 interface PhaseSelectorProps {
   value: PropertyPhase | null | undefined;
-  onValueChange: (value: PropertyPhase | '') => void;
+  onValueChange: (value: PropertyPhase | "") => void;
   className?: string;
   disabled?: boolean;
 }
 
 // Safe fallback component if the selector fails
-function PhaseSelectorFallback({ error, resetError }: { error: Error; resetError: () => void }) {
+function PhaseSelectorFallback({
+  error,
+  resetError,
+}: {
+  error: Error;
+  resetError: () => void;
+}) {
   return (
     <div className="border p-2 rounded">
       <p className="text-sm text-red-500">Phase selector failed to load</p>
@@ -47,14 +56,19 @@ export function SafePhaseSelector(props: PhaseSelectorProps) {
   );
 }
 
-function PhaseSelectorInner({ value, onValueChange, className, disabled = false }: PhaseSelectorProps) {
+function PhaseSelectorInner({
+  value,
+  onValueChange,
+  className,
+  disabled = false,
+}: PhaseSelectorProps) {
   const [open, setOpen] = useState(false);
 
   // Make sure we display the current phase or "--None--" if not set
   const displayValue = value || "--None--";
-  
+
   // The colorClass for the button should reflect the current phase
-  const colorClass = value ? getPhaseColorClass(value) : '';
+  const colorClass = value ? getPhaseColorClass(value) : "";
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -64,9 +78,9 @@ function PhaseSelectorInner({ value, onValueChange, className, disabled = false 
           role="combobox"
           aria-expanded={open}
           className={cn(
-            "justify-between w-full border-input", 
+            "justify-between w-full border-input",
             value ? colorClass : "",
-            className
+            className,
           )}
           disabled={disabled}
         >
@@ -83,14 +97,14 @@ function PhaseSelectorInner({ value, onValueChange, className, disabled = false 
               key="none"
               value="none"
               onSelect={() => {
-                onValueChange('');
+                onValueChange("");
                 setOpen(false);
               }}
             >
               <Check
                 className={cn(
                   "mr-2 h-4 w-4",
-                  !value ? "opacity-100" : "opacity-0"
+                  !value ? "opacity-100" : "opacity-0",
                 )}
               />
               --None--
@@ -108,7 +122,7 @@ function PhaseSelectorInner({ value, onValueChange, className, disabled = false 
                   <Check
                     className={cn(
                       "mr-2 h-4 w-4",
-                      value === phase ? "opacity-100" : "opacity-0"
+                      value === phase ? "opacity-100" : "opacity-0",
                     )}
                   />
                   <span>{phase}</span>

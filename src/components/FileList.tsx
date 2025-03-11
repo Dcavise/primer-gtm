@@ -1,12 +1,25 @@
-
-import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase-client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
-import { FileText, Image, FileIcon, Download, Trash2, Info } from 'lucide-react';
-import { toast } from 'sonner';
-import { getAllFileMetadata, deleteFileMetadata } from './FileMetadataHandler';
+import React, { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase-client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "@/components/ui/dialog";
+import {
+  FileText,
+  Image,
+  FileIcon,
+  Download,
+  Trash2,
+  Info,
+} from "lucide-react";
+import { toast } from "sonner";
+import { getAllFileMetadata, deleteFileMetadata } from "./FileMetadataHandler";
 
 interface FileObject {
   name: string;
@@ -35,7 +48,10 @@ interface FileListProps {
   onFileDeleted?: () => void;
 }
 
-export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted }) => {
+export const FileList: React.FC<FileListProps> = ({
+  propertyId,
+  onFileDeleted,
+}) => {
   const [files, setFiles] = useState<EnhancedFile[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [fileDetailsOpen, setFileDetailsOpen] = useState<boolean>(false);
@@ -46,9 +62,9 @@ export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted })
     try {
       // List files with the property prefix
       const { data: storageFiles, error } = await supabase.storage
-        .from('property_documents')
+        .from("property_documents")
         .list(`property_${propertyId}`, {
-          sortBy: { column: 'created_at', order: 'desc' },
+          sortBy: { column: "created_at", order: "desc" },
         });
 
       if (error) {
@@ -57,22 +73,25 @@ export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted })
 
       // Get all metadata for this property's files
       const metadataRecords = await getAllFileMetadata(propertyId);
-      
+
       // Combine storage files with their metadata
-      const enhancedFiles = storageFiles?.map(file => {
-        const filePath = `property_${propertyId}/${file.name}`;
-        const metadata = metadataRecords.find(m => m.file_path === filePath);
-        
-        return {
-          ...file,
-          metadata
-        };
-      }) || [];
+      const enhancedFiles =
+        storageFiles?.map((file) => {
+          const filePath = `property_${propertyId}/${file.name}`;
+          const metadata = metadataRecords.find(
+            (m) => m.file_path === filePath,
+          );
+
+          return {
+            ...file,
+            metadata,
+          };
+        }) || [];
 
       setFiles(enhancedFiles);
     } catch (error) {
-      console.error('Error fetching files:', error);
-      toast.error('Failed to load files');
+      console.error("Error fetching files:", error);
+      toast.error("Failed to load files");
     } finally {
       setIsLoading(false);
     }
@@ -82,7 +101,7 @@ export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted })
     try {
       const filePath = `property_${propertyId}/${fileName}`;
       const { data, error } = await supabase.storage
-        .from('property_documents')
+        .from("property_documents")
         .download(filePath);
 
       if (error) {
@@ -91,7 +110,7 @@ export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted })
 
       // Create a download link
       const url = URL.createObjectURL(data);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = fileName;
       document.body.appendChild(a);
@@ -99,35 +118,35 @@ export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted })
       URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
-      console.error('Error downloading file:', error);
-      toast.error('Failed to download file');
+      console.error("Error downloading file:", error);
+      toast.error("Failed to download file");
     }
   };
 
   const handleDelete = async (fileName: string) => {
     try {
       const filePath = `property_${propertyId}/${fileName}`;
-      
+
       // Delete the file from storage
       const { error } = await supabase.storage
-        .from('property_documents')
+        .from("property_documents")
         .remove([filePath]);
 
       if (error) {
         throw error;
       }
-      
+
       // Also delete the metadata
       await deleteFileMetadata(propertyId, filePath);
 
-      toast.success('File deleted successfully');
+      toast.success("File deleted successfully");
       fetchFiles();
       if (onFileDeleted) {
         onFileDeleted();
       }
     } catch (error) {
-      console.error('Error deleting file:', error);
-      toast.error('Failed to delete file');
+      console.error("Error deleting file:", error);
+      toast.error("Failed to delete file");
     }
   };
 
@@ -138,11 +157,11 @@ export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted })
 
   // Get file icon based on file type
   const getFileIcon = (fileName: string) => {
-    const extension = fileName.split('.').pop()?.toLowerCase();
-    
-    if (extension === 'pdf') {
+    const extension = fileName.split(".").pop()?.toLowerCase();
+
+    if (extension === "pdf") {
       return <FileText className="h-5 w-5 text-red-500" />;
-    } else if (['png', 'jpg', 'jpeg', 'gif'].includes(extension || '')) {
+    } else if (["png", "jpg", "jpeg", "gif"].includes(extension || "")) {
       return <Image className="h-5 w-5 text-blue-500" />;
     } else {
       return <FileIcon className="h-5 w-5 text-gray-500" />;
@@ -155,9 +174,9 @@ export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted })
     if (file.metadata && file.metadata.display_name) {
       return file.metadata.display_name;
     }
-    
+
     // Fall back to the original filename without timestamp prefix
-    return file.name.replace(/^\d+_/, '').split('.').slice(0, -1).join('.');
+    return file.name.replace(/^\d+_/, "").split(".").slice(0, -1).join(".");
   };
 
   useEffect(() => {
@@ -168,7 +187,9 @@ export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted })
     <div className="space-y-4">
       {isLoading ? (
         <div className="h-32 flex items-center justify-center">
-          <div className="animate-pulse text-muted-foreground">Loading files...</div>
+          <div className="animate-pulse text-muted-foreground">
+            Loading files...
+          </div>
         </div>
       ) : files.length === 0 ? (
         <div className="text-center p-4 bg-muted/20 rounded-md">
@@ -182,7 +203,10 @@ export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted })
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 truncate">
                     {getFileIcon(file.name)}
-                    <span className="text-sm truncate" title={getDisplayName(file)}>
+                    <span
+                      className="text-sm truncate"
+                      title={getDisplayName(file)}
+                    >
                       {getDisplayName(file)}
                     </span>
                   </div>
@@ -213,7 +237,7 @@ export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted })
                     </Button>
                   </div>
                 </div>
-                
+
                 {file.metadata && file.metadata.description && (
                   <div className="mt-2 text-xs text-muted-foreground">
                     {file.metadata.description}
@@ -234,42 +258,58 @@ export const FileList: React.FC<FileListProps> = ({ propertyId, onFileDeleted })
               View information about this file
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedFile && (
             <div className="space-y-4">
               <div>
-                <div className="text-sm text-muted-foreground mb-1">File Name</div>
-                <div className="font-medium break-all">{selectedFile.name.replace(/^\d+_/, '')}</div>
+                <div className="text-sm text-muted-foreground mb-1">
+                  File Name
+                </div>
+                <div className="font-medium break-all">
+                  {selectedFile.name.replace(/^\d+_/, "")}
+                </div>
               </div>
-              
+
               {selectedFile.metadata && selectedFile.metadata.display_name && (
                 <div>
-                  <div className="text-sm text-muted-foreground mb-1">Display Name</div>
-                  <div className="font-medium break-all">{selectedFile.metadata.display_name}</div>
+                  <div className="text-sm text-muted-foreground mb-1">
+                    Display Name
+                  </div>
+                  <div className="font-medium break-all">
+                    {selectedFile.metadata.display_name}
+                  </div>
                 </div>
               )}
-              
+
               {selectedFile.metadata && selectedFile.metadata.description && (
                 <div>
-                  <div className="text-sm text-muted-foreground mb-1">Description</div>
-                  <div className="break-all">{selectedFile.metadata.description}</div>
+                  <div className="text-sm text-muted-foreground mb-1">
+                    Description
+                  </div>
+                  <div className="break-all">
+                    {selectedFile.metadata.description}
+                  </div>
                 </div>
               )}
-              
+
               <div>
-                <div className="text-sm text-muted-foreground mb-1">Uploaded</div>
+                <div className="text-sm text-muted-foreground mb-1">
+                  Uploaded
+                </div>
                 <div>
-                  {selectedFile.metadata && selectedFile.metadata.uploaded_at 
-                    ? new Date(selectedFile.metadata.uploaded_at).toLocaleString() 
+                  {selectedFile.metadata && selectedFile.metadata.uploaded_at
+                    ? new Date(
+                        selectedFile.metadata.uploaded_at,
+                      ).toLocaleString()
                     : new Date(selectedFile.created_at).toLocaleString()}
                 </div>
               </div>
-              
+
               <div className="flex justify-end gap-2 pt-2">
                 <DialogClose asChild>
                   <Button variant="outline">Close</Button>
                 </DialogClose>
-                <Button 
+                <Button
                   onClick={() => {
                     handleDownload(selectedFile.name);
                     setFileDetailsOpen(false);

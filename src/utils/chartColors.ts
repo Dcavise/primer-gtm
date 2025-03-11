@@ -1,20 +1,19 @@
-
 /**
  * Chart color utilities based on the design system
  */
 
 // Standard color palette for charts throughout the application
 export const chartColors = [
-  '#1F77B4', // Blue
-  '#FF7F0E', // Orange
-  '#2CA02C', // Green
-  '#D62728', // Red
-  '#9467BD', // Purple
-  '#8C564B', // Brown
-  '#E377C2', // Pink
-  '#7F7F7F', // Gray
-  '#BCBD22', // Olive
-  '#17BECF'  // Cyan
+  "#1F77B4", // Blue
+  "#FF7F0E", // Orange
+  "#2CA02C", // Green
+  "#D62728", // Red
+  "#9467BD", // Purple
+  "#8C564B", // Brown
+  "#E377C2", // Pink
+  "#7F7F7F", // Gray
+  "#BCBD22", // Olive
+  "#17BECF", // Cyan
 ];
 
 // Primary categorical colors for distinct values (maintain backward compatibility)
@@ -22,17 +21,17 @@ export const CATEGORICAL_COLORS = chartColors.slice(0, 5);
 
 // Colors for trend lines
 export const TREND_COLORS = {
-  primary: chartColors[0],    // Blue
-  secondary: chartColors[1],  // Orange
-  baseline: '#C0C0C0'         // Gray
+  primary: chartColors[0], // Blue
+  secondary: chartColors[1], // Orange
+  baseline: "#C0C0C0", // Gray
 };
 
 // KPI indicator colors
 export const KPI_COLORS = {
-  positive: chartColors[2],  // Green
-  negative: chartColors[3],  // Red
-  neutral: '#C0C0C0',        // Gray
-  warning: '#FFD700'         // Gold
+  positive: chartColors[2], // Green
+  negative: chartColors[3], // Red
+  neutral: "#C0C0C0", // Gray
+  warning: "#FFD700", // Gold
 };
 
 /**
@@ -71,11 +70,15 @@ export function getKpiColor(value: number): string {
  * @param max Maximum value in range
  * @returns A color representing the value's position in the range
  */
-export function getSequentialColorScale(value: number, min: number, max: number): string {
+export function getSequentialColorScale(
+  value: number,
+  min: number,
+  max: number,
+): string {
   // Simple implementation - could be enhanced with interpolation
-  if (value <= min) return '#F7FBFF'; // Light blue
-  if (value >= max) return '#08306B'; // Dark blue
-  return '#6BAED6'; // Medium blue
+  if (value <= min) return "#F7FBFF"; // Light blue
+  if (value >= max) return "#08306B"; // Dark blue
+  return "#6BAED6"; // Medium blue
 }
 
 /**
@@ -83,15 +86,17 @@ export function getSequentialColorScale(value: number, min: number, max: number)
  * @param chartType The type of chart that needs colors
  * @returns An array of colors appropriate for the chart type
  */
-export function getColorsByChartType(chartType: 'leads' | 'opportunities' | 'enrollments' | 'conversions'): string[] {
+export function getColorsByChartType(
+  chartType: "leads" | "opportunities" | "enrollments" | "conversions",
+): string[] {
   switch (chartType) {
-    case 'leads':
+    case "leads":
       return chartColors.slice(0, 4);
-    case 'opportunities':
+    case "opportunities":
       return chartColors.slice(0, 5);
-    case 'enrollments':
+    case "enrollments":
       return [chartColors[2], chartColors[0], chartColors[4]]; // Green, Blue, Purple
-    case 'conversions':
+    case "conversions":
       return [chartColors[1], chartColors[0], chartColors[2]]; // Orange, Blue, Green
     default:
       return chartColors;

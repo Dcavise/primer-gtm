@@ -1,4 +1,3 @@
-
 export interface Coordinates {
   lat: number;
   lng: number;
@@ -9,7 +8,7 @@ export interface AddressSearchResult {
   coordinates: Coordinates;
 }
 
-export type SearchStatus = 'idle' | 'loading' | 'success' | 'error';
+export type SearchStatus = "idle" | "loading" | "success" | "error";
 
 export interface Campus {
   campus_id: string;
@@ -82,4 +81,3 @@ export interface SalesforceContact {
   created_at: string;
   updated_at: string;
 }
-

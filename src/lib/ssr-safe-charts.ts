@@ -1,6 +1,6 @@
 /**
  * SSR-Safe Recharts Wrapper
- * 
+ *
  * This file provides a safer way to import recharts components
  * that prevents SSR errors when rendering charts server-side.
  */
@@ -28,7 +28,7 @@ const SSRSafeStub = {
   Cell: EmptyComponent,
   Area: EmptyComponent,
   LabelList: EmptyComponent,
-  Label: EmptyComponent
+  Label: EmptyComponent,
 };
 
 // Use conditional imports to only load recharts on client-side
@@ -36,16 +36,16 @@ const SSRSafeStub = {
 let Charts: typeof SSRSafeStub;
 
 // Check if we're running in a browser environment
-const isBrowser = typeof window !== 'undefined';
+const isBrowser = typeof window !== "undefined";
 
 if (isBrowser) {
   // We're in the browser, so it's safe to use recharts
   try {
     // Dynamic import doesn't work with ESM in many environments
     // so we're using a workaround to conditionally import
-    Charts = require('recharts');
+    Charts = require("recharts");
   } catch (e) {
-    console.error('Failed to load Recharts:', e);
+    console.error("Failed to load Recharts:", e);
     Charts = SSRSafeStub;
   }
 } else {

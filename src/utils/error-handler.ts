@@ -1,17 +1,17 @@
-import { toast } from 'sonner';
-import { logger } from './logger';
+import { toast } from "sonner";
+import { logger } from "./logger";
 
 /**
  * Error types for consistent handling
  */
 export enum ErrorType {
-  Validation = 'VALIDATION',
-  Database = 'DATABASE',
-  Network = 'NETWORK',
-  Authentication = 'AUTHENTICATION',
-  Authorization = 'AUTHORIZATION',
-  NotFound = 'NOT_FOUND',
-  Unknown = 'UNKNOWN',
+  Validation = "VALIDATION",
+  Database = "DATABASE",
+  Network = "NETWORK",
+  Authentication = "AUTHENTICATION",
+  Authorization = "AUTHORIZATION",
+  NotFound = "NOT_FOUND",
+  Unknown = "UNKNOWN",
 }
 
 /**
@@ -31,7 +31,7 @@ export function createError(
   type: ErrorType,
   message: string,
   original?: unknown,
-  context?: Record<string, unknown>
+  context?: Record<string, unknown>,
 ): AppError {
   return {
     type,
@@ -47,12 +47,12 @@ export function createError(
 export function handleError(
   error: unknown,
   notifyUser = true,
-  context?: Record<string, unknown>
+  context?: Record<string, unknown>,
 ): AppError {
   let appError: AppError;
 
   // Normalize the error to our AppError format
-  if (typeof error === 'string') {
+  if (typeof error === "string") {
     appError = createError(ErrorType.Unknown, error);
   } else if (error instanceof Error) {
     appError = createError(ErrorType.Unknown, error.message, error);
@@ -60,22 +60,26 @@ export function handleError(
     // Handle database/API errors
     const code = (error as any).code.toString();
     let type = ErrorType.Unknown;
-    
-    if (code.startsWith('22') || code.startsWith('23')) {
+
+    if (code.startsWith("22") || code.startsWith("23")) {
       type = ErrorType.Validation;
-    } else if (code.startsWith('28')) {
+    } else if (code.startsWith("28")) {
       type = ErrorType.Authorization;
-    } else if (code.startsWith('42')) {
+    } else if (code.startsWith("42")) {
       type = ErrorType.Database;
-    } else if (code === '404') {
+    } else if (code === "404") {
       type = ErrorType.NotFound;
-    } else if (code === '401' || code === '403') {
+    } else if (code === "401" || code === "403") {
       type = ErrorType.Authentication;
     }
-    
+
     appError = createError(type, (error as any).message, error);
   } else {
-    appError = createError(ErrorType.Unknown, 'An unknown error occurred', error);
+    appError = createError(
+      ErrorType.Unknown,
+      "An unknown error occurred",
+      error,
+    );
   }
 
   // Add additional context
@@ -101,16 +105,17 @@ export function handleError(
   // Notify user if requested
   if (notifyUser) {
     let toastMessage = appError.message;
-    
+
     // Make user-facing messages more friendly
     if (appError.type === ErrorType.Network) {
-      toastMessage = 'Network error. Please check your connection and try again.';
+      toastMessage =
+        "Network error. Please check your connection and try again.";
     } else if (appError.type === ErrorType.Database) {
-      toastMessage = 'Database error. Please try again later.';
+      toastMessage = "Database error. Please try again later.";
     } else if (appError.type === ErrorType.Authentication) {
-      toastMessage = 'Your session has expired. Please log in again.';
+      toastMessage = "Your session has expired. Please log in again.";
     }
-    
+
     toast.error(toastMessage);
   }
 
@@ -122,9 +127,9 @@ export function handleError(
  */
 export async function tryCatch<T>(
   fn: () => Promise<T>,
-  errorMessage = 'An error occurred',
+  errorMessage = "An error occurred",
   notifyUser = true,
-  context?: Record<string, unknown>
+  context?: Record<string, unknown>,
 ): Promise<T | null> {
   try {
     return await fn();

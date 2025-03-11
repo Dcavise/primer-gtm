@@ -1,27 +1,27 @@
-import { RouteObject } from 'react-router-dom';
-import RealEstatePipeline from '../../pages/RealEstatePipeline';
-import PropertyDetail from '../../pages/PropertyDetail';
-import { FeatureRoutes } from '../common/routes';
+import { RouteObject } from "react-router-dom";
+import RealEstatePipeline from "../../pages/RealEstatePipeline";
+import PropertyDetail from "../../pages/PropertyDetail";
+import { FeatureRoutes } from "../common/routes";
 
 const realEstateRoutes: RouteObject[] = [
   {
     path: "real-estate-pipeline",
-    element: <RealEstatePipeline />
+    element: <RealEstatePipeline />,
   },
   {
     path: "real-estate-pipeline/property/:id",
-    element: <PropertyDetail />
-  }
+    element: <PropertyDetail />,
+  },
 ];
 
 export const realEstateFeature: FeatureRoutes = {
-  id: 'realEstate',
+  id: "realEstate",
   routes: realEstateRoutes,
   navItems: [
     {
-      path: '/real-estate-pipeline',
-      label: 'Real Estate',
-      order: 20
-    }
-  ]
+      path: "/real-estate-pipeline",
+      label: "Real Estate",
+      order: 20,
+    },
+  ],
 };

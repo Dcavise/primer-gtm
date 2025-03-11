@@ -1,8 +1,7 @@
-
-import React from 'react';
-import { formatDistanceToNow } from 'date-fns';
-import { User } from 'lucide-react';
-import { Badge } from './ui/badge';
+import React from "react";
+import { formatDistanceToNow } from "date-fns";
+import { User } from "lucide-react";
+import { Badge } from "./ui/badge";
 
 export interface CommentMention {
   id: string;
@@ -41,11 +40,14 @@ const Comment: React.FC<CommentProps> = ({ data }) => {
     let lastIndex = 0;
 
     // Sort mentions by their position in the comment
-    const mentionMatches = data.mentions.map(mention => {
-      const mentionText = `@${mention.full_name || mention.email}`;
-      const index = commentText.indexOf(mentionText);
-      return { mention, index, text: mentionText };
-    }).filter(match => match.index !== -1).sort((a, b) => a.index - b.index);
+    const mentionMatches = data.mentions
+      .map((mention) => {
+        const mentionText = `@${mention.full_name || mention.email}`;
+        const index = commentText.indexOf(mentionText);
+        return { mention, index, text: mentionText };
+      })
+      .filter((match) => match.index !== -1)
+      .sort((a, b) => a.index - b.index);
 
     // Build the comment with mentions highlighted
     mentionMatches.forEach(({ mention, index, text }) => {
@@ -53,9 +55,13 @@ const Comment: React.FC<CommentProps> = ({ data }) => {
         elements.push(commentText.substring(lastIndex, index));
       }
       elements.push(
-        <Badge key={mention.id} variant="secondary" className="mr-1 font-normal">
+        <Badge
+          key={mention.id}
+          variant="secondary"
+          className="mr-1 font-normal"
+        >
           @{mention.full_name || mention.email}
-        </Badge>
+        </Badge>,
       );
       lastIndex = index + text.length;
     });
@@ -76,7 +82,7 @@ const Comment: React.FC<CommentProps> = ({ data }) => {
           </div>
           <div>
             <p className="font-medium text-sm">
-              {data.user?.full_name || data.user?.email || 'Unknown User'}
+              {data.user?.full_name || data.user?.email || "Unknown User"}
             </p>
           </div>
         </div>
@@ -84,9 +90,7 @@ const Comment: React.FC<CommentProps> = ({ data }) => {
           {formatDistanceToNow(new Date(data.created_at), { addSuffix: true })}
         </p>
       </div>
-      <div className="text-sm">
-        {renderCommentWithMentions()}
-      </div>
+      <div className="text-sm">{renderCommentWithMentions()}</div>
     </div>
   );
 };

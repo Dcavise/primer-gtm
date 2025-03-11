@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
-import { useLayout } from '../../../contexts/LayoutContext';
-import { Sidebar, SidebarBody } from '@/components/ui/animated-sidebar';
-import { Search } from 'lucide-react';
+import React, { useState } from "react";
+import { Outlet } from "react-router-dom";
+import { useLayout } from "../../../contexts/LayoutContext";
+import { Sidebar, SidebarBody } from "@/components/ui/animated-sidebar";
+import { Search } from "lucide-react";
 
 /**
  * MainLayout component that provides consistent layout structure across all pages
@@ -11,7 +11,7 @@ import { Search } from 'lucide-react';
 const MainLayout: React.FC = () => {
   // State for sidebar open/closed state
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  
+
   // Use the layout context for compatibility
   const { showUserProfile } = useLayout();
 
@@ -21,7 +21,7 @@ const MainLayout: React.FC = () => {
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} animate={true}>
         <SidebarBody />
       </Sidebar>
-      
+
       {/* Main Content */}
       <div className="flex-1 overflow-auto bg-[#f8f9fa]">
         <main className="p-6">

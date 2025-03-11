@@ -1,5 +1,6 @@
 // Set debug mode based on environment
-const isDebugMode = import.meta.env.DEV || import.meta.env.MODE === 'development';
+const isDebugMode =
+  import.meta.env.DEV || import.meta.env.MODE === "development";
 
 // Maximum number of logs to keep in localStorage
 const MAX_PERSISTENT_LOGS = 100;
@@ -10,7 +11,7 @@ enum LogLevel {
   INFO = 1,
   WARN = 2,
   ERROR = 3,
-  AUTH = 4 // Special level for authentication issues
+  AUTH = 4, // Special level for authentication issues
 }
 
 // Log entry interface
@@ -30,32 +31,32 @@ const savePersistentLog = (level: LogLevel, message: string, data?: any) => {
     if (level < LogLevel.WARN) {
       return;
     }
-    
+
     const timestamp = new Date().toISOString();
     const logEntry: LogEntry = { timestamp, level, message, data };
-    
+
     // Get existing logs
-    const existingLogsJson = localStorage.getItem('app_logs') || '[]';
+    const existingLogsJson = localStorage.getItem("app_logs") || "[]";
     let logs: LogEntry[] = [];
-    
+
     try {
       logs = JSON.parse(existingLogsJson);
     } catch (e) {
       // If parsing fails, start with empty array
       logs = [];
     }
-    
+
     // Add new log and trim if needed
     logs.push(logEntry);
     if (logs.length > MAX_PERSISTENT_LOGS) {
       logs = logs.slice(-MAX_PERSISTENT_LOGS);
     }
-    
+
     // Save back to localStorage
-    localStorage.setItem('app_logs', JSON.stringify(logs));
+    localStorage.setItem("app_logs", JSON.stringify(logs));
   } catch (e) {
     // Fail silently if localStorage is not available
-    console.error('Failed to save log to localStorage:', e);
+    console.error("Failed to save log to localStorage:", e);
   }
 };
 
@@ -67,31 +68,31 @@ export const logger = {
    * Check if debug mode is enabled
    */
   isDebugMode: () => isDebugMode,
-  
+
   /**
    * Get all persistent logs
    */
   getPersistentLogs: (): LogEntry[] => {
     try {
-      const logsJson = localStorage.getItem('app_logs') || '[]';
+      const logsJson = localStorage.getItem("app_logs") || "[]";
       return JSON.parse(logsJson);
     } catch (e) {
-      console.error('Failed to retrieve logs from localStorage:', e);
+      console.error("Failed to retrieve logs from localStorage:", e);
       return [];
     }
   },
-  
+
   /**
    * Clear all persistent logs
    */
   clearPersistentLogs: () => {
     try {
-      localStorage.removeItem('app_logs');
+      localStorage.removeItem("app_logs");
     } catch (e) {
-      console.error('Failed to clear logs from localStorage:', e);
+      console.error("Failed to clear logs from localStorage:", e);
     }
   },
-  
+
   /**
    * Log info messages (only in debug mode)
    */
@@ -99,9 +100,13 @@ export const logger = {
     if (isDebugMode) {
       console.info(`[INFO] ${message}`, ...data);
     }
-    savePersistentLog(LogLevel.INFO, message, data.length > 0 ? data : undefined);
+    savePersistentLog(
+      LogLevel.INFO,
+      message,
+      data.length > 0 ? data : undefined,
+    );
   },
-  
+
   /**
    * Log warning messages (only in debug mode)
    */
@@ -109,25 +114,37 @@ export const logger = {
     if (isDebugMode) {
       console.warn(`[WARN] ${message}`, ...data);
     }
-    savePersistentLog(LogLevel.WARN, message, data.length > 0 ? data : undefined);
+    savePersistentLog(
+      LogLevel.WARN,
+      message,
+      data.length > 0 ? data : undefined,
+    );
   },
-  
+
   /**
    * Log error messages (always logged)
    */
   error: (message: string, ...data: any[]) => {
     console.error(`[ERROR] ${message}`, ...data);
-    savePersistentLog(LogLevel.ERROR, message, data.length > 0 ? data : undefined);
+    savePersistentLog(
+      LogLevel.ERROR,
+      message,
+      data.length > 0 ? data : undefined,
+    );
   },
-  
+
   /**
    * Log authentication-related messages (always logged and persisted)
    */
   auth: (message: string, ...data: any[]) => {
     console.error(`[AUTH] ${message}`, ...data);
-    savePersistentLog(LogLevel.AUTH, message, data.length > 0 ? data : undefined);
+    savePersistentLog(
+      LogLevel.AUTH,
+      message,
+      data.length > 0 ? data : undefined,
+    );
   },
-  
+
   /**
    * Log debug messages (only in debug mode)
    */
@@ -135,9 +152,13 @@ export const logger = {
     if (isDebugMode) {
       console.debug(`[DEBUG] ${message}`, ...data);
     }
-    savePersistentLog(LogLevel.DEBUG, message, data.length > 0 ? data : undefined);
+    savePersistentLog(
+      LogLevel.DEBUG,
+      message,
+      data.length > 0 ? data : undefined,
+    );
   },
-  
+
   /**
    * Log an object with pretty formatting (only in debug mode)
    */
@@ -148,7 +169,7 @@ export const logger = {
       console.groupEnd();
     }
   },
-  
+
   /**
    * Start a timer for performance measurement (only in debug mode)
    */
@@ -157,7 +178,7 @@ export const logger = {
       console.time(`[TIMER] ${label}`);
     }
   },
-  
+
   /**
    * End a timer and log the duration (only in debug mode)
    */
@@ -165,5 +186,5 @@ export const logger = {
     if (isDebugMode) {
       console.timeEnd(`[TIMER] ${label}`);
     }
-  }
+  },
 };

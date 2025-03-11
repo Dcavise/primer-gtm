@@ -1,5 +1,4 @@
-
-import { vi } from 'vitest';
+import { vi } from "vitest";
 
 // Create a mock for Supabase client
 export const mockSupabase = {
@@ -14,11 +13,11 @@ export const mockSupabase = {
   gte: vi.fn(() => mockSupabase),
   rpc: vi.fn(() => mockSupabase),
   auth: {
-    getSession: vi.fn()
+    getSession: vi.fn(),
   },
   functions: {
-    invoke: vi.fn()
-  }
+    invoke: vi.fn(),
+  },
 };
 
 // Create a mock for toast notifications
@@ -26,15 +25,15 @@ export const mockToast = {
   info: vi.fn(),
   success: vi.fn(),
   error: vi.fn(),
-  warning: vi.fn()
+  warning: vi.fn(),
 };
 
 // Mock the Supabase client
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: mockSupabase
+vi.mock("@/integrations/supabase/client", () => ({
+  supabase: mockSupabase,
 }));
 
 // Mock the toast library
-vi.mock('sonner', () => ({
-  toast: mockToast
+vi.mock("sonner", () => ({
+  toast: mockToast,
 }));

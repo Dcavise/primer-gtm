@@ -1,23 +1,25 @@
-
-import React from 'react';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { MetricData } from '@/hooks/salesforce/types';
-import { formatNumber, formatPercent } from '@/utils/format';
-import { TrendIndicator } from './TrendIndicator';
+import React from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { MetricData } from "@/hooks/salesforce/types";
+import { formatNumber, formatPercent } from "@/utils/format";
+import { TrendIndicator } from "./TrendIndicator";
 
 interface MetricsTableProps {
   metrics: MetricData[];
-  period: 'daily' | 'weekly' | 'monthly';
+  period: "daily" | "weekly" | "monthly";
 }
 
-export const MetricsTable: React.FC<MetricsTableProps> = ({ metrics, period }) => {
+export const MetricsTable: React.FC<MetricsTableProps> = ({
+  metrics,
+  period,
+}) => {
   return (
     <div className="overflow-x-auto">
       <Table>
@@ -38,30 +40,30 @@ export const MetricsTable: React.FC<MetricsTableProps> = ({ metrics, period }) =
               <TableCell>
                 <div className="flex items-center space-x-2">
                   <span>{formatNumber(metric.weekToDate.value)}</span>
-                  <TrendIndicator 
-                    value={metric.weekToDate.change} 
-                    format="percent" 
-                    positive={metric.weekToDate.positive} 
+                  <TrendIndicator
+                    value={metric.weekToDate.change}
+                    format="percent"
+                    positive={metric.weekToDate.positive}
                   />
                 </div>
               </TableCell>
               <TableCell>
                 <div className="flex items-center space-x-2">
                   <span>{formatNumber(metric.last7Days.value)}</span>
-                  <TrendIndicator 
-                    value={metric.last7Days.change} 
-                    format="percent" 
-                    positive={metric.last7Days.positive} 
+                  <TrendIndicator
+                    value={metric.last7Days.change}
+                    format="percent"
+                    positive={metric.last7Days.positive}
                   />
                 </div>
               </TableCell>
               <TableCell>
                 <div className="flex items-center space-x-2">
                   <span>{formatNumber(metric.last28Days.value)}</span>
-                  <TrendIndicator 
-                    value={metric.last28Days.change} 
-                    format="percent" 
-                    positive={metric.last28Days.positive} 
+                  <TrendIndicator
+                    value={metric.last28Days.change}
+                    format="percent"
+                    positive={metric.last28Days.positive}
                   />
                 </div>
               </TableCell>

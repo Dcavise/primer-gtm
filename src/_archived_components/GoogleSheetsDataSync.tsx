@@ -1,10 +1,16 @@
-
-import React, { useState } from 'react';
-import { supabase } from '@/integrations/supabase-client';
+import React, { useState } from "react";
+import { supabase } from "@/integrations/supabase-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { SyncErrorAlert } from "@/components/salesforce/SyncErrorAlert";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, RefreshCw } from "lucide-react";
@@ -21,7 +27,7 @@ export const GoogleSheetsDataSync: React.FC = () => {
     spreadsheetId: "1Lz5_CWhpQ1rJiIhThRoPRC1rgBhXyn2AIUsZO-hvVtA", // Default to the fellows spreadsheet
     sheetName: "Sheet1",
     range: "",
-    keyColumn: ""
+    keyColumn: "",
   });
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
@@ -30,7 +36,7 @@ export const GoogleSheetsDataSync: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const syncData = async () => {
@@ -39,7 +45,7 @@ export const GoogleSheetsDataSync: React.FC = () => {
       setError(null);
 
       const { spreadsheetId, sheetName, range, keyColumn } = formData;
-      
+
       // Validate required fields
       if (!spreadsheetId || !sheetName) {
         throw new Error("Spreadsheet ID and Sheet Name are required");
@@ -48,7 +54,7 @@ export const GoogleSheetsDataSync: React.FC = () => {
       // Prepare sync parameters
       const params: any = {
         spreadsheetId,
-        sheetName
+        sheetName,
       };
 
       // Add optional parameters if provided
@@ -56,31 +62,34 @@ export const GoogleSheetsDataSync: React.FC = () => {
       if (keyColumn) params.keyColumn = keyColumn;
 
       // Call the Supabase Edge Function
-      const { data, error } = await supabase.functions.invoke('sync-google-sheets-data', {
-        body: params
-      });
+      const { data, error } = await supabase.functions.invoke(
+        "sync-google-sheets-data",
+        {
+          body: params,
+        },
+      );
 
       if (error) {
         throw new Error(`Function error: ${error.message}`);
       }
 
       if (!data.success) {
-        throw new Error(data.error || 'Unknown error occurred');
+        throw new Error(data.error || "Unknown error occurred");
       }
 
       // Update last synced time
       setLastSynced(new Date().toISOString());
-      
+
       // Show success toast
       toast({
         title: "Data synced successfully",
-        description: data.message || `Processed ${data.result.processed} rows of data`,
+        description:
+          data.message || `Processed ${data.result.processed} rows of data`,
       });
-
     } catch (err: any) {
       console.error("Error syncing data:", err);
       setError(err.message || "An unknown error occurred");
-      
+
       toast({
         variant: "destructive",
         title: "Sync failed",
@@ -106,7 +115,7 @@ export const GoogleSheetsDataSync: React.FC = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         {error && <SyncErrorAlert error={error} />}
-        
+
         <div className="space-y-2">
           <Label htmlFor="spreadsheetId">Spreadsheet ID</Label>
           <Input
@@ -117,10 +126,11 @@ export const GoogleSheetsDataSync: React.FC = () => {
             placeholder="1Lz5_CWhpQ1rJiIhThRoPRC1rgBhXyn2AIUsZO-hvVtA"
           />
           <p className="text-sm text-muted-foreground">
-            The ID from the Google Sheet URL: https://docs.google.com/spreadsheets/d/[SPREADSHEET_ID]/edit
+            The ID from the Google Sheet URL:
+            https://docs.google.com/spreadsheets/d/[SPREADSHEET_ID]/edit
           </p>
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="sheetName">Sheet Name</Label>
           <Input
@@ -131,7 +141,7 @@ export const GoogleSheetsDataSync: React.FC = () => {
             placeholder="Sheet1"
           />
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="range">Range (Optional)</Label>
           <Input
@@ -145,7 +155,7 @@ export const GoogleSheetsDataSync: React.FC = () => {
             E.g., Sheet1!A1:Z100. If left empty, all data will be fetched.
           </p>
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="keyColumn">Key Column (Optional)</Label>
           <Input
@@ -161,8 +171,8 @@ export const GoogleSheetsDataSync: React.FC = () => {
         </div>
       </CardContent>
       <CardFooter>
-        <Button 
-          onClick={syncData} 
+        <Button
+          onClick={syncData}
           disabled={isSyncing || !formData.spreadsheetId || !formData.sheetName}
           className="w-full"
         >

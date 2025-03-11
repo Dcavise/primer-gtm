@@ -1,7 +1,6 @@
-
-import React from 'react';
-import { Map, MapPin, ExternalLink } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React from "react";
+import { Map, MapPin, ExternalLink } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface PropertyLocationProps {
   address: string;
@@ -10,7 +9,7 @@ interface PropertyLocationProps {
 const PropertyLocation: React.FC<PropertyLocationProps> = ({ address }) => {
   // Create Google Maps URL for the address
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
-  
+
   return (
     <Card>
       <CardHeader>
@@ -25,10 +24,10 @@ const PropertyLocation: React.FC<PropertyLocationProps> = ({ address }) => {
             <MapPin className="h-5 w-5 mr-2 text-slate-600" />
             <span className="text-slate-800">{address}</span>
           </div>
-          
-          <a 
+
+          <a
             href={googleMapsUrl}
-            target="_blank" 
+            target="_blank"
             rel="noopener noreferrer"
             className="flex items-center text-primary hover:underline mt-2"
           >

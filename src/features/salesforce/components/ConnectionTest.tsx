@@ -1,9 +1,25 @@
-import React, { useState } from 'react';
-import { testSalesforceConnection, getSampleLeads } from '@/utils/test-salesforce';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle, Database, User, Table2, List } from 'lucide-react';
+import React, { useState } from "react";
+import {
+  testSalesforceConnection,
+  getSampleLeads,
+} from "@/utils/test-salesforce";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  CheckCircle,
+  XCircle,
+  Database,
+  User,
+  Table2,
+  List,
+} from "lucide-react";
 
 export function SalesforceConnectionTest() {
   const [loading, setLoading] = useState(false);
@@ -19,7 +35,7 @@ export function SalesforceConnectionTest() {
       const testResults = await testSalesforceConnection();
       setResults(testResults);
     } catch (err) {
-      console.error('Test error:', err);
+      console.error("Test error:", err);
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
@@ -34,10 +50,14 @@ export function SalesforceConnectionTest() {
       if (success && data) {
         setLeadsData(data);
       } else {
-        setError(leadsError instanceof Error ? leadsError.message : String(leadsError || 'Unknown error'));
+        setError(
+          leadsError instanceof Error
+            ? leadsError.message
+            : String(leadsError || "Unknown error"),
+        );
       }
     } catch (err) {
-      console.error('Leads fetch error:', err);
+      console.error("Leads fetch error:", err);
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLeadsLoading(false);
@@ -55,17 +75,17 @@ export function SalesforceConnectionTest() {
       <CardContent>
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <Button
-              onClick={runTest}
-              disabled={loading}
-              variant="outline"
-            >
-              {loading ? 'Testing...' : 'Test Connection'}
+            <Button onClick={runTest} disabled={loading} variant="outline">
+              {loading ? "Testing..." : "Test Connection"}
             </Button>
-            
+
             {results && (
-              <Badge variant={results.regularClient.success ? "default" : "destructive"}>
-                {results.regularClient.success ? 'Connected' : 'Failed'}
+              <Badge
+                variant={
+                  results.regularClient.success ? "default" : "destructive"
+                }
+              >
+                {results.regularClient.success ? "Connected" : "Failed"}
               </Badge>
             )}
           </div>
@@ -98,13 +118,15 @@ export function SalesforceConnectionTest() {
                     )}
                     <span>Regular Client: </span>
                     <span className="ml-1 font-medium">
-                      {results.regularClient.success ? 'Connected' : 'Failed'}
+                      {results.regularClient.success ? "Connected" : "Failed"}
                     </span>
                   </div>
-                  
+
                   {results.regularClient.error && (
                     <div className="text-xs text-red-600 ml-6">
-                      Error: {results.regularClient.error.message || String(results.regularClient.error)}
+                      Error:{" "}
+                      {results.regularClient.error.message ||
+                        String(results.regularClient.error)}
                     </div>
                   )}
                 </div>
@@ -140,7 +162,7 @@ export function SalesforceConnectionTest() {
                   variant="outline"
                   size="sm"
                 >
-                  {leadsLoading ? 'Loading...' : 'Fetch Sample Leads'}
+                  {leadsLoading ? "Loading..." : "Fetch Sample Leads"}
                 </Button>
 
                 {leadsData.length > 0 && (
@@ -176,4 +198,4 @@ export function SalesforceConnectionTest() {
       </CardContent>
     </Card>
   );
-} 
+}

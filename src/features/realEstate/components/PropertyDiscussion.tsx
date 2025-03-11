@@ -1,14 +1,15 @@
-
-import React from 'react';
-import { MessageSquare } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import CommentsSection from '@/components/CommentsSection';
+import React from "react";
+import { MessageSquare } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import CommentsSection from "@/components/CommentsSection";
 
 interface PropertyDiscussionProps {
   propertyId: number;
 }
 
-const PropertyDiscussion: React.FC<PropertyDiscussionProps> = ({ propertyId }) => {
+const PropertyDiscussion: React.FC<PropertyDiscussionProps> = ({
+  propertyId,
+}) => {
   return (
     <Card>
       <CardHeader>

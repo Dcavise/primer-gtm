@@ -1,6 +1,6 @@
-import React from 'react';
-import { MapPin } from 'lucide-react';
-import { RealEstateProperty } from '@/types/realEstate';
+import React from "react";
+import { MapPin } from "lucide-react";
+import { RealEstateProperty } from "@/types/realEstate";
 
 interface PropertyHeaderProps {
   property: RealEstateProperty;

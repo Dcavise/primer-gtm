@@ -1,5 +1,5 @@
-import { RouteObject } from 'react-router-dom';
-import NotFound from '../../pages/NotFound';
+import { RouteObject } from "react-router-dom";
+import NotFound from "../../pages/NotFound";
 
 export interface FeatureRoutes {
   id: string;
@@ -14,7 +14,7 @@ export interface FeatureRoutes {
 
 export const commonRoutes: RouteObject[] = [
   {
-    path: '*',
-    element: <NotFound />
-  }
+    path: "*",
+    element: <NotFound />,
+  },
 ];

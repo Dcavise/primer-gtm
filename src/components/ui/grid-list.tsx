@@ -1,4 +1,4 @@
-import { GripHorizontal } from "lucide-react"
+import { GripHorizontal } from "lucide-react";
 import {
   Button as AriaButton,
   GridList as AriaGridList,
@@ -6,10 +6,10 @@ import {
   GridListItemProps as AriaGridListItemProps,
   GridListProps as AriaGridListProps,
   composeRenderProps,
-} from "react-aria-components"
+} from "react-aria-components";
 
-import { cn } from "@/lib/utils"
-import { Checkbox } from "@/components/ui/checkbox"
+import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export function GridList<T extends object>({
   children,
@@ -23,13 +23,13 @@ export function GridList<T extends object>({
           "jolly-GridList group flex flex-col gap-2 overflow-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md outline-none",
           /* Empty */
           "data-[empty]:p-6 data-[empty]:text-center data-[empty]:text-sm",
-          className
-        )
+          className,
+        ),
       )}
     >
       {children}
     </AriaGridList>
-  )
+  );
 }
 
 export function GridListItem({
@@ -37,7 +37,7 @@ export function GridListItem({
   className,
   ...props
 }: AriaGridListItemProps) {
-  let textValue = typeof children === "string" ? children : undefined
+  let textValue = typeof children === "string" ? children : undefined;
   return (
     <AriaGridListItem
       textValue={textValue}
@@ -54,8 +54,8 @@ export function GridListItem({
           "data-[selected]:bg-accent data-[selected]:text-accent-foreground",
           /* Dragging */
           "data-[dragging]:opacity-60",
-          className
-        )
+          className,
+        ),
       )}
       {...props}
     >
@@ -75,5 +75,5 @@ export function GridListItem({
         </>
       ))}
     </AriaGridListItem>
-  )
+  );
 }

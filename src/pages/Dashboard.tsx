@@ -1,5 +1,5 @@
-import React from 'react';
-import AdmissionsAnalytics from './AdmissionsAnalytics';
+import React from "react";
+import AdmissionsAnalytics from "./AdmissionsAnalytics";
 
 /**
  * Dashboard component that renders the AdmissionsAnalytics component

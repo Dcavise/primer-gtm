@@ -1,20 +1,25 @@
-
-import React from 'react';
-import { ErrorBoundary } from '@/components/error-boundary';
+import React from "react";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { Button } from "@/components/ui/button";
-import { SimplePhaseSelector } from './SimplePhaseSelector';
+import { SimplePhaseSelector } from "./SimplePhaseSelector";
 import { PropertyPhase } from "@/types/realEstate";
 
 // Type for props
 interface SafeSimplePhaseSelectorProps {
   value: PropertyPhase | null | undefined;
-  onValueChange: (value: PropertyPhase | '') => void;
+  onValueChange: (value: PropertyPhase | "") => void;
   className?: string;
   disabled?: boolean;
 }
 
 // Safe fallback component if the selector fails
-function PhaseSelectorFallback({ error, resetError }: { error: Error; resetError: () => void }) {
+function PhaseSelectorFallback({
+  error,
+  resetError,
+}: {
+  error: Error;
+  resetError: () => void;
+}) {
   return (
     <div className="border p-2 rounded">
       <p className="text-sm text-red-500">Phase selector failed to load</p>

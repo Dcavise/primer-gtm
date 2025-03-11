@@ -1,4 +1,4 @@
-import { GridList, GridListItem } from "@/components/ui/grid-list"
+import { GridList, GridListItem } from "@/components/ui/grid-list";
 
 export function GridListDemo() {
   return (
@@ -8,5 +8,5 @@ export function GridListDemo() {
       <GridListItem>Venusaur</GridListItem>
       <GridListItem>Pikachu</GridListItem>
     </GridList>
-  )
+  );
 }

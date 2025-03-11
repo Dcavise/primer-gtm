@@ -1,9 +1,8 @@
-
-import React from 'react';
-import { FolderOpen } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileUpload } from '@/components/FileUpload';
-import { FileList } from '@/components/FileList';
+import React from "react";
+import { FolderOpen } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FileUpload } from "@/components/FileUpload";
+import { FileList } from "@/components/FileList";
 
 interface PropertyDocumentsProps {
   propertyId: number;
@@ -14,7 +13,7 @@ interface PropertyDocumentsProps {
 const PropertyDocuments: React.FC<PropertyDocumentsProps> = ({
   propertyId,
   fileRefreshKey,
-  onUploadComplete
+  onUploadComplete,
 }) => {
   return (
     <Card>
@@ -25,16 +24,16 @@ const PropertyDocuments: React.FC<PropertyDocumentsProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <FileUpload 
-          propertyId={propertyId} 
-          onUploadComplete={onUploadComplete} 
+        <FileUpload
+          propertyId={propertyId}
+          onUploadComplete={onUploadComplete}
         />
-        
+
         <div className="border-t pt-4">
           <h3 className="font-medium text-sm mb-3">Uploaded Documents</h3>
-          <FileList 
+          <FileList
             key={fileRefreshKey}
-            propertyId={propertyId} 
+            propertyId={propertyId}
             onFileDeleted={onUploadComplete}
           />
         </div>

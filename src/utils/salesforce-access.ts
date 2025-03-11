@@ -1,5 +1,5 @@
-import { supabase } from '@/integrations/supabase-client';
-import { logger } from '@/utils/logger';
+import { supabase } from "@/integrations/supabase-client";
+import { logger } from "@/utils/logger";
 
 /**
  * A centralized Salesforce data access module that uses the unified Supabase client
@@ -27,12 +27,18 @@ export const querySalesforceTable = async (tableName: string, limit = 100) => {
  * @param campusId Optional campus ID to filter by
  * @returns Weekly lead count data
  */
-export const getWeeklyLeadCounts = async (startDate: string, endDate: string, campusId = null) => {
-  logger.info(`Fetching weekly lead counts from ${startDate} to ${endDate}, campus ID: ${campusId || 'all'}`);
-  return await supabase.executeRPC('get_weekly_lead_counts', {
+export const getWeeklyLeadCounts = async (
+  startDate: string,
+  endDate: string,
+  campusId = null,
+) => {
+  logger.info(
+    `Fetching weekly lead counts from ${startDate} to ${endDate}, campus ID: ${campusId || "all"}`,
+  );
+  return await supabase.executeRPC("get_weekly_lead_counts", {
     start_date: startDate,
     end_date: endDate,
-    campus_filter: campusId
+    campus_filter: campusId,
   });
 };
 
@@ -43,10 +49,12 @@ export const getWeeklyLeadCounts = async (startDate: string, endDate: string, ca
  * @returns Daily lead count data
  */
 export const getDailyLeadCount = async (days = 30, campusId = null) => {
-  logger.info(`Fetching daily lead count for past ${days} days, campus ID: ${campusId || 'all'}`);
-  return await supabase.executeRPC('get_daily_lead_count', {
+  logger.info(
+    `Fetching daily lead count for past ${days} days, campus ID: ${campusId || "all"}`,
+  );
+  return await supabase.executeRPC("get_daily_lead_count", {
     p_days: days,
-    p_campus_id: campusId
+    p_campus_id: campusId,
   });
 };
 
@@ -57,10 +65,12 @@ export const getDailyLeadCount = async (days = 30, campusId = null) => {
  * @returns Lead to win conversion data
  */
 export const getLeadToWinConversion = async (campusId = null, months = 12) => {
-  logger.info(`Fetching lead to win conversion for past ${months} months, campus ID: ${campusId || 'all'}`);
-  return await supabase.executeRPC('get_lead_to_win_conversion', {
+  logger.info(
+    `Fetching lead to win conversion for past ${months} months, campus ID: ${campusId || "all"}`,
+  );
+  return await supabase.executeRPC("get_lead_to_win_conversion", {
     p_campus_id: campusId,
-    p_months: months
+    p_months: months,
   });
 };
 
@@ -70,9 +80,11 @@ export const getLeadToWinConversion = async (campusId = null, months = 12) => {
  * @returns Week over week comparison data
  */
 export const getWeekOverWeekComparison = async (campusId = null) => {
-  logger.info(`Fetching week over week comparison, campus ID: ${campusId || 'all'}`);
-  return await supabase.executeRPC('get_week_over_week_comparison', {
-    p_campus_id: campusId
+  logger.info(
+    `Fetching week over week comparison, campus ID: ${campusId || "all"}`,
+  );
+  return await supabase.executeRPC("get_week_over_week_comparison", {
+    p_campus_id: campusId,
   });
 };
 
@@ -85,7 +97,7 @@ export const getWeekOverWeekComparison = async (campusId = null) => {
  * @returns Connection test results with schema access details
  */
 export const testConnection = async () => {
-  logger.info('Testing Supabase connection and schema access');
+  logger.info("Testing Supabase connection and schema access");
   return await supabase.testConnection();
 };
 
@@ -94,60 +106,65 @@ export const testConnection = async () => {
  * @returns Detailed information about schema access
  */
 export const troubleshootSchemaAccess = async () => {
-  logger.info('Troubleshooting schema access issues');
+  logger.info("Troubleshooting schema access issues");
   try {
     // Check for public schema access
     const { data: publicData, error: publicError } = await supabase
-      .from('campuses')
-      .select('count')
+      .from("campuses")
+      .select("count")
       .limit(1);
-    
+
     const publicSchemaAccessible = !publicError;
-    
+
     // Check if Salesforce tables are accessible
     let salesforceAccessible = false;
     let salesforceTablesAccessible = false;
-    
+
     try {
-      const { data, error } = await supabase.rpc('test_schema_exists', { schema_name: 'fivetran_views' });
+      const { data, error } = await supabase.rpc("test_schema_exists", {
+        schema_name: "fivetran_views",
+      });
       salesforceAccessible = !error && !!data;
     } catch (error) {
-      logger.warn('Error checking fivetran_views schema:', error);
+      logger.warn("Error checking fivetran_views schema:", error);
     }
-    
+
     try {
-      const { data, error } = await supabase.rpc('check_schema_tables', { schema_name: 'fivetran_views' });
-      salesforceTablesAccessible = !error && Array.isArray(data) && data.length > 0;
+      const { data, error } = await supabase.rpc("check_schema_tables", {
+        schema_name: "fivetran_views",
+      });
+      salesforceTablesAccessible =
+        !error && Array.isArray(data) && data.length > 0;
     } catch (error) {
-      logger.warn('Error checking fivetran_views tables:', error);
+      logger.warn("Error checking fivetran_views tables:", error);
     }
-    
+
     // List available schemas
     let availableSchemas = [];
     try {
-      const { data, error } = await supabase.rpc('list_schemas');
+      const { data, error } = await supabase.rpc("list_schemas");
       if (!error && Array.isArray(data)) {
         availableSchemas = data;
       }
     } catch (error) {
-      logger.warn('Error listing schemas:', error);
+      logger.warn("Error listing schemas:", error);
     }
-    
+
     // Test schemas
     const schemas = {
       public: { accessible: publicSchemaAccessible },
-      fivetran_views: { accessible: salesforceAccessible }
+      fivetran_views: { accessible: salesforceAccessible },
     };
-    
+
     return {
       success: publicSchemaAccessible,
       schemas,
       salesforceAccessible,
       salesforceTablesAccessible,
-      availableSchemas
+      availableSchemas,
     };
   } catch (error) {
-    logger.error('Error troubleshooting schema access:', error);
+    logger.error("Error troubleshooting schema access:", error);
     return { success: false, error };
   }
 };
@@ -170,39 +187,39 @@ export const testCrossSchemaMethods = async (): Promise<{
 }> => {
   // List of functions to test
   const functions = [
-    'get_daily_lead_count',
-    'get_lead_to_win_conversion',
-    'get_monthly_lead_trends',
-    'get_monthly_opportunity_trends',
-    'get_sales_cycle_by_campus',
-    'get_weekly_lead_counts'
+    "get_daily_lead_count",
+    "get_lead_to_win_conversion",
+    "get_monthly_lead_trends",
+    "get_monthly_opportunity_trends",
+    "get_sales_cycle_by_campus",
+    "get_weekly_lead_counts",
   ];
 
   logger.info("Testing cross-schema functions...");
   const results: FunctionTestResult = {};
-  
+
   for (const func of functions) {
     try {
       const { success, data, error } = await supabase.executeRPC(func);
-      results[func] = { 
-        success, 
-        error: error?.message, 
-        dataReceived: !!data 
+      results[func] = {
+        success,
+        error: error?.message,
+        dataReceived: !!data,
       };
       logger.info(`Function ${func}:`, results[func]);
     } catch (err) {
       const error = err as Error;
       logger.error(`Error calling function ${func}:`, error);
-      results[func] = { 
-        success: false, 
-        error: error.message 
+      results[func] = {
+        success: false,
+        error: error.message,
       };
     }
   }
 
   logger.info("Cross-schema function tests complete");
   return {
-    success: Object.values(results).some(r => r.success),
-    results
+    success: Object.values(results).some((r) => r.success),
+    results,
   };
 };

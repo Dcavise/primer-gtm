@@ -1,11 +1,11 @@
-import { RouteObject } from 'react-router-dom';
-import { FeatureRoutes } from '../common/routes';
+import { RouteObject } from "react-router-dom";
+import { FeatureRoutes } from "../common/routes";
 
 // Empty routes array since PL Hiring was removed
 const salesforceRoutes: RouteObject[] = [];
 
 export const salesforceFeature: FeatureRoutes = {
-  id: 'salesforce',
+  id: "salesforce",
   routes: salesforceRoutes,
-  navItems: [] // Removed PL Hiring navigation item
+  navItems: [], // Removed PL Hiring navigation item
 };

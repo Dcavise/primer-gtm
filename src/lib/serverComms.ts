@@ -1,5 +1,5 @@
-import { supabase } from '@/integrations/supabase-client';
-import axios from 'axios';
+import { supabase } from "@/integrations/supabase-client";
+import axios from "axios";
 import { toast } from "sonner";
 import { Coordinates } from "@/types";
 
@@ -7,7 +7,8 @@ import { Coordinates } from "@/types";
 export const SUPABASE_URL = "https://pudncilureqpzxrxfupr.supabase.co";
 
 // Google Sheets Service Account Email
-export const GOOGLE_SHEETS_SERVICE_ACCOUNT_EMAIL = "primer-sheets-sync@primer-sheets-379223.iam.gserviceaccount.com";
+export const GOOGLE_SHEETS_SERVICE_ACCOUNT_EMAIL =
+  "primer-sheets-sync@primer-sheets-379223.iam.gserviceaccount.com";
 
 // Set up a default axios instance
 export const api = axios.create();
@@ -20,37 +21,45 @@ export const api = axios.create();
 export async function getApiKey(keyName: string): Promise<string> {
   try {
     console.log(`Fetching ${keyName} API key via POST method`);
-    
+
     // First try using POST method
-    const { data, error } = await supabase.functions.invoke('get-api-keys', {
-      body: { key: keyName }
+    const { data, error } = await supabase.functions.invoke("get-api-keys", {
+      body: { key: keyName },
     });
-    
+
     if (error) {
       console.warn(`POST method failed for ${keyName} API key:`, error.message);
-      
+
       // If POST fails, try using GET method as fallback
       console.log(`Falling back to GET method for ${keyName} API key`);
-      const getResponse = await supabase.functions.invoke(`get-api-keys?key=${keyName}`, {
-        method: 'GET'
-      });
-      
+      const getResponse = await supabase.functions.invoke(
+        `get-api-keys?key=${keyName}`,
+        {
+          method: "GET",
+        },
+      );
+
       if (getResponse.error) {
-        console.error(`GET method also failed for ${keyName} API key:`, getResponse.error.message);
-        throw new Error(`Error fetching ${keyName} API key with GET: ${getResponse.error.message}`);
+        console.error(
+          `GET method also failed for ${keyName} API key:`,
+          getResponse.error.message,
+        );
+        throw new Error(
+          `Error fetching ${keyName} API key with GET: ${getResponse.error.message}`,
+        );
       }
-      
+
       if (!getResponse.data || !getResponse.data.key) {
         throw new Error(`No API key returned for ${keyName}`);
       }
-      
+
       return getResponse.data.key;
     }
-    
+
     if (!data || !data.key) {
       throw new Error(`No API key returned for ${keyName}`);
     }
-    
+
     return data.key;
   } catch (error) {
     console.error(`Failed to retrieve ${keyName} API key:`, error);
@@ -62,60 +71,68 @@ export async function getApiKey(keyName: string): Promise<string> {
 /**
  * Geocode an address using Google Maps API via Supabase function
  */
-export const geocodeAddress = async (address: string): Promise<{ 
+export const geocodeAddress = async (
+  address: string,
+): Promise<{
   address: string;
   coordinates: Coordinates;
 } | null> => {
   try {
     console.log(`Geocoding address: ${address}`);
-    
+
     // Improved error handling and logging
-    if (!address || address.trim() === '') {
+    if (!address || address.trim() === "") {
       toast.error("Invalid address", {
-        description: "Please provide a valid address to search."
+        description: "Please provide a valid address to search.",
       });
       return null;
     }
-    
+
     // Make API request to our supabase function
     console.log(`Using Supabase edge function to geocode address`);
-    
-    const { data, error } = await supabase.functions.invoke('geocode-address', {
-      body: { address }
+
+    const { data, error } = await supabase.functions.invoke("geocode-address", {
+      body: { address },
     });
-    
+
     if (error) {
       console.error(`Geocoding edge function error:`, error);
       toast.error("Geocoding failed", {
-        description: error.message || "Could not find coordinates for the provided address."
+        description:
+          error.message ||
+          "Could not find coordinates for the provided address.",
       });
       return null;
     }
-    
+
     if (!data || !data.coordinates) {
       console.error("Invalid geocoding result structure:", data);
       toast.error("Address location error", {
-        description: "The system couldn't determine exact coordinates for this address."
+        description:
+          "The system couldn't determine exact coordinates for this address.",
       });
       return null;
     }
-    
-    console.log(`Successfully geocoded address to: ${data.formattedAddress} (${data.coordinates.lat}, ${data.coordinates.lng})`);
-    
+
+    console.log(
+      `Successfully geocoded address to: ${data.formattedAddress} (${data.coordinates.lat}, ${data.coordinates.lng})`,
+    );
+
     return {
       address: data.formattedAddress || address,
       coordinates: {
         lat: data.coordinates.lat,
-        lng: data.coordinates.lng
-      }
+        lng: data.coordinates.lng,
+      },
     };
   } catch (error) {
     console.error("Error geocoding address:", error);
-    
+
     toast.error("Geocoding failed", {
-      description: "Could not find coordinates for the provided address. Please check the address and try again."
+      description:
+        "Could not find coordinates for the provided address. Please check the address and try again.",
     });
-    
+
     return null;
   }
 };
@@ -125,30 +142,31 @@ export const geocodeAddress = async (address: string): Promise<{
  */
 export const createBoundingBox = (
   center: Coordinates,
-  radiusInMeters: number
+  radiusInMeters: number,
 ): {
   bottomLeft: Coordinates;
   topRight: Coordinates;
 } => {
   // Earth's radius in meters
   const earthRadius = 6378137;
-  
+
   // Convert radius from meters to degrees
-  const radiusInDegrees = radiusInMeters / earthRadius * (180 / Math.PI);
-  
+  const radiusInDegrees = (radiusInMeters / earthRadius) * (180 / Math.PI);
+
   // Calculate the bounding box
   return {
     bottomLeft: {
       lat: center.lat - radiusInDegrees,
-      lng: center.lng - radiusInDegrees / Math.cos(center.lat * Math.PI / 180)
+      lng:
+        center.lng - radiusInDegrees / Math.cos((center.lat * Math.PI) / 180),
     },
     topRight: {
       lat: center.lat + radiusInDegrees,
-      lng: center.lng + radiusInDegrees / Math.cos(center.lat * Math.PI / 180)
-    }
+      lng:
+        center.lng + radiusInDegrees / Math.cos((center.lat * Math.PI) / 180),
+    },
   };
 };
-
 
 /**
  * Check database connection status
@@ -157,10 +175,10 @@ export const createBoundingBox = (
 export const checkDatabaseConnection = async () => {
   const MAX_RETRIES = 3;
   const RETRY_DELAY = 1000; // 1 second
-  
+
   // Helper function to add delay
-  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-  
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
   // Helper function for retry logic
   const retryOperation = async (operation, retries) => {
     try {
@@ -169,67 +187,90 @@ export const checkDatabaseConnection = async () => {
       if (retries <= 0) {
         throw error;
       }
-      
+
       await delay(RETRY_DELAY);
       return retryOperation(operation, retries - 1);
     }
   };
-  
+
   try {
     // First check public schema access with retry
     const publicCheckOperation = async () => {
       const publicCheck = await supabase
-        .from('campuses')
-        .select('count')
+        .from("campuses")
+        .select("count")
         .limit(1);
-      
+
       if (publicCheck.error) {
-        console.error("Public schema connectivity check failed:", publicCheck.error);
+        console.error(
+          "Public schema connectivity check failed:",
+          publicCheck.error,
+        );
         throw publicCheck.error;
       }
-      
+
       return true;
     };
-    
+
     let publicSchemaAccess = false;
     try {
-      publicSchemaAccess = await retryOperation(publicCheckOperation, MAX_RETRIES);
+      publicSchemaAccess = await retryOperation(
+        publicCheckOperation,
+        MAX_RETRIES,
+      );
     } catch (error) {
       console.error("Public schema access failed after retries:", error);
-      return { connected: false, schemas: { public: false, salesforce: false }};
+      return {
+        connected: false,
+        schemas: { public: false, salesforce: false },
+      };
     }
-    
+
     // Then check salesforce schema access
     let salesforceAccess = false;
     try {
       // Use an RPC function that attempts to access the salesforce schema
       const salesforceCheckOperation = async () => {
-        const salesforceCheck = await supabase.rpc('test_salesforce_connection');
-        
+        const salesforceCheck = await supabase.rpc(
+          "test_salesforce_connection",
+        );
+
         if (salesforceCheck.error) {
-          console.error("Salesforce schema connectivity check failed:", salesforceCheck.error);
+          console.error(
+            "Salesforce schema connectivity check failed:",
+            salesforceCheck.error,
+          );
           throw salesforceCheck.error;
         }
-        
+
         return salesforceCheck.data?.salesforce_schema_access === true;
       };
-      
-      salesforceAccess = await retryOperation(salesforceCheckOperation, MAX_RETRIES);
+
+      salesforceAccess = await retryOperation(
+        salesforceCheckOperation,
+        MAX_RETRIES,
+      );
     } catch (schemaError) {
-      console.error("Salesforce schema access check failed after retries:", schemaError);
+      console.error(
+        "Salesforce schema access check failed after retries:",
+        schemaError,
+      );
       // Continue even if this fails - we still have public schema access
     }
-    
+
     // Return results
-    return { 
-      connected: publicSchemaAccess, 
-      schemas: { 
-        public: publicSchemaAccess, 
-        salesforce: salesforceAccess 
-      }
+    return {
+      connected: publicSchemaAccess,
+      schemas: {
+        public: publicSchemaAccess,
+        salesforce: salesforceAccess,
+      },
     };
   } catch (error) {
-    console.error("Unexpected error during database connectivity check:", error);
-    return { connected: false, schemas: { public: false, salesforce: false }};
+    console.error(
+      "Unexpected error during database connectivity check:",
+      error,
+    );
+    return { connected: false, schemas: { public: false, salesforce: false } };
   }
-}; 
+};

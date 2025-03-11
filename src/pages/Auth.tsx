@@ -1,16 +1,15 @@
-
-import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import AuthLayout from '@/components/auth/AuthLayout';
-import LoginForm from '@/components/auth/LoginForm';
-import SignupForm from '@/components/auth/SignupForm';
+import React, { useState } from "react";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import AuthLayout from "@/components/auth/AuthLayout";
+import LoginForm from "@/components/auth/LoginForm";
+import SignupForm from "@/components/auth/SignupForm";
 
 const Auth = () => {
   const { user, loading } = useAuth();
-  const [activeTab, setActiveTab] = useState('signin');
+  const [activeTab, setActiveTab] = useState("signin");
 
   // If already authenticated, redirect to home
   if (user && !loading) {
@@ -26,8 +25,8 @@ const Auth = () => {
   }
 
   return (
-    <AuthLayout 
-      title="Primer Property Explorer" 
+    <AuthLayout
+      title="Primer Property Explorer"
       description="Access your property research tools"
     >
       <Card>
@@ -36,11 +35,11 @@ const Auth = () => {
             <TabsTrigger value="signin">Sign In</TabsTrigger>
             <TabsTrigger value="signup">Register</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="signin">
             <LoginForm />
           </TabsContent>
-          
+
           <TabsContent value="signup">
             <SignupForm />
           </TabsContent>

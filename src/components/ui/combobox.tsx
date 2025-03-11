@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import { Check } from "lucide-react";
 
@@ -72,7 +71,7 @@ export function ComboBox({
               <Check
                 className={cn(
                   "mr-2 h-4 w-4",
-                  !value ? "opacity-100" : "opacity-0"
+                  !value ? "opacity-100" : "opacity-0",
                 )}
               />
               --None--
@@ -87,14 +86,16 @@ export function ComboBox({
                 }}
                 className={cn(
                   "cursor-pointer",
-                  value === option.value ? "bg-accent text-accent-foreground" : ""
+                  value === option.value
+                    ? "bg-accent text-accent-foreground"
+                    : "",
                 )}
               >
                 <div className="flex items-center w-full">
                   <Check
                     className={cn(
                       "mr-2 h-4 w-4",
-                      value === option.value ? "opacity-100" : "opacity-0"
+                      value === option.value ? "opacity-100" : "opacity-0",
                     )}
                   />
                   <span>{option.label}</span>

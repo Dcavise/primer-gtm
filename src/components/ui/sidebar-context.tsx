@@ -12,7 +12,9 @@ export interface SidebarContextProps {
   animate: boolean;
 }
 
-const SidebarContext = createContext<SidebarContextProps | undefined>(undefined);
+const SidebarContext = createContext<SidebarContextProps | undefined>(
+  undefined,
+);
 
 /**
  * Hook to access sidebar state
@@ -24,12 +26,14 @@ export const useSidebar = () => {
   if (!context) {
     throw new Error("useSidebar must be used within a SidebarProvider");
   }
-  
+
   // Always force sidebar to be expanded regardless of actual state
   return {
     ...context,
     open: true,
-    setOpen: (_: boolean) => { /* No-op function to prevent sidebar collapse */ }
+    setOpen: (_: boolean) => {
+      /* No-op function to prevent sidebar collapse */
+    },
   };
 };
 
@@ -53,7 +57,9 @@ export const SidebarProvider = ({
 
   // Force open to always be true regardless of props
   const open = true;
-  const setOpen = (_: boolean) => { /* No-op function */ };
+  const setOpen = (_: boolean) => {
+    /* No-op function */
+  };
 
   return (
     <SidebarContext.Provider value={{ open, setOpen, animate }}>

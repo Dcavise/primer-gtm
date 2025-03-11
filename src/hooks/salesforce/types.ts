@@ -1,4 +1,4 @@
-import { Campus as BaseCampus } from '@/types';
+import { Campus as BaseCampus } from "@/types";
 
 export interface SummaryStats {
   fellowsCount: number;
@@ -31,9 +31,9 @@ export interface Campus extends BaseCampus {
 }
 
 export interface SyncStatus {
-  leads: 'idle' | 'loading' | 'success' | 'error';
-  opportunities: 'idle' | 'loading' | 'success' | 'error';
-  fellows: 'idle' | 'loading' | 'success' | 'error';
+  leads: "idle" | "loading" | "success" | "error";
+  opportunities: "idle" | "loading" | "success" | "error";
+  fellows: "idle" | "loading" | "success" | "error";
 }
 
 export interface MetricChange {

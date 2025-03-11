@@ -1,17 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { Edit, Save, X } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LoadingState } from '@/components/LoadingState';
-import { RealEstateProperty, PropertyPhase, BooleanStatus } from '@/types/realEstate';
-import { SafeSimplePhaseSelector } from './SafeSimplePhaseSelector';
-import { BooleanStatusSelector } from './BooleanStatusSelector';
-import { supabase } from '@/integrations/supabase-client';
-import { toast } from 'sonner';
-import { fieldValidators } from '@/schemas/propertySchema';
-import { ErrorBoundary } from '@/components/error-boundary';
+import React, { useState, useEffect } from "react";
+import { Edit, Save, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LoadingState } from "@/components/LoadingState";
+import {
+  RealEstateProperty,
+  PropertyPhase,
+  BooleanStatus,
+} from "@/types/realEstate";
+import { SafeSimplePhaseSelector } from "./SafeSimplePhaseSelector";
+import { BooleanStatusSelector } from "./BooleanStatusSelector";
+import { supabase } from "@/integrations/supabase-client";
+import { toast } from "sonner";
+import { fieldValidators } from "@/schemas/propertySchema";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 interface PropertyBasicInfoProps {
   property: RealEstateProperty;
@@ -20,40 +24,47 @@ interface PropertyBasicInfoProps {
 
 const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
   property,
-  onPropertyUpdated
+  onPropertyUpdated,
 }) => {
   // Individual field edit states
-  const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
+  const [editingFields, setEditingFields] = useState<Record<string, boolean>>(
+    {},
+  );
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
   // Fix the type definition to include PropertyPhase, string, null, and number
-  const [fieldValues, setFieldValues] = useState<Record<string, string | null | PropertyPhase | number | BooleanStatus>>({});
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [fieldValues, setFieldValues] = useState<
+    Record<string, string | null | PropertyPhase | number | BooleanStatus>
+  >({});
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
 
   // Initialize field values when property changes
   useEffect(() => {
     if (property) {
       setFieldValues({
-        phase: property.phase || '',
-        sf_available: property.sf_available || '',
-        zoning: property.zoning || '',
-        permitted_use: property.permitted_use || '',
-        parking: property.parking || '',
-        fire_sprinklers: property.fire_sprinklers || '',
-        fiber: property.fiber || '',
+        phase: property.phase || "",
+        sf_available: property.sf_available || "",
+        zoning: property.zoning || "",
+        permitted_use: property.permitted_use || "",
+        parking: property.parking || "",
+        fire_sprinklers: property.fire_sprinklers || "",
+        fiber: property.fiber || "",
       });
     }
   }, [property]);
 
   const validateField = (fieldName: string, value: any): boolean => {
     // Get the validator for this field from our schema
-    const validator = fieldValidators[fieldName as keyof typeof fieldValidators];
+    const validator =
+      fieldValidators[fieldName as keyof typeof fieldValidators];
     if (!validator) return true; // No validator defined for this field
-    
+
     try {
       // Validate the value against the schema
       validator.parse(value);
       // Clear any existing validation error for this field
-      setValidationErrors(prev => {
+      setValidationErrors((prev) => {
         const updated = { ...prev };
         delete updated[fieldName];
         return updated;
@@ -62,14 +73,14 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
     } catch (error) {
       console.error(`Validation error for ${fieldName}:`, error);
       if (error instanceof Error) {
-        setValidationErrors(prev => ({
+        setValidationErrors((prev) => ({
           ...prev,
-          [fieldName]: error.message
+          [fieldName]: error.message,
         }));
       } else {
-        setValidationErrors(prev => ({
+        setValidationErrors((prev) => ({
           ...prev,
-          [fieldName]: 'Invalid value'
+          [fieldName]: "Invalid value",
         }));
       }
       return false;
@@ -77,108 +88,117 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
   };
 
   const handleEditField = (fieldName: string) => {
-    setEditingFields(prev => ({ ...prev, [fieldName]: true }));
+    setEditingFields((prev) => ({ ...prev, [fieldName]: true }));
     // Type assertion for phase field
-    if (fieldName === 'phase') {
-      setFieldValues(prev => ({ 
-        ...prev, 
-        [fieldName]: property.phase || '' as PropertyPhase | ''
+    if (fieldName === "phase") {
+      setFieldValues((prev) => ({
+        ...prev,
+        [fieldName]: property.phase || ("" as PropertyPhase | ""),
       }));
-    } else if (fieldName === 'fire_sprinklers' || fieldName === 'fiber') {
-      setFieldValues(prev => ({ 
-        ...prev, 
-        [fieldName]: property[fieldName as keyof RealEstateProperty] as BooleanStatus || '' 
+    } else if (fieldName === "fire_sprinklers" || fieldName === "fiber") {
+      setFieldValues((prev) => ({
+        ...prev,
+        [fieldName]:
+          (property[fieldName as keyof RealEstateProperty] as BooleanStatus) ||
+          "",
       }));
     } else {
-      setFieldValues(prev => ({ 
-        ...prev, 
-        [fieldName]: property[fieldName as keyof RealEstateProperty] || '' 
+      setFieldValues((prev) => ({
+        ...prev,
+        [fieldName]: property[fieldName as keyof RealEstateProperty] || "",
       }));
     }
   };
 
   const handleCancelField = (fieldName: string) => {
-    setEditingFields(prev => ({ ...prev, [fieldName]: false }));
+    setEditingFields((prev) => ({ ...prev, [fieldName]: false }));
     // Clear any validation errors for this field
-    setValidationErrors(prev => {
+    setValidationErrors((prev) => {
       const updated = { ...prev };
       delete updated[fieldName];
       return updated;
     });
-    
+
     // Type assertion for phase field
-    if (fieldName === 'phase') {
-      setFieldValues(prev => ({ 
-        ...prev, 
-        [fieldName]: property.phase || '' as PropertyPhase | ''
+    if (fieldName === "phase") {
+      setFieldValues((prev) => ({
+        ...prev,
+        [fieldName]: property.phase || ("" as PropertyPhase | ""),
       }));
-    } else if (fieldName === 'fire_sprinklers' || fieldName === 'fiber') {
-      setFieldValues(prev => ({ 
-        ...prev, 
-        [fieldName]: property[fieldName as keyof RealEstateProperty] as BooleanStatus || '' 
+    } else if (fieldName === "fire_sprinklers" || fieldName === "fiber") {
+      setFieldValues((prev) => ({
+        ...prev,
+        [fieldName]:
+          (property[fieldName as keyof RealEstateProperty] as BooleanStatus) ||
+          "",
       }));
     } else {
-      setFieldValues(prev => ({ 
-        ...prev, 
-        [fieldName]: property[fieldName as keyof RealEstateProperty] || '' 
+      setFieldValues((prev) => ({
+        ...prev,
+        [fieldName]: property[fieldName as keyof RealEstateProperty] || "",
       }));
     }
   };
 
   const handleFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFieldValues(prev => ({ ...prev, [name]: value }));
-    validateField(name, value === '' ? null : value);
+    setFieldValues((prev) => ({ ...prev, [name]: value }));
+    validateField(name, value === "" ? null : value);
   };
 
-  const handlePhaseFieldChange = (value: PropertyPhase | '') => {
+  const handlePhaseFieldChange = (value: PropertyPhase | "") => {
     console.log("Selected phase:", value);
-    setFieldValues(prev => ({ ...prev, phase: value || null }));
-    validateField('phase', value === '' ? null : value);
+    setFieldValues((prev) => ({ ...prev, phase: value || null }));
+    validateField("phase", value === "" ? null : value);
   };
 
-  const handleBooleanStatusFieldChange = (fieldName: 'fire_sprinklers' | 'fiber', value: BooleanStatus | '') => {
+  const handleBooleanStatusFieldChange = (
+    fieldName: "fire_sprinklers" | "fiber",
+    value: BooleanStatus | "",
+  ) => {
     console.log(`Selected ${fieldName}:`, value);
-    setFieldValues(prev => ({ ...prev, [fieldName]: value || null }));
-    validateField(fieldName, value === '' ? null : value);
+    setFieldValues((prev) => ({ ...prev, [fieldName]: value || null }));
+    validateField(fieldName, value === "" ? null : value);
   };
 
   const handleSaveField = async (fieldName: string) => {
     if (!property.id) return;
-    
+
     // Get the value to validate
-    const valueToValidate = fieldName === 'phase' && fieldValues[fieldName] === '' 
-      ? null 
-      : fieldValues[fieldName];
-    
+    const valueToValidate =
+      fieldName === "phase" && fieldValues[fieldName] === ""
+        ? null
+        : fieldValues[fieldName];
+
     // Validate the field value before saving
     const isValid = validateField(fieldName, valueToValidate);
-    
+
     if (!isValid) {
       toast.error(`Invalid ${fieldName}: ${validationErrors[fieldName]}`);
       return;
     }
-    
-    setSavingFields(prev => ({ ...prev, [fieldName]: true }));
-    
+
+    setSavingFields((prev) => ({ ...prev, [fieldName]: true }));
+
     try {
       console.log(`Saving ${fieldName} with value:`, fieldValues[fieldName]);
-      
+
       // For the phase field, handle empty string as null for the database
-      const valueToSave = fieldName === 'phase' && fieldValues[fieldName] === '' 
-        ? null 
-        : fieldValues[fieldName];
-      
+      const valueToSave =
+        fieldName === "phase" && fieldValues[fieldName] === ""
+          ? null
+          : fieldValues[fieldName];
+
       const { error } = await supabase
-        .from('real_estate_pipeline')
+        .from("real_estate_pipeline")
         .update({ [fieldName]: valueToSave })
-        .eq('id', property.id);
-      
+        .eq("id", property.id);
+
       if (error) {
         console.error(`Error saving ${fieldName}:`, error);
         toast.error(`Failed to save ${fieldName}`);
       } else {
-        setEditingFields(prev => ({ ...prev, [fieldName]: false }));
+        setEditingFields((prev) => ({ ...prev, [fieldName]: false }));
         toast.success(`${fieldName} updated successfully`);
         onPropertyUpdated();
       }
@@ -186,23 +206,27 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
       console.error(`Error saving ${fieldName}:`, error);
       toast.error(`Failed to save ${fieldName}`);
     } finally {
-      setSavingFields(prev => ({ ...prev, [fieldName]: false }));
+      setSavingFields((prev) => ({ ...prev, [fieldName]: false }));
     }
   };
 
-  const renderField = (fieldName: string, label: string, type: string = 'text') => {
+  const renderField = (
+    fieldName: string,
+    label: string,
+    type: string = "text",
+  ) => {
     const isFieldEditing = editingFields[fieldName];
     const isFieldSaving = savingFields[fieldName];
     const hasError = validationErrors[fieldName];
-    
+
     return (
       <div className="space-y-1">
         <div className="flex justify-between items-center">
           <p className="text-sm text-muted-foreground">{label}</p>
           {!isFieldEditing && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => handleEditField(fieldName)}
               className="h-6 px-2"
             >
@@ -210,33 +234,31 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
             </Button>
           )}
         </div>
-        
+
         {isFieldEditing ? (
           <div className="space-y-2">
-            <Input 
-              name={fieldName} 
-              value={fieldValues[fieldName] || ''} 
+            <Input
+              name={fieldName}
+              value={fieldValues[fieldName] || ""}
               onChange={handleFieldChange}
               placeholder={`Enter ${label.toLowerCase()}`}
               type={type}
               className={hasError ? "border-red-500" : ""}
             />
-            {hasError && (
-              <p className="text-xs text-red-500">{hasError}</p>
-            )}
+            {hasError && <p className="text-xs text-red-500">{hasError}</p>}
             <div className="flex justify-end space-x-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => handleCancelField(fieldName)}
                 disabled={isFieldSaving}
                 className="h-7 px-2 text-xs"
               >
                 <X className="h-3 w-3 mr-1" /> Cancel
               </Button>
-              <Button 
-                variant="default" 
-                size="sm" 
+              <Button
+                variant="default"
+                size="sm"
                 onClick={() => handleSaveField(fieldName)}
                 disabled={isFieldSaving || Boolean(hasError)}
                 className="h-7 px-2 text-xs"
@@ -253,9 +275,10 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
           </div>
         ) : (
           <p className="font-medium">
-            {fieldName === 'sf_available' && property[fieldName] 
-              ? `${property[fieldName]} sq ft` 
-              : (property[fieldName as keyof RealEstateProperty] || 'Not specified')}
+            {fieldName === "sf_available" && property[fieldName]
+              ? `${property[fieldName]} sq ft`
+              : property[fieldName as keyof RealEstateProperty] ||
+                "Not specified"}
           </p>
         )}
       </div>
@@ -263,19 +286,19 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
   };
 
   const renderPhaseField = () => {
-    const fieldName = 'phase';
+    const fieldName = "phase";
     const isFieldEditing = editingFields[fieldName];
     const isFieldSaving = savingFields[fieldName];
     const hasError = validationErrors[fieldName];
-    
+
     return (
       <div className="space-y-1">
         <div className="flex justify-between items-center">
           <p className="text-sm text-muted-foreground">Phase</p>
           {!isFieldEditing && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => handleEditField(fieldName)}
               className="h-6 px-2"
             >
@@ -283,7 +306,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
             </Button>
           )}
         </div>
-        
+
         {isFieldEditing ? (
           <div className="space-y-2">
             <ErrorBoundary>
@@ -293,22 +316,20 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
                 disabled={isFieldSaving}
               />
             </ErrorBoundary>
-            {hasError && (
-              <p className="text-xs text-red-500">{hasError}</p>
-            )}
+            {hasError && <p className="text-xs text-red-500">{hasError}</p>}
             <div className="flex justify-end space-x-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => handleCancelField(fieldName)}
                 disabled={isFieldSaving}
                 className="h-7 px-2 text-xs"
               >
                 <X className="h-3 w-3 mr-1" /> Cancel
               </Button>
-              <Button 
-                variant="default" 
-                size="sm" 
+              <Button
+                variant="default"
+                size="sm"
                 onClick={() => handleSaveField(fieldName)}
                 disabled={isFieldSaving || Boolean(hasError)}
                 className="h-7 px-2 text-xs"
@@ -324,25 +345,28 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
             </div>
           </div>
         ) : (
-          <p className="font-medium">{property?.phase || 'Not specified'}</p>
+          <p className="font-medium">{property?.phase || "Not specified"}</p>
         )}
       </div>
     );
   };
 
-  const renderBooleanStatusField = (fieldName: 'fire_sprinklers' | 'fiber', label: string) => {
+  const renderBooleanStatusField = (
+    fieldName: "fire_sprinklers" | "fiber",
+    label: string,
+  ) => {
     const isFieldEditing = editingFields[fieldName];
     const isFieldSaving = savingFields[fieldName];
     const hasError = validationErrors[fieldName];
-    
+
     return (
       <div className="space-y-1">
         <div className="flex justify-between items-center">
           <p className="text-sm text-muted-foreground">{label}</p>
           {!isFieldEditing && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => handleEditField(fieldName)}
               className="h-6 px-2"
             >
@@ -350,32 +374,32 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
             </Button>
           )}
         </div>
-        
+
         {isFieldEditing ? (
           <div className="space-y-2">
             <ErrorBoundary>
               <BooleanStatusSelector
                 value={fieldValues[fieldName] as BooleanStatus | null}
-                onValueChange={(value) => handleBooleanStatusFieldChange(fieldName, value)}
+                onValueChange={(value) =>
+                  handleBooleanStatusFieldChange(fieldName, value)
+                }
                 disabled={isFieldSaving}
               />
             </ErrorBoundary>
-            {hasError && (
-              <p className="text-xs text-red-500">{hasError}</p>
-            )}
+            {hasError && <p className="text-xs text-red-500">{hasError}</p>}
             <div className="flex justify-end space-x-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => handleCancelField(fieldName)}
                 disabled={isFieldSaving}
                 className="h-7 px-2 text-xs"
               >
                 <X className="h-3 w-3 mr-1" /> Cancel
               </Button>
-              <Button 
-                variant="default" 
-                size="sm" 
+              <Button
+                variant="default"
+                size="sm"
                 onClick={() => handleSaveField(fieldName)}
                 disabled={isFieldSaving || Boolean(hasError)}
                 className="h-7 px-2 text-xs"
@@ -391,7 +415,9 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
             </div>
           </div>
         ) : (
-          <p className="font-medium">{property[fieldName] || 'Not specified'}</p>
+          <p className="font-medium">
+            {property[fieldName] || "Not specified"}
+          </p>
         )}
       </div>
     );
@@ -400,27 +426,21 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-xl">
-          Property Information
-        </CardTitle>
+        <CardTitle className="text-xl">Property Information</CardTitle>
         {property.market && (
           <div className="mt-2">
-            <Badge variant="outline">
-              {property.market}
-            </Badge>
+            <Badge variant="outline">{property.market}</Badge>
           </div>
         )}
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ErrorBoundary>
-          {renderPhaseField()}
-        </ErrorBoundary>
-        {renderField('sf_available', 'Available Space')}
-        {renderField('zoning', 'Zoning')}
-        {renderField('permitted_use', 'Permitted Use')}
-        {renderField('parking', 'Parking')}
-        {renderBooleanStatusField('fire_sprinklers', 'Fire Sprinklers')}
-        {renderBooleanStatusField('fiber', 'Fiber')}
+        <ErrorBoundary>{renderPhaseField()}</ErrorBoundary>
+        {renderField("sf_available", "Available Space")}
+        {renderField("zoning", "Zoning")}
+        {renderField("permitted_use", "Permitted Use")}
+        {renderField("parking", "Parking")}
+        {renderBooleanStatusField("fire_sprinklers", "Fire Sprinklers")}
+        {renderBooleanStatusField("fiber", "Fiber")}
       </CardContent>
     </Card>
   );
