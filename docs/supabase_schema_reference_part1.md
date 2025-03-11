@@ -1,0 +1,169 @@
+# Supabase Schema Reference - fivetran_views Schema (Part 1)
+
+## 1. Table: account
+- **id** (character varying(18), NOT NULL) - Primary key
+- **is_deleted** (boolean) - Deletion flag
+- **master_record_id** (character varying(18)) - Master record reference
+- **name** (character varying(765)) - Account name
+- **type** (character varying(765)) - Account type
+- **record_type_id** (character varying(18)) - Reference to record type
+- **parent_id** (character varying(18)) - Parent account reference
+- **billing_street** (character varying(765)) - Billing address street
+- **billing_city** (character varying(120)) - Billing address city
+- **billing_state** (character varying(240)) - Billing address state
+- **billing_postal_code** (character varying(60)) - Billing address postal code
+- **billing_country** (character varying(240)) - Billing address country
+- **billing_latitude** (double precision) - Billing address latitude
+- **billing_longitude** (double precision) - Billing address longitude
+- **billing_geocode_accuracy** (character varying(120)) - Billing address geocode accuracy
+- **shipping_street** (character varying(765)) - Shipping address street
+- **shipping_city** (character varying(120)) - Shipping address city
+- **shipping_state** (character varying(240)) - Shipping address state
+- **shipping_postal_code** (character varying(60)) - Shipping address postal code
+- **shipping_country** (character varying(240)) - Shipping address country
+- **shipping_latitude** (double precision) - Shipping address latitude
+- **shipping_longitude** (double precision) - Shipping address longitude
+- **shipping_geocode_accuracy** (character varying(120)) - Shipping address geocode accuracy
+- **phone** (character varying(120)) - Phone number
+- **website** (character varying(765)) - Website URL
+- **photo_url** (character varying(765)) - Photo URL
+- **industry** (character varying(765)) - Industry classification
+- **number_of_employees** (bigint) - Employee count
+- **description** (character varying(96000)) - Account description
+- **owner_id** (character varying(18)) - Owner reference
+- **created_date** (timestamp with time zone) - Creation timestamp
+- **created_by_id** (character varying(18)) - Creator reference
+- **last_modified_date** (timestamp with time zone) - Last modification timestamp
+- **last_modified_by_id** (character varying(18)) - Last modifier reference
+- **system_modstamp** (timestamp with time zone) - System modification timestamp
+- **last_activity_date** (date) - Last activity date
+- **last_viewed_date** (timestamp with time zone) - Last viewed timestamp
+- **last_referenced_date** (timestamp with time zone) - Last referenced timestamp
+- **jigsaw** (character varying(60)) - Jigsaw identifier
+- **jigsaw_company_id** (character varying(60)) - Jigsaw company identifier
+- **account_source** (character varying(765)) - Account source
+- **sic_desc** (character varying(240)) - SIC description
+- **is_priority_record** (boolean) - Priority record flag
+- **typeform_typeform_form_mapping_c** (character varying(18)) - Typeform mapping reference
+- **preferred_campus_c** (character varying(600)) - Preferred campus
+- **da_scoop_composer_account_tags_c** (character varying(4099)) - Account tags
+- **da_scoop_composer_alias_1_c** (character varying(765)) - Account alias 1
+- **da_scoop_composer_alias_2_c** (character varying(765)) - Account alias 2
+- **da_scoop_composer_churned_customer_c** (boolean) - Churned customer flag
+- **da_scoop_composer_domain_1_c** (character varying(765)) - Domain 1
+- **da_scoop_composer_domain_2_c** (character varying(765)) - Domain 2
+- **da_scoop_composer_dont_match_leads_to_this_account_c** (boolean) - Lead matching exclusion flag
+- **da_scoop_composer_engagement_status_c** (character varying(765)) - Engagement status
+- **da_scoop_composer_groove_notes_c** (character varying(98304)) - Groove notes
+- **da_scoop_composer_hash_1_c** (character varying(765)) - Hash 1
+- **da_scoop_composer_hash_2_c** (character varying(765)) - Hash 2
+- **da_scoop_composer_hash_3_c** (character varying(765)) - Hash 3
+- **pdc_family_id_c** (character varying(300)) - PDC family ID
+- **re_enrollment_application_url_c** (character varying(765)) - Re-enrollment application URL
+- **re_enrollment_application_status_c** (character varying(765)) - Re-enrollment application status
+- **slft_re_enrollment_url_c** (character varying(300000)) - Re-enrollment URL (SalesLoft)
+- **completed_financial_aid_application_on_c** (date) - Financial aid application completion date
+- **financial_aid_application_url_c** (character varying(765)) - Financial aid application URL
+- **financial_aid_application_status_c** (character varying(765)) - Financial aid application status
+- **utm_source_c** (character varying(675)) - UTM source
+- **utm_medium_c** (character varying(675)) - UTM medium
+- **utm_campaign_c** (character varying(675)) - UTM campaign
+- **referring_url_c** (character varying(765)) - Referring URL
+- **fbclid_c** (character varying(765)) - Facebook click ID
+- **gclid_c** (character varying(765)) - Google click ID
+- **household_income_range_c** (character varying(675)) - Household income range
+- **potential_student_count_c** (double precision) - Potential student count
+- **first_form_source_c** (character varying(765)) - First form source
+- **discovery_source_c** (character varying(765)) - Discovery source
+- **last_form_source_c** (character varying(765)) - Last form source
+- **utm_term_c** (character varying(765)) - UTM term
+- **previous_state_scholarship_type_c** (character varying(765)) - Previous state scholarship type
+- **interested_in_financial_aid_c** (boolean) - Financial aid interest flag
+- **alternate_campus_interest_c** (character varying(18)) - Alternate campus interest
+- **current_campus_c** (character varying(18)) - Current campus
+- **referring_primer_leader_c** (character varying(18)) - Referring primer leader
+- **handwrytten_sent_c** (boolean) - Handwritten note sent flag
+- **admissions_portal_last_viewed_at_c** (timestamp with time zone) - Admissions portal last viewed
+- **email_alternate_c** (character varying(240)) - Alternate email
+- **tax_status_c** (character varying(18)) - Tax status
+- **_fivetran_deleted** (boolean) - Fivetran deletion flag
+- **_fivetran_synced** (timestamp with time zone) - Fivetran sync timestamp
+- **converted_lead_id_c** (character varying(150)) - Converted lead ID
+- **converted_lead_date_c** (date) - Lead conversion date
+
+## 2. Table: account_contact_relation
+- **id** (character varying(18), NOT NULL) - Primary key
+- **account_id** (character varying(18)) - Account reference
+- **contact_id** (character varying(18)) - Contact reference
+- **roles** (character varying(4099)) - Relationship roles
+- **is_direct** (boolean) - Direct relationship flag
+- **is_active** (boolean) - Active relationship flag
+- **start_date** (date) - Relationship start date
+- **end_date** (date) - Relationship end date
+- **is_deleted** (boolean) - Deletion flag
+- **created_date** (timestamp with time zone) - Creation timestamp
+- **created_by_id** (character varying(18)) - Creator reference
+- **last_modified_date** (timestamp with time zone) - Last modification timestamp
+- **last_modified_by_id** (character varying(18)) - Last modifier reference
+- **system_modstamp** (timestamp with time zone) - System modification timestamp
+- **relationship_strength_c** (character varying(765)) - Relationship strength
+- **_fivetran_deleted** (boolean) - Fivetran deletion flag
+- **_fivetran_synced** (timestamp with time zone) - Fivetran sync timestamp
+
+## 3. Table: account_contact_role
+- **id** (character varying(18), NOT NULL) - Primary key
+- **is_deleted** (boolean) - Deletion flag
+- **created_date** (timestamp with time zone) - Creation timestamp
+- **created_by_id** (character varying(18)) - Creator reference
+- **last_modified_date** (timestamp with time zone) - Last modification timestamp
+- **last_modified_by_id** (character varying(18)) - Last modifier reference
+- **system_modstamp** (timestamp with time zone) - System modification timestamp
+- **account_id** (character varying(18)) - Account reference
+- **contact_id** (character varying(18)) - Contact reference
+- **role** (character varying(120)) - Role name
+- **is_primary** (boolean) - Primary role flag
+- **_fivetran_deleted** (boolean) - Fivetran deletion flag
+- **_fivetran_synced** (timestamp with time zone) - Fivetran sync timestamp
+
+## 4. Table: account_feed
+- **id** (character varying(18), NOT NULL) - Primary key
+- **parent_id** (character varying(18)) - Parent reference
+- **type** (character varying(120)) - Feed type
+- **created_by_id** (character varying(18)) - Creator reference
+- **created_date** (timestamp with time zone) - Creation timestamp
+- **is_deleted** (boolean) - Deletion flag
+- **last_modified_date** (timestamp with time zone) - Last modification timestamp
+- **system_modstamp** (timestamp with time zone) - System modification timestamp
+- **comment_count** (bigint) - Comment count
+- **like_count** (bigint) - Like count
+- **title** (character varying(765)) - Feed title
+- **body** (character varying(30000)) - Feed body
+- **link_url** (character varying(3000)) - Link URL
+- **is_rich_text** (boolean) - Rich text flag
+- **related_record_id** (character varying(18)) - Related record reference
+- **inserted_by_id** (character varying(18)) - Inserter reference
+- **network_scope** (character varying(120)) - Network scope
+- **visibility** (character varying(120)) - Visibility setting
+- **best_comment_id** (character varying(18)) - Best comment reference
+- **_fivetran_deleted** (boolean) - Fivetran deletion flag
+- **_fivetran_synced** (timestamp with time zone) - Fivetran sync timestamp
+
+## 5. Table: account_history
+- **id** (character varying(18), NOT NULL) - Primary key
+- **is_deleted** (boolean) - Deletion flag
+- **account_id** (character varying(18)) - Account reference
+- **created_by_id** (character varying(18)) - Creator reference
+- **created_date** (timestamp with time zone) - Creation timestamp
+- **field** (character varying(765)) - Changed field name
+- **data_type** (character varying(120)) - Data type
+- **old_value** (character varying(765)) - Previous value
+- **new_value** (character varying(765)) - New value
+- **_fivetran_deleted** (boolean) - Fivetran deletion flag
+- **_fivetran_synced** (timestamp with time zone) - Fivetran sync timestamp
+
+## Important Notes
+- All tables are in the fivetran_views schema, not the public schema
+- Most tables include Fivetran-specific fields (_fivetran_deleted, _fivetran_synced) for tracking synchronization
+- References between tables are maintained via ID fields (e.g., account_id, contact_id)
+- Many fields have custom extensions (ending with _c) specific to the Primer GTM application
+- Timestamps are stored with timezone information

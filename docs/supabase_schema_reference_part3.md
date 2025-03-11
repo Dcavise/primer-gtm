@@ -1,0 +1,218 @@
+# Supabase Schema Reference - fivetran_views Schema (Part 3)
+
+## 8. Table: lead
+- **id** (character varying(18), NOT NULL) - Primary key
+- **is_deleted** (boolean) - Deletion flag
+- **master_record_id** (character varying(18)) - Master record reference
+- **last_name** (character varying(240)) - Last name
+- **first_name** (character varying(120)) - First name
+- **salutation** (character varying(120)) - Salutation
+- **middle_name** (character varying(120)) - Middle name
+- **suffix** (character varying(120)) - Name suffix
+- **name** (character varying(363)) - Full name
+- **title** (character varying(384)) - Title
+- **company** (character varying(765)) - Company name
+- **street** (character varying(765)) - Street address
+- **city** (character varying(120)) - City
+- **state** (character varying(240)) - State
+- **postal_code** (character varying(60)) - Postal code
+- **country** (character varying(240)) - Country
+- **latitude** (double precision) - Latitude
+- **longitude** (double precision) - Longitude
+- **geocode_accuracy** (character varying(120)) - Geocode accuracy
+- **phone** (character varying(120)) - Phone number
+- **mobile_phone** (character varying(120)) - Mobile phone
+- **email** (character varying(240)) - Email address
+- **website** (character varying(765)) - Website URL
+- **photo_url** (character varying(765)) - Photo URL
+- **description** (character varying(96000)) - Description
+- **lead_source** (character varying(765)) - Lead source
+- **status** (character varying(765)) - Lead status
+- **industry** (character varying(765)) - Industry
+- **rating** (character varying(765)) - Rating
+- **number_of_employees** (bigint) - Employee count
+- **owner_id** (character varying(18)) - Owner reference
+- **has_opted_out_of_email** (boolean) - Email opt-out flag
+- **is_converted** (boolean) - Conversion flag
+- **converted_date** (date) - Conversion date
+- **converted_account_id** (character varying(18)) - Converted account reference
+- **converted_contact_id** (character varying(18)) - Converted contact reference
+- **converted_opportunity_id** (character varying(18)) - Converted opportunity reference
+- **is_unread_by_owner** (boolean) - Unread by owner flag
+- **created_date** (timestamp with time zone) - Creation timestamp
+- **created_by_id** (character varying(18)) - Creator reference
+- **last_modified_date** (timestamp with time zone) - Last modification timestamp
+- **last_modified_by_id** (character varying(18)) - Last modifier reference
+- **system_modstamp** (timestamp with time zone) - System modification timestamp
+- **last_activity_date** (date) - Last activity date
+- **do_not_call** (boolean) - Do not call flag
+- **last_viewed_date** (timestamp with time zone) - Last viewed timestamp
+- **last_referenced_date** (timestamp with time zone) - Last referenced timestamp
+- **jigsaw** (character varying(60)) - Jigsaw identifier
+- **jigsaw_contact_id** (character varying(60)) - Jigsaw contact ID
+- **email_bounced_reason** (character varying(765)) - Email bounce reason
+- **email_bounced_date** (timestamp with time zone) - Email bounce date
+- **is_priority_record** (boolean) - Priority record flag
+- **preferred_campus_c** (character varying(765)) - Preferred campus
+- **student_name_c** (character varying(300)) - Student name
+- **referee_c** (character varying(765)) - Referee
+- **zip_code_c** (character varying(15)) - ZIP code
+- **lead_notes_c** (character varying(98304)) - Lead notes
+- **typeform_typeform_form_mapping_c** (character varying(18)) - Typeform mapping reference
+- **current_grade_dep_c** (character varying(765)) - Current grade (deprecated)
+- **current_school_c** (character varying(600)) - Current school
+- **desired_transfer_c** (character varying(765)) - Desired transfer
+- **interested_in_financial_aid_c** (boolean) - Financial aid interest flag
+- **calendly_calendly_created_c** (boolean) - Created via Calendly flag
+- **sales_loft_1_most_recent_cadence_name_c** (character varying(765)) - Most recent cadence name
+- **sales_loft_1_most_recent_cadence_next_step_due_date_c** (date) - Next step due date
+- **sales_loft_1_most_recent_last_completed_step_c** (double precision) - Last completed step
+- **specify_preferred_campus_c** (character varying(765)) - Specific preferred campus
+- **iep_c** (character varying(765)) - IEP status
+- **family_interview_date_time_c** (timestamp with time zone) - Family interview datetime
+- **esl_c** (boolean) - ESL flag
+- **referring_ml_c** (character varying(765)) - Referring microschool leader
+- **nurture_reason_c** (character varying(765)) - Nurture reason
+- **visual_antidote_fast_forms_auto_assign_c** (boolean) - Fast forms auto-assign flag
+- **visual_antidote_fast_forms_autoresponse_c** (boolean) - Fast forms autoresponse flag
+- **da_scoop_composer_email_2_c** (character varying(240)) - Secondary email
+- **da_scoop_composer_groove_notes_c** (character varying(98304)) - Groove notes
+- **da_scoop_composer_is_created_by_groove_c** (boolean) - Created by Groove flag
+- **da_scoop_composer_normalized_mobile_c** (character varying(45)) - Normalized mobile
+- **da_scoop_composer_normalized_phone_c** (character varying(45)) - Normalized phone
+- **student_first_name_c** (character varying(675)) - Student first name
+- **student_last_name_c** (character varying(675)) - Student last name
+- **school_year_c** (character varying(765)) - School year
+- **expected_grade_c** (character varying(765)) - Expected grade
+- **other_student_names_c** (character varying(765)) - Other student names
+- **potential_student_count_c** (double precision) - Potential student count
+- **discovery_source_c** (character varying(765)) - Discovery source
+- **first_form_source_c** (character varying(765)) - First form source
+- **utm_source_c** (character varying(675)) - UTM source
+- **utm_medium_c** (character varying(675)) - UTM medium
+- **utm_campaign_c** (character varying(675)) - UTM campaign
+- **referring_url_c** (character varying(765)) - Referring URL
+- **gclid_c** (character varying(765)) - Google click ID
+- **fbclid_c** (character varying(765)) - Facebook click ID
+- **household_income_range_c** (character varying(675)) - Household income range
+- **person_type_c** (character varying(765)) - Person type
+- **last_form_source_c** (character varying(765)) - Last form source
+- **lead_status_detail_c** (character varying(765)) - Lead status detail
+- **has_past_state_scholarship_c** (character varying(765)) - Past scholarship flag
+- **salesloft_person_stage_c** (character varying(675)) - SalesLoft person stage
+- **referred_by_c** (character varying(765)) - Referred by
+- **groove_active_flows_count_c** (double precision) - Active flows count
+- **groove_added_to_flow_date_c** (date) - Added to flow date
+- **groove_flow_completed_date_c** (date) - Flow completed date
+- **groove_last_engagement_type_c** (character varying(150)) - Last engagement type
+- **groove_last_engagement_c** (timestamp with time zone) - Last engagement timestamp
+- **groove_last_flow_name_c** (character varying(765)) - Last flow name
+- **groove_last_flow_status_c** (character varying(150)) - Last flow status
+- **groove_last_flow_step_number_c** (double precision) - Last flow step number
+- **groove_last_flow_step_type_c** (character varying(600)) - Last flow step type
+- **groove_last_step_completed_c** (timestamp with time zone) - Last step completed timestamp
+- **groove_last_step_skipped_c** (character varying(150)) - Last step skipped
+- **groove_last_touch_type_c** (character varying(150)) - Last touch type
+- **groove_last_touch_c** (timestamp with time zone) - Last touch timestamp
+- **groove_next_step_due_date_c** (date) - Next step due date
+- **groove_removed_from_flow_date_c** (date) - Removed from flow date
+- **groove_removed_from_flow_reason_c** (character varying(150)) - Removal reason
+- **outbound_email_counter_c** (double precision) - Outbound email counter
+- **past_scholarship_award_type_c** (character varying(765)) - Past scholarship award type
+- **utm_term_c** (character varying(765)) - UTM term
+- **application_complete_c** (boolean) - Application completion flag
+- **round_robin_number_c** (character varying(90)) - Round robin number
+- **student_date_of_birth_c** (date) - Student date of birth
+- **current_grade_c** (character varying(765)) - Current grade
+- **zvc_is_created_by_zoom_app_c** (boolean) - Created by Zoom app flag
+- **previous_state_scholarship_type_c** (character varying(765)) - Previous scholarship type
+- **primary_language_c** (character varying(765)) - Primary language
+- **groove_engagement_score_c** (double precision) - Engagement score
+- **last_called_at_c** (timestamp with time zone) - Last called timestamp
+- **call_count_c** (double precision) - Call count
+- **ignore_round_robin_c** (boolean) - Ignore round robin flag
+- **parent_meeting_booked_c** (boolean) - Parent meeting booked flag
+- **family_interview_status_c** (character varying(765)) - Family interview status
+- **registered_for_info_session_on_c** (date) - Info session registration date
+- **registered_for_open_house_c** (boolean) - Open house registration flag
+- **lead_source_detail_c** (character varying(765)) - Lead source detail
+- **parent_meeting_booked_at_c** (timestamp with time zone) - Parent meeting booking timestamp
+- **bypass_new_lead_flow_c** (boolean) - Bypass new lead flow flag
+- **campus_c** (character varying(18)) - Campus reference
+- **alternate_campus_interest_c** (character varying(18)) - Alternate campus interest
+- **rerferring_primer_leader_c** (character varying(18)) - Referring primer leader
+- **pl_ref_c** (character varying(675)) - PL reference
+- **awaiting_campus_location_c** (boolean) - Awaiting campus location flag
+- **campus_state_c** (character varying(765)) - Campus state
+- **group_value_c** (character varying(60)) - Group value
+- **email_alternate_c** (character varying(240)) - Alternate email
+- **_fivetran_deleted** (boolean) - Fivetran deletion flag
+- **_fivetran_synced** (timestamp with time zone) - Fivetran sync timestamp
+
+## 9. Table: opportunity
+- **id** (character varying(18), NOT NULL) - Primary key
+- **is_deleted** (boolean) - Deletion flag
+- **account_id** (character varying(18)) - Account reference
+- **record_type_id** (character varying(18)) - Record type reference
+- **name** (character varying(360)) - Opportunity name
+- **description** (character varying(96000)) - Description
+- **stage_name** (character varying(765)) - Stage name
+- **amount** (numeric(35,17)) - Amount
+- **probability** (double precision) - Probability percentage
+- **close_date** (date) - Close date
+- **type** (character varying(765)) - Opportunity type
+- **next_step** (character varying(765)) - Next step
+- **lead_source** (character varying(765)) - Lead source
+- **is_closed** (boolean) - Closed flag
+- **is_won** (boolean) - Won flag
+- **forecast_category** (character varying(120)) - Forecast category
+- **forecast_category_name** (character varying(765)) - Forecast category name
+- **campaign_id** (character varying(18)) - Campaign reference
+- **has_opportunity_line_item** (boolean) - Has line items flag
+- **pricebook_2_id** (character varying(18)) - Price book reference
+- **owner_id** (character varying(18)) - Owner reference
+- **created_date** (timestamp with time zone) - Creation timestamp
+- **created_by_id** (character varying(18)) - Creator reference
+- **last_modified_date** (timestamp with time zone) - Last modification timestamp
+- **last_modified_by_id** (character varying(18)) - Last modifier reference
+- **system_modstamp** (timestamp with time zone) - System modification timestamp
+- **last_activity_date** (date) - Last activity date
+- **push_count** (bigint) - Push count
+- **last_stage_change_date** (timestamp with time zone) - Last stage change timestamp
+- **fiscal_quarter** (bigint) - Fiscal quarter
+- **fiscal_year** (bigint) - Fiscal year
+- **fiscal** (character varying(6)) - Fiscal period
+- **contact_id** (character varying(18)) - Contact reference
+- **last_viewed_date** (timestamp with time zone) - Last viewed timestamp
+- **last_referenced_date** (timestamp with time zone) - Last referenced timestamp
+- **synced_quote_id** (character varying(18)) - Synced quote reference
+- **contract_id** (character varying(18)) - Contract reference
+- **has_open_activity** (boolean) - Has open activity flag
+- **has_overdue_task** (boolean) - Has overdue task flag
+- **last_amount_changed_history_id** (character varying(18)) - Last amount change history reference
+- **last_close_date_changed_history_id** (character varying(18)) - Last close date change history reference
+- **budget_confirmed_c** (boolean) - Budget confirmed flag
+- **discovery_completed_c** (boolean) - Discovery completed flag
+- **roi_analysis_completed_c** (boolean) - ROI analysis completed flag
+- **parent_name_c** (character varying(600)) - Parent name
+- **loss_reason_c** (character varying(765)) - Loss reason
+- **parent_email_c** (character varying(240)) - Parent email
+- **student_zip_code_c** (character varying(15)) - Student ZIP code
+- **lead_notes_c** (character varying(98304)) - Lead notes
+- **family_interview_notes_c** (character varying(98304)) - Family interview notes
+- **student_name_c** (character varying(765)) - Student name
+- **parent_phone_c** (character varying(765)) - Parent phone
+- **typeform_typeform_form_mapping_c** (character varying(18)) - Typeform mapping reference
+- **school_year_c** (character varying(765)) - School year
+- **current_school_c** (character varying(600)) - Current school
+- **desired_transfer_c** (character varying(765)) - Desired transfer
+- **holding_reason_c** (character varying(765)) - Holding reason
+- **preferred_campus_c** (character varying(765)) - Preferred campus
+
+## Important Notes
+- All tables are in the fivetran_views schema, not the public schema
+- The lead table contains detailed information about potential customers, including their status, contact information, and various tracking fields
+- The opportunity table represents potential enrollment opportunities, tracking the sales process from initial interest to enrollment
+- Both tables include extensive custom fields (ending with _c) specific to the Primer GTM application
+- Tables include tracking fields for marketing attribution (UTM parameters) and integration with external tools (Groove, SalesLoft)
+- Fivetran-specific fields (_fivetran_deleted, _fivetran_synced) are present for synchronization tracking

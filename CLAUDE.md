@@ -41,6 +41,7 @@
 
 ### Important Guidelines
 - **Always use the fivetran_views schema**, not the public schema
+- **The application database schema is fivetran_views, not public**
 - When accessing tables, use schema-qualified names (e.g., `fivetran_views.lead`)
 - For function calls, use direct schema name (e.g., `fivetran_views.search_families`) 
 - For campus information, use `current_campus_name` and `opportunity_campus_names` fields from the family record instead of IDs

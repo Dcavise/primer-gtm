@@ -369,23 +369,36 @@ const Search = () => {
   // Removed tab change handler as we now only focus on family search
 
   const handleResultClick = (result: SearchResultItem) => {
+    // With the new buttons, card click should default to the standard view
+    // But let's keep the code clean with proper type handling
+    
+    // Log detailed information to help diagnose any ID format issues
+    console.log("Result card clicked:", {
+      id: result.id,
+      allIds: result.familyIds,
+      name: result.name,
+      details: result.details
+    });
+
+    if (!result.id) {
+      console.error("Cannot navigate - missing family ID", result);
+      alert("Error: Could not find a valid ID for this family");
+      return;
+    }
+
+    // Extract the most reliable ID to use for navigation
+    const bestId = result.familyIds?.standard_id || 
+                  result.familyIds?.family_id || 
+                  result.familyIds?.alternate_id ||
+                  result.id;
+                  
+    console.log(`Search: Navigating to family detail with best ID: ${bestId}`);
+    
     // Navigate based on result type
     switch (result.type) {
       case "Family":
-        // Using the new comprehensive family detail page with the standardized ID
-        // Log detailed information to help diagnose any ID format issues
-        console.log("Navigating to family detail with:", {
-          id: result.id,
-          allIds: result.familyIds,
-        });
-
-        if (!result.id) {
-          console.error("Cannot navigate - missing family ID", result);
-          alert("Error: Could not find a valid ID for this family");
-          return;
-        }
-
-        navigate(`/family-detail/${result.id}`);
+        // Navigate to the family detail page with the best available ID
+        navigate(`/family-detail/${bestId}`);
         break;
       case "Student":
         // Replace with actual student profile route when available
@@ -605,13 +618,38 @@ const Search = () => {
 
                       {/* Removed the School Year Information section as requested */}
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="self-start mt-2 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                    >
-                      View
-                    </Button>
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="self-start hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const bestId = result.familyIds?.standard_id || 
+                                        result.familyIds?.family_id || 
+                                        result.familyIds?.alternate_id ||
+                                        result.id;
+                          navigate(`/family-detail/${bestId}`);
+                        }}
+                      >
+                        View
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="self-start hover:bg-purple-50 hover:text-purple-600 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const bestId = result.familyIds?.standard_id || 
+                                        result.familyIds?.family_id || 
+                                        result.familyIds?.alternate_id ||
+                                        result.id;
+                          navigate(`/enhanced-family/${bestId}`);
+                        }}
+                      >
+                        Enhanced
+                      </Button>
+                    </div>
                   </div>
                 </Card>
               ))

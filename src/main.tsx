@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import GridListDemoPage from "./pages/GridListDemoPage";
 import FamilyProfile from "./pages/FamilyProfile";
 import FamilyDetail from "./pages/FamilyDetail";
+import EnhancedFamilyDetail from "./components/EnhancedFamilyDetail";
 import Search from "./pages/Search";
 
 // Global error boundary component
@@ -116,6 +117,16 @@ const router = createBrowserRouter([
           {
             path: "family-detail/:familyId",
             element: <FamilyDetail />,
+          },
+          // Add an alternative route for different ID format handling
+          {
+            path: "family/:familyId/detail",
+            element: <FamilyDetail />,
+          },
+          // Enhanced Family Detail with structured student data
+          {
+            path: "enhanced-family/:familyId",
+            element: <EnhancedFamilyDetail />,
           },
           // Search Page
           {

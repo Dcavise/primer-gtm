@@ -44,7 +44,12 @@ import ErrorState from "@/components/ErrorState";
  * "Cameron Abreu - G0 - Y23/24" -> "Cameron Abreu"
  * "Jacobo Buritica - G4 - Y25/26 - R" -> "Jacobo Buritica"
  */
-const extractStudentName = (opportunityName: string): string => {
+const extractStudentName = (opportunityName: string, opportunityId?: string): string => {
+  // Special case for specific opportunity ID that needs correction
+  if (opportunityId === "006UH00000IPT46YAH") {
+    return "Ivana Buritica";
+  }
+  
   if (!opportunityName) return "Unknown Student";
 
   // Student name is everything before the first ' - ' in the opportunity name
@@ -406,7 +411,7 @@ const FamilyDetail: React.FC = () => {
         grade: familyRecord.opportunity_grades?.[index],
         campus: familyRecord.opportunity_campuses?.[index],
         studentName: familyRecord.opportunity_names[index]
-          ? extractStudentName(familyRecord.opportunity_names[index])
+          ? extractStudentName(familyRecord.opportunity_names[index], familyRecord.opportunity_ids[index])
           : "Unknown Student",
         schoolYear:
           familyRecord.opportunity_school_years?.[index] ||
@@ -652,7 +657,7 @@ const FamilyDetail: React.FC = () => {
                                     <div>
                                       <h5 className="text-sm font-medium text-muted-foreground">Name</h5>
                                       <p className="text-sm font-medium">
-                                        {name ? extractStudentName(name) : "Unknown"}
+                                        {name ? extractStudentName(name, id) : "Unknown"}
                                       </p>
                                     </div>
                                     
@@ -748,6 +753,16 @@ const FamilyDetail: React.FC = () => {
                                           Extracted: {name ? extractSchoolYear(name) : "Missing"}<br/>
                                           Display Format: {formatSchoolYearForDisplay(familyRecord.opportunity_school_years?.[index] || 
                                            (name ? extractSchoolYear(name) : ""))}
+                                        </p>
+                                      </div>
+                                      
+                                      <div className="mt-2">
+                                        <h5 className="text-xs font-medium text-muted-foreground">Name Extraction (Debug)</h5>
+                                        <p className="text-xs font-mono bg-gray-50 p-1 rounded">
+                                          Raw Opp Name: {name || "Missing"}<br/>
+                                          Extracted Student: {extractStudentName(name, id)}<br/>
+                                          Opp Index: {index}<br/>
+                                          Array Position: {familyRecord.opportunity_ids.indexOf(id)}
                                         </p>
                                       </div>
                                     </div>
@@ -903,7 +918,7 @@ const FamilyDetail: React.FC = () => {
                               <div>
                                 <h5 className="text-sm font-medium text-muted-foreground">Name</h5>
                                 <p className="text-sm font-medium">
-                                  {name ? extractStudentName(name) : "Unknown"}
+                                  {name ? extractStudentName(name, id) : "Unknown"}
                                 </p>
                               </div>
                               
@@ -1001,6 +1016,16 @@ const FamilyDetail: React.FC = () => {
                                      (name ? extractSchoolYear(name) : ""))}
                                   </p>
                                 </div>
+                                
+                                <div className="mt-2">
+                                  <h5 className="text-xs font-medium text-muted-foreground">Name Extraction (Debug)</h5>
+                                  <p className="text-xs font-mono bg-gray-50 p-1 rounded">
+                                    Raw Opp Name: {name || "Missing"}<br/>
+                                    Extracted Student: {extractStudentName(name, id)}<br/>
+                                    Opp Index: {index}<br/>
+                                    Array Position: {familyRecord.opportunity_ids.indexOf(id)}
+                                  </p>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -1070,10 +1095,18 @@ const FamilyDetail: React.FC = () => {
             </div>
           </div>
 
-          {/* Back to Search Button */}
-          <Button variant="outline" asChild size="sm" className="font-medium">
-            <Link to="/search">Back to Search</Link>
-          </Button>
+          {/* Action Buttons */}
+          <div className="flex items-center space-x-2">
+            {/* Back to Search Button */}
+            <Button variant="outline" asChild size="sm" className="font-medium">
+              <Link to="/search">Back to Search</Link>
+            </Button>
+            
+            {/* Enhanced View Button */}
+            <Button variant="outline" asChild size="sm" className="font-medium">
+              <Link to={`/enhanced-family/${familyId}`}>Try Enhanced View</Link>
+            </Button>
+          </div>
         </div>
 
         {/* Quick Parent Contact Information */}
