@@ -213,15 +213,41 @@ const StudentTimeline: React.FC<TimelineProps> = ({
   };
 
   return (
-    <div className="mt-6 mb-8 bg-muted/10 p-4 rounded-lg border border-muted">
-      <h4 className="text-sm font-medium mb-4">Enrollment Timeline</h4>
+    <div className="mt-6 mb-8 bg-muted/10 p-6 rounded-lg border border-muted shadow-sm">
+      <h4 className="text-sm font-medium mb-5 text-foreground/80">Enrollment Timeline</h4>
       <div className="relative w-full">
         {/* Simplified timeline container */}
         <div className="flex flex-col">
           {/* Horizontal layout for timeline nodes */}
-          <div className="flex items-center justify-between mb-2 relative px-8">
+          <div className="flex items-center justify-between mb-3 relative px-8">
             {/* Connector line spanning the width */}
-            <div className="absolute h-0.5 top-4 left-12 right-12 bg-muted-foreground/30"></div>
+            <div className="absolute h-1 top-4 left-12 right-12 bg-muted-foreground/20 rounded-full"></div>
+            
+            {/* Green glow layer on top of base line */}
+            <div className="absolute h-2 top-[14px] left-12 right-12 bg-green-500/10 blur-md rounded-full"></div>
+            
+            {/* Active line segments between enrolled nodes */}
+            {years.map((year, idx) => {
+              if (idx < years.length - 1) {
+                const currentYearEnrolled = isEnrolledForYear(year);
+                const nextYearEnrolled = isEnrolledForYear(years[idx + 1]);
+                
+                // Only show active line if both connected nodes are enrolled
+                if (currentYearEnrolled && nextYearEnrolled) {
+                  return (
+                    <div 
+                      key={`connector-${idx}`}
+                      className="absolute h-2 top-[14px] bg-gradient-to-r from-green-500 to-green-400 shadow-[0_0_15px_rgba(34,197,94,0.6)] z-0 rounded-full transition-all duration-500"
+                      style={{ 
+                        left: `calc(${(100 / (years.length - 1)) * idx}% + 3px)`,
+                        width: `calc(${100 / (years.length - 1)}% - 6px)`,
+                      }}
+                    ></div>
+                  );
+                }
+              }
+              return null;
+            })}
 
             {years.map((year, idx) => {
               const isEnrolled = isEnrolledForYear(year);
@@ -234,13 +260,13 @@ const StudentTimeline: React.FC<TimelineProps> = ({
                 >
                   {/* Circle node - green if enrolled for this year */}
                   {isEnrolled ? (
-                    <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
-                      <div className="w-2 h-2 rounded-full bg-white"></div>
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-lg shadow-green-500/30 border-2 border-white transition-all duration-300 hover:scale-110">
+                      <CheckCircle2 className="w-5 h-5 text-white" />
                     </div>
                   ) : idx === 0 ? (
-                    <div className="w-6 h-6 rounded-full bg-gray-400"></div>
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 border border-white/70 shadow-md transition-all duration-300 hover:scale-105"></div>
                   ) : (
-                    <div className="w-6 h-6 rounded-full border-2 border-gray-300"></div>
+                    <div className="w-7 h-7 rounded-full border-2 border-gray-300 bg-white shadow-sm transition-all duration-300 hover:border-gray-400"></div>
                   )}
                 </div>
               );
@@ -248,7 +274,7 @@ const StudentTimeline: React.FC<TimelineProps> = ({
           </div>
 
           {/* Year labels */}
-          <div className="flex items-center justify-between px-8 mb-4">
+          <div className="flex items-center justify-between px-8 mb-3">
             {years.map((year) => {
               return (
                 <div
@@ -274,13 +300,13 @@ const StudentTimeline: React.FC<TimelineProps> = ({
                 (parseInt(displayYear) + 1).toString().substring(2);
 
               // Different styling based on enrollment status
-              let badgeClass = "text-xs rounded px-2 py-0.5 font-medium ";
+              let badgeClass = "text-xs rounded-md px-3 py-1 font-medium shadow-sm transition-all duration-300 ";
               if (isEnrolled) {
-                badgeClass += "bg-green-100 text-green-700 border border-green-300";
+                badgeClass += "bg-gradient-to-r from-green-50 to-green-100 text-green-700 border border-green-200";
               } else if (idx === 0) {
-                badgeClass += "bg-muted/50 text-muted-foreground";
+                badgeClass += "bg-muted/50 text-muted-foreground/80";
               } else {
-                badgeClass += "border border-muted-foreground/30 text-muted-foreground";
+                badgeClass += "border border-muted-foreground/20 text-muted-foreground/70";
               }
 
               return (
@@ -1091,7 +1117,21 @@ const FamilyDetail: React.FC = () => {
                   {familyRecord.current_campus_name || familyRecord.current_campus_c || "Not Assigned"}
                 </span>
               </Badge>
-
+              
+              {/* Students Badge - using the exact structure from the screenshot */}
+              <div className="flex items-center border border-muted/40 rounded-full py-1.5 px-3">
+                <GraduationCap className="h-3.5 w-3.5 text-muted-foreground mr-1.5" />
+                <span className="text-sm font-medium">
+                  {familyRecord.opportunity_count || 0} Students
+                </span>
+              </div>
+              
+              {/* Health District badge from screenshot */}
+              <div className="flex items-center p-2 px-4 rounded-full border bg-white">
+                <span className="text-sm font-medium">
+                  Health District
+                </span>
+              </div>
             </div>
           </div>
 
@@ -1102,10 +1142,6 @@ const FamilyDetail: React.FC = () => {
               <Link to="/search">Back to Search</Link>
             </Button>
             
-            {/* Enhanced View Button */}
-            <Button variant="outline" asChild size="sm" className="font-medium">
-              <Link to={`/enhanced-family/${familyId}`}>Try Enhanced View</Link>
-            </Button>
           </div>
         </div>
 

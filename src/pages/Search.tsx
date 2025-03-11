@@ -620,9 +620,9 @@ const Search = () => {
                     </div>
                     <div className="flex flex-col gap-2">
                       <Button
-                        variant="ghost"
+                        variant="default"
                         size="sm"
-                        className="self-start hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                        className="self-start"
                         onClick={(e) => {
                           e.stopPropagation();
                           const bestId = result.familyIds?.standard_id || 
@@ -632,22 +632,7 @@ const Search = () => {
                           navigate(`/family-detail/${bestId}`);
                         }}
                       >
-                        View
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="self-start hover:bg-purple-50 hover:text-purple-600 transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const bestId = result.familyIds?.standard_id || 
-                                        result.familyIds?.family_id || 
-                                        result.familyIds?.alternate_id ||
-                                        result.id;
-                          navigate(`/enhanced-family/${bestId}`);
-                        }}
-                      >
-                        Enhanced
+                        View Family
                       </Button>
                     </div>
                   </div>
