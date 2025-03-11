@@ -103,23 +103,7 @@ const StudentTimeline: React.FC<TimelineProps> = ({
   studentName,
   opportunities,
 }) => {
-  // Filter to only show won opportunities
-  const wonOpportunities = opportunities.filter((opp) => opp.isWon);
-
-  // Don't show timeline if no won opportunities
-  if (wonOpportunities.length === 0) return null;
-
-  // Group won opportunities by school year
-  const opportunitiesByYear = wonOpportunities.reduce(
-    (acc, opp) => {
-      const year = opp.schoolYear;
-      if (!acc[year]) acc[year] = [];
-      acc[year].push(opp);
-      return acc;
-    },
-    {} as Record<string, typeof wonOpportunities>,
-  );
-
+  // Always show the timeline for all students, regardless of enrollment status
   // Get current year and generate years for timeline
   const getCurrentYear = () => {
     const now = new Date();
@@ -138,6 +122,27 @@ const StudentTimeline: React.FC<TimelineProps> = ({
   };
 
   const years = generateYears();
+  
+  // Helper function to check if an opportunity is enrolled for a specific year
+  const isEnrolledForYear = (year: string): boolean => {
+    // Convert the year format from "2024-2025" to shorthand "24/25" format
+    const startYear = year.split('-')[0];
+    const endYear = year.split('-')[1];
+    const shortYearFormat = `${startYear.slice(-2)}/${endYear.slice(-2)}`;
+    
+    // Check if any opportunity is won and matches this year
+    return opportunities.some(opp => 
+      opp.isWon && 
+      (
+        // Check for full year format match (in school_year_c field)
+        (opp.schoolYear === year) ||
+        // Check for short year format match (e.g., "24/25")
+        (opp.schoolYear === shortYearFormat) ||
+        // Check for Y format (e.g., "Y24/25" in opportunity name)
+        (opp.schoolYear.includes(`Y${shortYearFormat}`))
+      )
+    );
+  };
 
   return (
     <div className="mt-6 mb-8 bg-muted/10 p-4 rounded-lg border border-muted">
@@ -151,8 +156,7 @@ const StudentTimeline: React.FC<TimelineProps> = ({
             <div className="absolute h-0.5 top-4 left-12 right-12 bg-muted-foreground/30"></div>
 
             {years.map((year, idx) => {
-              const displayYear = year.split("-")[0];
-              const hasWonOpportunity = !!opportunitiesByYear[year];
+              const isEnrolled = isEnrolledForYear(year);
 
               return (
                 <div
@@ -160,9 +164,11 @@ const StudentTimeline: React.FC<TimelineProps> = ({
                   className="flex flex-col items-center z-10"
                   style={{ width: "80px" }}
                 >
-                  {/* Circle node */}
-                  {hasWonOpportunity ? (
-                    <div className="w-6 h-6 rounded-full bg-green-500"></div>
+                  {/* Circle node - green if enrolled for this year */}
+                  {isEnrolled ? (
+                    <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+                      <div className="w-2 h-2 rounded-full bg-white"></div>
+                    </div>
                   ) : idx === 0 ? (
                     <div className="w-6 h-6 rounded-full bg-gray-400"></div>
                   ) : (
@@ -176,7 +182,6 @@ const StudentTimeline: React.FC<TimelineProps> = ({
           {/* Year labels */}
           <div className="flex items-center justify-between px-8 mb-4">
             {years.map((year) => {
-              const displayYear = year.split("-")[0];
               return (
                 <div
                   key={`label-${year}`}
@@ -194,21 +199,20 @@ const StudentTimeline: React.FC<TimelineProps> = ({
           <div className="flex items-center justify-between px-8">
             {years.map((year, idx) => {
               const displayYear = year.split("-")[0];
-              const hasWonOpportunity = !!opportunitiesByYear[year];
+              const isEnrolled = isEnrolledForYear(year);
               const yearLabel =
                 displayYear.substring(2) +
                 "/" +
                 (parseInt(displayYear) + 1).toString().substring(2);
 
-              // Different styling based on status
+              // Different styling based on enrollment status
               let badgeClass = "text-xs rounded px-2 py-0.5 font-medium ";
-              if (hasWonOpportunity) {
-                badgeClass += "bg-green-100 text-green-600";
+              if (isEnrolled) {
+                badgeClass += "bg-green-100 text-green-700 border border-green-300";
               } else if (idx === 0) {
                 badgeClass += "bg-muted/50 text-muted-foreground";
               } else {
-                badgeClass +=
-                  "border border-muted-foreground/30 text-muted-foreground";
+                badgeClass += "border border-muted-foreground/30 text-muted-foreground";
               }
 
               return (
