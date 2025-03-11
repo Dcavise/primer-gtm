@@ -113,19 +113,14 @@ const router = createBrowserRouter([
             path: "family/:familyId",
             element: <FamilyProfile />,
           },
-          // Family Detail Page (using the new comprehensive view)
+          // Family Detail Page (using the enhanced view)
           {
             path: "family-detail/:familyId",
-            element: <FamilyDetail />,
+            element: <EnhancedFamilyDetail />,
           },
           // Add an alternative route for different ID format handling
           {
             path: "family/:familyId/detail",
-            element: <FamilyDetail />,
-          },
-          // Enhanced Family Detail with structured student data
-          {
-            path: "enhanced-family/:familyId",
             element: <EnhancedFamilyDetail />,
           },
           // Search Page

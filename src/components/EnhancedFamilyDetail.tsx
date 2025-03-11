@@ -61,6 +61,10 @@ interface TimelineProps {
 }
 
 const StudentTimeline: React.FC<TimelineProps> = ({ student }) => {
+  // Handle special cases for name correction
+  // This ensures specific students like the Buritica family are properly handled
+  // (Now handled at the database level but keeping compatibility code)
+  
   // Filter to only show won opportunities
   const wonOpportunities = student.opportunities.filter((opp) => opp.is_won);
 
@@ -507,6 +511,90 @@ const EnhancedFamilyDetail: React.FC = () => {
     );
   }
 
+  // Special case handlers for student name variations
+  const getFixedStudentName = (student: Student): string => {
+    // Handle specific cases like the Buritica family spelling variations
+    // This ensures UI is consistent even if data has minor variations
+    
+    // Check if this is one of the Buritica students with spelling variations
+    if (student.last_name && 
+        (student.last_name.toLowerCase().includes("buriti") || 
+         student.last_name.toLowerCase().includes("butit"))) {
+      
+      // Return corrected name format based on opportunity IDs or other identifiers
+      const isIvana = student.opportunities.some(opp => 
+        opp.id === "006UH00000IPT46YAH" || 
+        student.first_name.toLowerCase().includes("iva")
+      );
+      
+      const isJacobo = student.first_name.toLowerCase().includes("jac");
+      
+      if (isIvana) return "Ivana Buritica";
+      if (isJacobo) return "Jacobo Buritica";
+    }
+    
+    return student.full_name;
+  };
+  
+  // Merge students with similar names (like "Jacobo Buritica" and "Jacobo Butitica")
+  const mergeStudents = (students: Student[]): Student[] => {
+    if (!students || students.length <= 1) return students;
+    
+    // Group students by normalized name
+    const studentsByName: Record<string, Student[]> = {};
+    
+    // First pass: group by normalized names
+    students.forEach(student => {
+      // Generate a normalized key for the student based on case-insensitive first name
+      // and a simplified last name (to handle Buritica/Butitica variations)
+      const firstName = student.first_name.toLowerCase();
+      let lastName = student.last_name.toLowerCase();
+      
+      // Handle Buritica family special case
+      if (lastName.includes("buriti") || lastName.includes("butit")) {
+        lastName = "buritica";
+      }
+      
+      const key = `${firstName}-${lastName}`;
+      
+      if (!studentsByName[key]) {
+        studentsByName[key] = [];
+      }
+      studentsByName[key].push(student);
+    });
+    
+    // Second pass: merge students with the same normalized name
+    const mergedStudents: Student[] = [];
+    
+    Object.values(studentsByName).forEach(group => {
+      if (group.length === 1) {
+        // No need to merge
+        mergedStudents.push(group[0]);
+      } else {
+        // Merge this group of students
+        const mergedStudent: Student = {
+          ...group[0],
+          opportunities: []
+        };
+        
+        // Combine all opportunities from the group
+        group.forEach(student => {
+          mergedStudent.opportunities = [
+            ...mergedStudent.opportunities,
+            ...student.opportunities
+          ];
+        });
+        
+        // Use the fixed name for this student
+        mergedStudent.full_name = getFixedStudentName(mergedStudent);
+        
+        mergedStudents.push(mergedStudent);
+      }
+    });
+    
+    return mergedStudents;
+  };
+
   // Render students section with the new data structure
   const renderStudentsSection = () => {
     if (!familyRecord.students || familyRecord.students.length === 0) {
@@ -518,23 +606,25 @@ const EnhancedFamilyDetail: React.FC = () => {
         </div>
       );
     }
+    
+    // mergedStudents is defined globally for all functions
 
-    if (familyRecord.students.length > 1) {
+    if (mergedStudents.length > 1) {
       return (
-        <Tabs defaultValue={familyRecord.students[0].id} className="w-full">
-          <TabsList className="grid" style={{ gridTemplateColumns: `repeat(${Math.min(familyRecord.students.length, 4)}, 1fr)` }}>
-            {familyRecord.students.map((student) => (
+        <Tabs defaultValue={mergedStudents[0].id} className="w-full">
+          <TabsList className="grid" style={{ gridTemplateColumns: `repeat(${Math.min(mergedStudents.length, 4)}, 1fr)` }}>
+            {mergedStudents.map((student) => (
               <TabsTrigger key={`tab-${student.id}`} value={student.id}>
-                {student.full_name}
+                {getFixedStudentName(student)}
               </TabsTrigger>
             ))}
           </TabsList>
-          {familyRecord.students.map((student) => (
+          {mergedStudents.map((student) => (
             <TabsContent key={`content-${student.id}`} value={student.id} className="mt-4">
               <Card>
                 <CardHeader className="pb-0">
                   <CardTitle className="text-xl font-semibold">
-                    {student.full_name}
+                    {getFixedStudentName(student)}
                     {student.opportunities.some(opp => opp.is_won) && (
                       <Badge variant="success" className="ml-2">Enrolled</Badge>
                     )}
@@ -550,7 +640,7 @@ const EnhancedFamilyDetail: React.FC = () => {
                       <OpportunityCard 
                         key={opportunity.id} 
                         opportunity={opportunity} 
-                        studentName={student.full_name}
+                        studentName={getFixedStudentName(student)}
                       />
                     ))}
                   </div>
@@ -560,14 +650,14 @@ const EnhancedFamilyDetail: React.FC = () => {
           ))}
         </Tabs>
       );
-    } else if (familyRecord.students.length === 1) {
+    } else if (mergedStudents.length === 1) {
       // If there's only one student, just show the cards without tabs
-      const student = familyRecord.students[0];
+      const student = mergedStudents[0];
       return (
         <Card>
           <CardHeader className="pb-0">
             <CardTitle className="text-xl font-semibold">
-              {student.full_name}
+              {getFixedStudentName(student)}
               {student.opportunities.some(opp => opp.is_won) && (
                 <Badge variant="success" className="ml-2">Enrolled</Badge>
               )}
@@ -581,7 +671,7 @@ const EnhancedFamilyDetail: React.FC = () => {
                 <OpportunityCard 
                   key={opportunity.id} 
                   opportunity={opportunity} 
-                  studentName={student.full_name}
+                  studentName={getFixedStudentName(student)}
                 />
               ))}
             </div>
@@ -590,6 +680,10 @@ const EnhancedFamilyDetail: React.FC = () => {
       );
     }
   };
+
+  // Apply the mergeStudents function to handle student name variations
+  const mergedStudents = familyRecord.students ? mergeStudents(familyRecord.students) : [];
+  console.log(`Merged ${familyRecord.students?.length || 0} students into ${mergedStudents.length} unique students`);
 
   return (
     <div className="max-w-6xl mx-auto p-4">
@@ -604,7 +698,7 @@ const EnhancedFamilyDetail: React.FC = () => {
               </h1>
               
               {/* Active status pill - displayed when family has any closed won opportunity for current year */}
-              {familyRecord.students && familyRecord.students.some(student => 
+              {mergedStudents && mergedStudents.some(student => 
                 student.opportunities && student.opportunities.some(opp => 
                   opp.is_won && 
                   formatSchoolYearForDisplay(opp.school_year).includes("25/26")
@@ -713,7 +807,7 @@ const EnhancedFamilyDetail: React.FC = () => {
                       <div>
                         <div className="text-sm text-muted-foreground">Students</div>
                         <div className="font-medium">
-                          {familyRecord.students?.length || 0}
+                          {mergedStudents?.length || 0}
                         </div>
                         <div className="text-xs text-muted-foreground">Total students</div>
                       </div>
@@ -725,7 +819,7 @@ const EnhancedFamilyDetail: React.FC = () => {
                       <div>
                         <div className="text-sm text-muted-foreground">Opportunities</div>
                         <div className="font-medium">
-                          {familyRecord.students?.reduce((total, student) => 
+                          {mergedStudents?.reduce((total, student) => 
                             total + student.opportunities.length, 0) || 0}
                         </div>
                         <div className="text-xs text-muted-foreground">Total opportunities</div>
@@ -738,9 +832,9 @@ const EnhancedFamilyDetail: React.FC = () => {
                       <div>
                         <div className="text-sm text-muted-foreground">Family Since</div>
                         <div className="font-medium">
-                          {familyRecord.students?.length > 0 && 
-                           familyRecord.students.some(s => s.opportunities.length > 0) ? 
-                            new Date(Math.min(...familyRecord.students
+                          {mergedStudents?.length > 0 && 
+                           mergedStudents.some(s => s.opportunities.length > 0) ? 
+                            new Date(Math.min(...mergedStudents
                               .flatMap(s => s.opportunities)
                               .filter(o => o.created_date)
                               .map(o => new Date(o.created_date).getTime())
@@ -758,9 +852,9 @@ const EnhancedFamilyDetail: React.FC = () => {
                       <div>
                         <div className="text-sm text-muted-foreground">Active School Years</div>
                         <div className="font-medium">
-                          {familyRecord.students ? 
+                          {mergedStudents ? 
                             Array.from(new Set(
-                              familyRecord.students
+                              mergedStudents
                                 .flatMap(s => s.opportunities)
                                 .filter(o => o.is_won)
                                 .map(o => formatSchoolYearForDisplay(o.school_year))
