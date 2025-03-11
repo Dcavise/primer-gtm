@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, Navigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Card,
@@ -230,6 +230,29 @@ const StudentTimeline: React.FC<TimelineProps> = ({
 
 const FamilyDetail: React.FC = () => {
   const { familyId } = useParams<{ familyId: string }>();
+  const { loading, error, familyRecord, fetchFamilyRecord } = useFamilyData();
+
+  useEffect(() => {
+    if (familyId) {
+      console.log(`FamilyDetail: Fetching family record for ID: ${familyId}`);
+      
+      // Attempt to normalize the ID - it might be in different formats
+      // Salesforce IDs are often 18 characters, PDC IDs may be different
+      const normalizedId = familyId.trim();
+      
+      console.log(`FamilyDetail: Using normalized ID: ${normalizedId}`);
+      fetchFamilyRecord(normalizedId);
+    } else {
+      console.error("FamilyDetail: No familyId found in URL params");
+    }
+  }, [familyId, fetchFamilyRecord]);
+
+  // Validate familyId format after all hooks are called
+  const isValidId = familyId && /^[a-zA-Z0-9]{15,18}$/.test(familyId);
+  
+  if (!isValidId) {
+    return <Navigate to="/not-found" replace />;
+  }
 
   // Mock data for design purposes
   const mockFamilyData = {
@@ -251,29 +274,6 @@ const FamilyDetail: React.FC = () => {
     contactCount: 2,
     opportunityCount: 3,
   };
-  // Use our custom hook for family data retrieval
-  const {
-    loading,
-    error,
-    familyRecord,
-    fetchFamilyRecord,
-  } = useFamilyData();
-
-  // Fetch the family record when the component mounts or familyId changes
-  useEffect(() => {
-    if (familyId) {
-      console.log(`FamilyDetail: Fetching family record for ID: ${familyId}`);
-      
-      // Attempt to normalize the ID - it might be in different formats
-      // Salesforce IDs are often 18 characters, PDC IDs may be different
-      const normalizedId = familyId.trim();
-      
-      console.log(`FamilyDetail: Using normalized ID: ${normalizedId}`);
-      fetchFamilyRecord(normalizedId);
-    } else {
-      console.error("FamilyDetail: No familyId found in URL params");
-    }
-  }, [familyId, fetchFamilyRecord]);
 
   if (loading) {
     return <LoadingState message="Loading family record..." />;
@@ -365,25 +365,90 @@ const FamilyDetail: React.FC = () => {
       {} as Record<string, typeof opportunitiesData>,
     );
 
+    // Fuzzy match threshold (0-1 where 1 is exact match)
+    const FUZZY_MATCH_THRESHOLD = 0.8;
+
+    // Helper function to compare two strings using Levenshtein distance
+    function fuzzyMatch(str1: string, str2: string): boolean {
+      if (str1 === str2) return true;
+
+      const len1 = str1.length;
+      const len2 = str2.length;
+      const maxLen = Math.max(len1, len2);
+
+      // Calculate Levenshtein distance
+      const matrix = [];
+      for (let i = 0; i <= len1; i++) {
+        matrix[i] = [i];
+      }
+      for (let j = 0; j <= len2; j++) {
+        matrix[0][j] = j;
+      }
+
+      for (let i = 1; i <= len1; i++) {
+        for (let j = 1; j <= len2; j++) {
+          const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j] + 1, // deletion
+            matrix[i][j - 1] + 1, // insertion
+            matrix[i - 1][j - 1] + cost // substitution
+          );
+        }
+      }
+
+      const distance = matrix[len1][len2];
+      const similarity = 1 - (distance / maxLen);
+
+      return similarity >= FUZZY_MATCH_THRESHOLD;
+    }
+
+    // Function to combine similar student records
+    function combineSimilarStudents(students: StudentRecord[]): StudentRecord[] {
+      const combined: StudentRecord[] = [];
+
+      students.forEach(student => {
+        const existing = combined.find(s => 
+          fuzzyMatch(s.lastName, student.lastName) && 
+          fuzzyMatch(s.firstName, student.firstName)
+        );
+
+        if (existing) {
+          // Merge the records
+          existing.opportunities = [...existing.opportunities, ...student.opportunities];
+          existing.contacts = [...existing.contacts, ...student.contacts];
+        } else {
+          combined.push({...student});
+        }
+      });
+
+      return combined;
+    }
+
     // Convert to array of student groups
     const studentGroups = Object.entries(
       opportunitiesByStudent,
     ).map(([studentName, opportunities]) => ({
       studentName,
+      firstName: studentName.split(' ')[0],
+      lastName: studentName.split(' ').slice(1).join(' '),
       opportunities,
+      contacts: [] // Initialize empty contacts array
     }));
-    
-    if (studentGroups.length > 1) {
+
+    // Combine similar student records
+    const combinedStudentGroups = combineSimilarStudents(studentGroups);
+
+    if (combinedStudentGroups.length > 1) {
       return (
-        <Tabs defaultValue={studentGroups[0].studentName} className="w-full">
-          <TabsList className="grid" style={{ gridTemplateColumns: `repeat(${Math.min(studentGroups.length, 4)}, 1fr)` }}>
-            {studentGroups.map(({ studentName }) => (
+        <Tabs defaultValue={combinedStudentGroups[0].studentName} className="w-full">
+          <TabsList className="grid" style={{ gridTemplateColumns: `repeat(${Math.min(combinedStudentGroups.length, 4)}, 1fr)` }}>
+            {combinedStudentGroups.map(({ studentName }) => (
               <TabsTrigger key={`tab-${studentName}`} value={studentName}>
                 {studentName}
               </TabsTrigger>
             ))}
           </TabsList>
-          {studentGroups.map(({ studentName, opportunities }) => (
+          {combinedStudentGroups.map(({ studentName, opportunities }) => (
             <TabsContent key={`content-${studentName}`} value={studentName} className="mt-4">
               <Card>
                 <CardHeader className="pb-0">
@@ -562,9 +627,9 @@ const FamilyDetail: React.FC = () => {
           ))}
         </Tabs>
       );
-    } else if (studentGroups.length === 1) {
+    } else if (combinedStudentGroups.length === 1) {
       // If there's only one student, just show the cards without tabs
-      const { studentName, opportunities } = studentGroups[0];
+      const { studentName, opportunities } = combinedStudentGroups[0];
       return (
         <Card>
           <CardHeader className="pb-0">
@@ -757,9 +822,26 @@ const FamilyDetail: React.FC = () => {
         <div className="flex justify-between items-start">
           <div>
             {/* Prominent Household Name as Title */}
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              {familyRecord.family_name}
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                {familyRecord.family_name}
+              </h1>
+              
+              {/* Active status pill - displayed when family has any closed won opportunity for current year */}
+              {familyRecord.opportunity_count > 0 && 
+                familyRecord.opportunity_ids.some((_, idx) => 
+                  (familyRecord.opportunity_is_won?.[idx] || 
+                   familyRecord.opportunity_stages?.[idx]?.includes("Closed Won")) && 
+                  (familyRecord.opportunity_school_years?.[idx]?.includes("25/26") || 
+                   (familyRecord.opportunity_names?.[idx] && 
+                    familyRecord.opportunity_names[idx].includes("Y25/26")))
+                ) && (
+                <div className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-sm font-medium text-green-800">
+                  <div className="mr-1 h-1.5 w-1.5 rounded-full bg-green-500"></div>
+                  Active
+                </div>
+              )}
+            </div>
 
             {/* Badges for key information */}
             <div className="flex items-center mt-2 space-x-2">
@@ -774,31 +856,6 @@ const FamilyDetail: React.FC = () => {
                 </span>
               </Badge>
 
-              {/* Contact Count Badge */}
-              <Badge
-                variant="secondary"
-                className="flex items-center gap-1 py-1.5 pl-2 pr-3"
-              >
-                <UserIcon className="h-3.5 w-3.5" />
-                <span>
-                  {familyRecord.contact_count}{" "}
-                  {familyRecord.contact_count !== 1 ? "Contacts" : "Contact"}
-                </span>
-              </Badge>
-
-              {/* Opportunity Count Badge */}
-              <Badge
-                variant="secondary"
-                className="flex items-center gap-1 py-1.5 pl-2 pr-3"
-              >
-                <Briefcase className="h-3.5 w-3.5" />
-                <span>
-                  {familyRecord.opportunity_count}{" "}
-                  {familyRecord.opportunity_count !== 1
-                    ? "Opportunities"
-                    : "Opportunity"}
-                </span>
-              </Badge>
             </div>
           </div>
 
@@ -876,79 +933,70 @@ const FamilyDetail: React.FC = () => {
                   Family Information
                 </h3>
                 
-                {/* Key Metrics */}
-                <h4 className="text-sm font-medium mb-3">Family Metrics</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Lifetime Value Metric */}
-                  <div className="p-4 rounded-lg bg-card border border-primary/40 hover:border-primary/70 transition-colors hover:bg-muted/5 cursor-pointer">
-                    <div className="flex items-center mb-2">
-                      <DollarSignIcon className="h-4 w-4 mr-2 text-primary" />
-                      <div className="text-sm font-medium text-muted-foreground">Lifetime Value</div>
+                {/* Family Information content - styled to match Parent Contact Information */}
+                <div className="p-4 rounded-lg bg-card border border-muted/20 hover:border-muted/50 transition-colors">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Lifetime Value */}
+                    <div className="flex items-center">
+                      <DollarSignIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <div>
+                        <div className="text-sm text-muted-foreground">Lifetime Value</div>
+                        <div className="font-medium">
+                          {familyRecord.tuition_offer_count > 0
+                            ? `$${((familyRecord.tuition_offer_family_contributions.reduce((sum, val) => sum + (val || 0), 0) || 0)).toLocaleString()}`
+                            : "$0"}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Total family contribution</div>
+                      </div>
                     </div>
-                    <div className="font-bold text-lg text-primary">
-                      {familyRecord.tuition_offer_count > 0
-                        ? `$${((familyRecord.tuition_offer_family_contributions.reduce((sum, val) => sum + (val || 0), 0) || 0)).toLocaleString()}`
-                        : "$0"}
+                    
+                    {/* Last Activity */}
+                    <div className="flex items-center">
+                      <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <div>
+                        <div className="text-sm text-muted-foreground">Last Activity</div>
+                        <div className="font-medium">
+                          {familyRecord.contact_count > 0 && familyRecord.contact_last_activity_dates.some(date => date)
+                            ? new Date(Math.max(...familyRecord.contact_last_activity_dates
+                                .filter(date => date)
+                                .map(date => new Date(date).getTime()))).toLocaleDateString()
+                            : "No activity"}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Most recent contact interaction</div>
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">Total family contribution</p>
-                  </div>
-                  
-                  {/* Last Activity Metric */}
-                  <div className={`p-4 rounded-lg bg-card border transition-colors
-                    ${familyRecord.contact_count > 0 && familyRecord.contact_last_activity_dates.some(date => date) 
-                      ? "border-l-4 border-l-green-500 border-muted/40" 
-                      : "border-muted/40 hover:border-muted/70"}`}>
-                    <div className="flex items-center mb-2">
-                      <CalendarIcon className="h-4 w-4 mr-2 text-primary" />
-                      <div className="text-sm font-medium text-muted-foreground">Last Activity</div>
+                    
+                    {/* Open Tuition Offers */}
+                    <div className="flex items-center">
+                      <GraduationCap className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <div>
+                        <div className="text-sm text-muted-foreground">Open Tuition Offers</div>
+                        <div className="font-medium">
+                          {familyRecord.tuition_offer_count > 0
+                            ? `${familyRecord.tuition_offer_statuses.filter(status => 
+                                status && (status.includes("Active") || status.includes("Open"))
+                              ).length} out of ${familyRecord.tuition_offer_count}`
+                            : "0"}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Active tuition offers</div>
+                      </div>
                     </div>
-                    <div className="font-bold text-lg">
-                      {familyRecord.contact_count > 0 && familyRecord.contact_last_activity_dates.some(date => date)
-                        ? new Date(Math.max(...familyRecord.contact_last_activity_dates
-                            .filter(date => date)
-                            .map(date => new Date(date).getTime()))).toLocaleDateString()
-                        : "No activity"}
+                    
+                    {/* Family Since Date */}
+                    <div className="flex items-center">
+                      <UserIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <div>
+                        <div className="text-sm text-muted-foreground">Family Since</div>
+                        <div className="font-medium">
+                          {familyRecord.opportunity_count > 0 && familyRecord.opportunity_created_dates.some(date => date)
+                            ? new Date(Math.min(...familyRecord.opportunity_created_dates
+                                .filter(date => date)
+                                .map(date => new Date(date).getTime()))).toLocaleDateString()
+                            : "Unknown"}
+                        </div>
+                        <div className="text-xs text-muted-foreground">First opportunity created</div>
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">Most recent contact interaction</p>
-                  </div>
-                  
-                  {/* Open Tuition Offers */}
-                  <div className={`p-4 rounded-lg bg-card border transition-colors hover:bg-muted/5 cursor-pointer
-                    ${familyRecord.tuition_offer_count > 0
-                      ? "border-l-4 border-l-green-500 border-muted/40" 
-                      : "border-muted/40 hover:border-muted/70"}`}>
-                    <div className="flex items-center mb-2">
-                      <GraduationCap className="h-4 w-4 mr-2 text-primary" />
-                      <div className="text-sm font-medium text-muted-foreground">Open Tuition Offers</div>
-                    </div>
-                    <div className="font-bold text-lg">
-                      {familyRecord.tuition_offer_count > 0
-                        ? familyRecord.tuition_offer_statuses.filter(status => 
-                            status && (status.includes("Active") || status.includes("Open"))
-                          ).length
-                        : 0}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {familyRecord.tuition_offer_count > 0
-                        ? `Out of ${familyRecord.tuition_offer_count} total offers`
-                        : "No tuition offers"}
-                    </p>
-                  </div>
-                  
-                  {/* Family Since Date */}
-                  <div className="p-4 rounded-lg bg-card border border-muted/40 hover:border-muted/70 transition-colors hover:bg-muted/5 cursor-pointer">
-                    <div className="flex items-center mb-2">
-                      <UserIcon className="h-4 w-4 mr-2 text-primary" />
-                      <div className="text-sm font-medium text-muted-foreground">Family Since</div>
-                    </div>
-                    <div className="font-bold text-lg">
-                      {familyRecord.opportunity_count > 0 && familyRecord.opportunity_created_dates.some(date => date)
-                        ? new Date(Math.min(...familyRecord.opportunity_created_dates
-                            .filter(date => date)
-                            .map(date => new Date(date).getTime()))).toLocaleDateString()
-                        : "Unknown"}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">First opportunity created</p>
                   </div>
                 </div>
               </div>
@@ -1179,5 +1227,14 @@ const FamilyDetail: React.FC = () => {
     </div>
   );
 };
+
+// Type definition for student records
+interface StudentRecord {
+  studentName: string;
+  firstName: string;
+  lastName: string;
+  opportunities: any[];
+  contacts: any[];
+}
 
 export default FamilyDetail;
