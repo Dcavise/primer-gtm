@@ -125,10 +125,31 @@ Each student record includes:
 - Array of all opportunities across different school years
 - Each opportunity includes its stage, campus, and other details
 
+### Data Synchronization
+The student data is synchronized with opportunity data through scheduled updates:
+
+1. **Periodic Refresh**: The `populate_derived_students()` function is scheduled to run periodically to process new opportunities
+2. **Manual Updates**: Special cases can be handled with the `set_opportunity_student_override()` function
+3. **Implementation**: Using Option 3 (Scheduled Updates) for efficient batch processing of Fivetran data syncs
+
+To manually refresh the student data, you can run:
+```sql
+SELECT fivetran_views.populate_derived_students();
+```
+
 ### Handling Special Cases
 The system includes a way to handle special cases like Ivana Buritica with the `opportunity_student_map` table:
 - `is_manual_override` flag for manually corrected mappings
 - The `set_opportunity_student_override` function to assign specific opportunities to students
+
+Example of manually mapping an opportunity to a specific student:
+```sql
+SELECT fivetran_views.set_opportunity_student_override(
+  '006UH00000IPT46YAH',  -- Opportunity ID
+  'Ivana',                -- Student first name
+  'Buritica'              -- Student last name
+);
+```
 
 ### Views and Aggregations
 - `enhanced_family_records` - Provides structured student and opportunity data
