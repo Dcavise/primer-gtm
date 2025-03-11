@@ -22,6 +22,8 @@ export interface FamilyRecord {
   opportunity_family_interview_notes: string[];
   opportunity_created_dates: string[];
   opportunity_record_types?: string[]; // Added record types field
+  opportunity_school_years?: string[]; // School years for each opportunity
+  opportunity_is_won?: boolean[]; // Whether each opportunity is won (Closed Won)
   tuition_offer_ids: string[];
   tuition_offer_statuses: string[];
   tuition_offer_family_contributions: number[];

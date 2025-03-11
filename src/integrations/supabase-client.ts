@@ -614,9 +614,11 @@ class SupabaseUnifiedClient {
         ),
         -- Now get the actual stage names directly from the opportunity table
         -- We'll get them in a way that preserves the exact order as in opportunity_ids
-        opportunity_stages AS (
+        opportunity_data AS (
           SELECT 
-            array_agg(s.stage ORDER BY ids.index) as opportunity_stages
+            array_agg(s.stage ORDER BY ids.index) as opportunity_stages,
+            array_agg(s.school_year ORDER BY ids.index) as opportunity_school_years,
+            array_agg(s.is_won ORDER BY ids.index) as opportunity_is_won
           FROM family_data fd,
           LATERAL (
             SELECT 
@@ -625,16 +627,20 @@ class SupabaseUnifiedClient {
           ) ids
           LEFT JOIN LATERAL (
             SELECT 
-              o.stage_name as stage
+              o.stage_name as stage,
+              o.school_year_c as school_year,
+              CASE WHEN o.stage_name = 'Closed Won' THEN true ELSE false END as is_won
             FROM fivetran_views.opportunity o
             WHERE o.id = ids.opp_id
           ) s ON true
         )
         SELECT 
           fd.*,
-          COALESCE(os.opportunity_stages, ARRAY[]::text[]) as opportunity_stages
+          COALESCE(od.opportunity_stages, ARRAY[]::text[]) as opportunity_stages,
+          COALESCE(od.opportunity_school_years, ARRAY[]::text[]) as opportunity_school_years,
+          COALESCE(od.opportunity_is_won, ARRAY[]::boolean[]) as opportunity_is_won
         FROM family_data fd
-        LEFT JOIN opportunity_stages os ON true
+        LEFT JOIN opportunity_data od ON true
       `;
       
       try {
