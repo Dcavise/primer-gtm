@@ -915,6 +915,27 @@ const EnhancedFamilyDetail: React.FC = () => {
                       </div>
                     </div>
                     
+                    {/* Lifetime Value (LTV) - mock data */}
+                    <div className="flex items-center">
+                      <DollarSignIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <div>
+                        <div className="text-sm text-muted-foreground">Lifetime Value</div>
+                        <div className="font-medium">
+                          {new Intl.NumberFormat('en-US', {
+                            style: 'currency',
+                            currency: 'USD',
+                            maximumFractionDigits: 0
+                          }).format(
+                            // Mock LTV calculation based on number of opportunities and won status
+                            mergedStudents?.flatMap(s => s.opportunities)
+                              .filter(o => o.is_won)
+                              .length * 12500 || 0
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Total tuition revenue</div>
+                      </div>
+                    </div>
+                    
                     {/* Active School Years */}
                     <div className="flex items-center">
                       <GraduationCap className="h-4 w-4 mr-2 text-muted-foreground" />
@@ -932,6 +953,28 @@ const EnhancedFamilyDetail: React.FC = () => {
                           }
                         </div>
                         <div className="text-xs text-muted-foreground">Years with won opportunities</div>
+                      </div>
+                    </div>
+                    
+                    {/* Current Status */}
+                    <div className="flex items-center">
+                      <CheckCircle2 className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <div>
+                        <div className="text-sm text-muted-foreground">Current Status</div>
+                        <div className="font-medium">
+                          {mergedStudents?.some(s => 
+                            s.opportunities.some(o => 
+                              o.is_won && 
+                              formatSchoolYearForDisplay(o.school_year).includes("25/26")
+                            )
+                          ) ? 
+                            "Active Enrollment" : 
+                            mergedStudents?.some(s => s.opportunities.some(o => o.is_won)) ?
+                              "Previous Enrollment" :
+                              "Lead / Prospect"
+                          }
+                        </div>
+                        <div className="text-xs text-muted-foreground">Current family status</div>
                       </div>
                     </div>
                   </div>
@@ -955,8 +998,8 @@ const EnhancedFamilyDetail: React.FC = () => {
 
         {/* Links / Resources Section */}
         <div className="bg-muted/20 rounded-lg p-6 mt-8">
-          <h2 className="text-2xl font-bold mb-4">Resources</h2>
-          <div className="flex flex-wrap gap-4">
+          <h2 className="text-2xl font-bold mb-4">External Resources</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Salesforce Link */}
             <a 
               href={familyRecord.family_id ? `https://primer.lightning.force.com/lightning/r/Account/${familyRecord.family_id}/view` : "#"} 
@@ -1001,6 +1044,54 @@ const EnhancedFamilyDetail: React.FC = () => {
                 <line x1="10" y1="14" x2="21" y2="3"></line>
               </svg>
               Intercom
+            </a>
+            
+            {/* Stripe Link (Mock) */}
+            <a 
+              href={familyRecord.family_id ? 
+                `https://dashboard.stripe.com/search?query=${encodeURIComponent(familyRecord.family_name)}` : "#"} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-[#6772e5] text-white hover:bg-[#6772e5]/90 h-10 px-4 py-2 ${!familyRecord.family_id ? 'opacity-50 pointer-events-none' : ''}`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-2">
+                <path d="M2 9h20M2 15h20" />
+                <path d="M5 5v14" />
+                <path d="M19 5v14" />
+              </svg>
+              Stripe
+            </a>
+            
+            {/* Docs Link (Mock) */}
+            <a 
+              href={familyRecord.family_id ? 
+                `https://docs.google.com/search?q=${encodeURIComponent(familyRecord.family_name)}` : "#"} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-[#0F9D58] text-white hover:bg-[#0F9D58]/90 h-10 px-4 py-2 ${!familyRecord.family_id ? 'opacity-50 pointer-events-none' : ''}`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <polyline points="10 9 9 9 8 9" />
+              </svg>
+              Documents
+            </a>
+            
+            {/* SchoolMint Link (Mock) */}
+            <a 
+              href={familyRecord.family_id ? 
+                `https://primerlearning.schoolmint.com/families/${familyRecord.family_id}` : "#"} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-[#4481eb] text-white hover:bg-[#4481eb]/90 h-10 px-4 py-2 ${!familyRecord.family_id ? 'opacity-50 pointer-events-none' : ''}`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-2">
+                <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+              </svg>
+              SchoolMint
             </a>
           </div>
         </div>
