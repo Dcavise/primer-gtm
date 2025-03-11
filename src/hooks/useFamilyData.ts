@@ -7,6 +7,7 @@ export interface FamilyRecord {
   family_name: string;
   pdc_family_id_c: string;
   current_campus_c: string;
+  current_campus_name?: string; // Added campus name field
   contact_ids: string[];
   contact_first_names: string[];
   contact_last_names: string[];
@@ -18,6 +19,7 @@ export interface FamilyRecord {
   opportunity_stages: string[];
   opportunity_grades: string[];
   opportunity_campuses: string[];
+  opportunity_campus_names?: string[]; // Added campus names array
   opportunity_lead_notes: string[];
   opportunity_family_interview_notes: string[];
   opportunity_created_dates: string[];
@@ -85,30 +87,48 @@ export const useFamilyData = (): UseFamilyDataReturn => {
     setError(null);
 
     try {
-      console.log(`Fetching family record for ID: ${familyId}`);
+      console.log(`useFamilyData: Fetching family record for ID: ${familyId}`);
 
-      // Use our improved getFamilyRecord method that queries the comprehensive_family_records table directly
+      // Try to normalize the ID to improve search success
+      const normalizedId = familyId.trim();
+      
+      // Check if this might be a truncated ID (common in URLs)
+      if (normalizedId.length < 18 && normalizedId.length > 10) {
+        console.log(`useFamilyData: ID appears to be truncated (length ${normalizedId.length}), will use partial matching`);
+      }
+      
+      console.log(`useFamilyData: Using normalized ID: ${normalizedId}`);
+
+      // Use our improved getFamilyRecord method that queries the comprehensive_family_records table
+      // from the fivetran_views schema as mentioned in the documentation
       const { success, data, error } = await (supabase as SupabaseUnifiedClient).getFamilyRecord(
-        familyId
+        normalizedId
       );
 
       if (!success || error) {
-        console.warn("Failed to fetch family record:", error);
+        console.warn("useFamilyData: Failed to fetch family record:", error);
         throw new Error(typeof error === "string" ? error : "Failed to fetch family data");
       }
 
       if (!data) {
-        setError(`Family with ID ${familyId} not found`);
+        console.error(`useFamilyData: Family with ID ${normalizedId} not found`);
+        setError(`Family with ID ${normalizedId} not found in the database. Please verify the ID.`);
         setFamilyRecord(null);
       } else {
         // Cast to FamilyRecord type
         setFamilyRecord(data as unknown as FamilyRecord);
-        console.log("Successfully fetched family record:", data);
+        console.log("useFamilyData: Successfully fetched family record with fields:", 
+          Object.keys(data).join(', '));
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
       setError(`Error fetching family data: ${errorMessage}`);
-      console.error("Error fetching family data:", err);
+      console.error("useFamilyData: Error fetching family data:", err);
+      
+      // Add more detailed logging for troubleshooting
+      if (err instanceof Error && err.stack) {
+        console.error("Stack trace:", err.stack);
+      }
     } finally {
       setLoading(false);
     }

@@ -635,9 +635,15 @@ export class SupabaseUnifiedClient {
 
       logger.debug(`Fetching family record for ID: ${familyId}`);
 
-      // Query the comprehensive_family_records table directly
-      // Query explicitly specifying each field to ensure proper data retrieval
-      // First get the base family data from comprehensive_family_records
+      // Query the comprehensive_family_records table directly from fivetran_views schema
+      // According to docs, this is the correct schema, not public schema
+      // We'll try to match by any identifier (family_id or pdc_family_id_c or standard_id)
+      // and handle potential format issues with more lenient matching
+      
+      // Clean and sanitize the ID input to prevent SQL injection
+      const sanitizedId = familyId.replace(/'/g, "''");
+      logger.debug(`Using sanitized ID for family record query: ${sanitizedId}`);
+      
       const query = `
         WITH family_data AS (
           SELECT 
@@ -667,8 +673,43 @@ export class SupabaseUnifiedClient {
             opportunity_count,
             tuition_offer_count
           FROM fivetran_views.comprehensive_family_records
-          WHERE family_id = '${familyId}' OR pdc_family_id_c = '${familyId}'
+          WHERE 
+            -- Try to match by any ID field
+            family_id = '${sanitizedId}' 
+            OR pdc_family_id_c = '${sanitizedId}'
+            OR family_id LIKE '${sanitizedId}%' -- Try partial matching for truncated IDs
+            OR pdc_family_id_c LIKE '${sanitizedId}%' -- Try partial matching for truncated IDs
           LIMIT 1
+        ),
+        -- Get the campus name for the current_campus_c field
+        campus_data AS (
+          SELECT
+            c.id as campus_id,
+            c.name as campus_name
+          FROM
+            fivetran_views.campus_c c
+          JOIN
+            family_data fd ON fd.current_campus_c = c.id
+        ),
+        -- Get campus names for all opportunity campuses
+        opportunity_campus_names AS (
+          SELECT
+            array_agg(c.name ORDER BY ids.index) as opportunity_campus_names
+          FROM 
+            family_data fd,
+            LATERAL (
+              SELECT
+                UNNEST(fd.opportunity_campuses) as campus_id,
+                generate_subscripts(fd.opportunity_campuses, 1) as index
+            ) ids
+          LEFT JOIN LATERAL (
+            SELECT
+              c.name
+            FROM
+              fivetran_views.campus_c c
+            WHERE
+              c.id = ids.campus_id
+          ) c ON true
         ),
         -- Now get the actual stage names directly from the opportunity table
         -- We'll get them in a way that preserves the exact order as in opportunity_ids
@@ -694,11 +735,15 @@ export class SupabaseUnifiedClient {
         )
         SELECT 
           fd.*,
+          COALESCE(cd.campus_name, 'Unknown Campus') as current_campus_name,
           COALESCE(od.opportunity_stages, ARRAY[]::text[]) as opportunity_stages,
           COALESCE(od.opportunity_school_years, ARRAY[]::text[]) as opportunity_school_years,
-          COALESCE(od.opportunity_is_won, ARRAY[]::boolean[]) as opportunity_is_won
+          COALESCE(od.opportunity_is_won, ARRAY[]::boolean[]) as opportunity_is_won,
+          COALESCE(ocn.opportunity_campus_names, ARRAY[]::text[]) as opportunity_campus_names
         FROM family_data fd
+        LEFT JOIN campus_data cd ON true
         LEFT JOIN opportunity_data od ON true
+        LEFT JOIN opportunity_campus_names ocn ON true
       `;
 
       try {
@@ -713,11 +758,31 @@ export class SupabaseUnifiedClient {
         }
 
         if (!data || (Array.isArray(data) && data.length === 0)) {
-          logger.warn(`No family found with ID: ${familyId}`);
+          logger.warn(`No family found with ID: ${familyId} in fivetran_views.comprehensive_family_records`);
+          
+          // Provide more detailed debugging information
+          logger.debug('Query that produced no results:', query);
+          
+          // Try to check if the table even exists and has data
+          try {
+            const tableCheckQuery = `SELECT count(*) FROM fivetran_views.comprehensive_family_records LIMIT 1`;
+            logger.debug('Checking if table has data with query:', tableCheckQuery);
+            this.regular.rpc("execute_sql_query", { query_text: tableCheckQuery })
+              .then(({data: checkData, error: checkError}) => {
+                if (checkError) {
+                  logger.error('Error checking table existence:', checkError);
+                } else {
+                  logger.debug('Table check result:', checkData);
+                }
+              });
+          } catch (checkError) {
+            logger.error('Error during table existence check:', checkError);
+          }
+          
           return {
             success: false,
             data: null,
-            error: `Family with ID ${familyId} not found`,
+            error: `Family with ID ${familyId} not found in the database. Please check the ID and try again.`,
           };
         }
 

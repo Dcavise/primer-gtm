@@ -36,3 +36,42 @@
 - All feature-specific hooks should be in `/src/features/[feature]/hooks/`
 - Only shared components go in `/src/components/`
 - All component imports should use `@/` path aliases
+
+## Supabase Database Structure
+
+### Important Guidelines
+- **Always use the fivetran_views schema**, not the public schema
+- When accessing tables, use schema-qualified names (e.g., `fivetran_views.lead`)
+- For function calls, use direct schema name (e.g., `fivetran_views.search_families`) 
+- For campus information, use `current_campus_name` and `opportunity_campus_names` fields from the family record instead of IDs
+
+### Key Tables
+- `account` - Families/organizations
+- `contact` - Individual contacts
+- `lead` - Prospective students/families
+- `opportunity` - Enrollment opportunities
+- `campus_c` - Campus locations (contains both ID and name fields)
+
+### Important Functions
+- **get_family_record**: Retrieves detailed family record by family ID (now includes campus names)
+- **get_campus_names**: Retrieves campus names for an array of campus IDs
+- **get_campus_name**: Retrieves a single campus name for a given campus ID
+- **search_families**: Searches for families matching search term
+- **get_lead_metrics**: Retrieves lead metrics for specified time period
+
+### Family Record Structure
+The family record now includes these additional fields:
+- `current_campus_name`: Human-readable name of the family's campus
+- `opportunity_campus_names`: Array of campus names corresponding to each opportunity
+
+### Metrics Views
+- `lead_metrics_daily` - Daily aggregation of lead metrics
+- `lead_metrics_weekly` - Weekly aggregation of lead metrics
+- `lead_metrics_monthly` - Monthly aggregation of lead metrics
+
+### Documentation
+Full database documentation is available in the `/docs/` directory:
+- Main Index: `/docs/supabase_documentation_index.md`
+- Functions Reference: `/docs/supabase_functions_reference.md`
+- Schema Reference: `/docs/supabase_schema_reference_*.md`
+- Metrics Views Reference: `/docs/supabase_metrics_views_reference.md`
