@@ -25,7 +25,7 @@ const Auth = () => {
   }
 
   return (
-    <AuthLayout title="Primer Property Explorer" description="Access your property research tools">
+    <AuthLayout title="Primer GTM" description="Primer School Growth and Management Dashboard">
       <Card>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2">

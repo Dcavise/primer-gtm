@@ -107,6 +107,36 @@ const StudentTimeline: React.FC<TimelineProps> = ({ student }) => {
             {/* Connector line spanning the width */}
             <div className="absolute h-0.5 top-4 left-12 right-12 bg-muted-foreground/30"></div>
 
+            {/* Green connector lines between completed years */}
+            {years.map((year, idx) => {
+              if (idx < years.length - 1) {
+                const currentYearHasWon = Object.keys(opportunitiesByYear).some(oppYear => {
+                  const formattedYear = formatSchoolYearForDisplay(oppYear);
+                  const yearToCheck = formatSchoolYearForDisplay(year);
+                  return formattedYear === yearToCheck;
+                });
+                
+                const nextYearHasWon = Object.keys(opportunitiesByYear).some(oppYear => {
+                  const formattedYear = formatSchoolYearForDisplay(oppYear);
+                  const yearToCheck = formatSchoolYearForDisplay(years[idx + 1]);
+                  return formattedYear === yearToCheck;
+                });
+                
+                if (currentYearHasWon && nextYearHasWon) {
+                  const left = idx === 0 ? "12px" : `calc(12px + ${idx} * 80px)`;
+                  const width = "80px";
+                  return (
+                    <div 
+                      key={`connector-${idx}`}
+                      className="absolute h-2 bg-green-500 top-4 z-0"
+                      style={{ left, width }}
+                    ></div>
+                  );
+                }
+              }
+              return null;
+            })}
+
             {years.map((year, idx) => {
               const displayYear = year.split("-")[0];
               // Check if student is enrolled in this year
