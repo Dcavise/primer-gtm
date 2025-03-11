@@ -371,15 +371,29 @@ const FamilyDetail: React.FC = () => {
     <div className="max-w-6xl mx-auto p-4">
       {/* Header / Summary Section */}
       <div className="mb-8">
-        <div className="flex justify-between items-start">
-          <div>
-            {/* Prominent Household Name as Title */}
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              {family.family_name}
-            </h1>
-
-            {/* Badges for key information */}
-            <div className="flex items-center mt-2 space-x-2">
+        <div className="flex justify-between items-center">
+          <div className="flex flex-1 items-center gap-4">
+            {/* Left side: Household Name */}
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                {family.family_name}
+              </h1>
+            </div>
+            
+            {/* Center section: Badges/tags */}
+            <div className="flex items-center gap-3 ml-6">
+              {/* Check if family has any won opportunities */}
+              {family.opportunity_is_won && 
+               family.opportunity_is_won.some(isWon => isWon === true) && (
+                <Badge
+                  variant="success"
+                  className="flex items-center gap-1 py-1.5 pl-2 pr-3 bg-green-100 text-green-800 border-green-200"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  <span className="text-sm font-medium">Active</span>
+                </Badge>
+              )}
+              
               {/* Campus Badge with Icon */}
               <Badge
                 variant="outline"
@@ -391,20 +405,85 @@ const FamilyDetail: React.FC = () => {
                 </span>
               </Badge>
 
-              {/* Contact Count Badge */}
-              <Badge variant="secondary" className="flex items-center gap-1 py-1.5 pl-2 pr-3">
-                <UserIcon className="h-3.5 w-3.5" />
+              {/* Student Count Badge */}
+              <Badge
+                variant="secondary"
+                className="flex items-center gap-1 py-1.5 pl-2 pr-3"
+              >
+                <GraduationCap className="h-3.5 w-3.5" />
                 <span>
-                  {family.contact_count} {family.contact_count !== 1 ? "Contacts" : "Contact"}
-                </span>
-              </Badge>
-
-              {/* Opportunity Count Badge */}
-              <Badge variant="secondary" className="flex items-center gap-1 py-1.5 pl-2 pr-3">
-                <Briefcase className="h-3.5 w-3.5" />
-                <span>
-                  {family.opportunity_count}{" "}
-                  {family.opportunity_count !== 1 ? "Opportunities" : "Opportunity"}
+                  {(() => {
+                    // Helper function to calculate string similarity (Levenshtein distance)
+                    const calculateSimilarity = (str1: string, str2: string): number => {
+                      const track = Array(str2.length + 1).fill(null).map(() => 
+                        Array(str1.length + 1).fill(null));
+                      
+                      for (let i = 0; i <= str1.length; i += 1) {
+                        track[0][i] = i;
+                      }
+                      
+                      for (let j = 0; j <= str2.length; j += 1) {
+                        track[j][0] = j;
+                      }
+                      
+                      for (let j = 1; j <= str2.length; j += 1) {
+                        for (let i = 1; i <= str1.length; i += 1) {
+                          const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
+                          track[j][i] = Math.min(
+                            track[j][i - 1] + 1, // deletion
+                            track[j - 1][i] + 1, // insertion
+                            track[j - 1][i - 1] + indicator, // substitution
+                          );
+                        }
+                      }
+                      
+                      // Calculate similarity as a percentage (0-1)
+                      // Higher values mean more similar strings
+                      const maxLength = Math.max(str1.length, str2.length);
+                      return maxLength === 0 ? 1 : 1 - (track[str2.length][str1.length] / maxLength);
+                    };
+                    
+                    // Normalize student name for more accurate comparison
+                    const normalizeStudentName = (name: string): string => {
+                      return name
+                        .toLowerCase()
+                        .replace(/\s+/g, ' ') // normalize whitespace
+                        .trim();
+                    };
+                    
+                    // Extract and clean student names
+                    const rawStudentNames = family.opportunity_names
+                      ? family.opportunity_names
+                          .map(name => name ? extractStudentName(name) : null)
+                          .filter(Boolean) as string[]
+                      : [];
+                    
+                    // Deduplicate similar names using fuzzy matching
+                    const uniqueStudentNames: string[] = [];
+                    
+                    // Similarity threshold (0.85 = 85% similar)
+                    const SIMILARITY_THRESHOLD = 0.85;
+                    
+                    // Process each name
+                    rawStudentNames.forEach(currentName => {
+                      const normalizedCurrentName = normalizeStudentName(currentName);
+                      
+                      // Check if this name is similar to any we've already seen
+                      const existingSimilarName = uniqueStudentNames.find(existingName => {
+                        const normalizedExistingName = normalizeStudentName(existingName);
+                        const similarity = calculateSimilarity(normalizedCurrentName, normalizedExistingName);
+                        return similarity >= SIMILARITY_THRESHOLD;
+                      });
+                      
+                      // If no similar name found, add this one to our list
+                      if (!existingSimilarName) {
+                        uniqueStudentNames.push(currentName);
+                      }
+                    });
+                    
+                    const studentCount = uniqueStudentNames.length;
+                    return `${studentCount} ${studentCount !== 1 ? 'Students' : 'Student'}`;
+                  })()}
                 </span>
               </Badge>
             </div>
@@ -634,6 +713,44 @@ const FamilyDetail: React.FC = () => {
           <h2 className="text-2xl font-bold mb-4">Students</h2>
           {family.opportunity_count > 0 ? (
             (() => {
+              // Helper function to calculate string similarity (Levenshtein distance)
+              const calculateSimilarity = (str1: string, str2: string): number => {
+                const track = Array(str2.length + 1).fill(null).map(() => 
+                  Array(str1.length + 1).fill(null));
+                
+                for (let i = 0; i <= str1.length; i += 1) {
+                  track[0][i] = i;
+                }
+                
+                for (let j = 0; j <= str2.length; j += 1) {
+                  track[j][0] = j;
+                }
+                
+                for (let j = 1; j <= str2.length; j += 1) {
+                  for (let i = 1; i <= str1.length; i += 1) {
+                    const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
+                    track[j][i] = Math.min(
+                      track[j][i - 1] + 1, // deletion
+                      track[j - 1][i] + 1, // insertion
+                      track[j - 1][i - 1] + indicator, // substitution
+                    );
+                  }
+                }
+                
+                // Calculate similarity as a percentage (0-1)
+                // Higher values mean more similar strings
+                const maxLength = Math.max(str1.length, str2.length);
+                return maxLength === 0 ? 1 : 1 - (track[str2.length][str1.length] / maxLength);
+              };
+              
+              // Normalize student name for more accurate comparison
+              const normalizeStudentName = (name: string): string => {
+                return name
+                  .toLowerCase()
+                  .replace(/\s+/g, ' ') // normalize whitespace
+                  .trim();
+              };
+
               // Process opportunity data and provide defaults for missing values
               const opportunitiesData = family.opportunity_ids.map((id, index) => ({
                 id,
@@ -657,13 +774,53 @@ const FamilyDetail: React.FC = () => {
                   false,
               }));
 
-              // Group opportunities by student name
+              // Create a similarity map to group student names
+              const similarStudentGroups: Record<string, string> = {};
+              
+              // Similarity threshold (0.85 = 85% similar)
+              const SIMILARITY_THRESHOLD = 0.85;
+              
+              // Identify similar student names
+              opportunitiesData.forEach((opp) => {
+                const currentName = opp.studentName;
+                
+                // Skip already processed names
+                if (similarStudentGroups[currentName]) return;
+                
+                // Find if this name is similar to any previously seen name
+                const normalizedCurrentName = normalizeStudentName(currentName);
+                
+                // Check all other student names not yet grouped
+                opportunitiesData.forEach((otherOpp) => {
+                  if (
+                    currentName !== otherOpp.studentName && 
+                    !similarStudentGroups[otherOpp.studentName]
+                  ) {
+                    const normalizedOtherName = normalizeStudentName(otherOpp.studentName);
+                    const similarity = calculateSimilarity(normalizedCurrentName, normalizedOtherName);
+                    
+                    // If similar enough, map to the first name we saw
+                    if (similarity >= SIMILARITY_THRESHOLD) {
+                      similarStudentGroups[otherOpp.studentName] = currentName;
+                      console.log(`Grouping similar names: ${otherOpp.studentName} -> ${currentName} (${Math.round(similarity * 100)}% similar)`);
+                    }
+                  }
+                });
+                
+                // Map the name to itself to mark as processed
+                similarStudentGroups[currentName] = currentName;
+              });
+
+              // Group opportunities by canonical student name (using the similarity map)
               const opportunitiesByStudent = opportunitiesData.reduce(
                 (acc, opp) => {
-                  if (!acc[opp.studentName]) {
-                    acc[opp.studentName] = [];
+                  // Use the canonical name from the similarity map, or the original name if no mapping
+                  const canonicalName = similarStudentGroups[opp.studentName] || opp.studentName;
+                  
+                  if (!acc[canonicalName]) {
+                    acc[canonicalName] = [];
                   }
-                  acc[opp.studentName].push(opp);
+                  acc[canonicalName].push(opp);
                   return acc;
                 },
                 {} as Record<string, typeof opportunitiesData>
