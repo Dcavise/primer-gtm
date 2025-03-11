@@ -521,7 +521,16 @@ const FamilyDetail: React.FC = () => {
                         >
                           <CardHeader>
                             <CardTitle>
-                              Opportunity {index + 1}
+                              {/* Display school year and record type in the header */}
+                              {(familyRecord.opportunity_school_years?.[index] || 
+                               (name ? extractSchoolYear(name) : "")) && recordTypeDisplay ? (
+                                <>
+                                  {familyRecord.opportunity_school_years?.[index] || 
+                                   (name ? extractSchoolYear(name) : "")} {recordTypeDisplay}
+                                </>
+                              ) : (
+                                `Opportunity ${index + 1}`
+                              )}
                             </CardTitle>
                             <CardDescription>
                               <Badge
@@ -719,7 +728,16 @@ const FamilyDetail: React.FC = () => {
                   >
                     <CardHeader>
                       <CardTitle>
-                        Opportunity {index + 1}
+                        {/* Display school year and record type in the header */}
+                        {(familyRecord.opportunity_school_years?.[index] || 
+                         (name ? extractSchoolYear(name) : "")) && recordTypeDisplay ? (
+                          <>
+                            {familyRecord.opportunity_school_years?.[index] || 
+                             (name ? extractSchoolYear(name) : "")} {recordTypeDisplay}
+                          </>
+                        ) : (
+                          `Opportunity ${index + 1}`
+                        )}
                       </CardTitle>
                       <CardDescription>
                         <Badge
