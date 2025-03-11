@@ -450,7 +450,7 @@ const Search = () => {
         </div>
 
         {searchQuery.trim() && (
-          <div className="grid gap-6">
+          <div className="grid gap-4">
           {isSearching ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-outer-space"></div>
@@ -459,7 +459,7 @@ const Search = () => {
             searchResults.map((result) => (
               <Card 
                 key={result.id} 
-                className={`p-5 bg-white hover:shadow-lg cursor-pointer transition-all duration-200 border border-gray-100 ${result.hasWonOpportunities ? 'border-l-4 border-l-green-500' : ''}`}
+                className={`p-4 bg-white hover:shadow-lg cursor-pointer transition-all duration-200 border border-gray-100 rounded-lg ${result.hasWonOpportunities ? 'border-l-4 border-l-green-500' : ''} mb-2 shadow-sm`}
                 onClick={() => handleResultClick(result)}
               >
                 <div className="flex items-start gap-4">
@@ -479,29 +479,20 @@ const Search = () => {
                     )}
                   </div>
                   <div className="flex-1">
-                    {/* Type and badges row */}
-                    <div className="flex items-center text-sm text-slate-gray mb-3">
-                      <span>{result.type}</span>
+                    {/* Campus badge row */}
+                    <div className="flex items-center mb-1">
                       {result.hasWonOpportunities && (
-                        <span className="ml-2 px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-medium rounded-full shadow-sm flex items-center gap-1">
+                        <Badge variant="outline" className="mr-2 px-3 py-1 bg-emerald-100 text-emerald-800 border-emerald-200 flex items-center gap-1">
                           <Award className="h-3 w-3" /> Active
-                        </span>
+                        </Badge>
                       )}
+                      <Badge variant="outline" className="px-2 py-1 bg-gray-100 text-gray-700 border-gray-200 flex items-center gap-1">
+                        <MapPin className="h-3 w-3" /> {result.details.replace('Campus:', '').trim()}
+                      </Badge>
                     </div>
                     
                     {/* Enhanced household name - increased size and weight */}
-                    <h3 className="text-xl font-bold text-outer-space mb-3">{result.name}</h3>
-                    
-                    {/* Key details with subtle divider */}
-                    <div className="border-b border-gray-100 pb-3 mb-3">
-                      <div className="flex flex-col gap-2">
-                        {/* Display campus with icon */}
-                        <div className="flex items-center">
-                          <MapPin className="h-4 w-4 text-gray-500 mr-2" />
-                          <span className="text-slate-gray">{result.details.replace('Campus:', '').trim()}</span>
-                        </div>
-                      </div>
-                    </div>
+                    <h3 className="text-2xl font-semibold text-outer-space">{result.name}</h3>
                     
                     {/* Removed the School Year Information section as requested */}
                   </div>
