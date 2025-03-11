@@ -616,6 +616,25 @@ const FamilyDetail: React.FC = () => {
                                         </p>
                                       </div>
                                     )}
+                                    
+                                    {/* Debug information */}
+                                    <div className="mt-4 pt-2 border-t border-dashed border-gray-200">
+                                      <div>
+                                        <h5 className="text-xs font-medium text-muted-foreground">Opportunity ID (Debug)</h5>
+                                        <p className="text-xs font-mono bg-gray-50 p-1 rounded">
+                                          {id}
+                                        </p>
+                                      </div>
+                                      
+                                      <div className="mt-2">
+                                        <h5 className="text-xs font-medium text-muted-foreground">Last Stage Change (Debug)</h5>
+                                        <p className="text-xs font-mono bg-gray-50 p-1 rounded">
+                                          {familyRecord.opportunity_created_dates[index] 
+                                            ? new Date(familyRecord.opportunity_created_dates[index]).toLocaleDateString() 
+                                            : "Unknown"}
+                                        </p>
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -795,6 +814,25 @@ const FamilyDetail: React.FC = () => {
                                   </p>
                                 </div>
                               )}
+                              
+                              {/* Debug information */}
+                              <div className="mt-4 pt-2 border-t border-dashed border-gray-200">
+                                <div>
+                                  <h5 className="text-xs font-medium text-muted-foreground">Opportunity ID (Debug)</h5>
+                                  <p className="text-xs font-mono bg-gray-50 p-1 rounded">
+                                    {id}
+                                  </p>
+                                </div>
+                                
+                                <div className="mt-2">
+                                  <h5 className="text-xs font-medium text-muted-foreground">Last Stage Change (Debug)</h5>
+                                  <p className="text-xs font-mono bg-gray-50 p-1 rounded">
+                                    {familyRecord.opportunity_created_dates[index] 
+                                      ? new Date(familyRecord.opportunity_created_dates[index]).toLocaleDateString() 
+                                      : "Unknown"}
+                                  </p>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
