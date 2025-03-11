@@ -25,11 +25,9 @@ export const useGradeBandEnrollment = ({
 
   // Debug input parameters
   useEffect(() => {
-    console.log(
-      "%c useGradeBandEnrollment input params:",
-      "color: orange; font-weight: bold",
-      { campusId },
-    );
+    console.log("%c useGradeBandEnrollment input params:", "color: orange; font-weight: bold", {
+      campusId,
+    });
   }, [campusId]);
 
   useEffect(() => {
@@ -39,10 +37,7 @@ export const useGradeBandEnrollment = ({
         setLoading(true);
         setError(null);
 
-        console.log(
-          "Using grade_enrollment_summary view with campus filter:",
-          campusId,
-        );
+        console.log("Using grade_enrollment_summary view with campus filter:", campusId);
 
         // Query the view directly
         let query;
@@ -91,9 +86,7 @@ export const useGradeBandEnrollment = ({
         console.log("Query response:", { rawData, queryError });
 
         if (queryError) {
-          throw new Error(
-            `SQL query error: ${queryError.message || "Unknown error"}`,
-          );
+          throw new Error(`SQL query error: ${queryError.message || "Unknown error"}`);
         }
 
         // Process the returned data and group into bands
@@ -113,19 +106,13 @@ export const useGradeBandEnrollment = ({
             const normalizedGrade = grade.toUpperCase();
 
             if (["K", "TK", "0", "1", "2"].includes(normalizedGrade)) {
-              console.log(
-                `Grade ${grade} mapped to K-2 band with count ${count}`,
-              );
+              console.log(`Grade ${grade} mapped to K-2 band with count ${count}`);
               gradeBandCounts["K-2"] += count;
             } else if (["3", "4", "5"].includes(normalizedGrade)) {
-              console.log(
-                `Grade ${grade} mapped to 3-5 band with count ${count}`,
-              );
+              console.log(`Grade ${grade} mapped to 3-5 band with count ${count}`);
               gradeBandCounts["3-5"] += count;
             } else if (["6", "7", "8"].includes(normalizedGrade)) {
-              console.log(
-                `Grade ${grade} mapped to 6-8 band with count ${count}`,
-              );
+              console.log(`Grade ${grade} mapped to 6-8 band with count ${count}`);
               gradeBandCounts["6-8"] += count;
             } else {
               console.log(`Grade ${grade} not mapped to any band`);
@@ -134,25 +121,21 @@ export const useGradeBandEnrollment = ({
         }
 
         // Convert to array format
-        const resultData: GradeBandEnrollmentItem[] = Object.entries(
-          gradeBandCounts,
-        ).map(([grade_band, enrollment_count]) => ({
-          grade_band,
-          enrollment_count,
-        }));
+        const resultData: GradeBandEnrollmentItem[] = Object.entries(gradeBandCounts).map(
+          ([grade_band, enrollment_count]) => ({
+            grade_band,
+            enrollment_count,
+          })
+        );
 
         // Make sure we have entries for all expected grade bands, even if no data was returned
         const defaultGradeBands = ["K-2", "3-5", "6-8"];
         const finalData = defaultGradeBands.map((band) => {
-          const existingData = resultData.find(
-            (item) => item.grade_band === band,
-          );
+          const existingData = resultData.find((item) => item.grade_band === band);
           if (existingData) {
             return existingData;
           } else {
-            console.log(
-              `No data found for grade band: ${band}, adding with count 0`,
-            );
+            console.log(`No data found for grade band: ${band}, adding with count 0`);
             return {
               grade_band: band,
               enrollment_count: 0,
@@ -165,13 +148,8 @@ export const useGradeBandEnrollment = ({
       } catch (err) {
         console.error("Error fetching grade band enrollment data:", err);
         // Create a new error with a more helpful message
-        const errorMessage =
-          err instanceof Error ? err.message : "An unknown error occurred";
-        setError(
-          new Error(
-            `Failed to fetch grade band enrollment data: ${errorMessage}`,
-          ),
-        );
+        const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
+        setError(new Error(`Failed to fetch grade band enrollment data: ${errorMessage}`));
         // Set empty data to prevent component errors
         setData([]);
       } finally {

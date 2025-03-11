@@ -46,7 +46,7 @@ describe("fetchLeadsStats", () => {
             callback({
               data: mockWeeklyData,
               error: null,
-            }),
+            })
           ),
       };
     });
@@ -82,7 +82,7 @@ describe("fetchLeadsStats", () => {
                 { week: "2023-01-22", lead_count: 3 },
               ],
               error: null,
-            }),
+            })
           ),
       };
     });
@@ -94,7 +94,7 @@ describe("fetchLeadsStats", () => {
       "get_weekly_lead_counts",
       expect.objectContaining({
         campus_filter: "campus-123",
-      }),
+      })
     );
   });
 
@@ -114,7 +114,7 @@ describe("fetchLeadsStats", () => {
             callback({
               data: null,
               error: new Error("RPC error"),
-            }),
+            })
           ),
       };
     });
@@ -134,7 +134,7 @@ describe("fetchLeadsStats", () => {
             callback({
               data: mockFallbackData,
               error: null,
-            }),
+            })
           ),
       };
     });
@@ -143,11 +143,7 @@ describe("fetchLeadsStats", () => {
 
     // The second RPC call should be for query_salesforce_lead
     expect(mockSupabase.rpc).toHaveBeenCalledTimes(2);
-    expect(mockSupabase.rpc).toHaveBeenNthCalledWith(
-      2,
-      "query_salesforce_lead",
-      expect.anything(),
-    );
+    expect(mockSupabase.rpc).toHaveBeenNthCalledWith(2, "query_salesforce_lead", expect.anything());
 
     // Should have weekly data
     expect(result.weeklyLeadCounts.length).toBeGreaterThan(0);
@@ -171,7 +167,7 @@ describe("fetchLeadsStats", () => {
             callback({
               data: null,
               error: mockError,
-            }),
+            })
           ),
       };
     });
@@ -185,17 +181,14 @@ describe("fetchLeadsStats", () => {
             callback({
               data: null,
               error: new Error("Second API error"),
-            }),
+            })
           ),
       };
     });
 
     await fetchLeadsStats([], mockHandleError);
 
-    expect(mockHandleError).toHaveBeenCalledWith(
-      mockError,
-      "Error fetching leads stats",
-    );
+    expect(mockHandleError).toHaveBeenCalledWith(mockError, "Error fetching leads stats");
   });
 
   it("should return mock data on error", async () => {
@@ -216,7 +209,7 @@ describe("fetchLeadsStats", () => {
             callback({
               data: null,
               error: mockError,
-            }),
+            })
           ),
       };
     });
@@ -230,7 +223,7 @@ describe("fetchLeadsStats", () => {
             callback({
               data: null,
               error: new Error("Second API error"),
-            }),
+            })
           ),
       };
     });

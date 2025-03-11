@@ -4,12 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingState } from "@/components/LoadingState";
-import {
-  RealEstateProperty,
-  BooleanStatus,
-  SurveyStatus,
-  TestFitStatus,
-} from "@/types/realEstate";
+import { RealEstateProperty, BooleanStatus, SurveyStatus, TestFitStatus } from "@/types/realEstate";
 import { supabase } from "@/integrations/supabase-client";
 import { toast } from "sonner";
 import { BooleanStatusSelector } from "./BooleanStatusSelector";
@@ -22,14 +17,9 @@ interface PropertyStatusInfoProps {
   onPropertyUpdated: () => void;
 }
 
-const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
-  property,
-  onPropertyUpdated,
-}) => {
+const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({ property, onPropertyUpdated }) => {
   // Individual field edit states
-  const [editingFields, setEditingFields] = useState<Record<string, boolean>>(
-    {},
-  );
+  const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
   // Update type to accommodate enum values with proper nullable types
   const [fieldValues, setFieldValues] = useState<
@@ -81,7 +71,7 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
 
   const handleEnumFieldChange = (
     fieldName: string,
-    value: BooleanStatus | SurveyStatus | TestFitStatus | "",
+    value: BooleanStatus | SurveyStatus | TestFitStatus | ""
   ) => {
     setFieldValues((prev) => ({
       ...prev,
@@ -183,10 +173,7 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
     );
   };
 
-  const renderBooleanStatusField = (
-    fieldName: "ahj_zoning_confirmation",
-    label: string,
-  ) => {
+  const renderBooleanStatusField = (fieldName: "ahj_zoning_confirmation", label: string) => {
     const isFieldEditing = editingFields[fieldName];
     const isFieldSaving = savingFields[fieldName];
 
@@ -211,9 +198,7 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
             <ErrorBoundary>
               <BooleanStatusSelector
                 value={fieldValues[fieldName] as BooleanStatus | null}
-                onValueChange={(value) =>
-                  handleEnumFieldChange(fieldName, value)
-                }
+                onValueChange={(value) => handleEnumFieldChange(fieldName, value)}
                 disabled={isFieldSaving}
               />
             </ErrorBoundary>
@@ -245,18 +230,13 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
             </div>
           </div>
         ) : (
-          <p className="font-medium">
-            {property[fieldName] || "Not specified"}
-          </p>
+          <p className="font-medium">{property[fieldName] || "Not specified"}</p>
         )}
       </div>
     );
   };
 
-  const renderSurveyStatusField = (
-    fieldName: "survey_status",
-    label: string,
-  ) => {
+  const renderSurveyStatusField = (fieldName: "survey_status", label: string) => {
     const isFieldEditing = editingFields[fieldName];
     const isFieldSaving = savingFields[fieldName];
 
@@ -281,9 +261,7 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
             <ErrorBoundary>
               <SurveyStatusSelector
                 value={fieldValues[fieldName] as SurveyStatus | null}
-                onValueChange={(value) =>
-                  handleEnumFieldChange(fieldName, value)
-                }
+                onValueChange={(value) => handleEnumFieldChange(fieldName, value)}
                 disabled={isFieldSaving}
               />
             </ErrorBoundary>
@@ -315,18 +293,13 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
             </div>
           </div>
         ) : (
-          <p className="font-medium">
-            {property[fieldName] || "Not specified"}
-          </p>
+          <p className="font-medium">{property[fieldName] || "Not specified"}</p>
         )}
       </div>
     );
   };
 
-  const renderTestFitStatusField = (
-    fieldName: "test_fit_status",
-    label: string,
-  ) => {
+  const renderTestFitStatusField = (fieldName: "test_fit_status", label: string) => {
     const isFieldEditing = editingFields[fieldName];
     const isFieldSaving = savingFields[fieldName];
 
@@ -351,9 +324,7 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
             <ErrorBoundary>
               <TestFitStatusSelector
                 value={fieldValues[fieldName] as TestFitStatus | null}
-                onValueChange={(value) =>
-                  handleEnumFieldChange(fieldName, value)
-                }
+                onValueChange={(value) => handleEnumFieldChange(fieldName, value)}
                 disabled={isFieldSaving}
               />
             </ErrorBoundary>
@@ -385,9 +356,7 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
             </div>
           </div>
         ) : (
-          <p className="font-medium">
-            {property[fieldName] || "Not specified"}
-          </p>
+          <p className="font-medium">{property[fieldName] || "Not specified"}</p>
         )}
       </div>
     );
@@ -399,10 +368,7 @@ const PropertyStatusInfo: React.FC<PropertyStatusInfoProps> = ({
         <CardTitle className="text-xl">Status Information</CardTitle>
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {renderBooleanStatusField(
-          "ahj_zoning_confirmation",
-          "AHJ Zoning Confirmation",
-        )}
+        {renderBooleanStatusField("ahj_zoning_confirmation", "AHJ Zoning Confirmation")}
         {renderField("ahj_building_records", "AHJ Building Records")}
         {renderSurveyStatusField("survey_status", "Survey Status")}
         {renderTestFitStatusField("test_fit_status", "Test Fit Status")}

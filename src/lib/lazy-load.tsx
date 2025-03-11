@@ -9,9 +9,7 @@ interface LazyLoadProps {
  * LazyLoad component for wrapping components that should be lazy loaded
  */
 export function LazyLoad({ children, fallback }: LazyLoadProps) {
-  return (
-    <Suspense fallback={fallback || <DefaultFallback />}>{children}</Suspense>
-  );
+  return <Suspense fallback={fallback || <DefaultFallback />}>{children}</Suspense>;
 }
 
 /**
@@ -32,7 +30,7 @@ function DefaultFallback() {
  */
 export function createLazyComponent<T extends React.ComponentType<any>>(
   importFn: () => Promise<{ default: T }>,
-  fallback?: React.ReactNode,
+  fallback?: React.ReactNode
 ) {
   const LazyComponent = React.lazy(importFn);
 
@@ -63,8 +61,6 @@ export function LazyRoute({
 /**
  * Helper function to create lazy loaded routes
  */
-export function lazyLoad(
-  importFn: () => Promise<{ default: React.ComponentType<any> }>,
-) {
+export function lazyLoad(importFn: () => Promise<{ default: React.ComponentType<any> }>) {
   return React.lazy(importFn);
 }

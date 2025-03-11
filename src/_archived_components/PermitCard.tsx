@@ -19,20 +19,12 @@ interface PermitCardProps {
   searchedAddress: string;
 }
 
-export const PermitCard = ({
-  permit,
-  onClick,
-  delay = 0,
-  searchedAddress,
-}: PermitCardProps) => {
+export const PermitCard = ({ permit, onClick, delay = 0, searchedAddress }: PermitCardProps) => {
   const getStatusColor = (status: string) => {
     const lowerStatus = status.toLowerCase();
-    if (lowerStatus.includes("approved") || lowerStatus.includes("complete"))
-      return "bg-green-500";
-    if (lowerStatus.includes("pending") || lowerStatus.includes("review"))
-      return "bg-amber-500";
-    if (lowerStatus.includes("denied") || lowerStatus.includes("reject"))
-      return "bg-red-500";
+    if (lowerStatus.includes("approved") || lowerStatus.includes("complete")) return "bg-green-500";
+    if (lowerStatus.includes("pending") || lowerStatus.includes("review")) return "bg-amber-500";
+    if (lowerStatus.includes("denied") || lowerStatus.includes("reject")) return "bg-red-500";
     return "bg-blue-500";
   };
 
@@ -51,10 +43,7 @@ export const PermitCard = ({
 
   // Use project_brief as description, fallback to project_name, then project_type
   const description =
-    permit.project_brief ||
-    permit.project_name ||
-    permit.project_type ||
-    "Unknown Project";
+    permit.project_brief || permit.project_name || permit.project_type || "Unknown Project";
 
   return (
     <motion.div
@@ -76,9 +65,7 @@ export const PermitCard = ({
             <div>
               <CardTitle className="line-clamp-2 text-lg md:text-xl group-hover:text-primary transition-colors">
                 {description}
-                {exactMatch && (
-                  <CheckCircle className="h-4 w-4 text-green-500 inline-block ml-1" />
-                )}
+                {exactMatch && <CheckCircle className="h-4 w-4 text-green-500 inline-block ml-1" />}
               </CardTitle>
               <CardDescription className="line-clamp-1 mt-1 flex items-center gap-1">
                 <MapPin className="h-3 w-3 inline-block" />

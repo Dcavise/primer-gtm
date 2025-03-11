@@ -8,10 +8,7 @@ interface PipelineColumnProps {
   properties: RealEstateProperty[];
 }
 
-export const PipelineColumn: React.FC<PipelineColumnProps> = ({
-  title,
-  properties,
-}) => {
+export const PipelineColumn: React.FC<PipelineColumnProps> = ({ title, properties }) => {
   // Cast title to PropertyPhase for the color class function if it's a valid phase
   const isValidPhase = (title: string): title is PropertyPhase => {
     return [
@@ -28,12 +25,9 @@ export const PipelineColumn: React.FC<PipelineColumnProps> = ({
     ].includes(title);
   };
 
-  const phaseForColor = isValidPhase(title)
-    ? title
-    : ("0. New Site" as PropertyPhase);
+  const phaseForColor = isValidPhase(title) ? title : ("0. New Site" as PropertyPhase);
   const phaseColorClass = getPhaseColorClass(phaseForColor);
-  const textColorClass =
-    title === "0. New Site" ? "text-gray-800" : "text-white";
+  const textColorClass = title === "0. New Site" ? "text-gray-800" : "text-white";
 
   return (
     <div className="flex flex-col h-full">
@@ -46,9 +40,7 @@ export const PipelineColumn: React.FC<PipelineColumnProps> = ({
       <div className="flex-1 bg-secondary/20 p-2 rounded-b-md overflow-auto max-h-[calc(100vh-220px)]">
         <div className="space-y-3">
           {properties.length > 0 ? (
-            properties.map((property) => (
-              <PropertyCard key={property.id} property={property} />
-            ))
+            properties.map((property) => <PropertyCard key={property.id} property={property} />)
           ) : (
             <div className="text-center py-8 text-sm text-muted-foreground">
               No properties in this phase

@@ -20,14 +20,14 @@ export const metricCard = tv({
     interactive: {
       true: "hover:bg-muted/5 cursor-pointer",
       false: "",
-    }
+    },
   },
   defaultVariants: {
     importance: "secondary",
     size: "md",
     status: "neutral",
     interactive: false,
-  }
+  },
 });
 
 export const metricValue = tv({
@@ -42,12 +42,12 @@ export const metricValue = tv({
       normal: "",
       high: "text-primary",
       low: "text-muted-foreground",
-    }
+    },
   },
   defaultVariants: {
     size: "md",
     emphasis: "normal",
-  }
+  },
 });
 
 export const metricLabel = tv({
@@ -56,11 +56,11 @@ export const metricLabel = tv({
     withIcon: {
       true: "gap-2",
       false: "",
-    }
+    },
   },
   defaultVariants: {
     withIcon: false,
-  }
+  },
 });
 
 export const metricDescription = tv({
@@ -69,9 +69,9 @@ export const metricDescription = tv({
     style: {
       subtle: "opacity-80",
       normal: "",
-    }
+    },
   },
   defaultVariants: {
     style: "normal",
-  }
+  },
 });

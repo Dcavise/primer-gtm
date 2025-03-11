@@ -10,11 +10,7 @@ import {
   CommandInput,
   CommandItem,
 } from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export interface ComboBoxOption {
   value: string;
@@ -49,9 +45,7 @@ export function ComboBox({
           aria-expanded={open}
           className={cn("w-full justify-between border-input", className)}
         >
-          {value
-            ? options.find((option) => option.value === value)?.label
-            : placeholder}
+          {value ? options.find((option) => option.value === value)?.label : placeholder}
           <span className="ml-2 h-4 w-4 shrink-0 opacity-50">▼</span>
         </Button>
       </PopoverTrigger>
@@ -68,12 +62,7 @@ export function ComboBox({
                 setOpen(false);
               }}
             >
-              <Check
-                className={cn(
-                  "mr-2 h-4 w-4",
-                  !value ? "opacity-100" : "opacity-0",
-                )}
-              />
+              <Check className={cn("mr-2 h-4 w-4", !value ? "opacity-100" : "opacity-0")} />
               --None--
             </CommandItem>
             {options.map((option) => (
@@ -86,16 +75,14 @@ export function ComboBox({
                 }}
                 className={cn(
                   "cursor-pointer",
-                  value === option.value
-                    ? "bg-accent text-accent-foreground"
-                    : "",
+                  value === option.value ? "bg-accent text-accent-foreground" : ""
                 )}
               >
                 <div className="flex items-center w-full">
                   <Check
                     className={cn(
                       "mr-2 h-4 w-4",
-                      value === option.value ? "opacity-100" : "opacity-0",
+                      value === option.value ? "opacity-100" : "opacity-0"
                     )}
                   />
                   <span>{option.label}</span>

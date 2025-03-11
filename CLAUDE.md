@@ -5,6 +5,8 @@
 - `npm run build`: Build for production
 - `npm run build:dev`: Build for development
 - `npm run lint`: Run ESLint
+- `npm run lint:fix`: Run ESLint with auto-fix
+- `npm run format`: Run Prettier formatting
 - `vitest`: Run all tests
 - `vitest src/path/to/file.test.ts`: Run specific test
 - `vitest --coverage`: Generate test coverage report

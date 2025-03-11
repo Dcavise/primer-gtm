@@ -14,19 +14,12 @@ interface PropertyLeaseInfoProps {
   onPropertyUpdated: () => void;
 }
 
-const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
-  property,
-  onPropertyUpdated,
-}) => {
+const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({ property, onPropertyUpdated }) => {
   // Individual field edit states
-  const [editingFields, setEditingFields] = useState<Record<string, boolean>>(
-    {},
-  );
+  const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
   // Update type to match our form inputs
-  const [fieldValues, setFieldValues] = useState<
-    Record<string, LeaseStatus | null>
-  >({
+  const [fieldValues, setFieldValues] = useState<Record<string, LeaseStatus | null>>({
     loi_status: null,
     lease_status: null,
   });
@@ -45,9 +38,7 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
     setEditingFields((prev) => ({ ...prev, [fieldName]: true }));
     setFieldValues((prev) => ({
       ...prev,
-      [fieldName]: property[
-        fieldName as keyof RealEstateProperty
-      ] as LeaseStatus | null,
+      [fieldName]: property[fieldName as keyof RealEstateProperty] as LeaseStatus | null,
     }));
   };
 
@@ -55,9 +46,7 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
     setEditingFields((prev) => ({ ...prev, [fieldName]: false }));
     setFieldValues((prev) => ({
       ...prev,
-      [fieldName]: property[
-        fieldName as keyof RealEstateProperty
-      ] as LeaseStatus | null,
+      [fieldName]: property[fieldName as keyof RealEstateProperty] as LeaseStatus | null,
     }));
   };
 
@@ -98,10 +87,7 @@ const PropertyLeaseInfo: React.FC<PropertyLeaseInfoProps> = ({
     }
   };
 
-  const renderLeaseStatusField = (
-    fieldName: "loi_status" | "lease_status",
-    label: string,
-  ) => {
+  const renderLeaseStatusField = (fieldName: "loi_status" | "lease_status", label: string) => {
     const isFieldEditing = editingFields[fieldName] || false;
     const isFieldSaving = savingFields[fieldName] || false;
 

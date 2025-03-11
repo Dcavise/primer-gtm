@@ -7,12 +7,8 @@ import { Check, X, AlertCircle } from "lucide-react";
 
 const SimpleDatabaseTest = () => {
   const [loading, setLoading] = useState(false);
-  const [publicSchemaExists, setPublicSchemaExists] = useState<boolean | null>(
-    null,
-  );
-  const [salesforceSchemaExists, setSalesforceSchemaExists] = useState<
-    boolean | null
-  >(null);
+  const [publicSchemaExists, setPublicSchemaExists] = useState<boolean | null>(null);
+  const [salesforceSchemaExists, setSalesforceSchemaExists] = useState<boolean | null>(null);
   const [publicTables, setPublicTables] = useState<string[]>([]);
   const [salesforceTables, setSalesforceTables] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -25,12 +21,9 @@ const SimpleDatabaseTest = () => {
       setDiagResults(null);
 
       // Try to get schema information using the standard Postgres function
-      const { data: publicResult, error: publicError } = await supabase.rpc(
-        "test_schema_exists",
-        {
-          schema_name: "public",
-        },
-      );
+      const { data: publicResult, error: publicError } = await supabase.rpc("test_schema_exists", {
+        schema_name: "public",
+      });
 
       if (publicError) {
         // If the RPC fails, that itself is useful diagnostic information
@@ -43,18 +36,18 @@ const SimpleDatabaseTest = () => {
       }
 
       // Check fivetran_views schema
-      const { data: salesforceResult, error: salesforceError } =
-        await supabase.rpc("test_schema_exists", {
+      const { data: salesforceResult, error: salesforceError } = await supabase.rpc(
+        "test_schema_exists",
+        {
           schema_name: "fivetran_views",
-        });
+        }
+      );
 
       if (salesforceError) {
         console.error("Fivetran_views schema check failed:", salesforceError);
         setSalesforceSchemaExists(false);
         if (!publicError) {
-          setError(
-            `Error checking fivetran_views schema: ${salesforceError.message}`,
-          );
+          setError(`Error checking fivetran_views schema: ${salesforceError.message}`);
         }
       } else {
         setSalesforceSchemaExists(salesforceResult?.exists || false);
@@ -78,8 +71,10 @@ const SimpleDatabaseTest = () => {
       const diagnoses = [];
 
       // 1. Check if we can query public.check_schema_tables
-      const { data: schemaCheckData, error: schemaCheckError } =
-        await supabase.rpc("check_schema_tables", { schema_name: "public" });
+      const { data: schemaCheckData, error: schemaCheckError } = await supabase.rpc(
+        "check_schema_tables",
+        { schema_name: "public" }
+      );
 
       if (schemaCheckError) {
         diagnoses.push({
@@ -96,13 +91,10 @@ const SimpleDatabaseTest = () => {
       }
 
       // 2. Check if we can query public.describe_table
-      const { data: describeData, error: describeError } = await supabase.rpc(
-        "describe_table",
-        {
-          schema_name: "public",
-          table_name: "campuses",
-        },
-      );
+      const { data: describeData, error: describeError } = await supabase.rpc("describe_table", {
+        schema_name: "public",
+        table_name: "campuses",
+      });
 
       if (describeError) {
         diagnoses.push({
@@ -119,8 +111,7 @@ const SimpleDatabaseTest = () => {
       }
 
       // 3. Try to get schema names through a direct RPC if it exists
-      const { data: schemaList, error: schemaListError } =
-        await supabase.rpc("list_schemas");
+      const { data: schemaList, error: schemaListError } = await supabase.rpc("list_schemas");
 
       if (schemaListError) {
         diagnoses.push({
@@ -139,9 +130,7 @@ const SimpleDatabaseTest = () => {
       setDiagResults(diagnoses);
     } catch (err) {
       console.error("Diagnostics error:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to run diagnostics",
-      );
+      setError(err instanceof Error ? err.message : "Failed to run diagnostics");
     } finally {
       setLoading(false);
     }
@@ -184,7 +173,7 @@ const SimpleDatabaseTest = () => {
           "$$;\n" +
           "COMMENT ON FUNCTION public.test_schema_exists IS 'Check if a schema exists and list its tables';\n" +
           "GRANT EXECUTE ON FUNCTION public.test_schema_exists TO authenticated;\n" +
-          "GRANT EXECUTE ON FUNCTION public.test_schema_exists TO service_role;",
+          "GRANT EXECUTE ON FUNCTION public.test_schema_exists TO service_role;"
       );
     } catch (err) {
       console.error("Function check error:", err);
@@ -205,18 +194,10 @@ const SimpleDatabaseTest = () => {
             <Button onClick={checkDatabase} disabled={loading}>
               {loading ? "Checking..." : "Check Schemas"}
             </Button>
-            <Button
-              onClick={runDiagnostics}
-              disabled={loading}
-              variant="outline"
-            >
+            <Button onClick={runDiagnostics} disabled={loading} variant="outline">
               Run Diagnostics
             </Button>
-            <Button
-              onClick={checkFunctionExists}
-              disabled={loading}
-              variant="secondary"
-            >
+            <Button onClick={checkFunctionExists} disabled={loading} variant="secondary">
               Show Required SQL
             </Button>
           </div>
@@ -249,14 +230,10 @@ const SimpleDatabaseTest = () => {
                   <p className="text-muted-foreground">Not checked yet</p>
                 ) : publicSchemaExists ? (
                   <div>
-                    <p className="text-green-600 font-medium">
-                      Public schema exists
-                    </p>
+                    <p className="text-green-600 font-medium">Public schema exists</p>
                     {publicTables.length > 0 ? (
                       <div className="mt-2">
-                        <p className="text-sm font-medium mb-1">
-                          Tables ({publicTables.length}):
-                        </p>
+                        <p className="text-sm font-medium mb-1">Tables ({publicTables.length}):</p>
                         <ul className="text-sm list-disc pl-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-1">
                           {publicTables.slice(0, 10).map((table) => (
                             <li key={table}>{table}</li>
@@ -295,9 +272,7 @@ const SimpleDatabaseTest = () => {
                   <p className="text-muted-foreground">Not checked yet</p>
                 ) : salesforceSchemaExists ? (
                   <div>
-                    <p className="text-green-600 font-medium">
-                      Fivetran Views schema exists
-                    </p>
+                    <p className="text-green-600 font-medium">Fivetran Views schema exists</p>
                     {salesforceTables.length > 0 ? (
                       <div className="mt-2">
                         <p className="text-sm font-medium mb-1">
@@ -317,9 +292,7 @@ const SimpleDatabaseTest = () => {
                     )}
                   </div>
                 ) : (
-                  <p className="text-red-600">
-                    Fivetran Views schema not found
-                  </p>
+                  <p className="text-red-600">Fivetran Views schema not found</p>
                 )}
               </CardContent>
             </Card>
@@ -344,24 +317,11 @@ const SimpleDatabaseTest = () => {
             <AlertTitle>Database Troubleshooting</AlertTitle>
             <AlertDescription>
               <ul className="list-disc pl-5 space-y-1 mt-2">
-                <li>
-                  Click "Show Required SQL" to see the SQL needed to create the
-                  test function
-                </li>
-                <li>
-                  Add this SQL function to your Supabase project via the SQL
-                  Editor
-                </li>
-                <li>
-                  Verify your Supabase connection credentials in .env file
-                </li>
-                <li>
-                  Check permissions for the authenticated and service_role
-                </li>
-                <li>
-                  RLS (Row Level Security) policies might restrict access to
-                  system catalogs
-                </li>
+                <li>Click "Show Required SQL" to see the SQL needed to create the test function</li>
+                <li>Add this SQL function to your Supabase project via the SQL Editor</li>
+                <li>Verify your Supabase connection credentials in .env file</li>
+                <li>Check permissions for the authenticated and service_role</li>
+                <li>RLS (Row Level Security) policies might restrict access to system catalogs</li>
               </ul>
             </AlertDescription>
           </Alert>

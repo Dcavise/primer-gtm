@@ -1,8 +1,5 @@
 import { useState, useCallback } from "react";
-import {
-  supabase,
-  SupabaseUnifiedClient,
-} from "@/integrations/supabase-client";
+import { supabase, SupabaseUnifiedClient } from "@/integrations/supabase-client";
 
 // Define the types for family records
 export interface FamilyRecord {
@@ -91,15 +88,13 @@ export const useFamilyData = (): UseFamilyDataReturn => {
       console.log(`Fetching family record for ID: ${familyId}`);
 
       // Use our improved getFamilyRecord method that queries the comprehensive_family_records table directly
-      const { success, data, error } = await (
-        supabase as SupabaseUnifiedClient
-      ).getFamilyRecord(familyId);
+      const { success, data, error } = await (supabase as SupabaseUnifiedClient).getFamilyRecord(
+        familyId
+      );
 
       if (!success || error) {
         console.warn("Failed to fetch family record:", error);
-        throw new Error(
-          typeof error === "string" ? error : "Failed to fetch family data",
-        );
+        throw new Error(typeof error === "string" ? error : "Failed to fetch family data");
       }
 
       if (!data) {
@@ -134,14 +129,12 @@ export const useFamilyData = (): UseFamilyDataReturn => {
     setError(null);
 
     try {
-      console.log(
-        `Searching for families with term: "${searchTerm}" (useFamilyData)`,
-      );
+      console.log(`Searching for families with term: "${searchTerm}" (useFamilyData)`);
 
       // Use the improved searchFamilies method from our Supabase client
-      const { success, data, error } = await (
-        supabase as SupabaseUnifiedClient
-      ).searchFamilies(searchTerm);
+      const { success, data, error } = await (supabase as SupabaseUnifiedClient).searchFamilies(
+        searchTerm
+      );
 
       if (!success || error) {
         console.warn("Search failed in useFamilyData hook:", error);

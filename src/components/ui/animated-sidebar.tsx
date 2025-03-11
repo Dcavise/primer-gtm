@@ -118,17 +118,13 @@ export const DesktopSidebar = ({
     <motion.div
       className={cn(
         "min-h-screen h-full px-6 py-8 hidden md:flex md:flex-col bg-neutral-50 border-r border-gray-200 w-[280px] flex-shrink-0",
-        className,
+        className
       )}
       animate={{
         width: animate ? (open ? "280px" : "60px") : "280px",
       }}
-      onMouseEnter={() =>
-        animate && typeof setOpen === "function" && setOpen(true)
-      }
-      onMouseLeave={() =>
-        animate && typeof setOpen === "function" && setOpen(false)
-      }
+      onMouseEnter={() => animate && typeof setOpen === "function" && setOpen(true)}
+      onMouseLeave={() => animate && typeof setOpen === "function" && setOpen(false)}
       {...props}
     >
       {/* Logo */}
@@ -189,10 +185,9 @@ export const DesktopSidebar = ({
             link={link}
             className={cn(
               location.pathname === link.href ||
-                (link.href !== "/dashboard" &&
-                  location.pathname.includes(link.href.slice(1)))
+                (link.href !== "/dashboard" && location.pathname.includes(link.href.slice(1)))
                 ? "bg-blue-50 text-blue-700"
-                : "hover:bg-gray-100 text-gray-700",
+                : "hover:bg-gray-100 text-gray-700"
             )}
           />
         ))}
@@ -201,10 +196,7 @@ export const DesktopSidebar = ({
   );
 };
 
-export const MobileSidebar = ({
-  className,
-  ...props
-}: React.ComponentProps<"div">) => {
+export const MobileSidebar = ({ className, ...props }: React.ComponentProps<"div">) => {
   const { open, setOpen } = useSidebar();
   const location = useLocation();
 
@@ -240,7 +232,7 @@ export const MobileSidebar = ({
     <>
       <div
         className={cn(
-          "h-10 px-4 py-4 flex flex-row md:hidden items-center justify-between bg-neutral-50 border-b border-gray-200 w-full",
+          "h-10 px-4 py-4 flex flex-row md:hidden items-center justify-between bg-neutral-50 border-b border-gray-200 w-full"
         )}
         {...props}
       >
@@ -262,7 +254,7 @@ export const MobileSidebar = ({
               }}
               className={cn(
                 "fixed h-full w-full inset-0 bg-neutral-50 p-6 z-[100] flex flex-col",
-                className,
+                className
               )}
             >
               <div
@@ -310,8 +302,7 @@ export const SidebarLink = ({
   const location = useLocation();
   const isActive =
     location.pathname === link.href ||
-    (link.href !== "/dashboard" &&
-      location.pathname.includes(link.href.slice(1)));
+    (link.href !== "/dashboard" && location.pathname.includes(link.href.slice(1)));
 
   return (
     <RouterLink
@@ -319,10 +310,8 @@ export const SidebarLink = ({
       className={cn(
         "flex items-center py-2.5 rounded-md font-medium text-sm group/sidebar transition duration-200 ease-in-out",
         open ? "px-3" : "px-0 w-full justify-center",
-        isActive
-          ? "bg-blue-50 text-blue-700"
-          : "text-gray-700 hover:bg-gray-100",
-        className,
+        isActive ? "bg-blue-50 text-blue-700" : "text-gray-700 hover:bg-gray-100",
+        className
       )}
       {...props}
     >
@@ -330,7 +319,7 @@ export const SidebarLink = ({
         className={cn(
           "flex-shrink-0",
           open ? "mr-3" : "mx-auto",
-          isActive ? "text-blue-700" : "text-gray-500",
+          isActive ? "text-blue-700" : "text-gray-500"
         )}
       >
         {link.icon}
@@ -342,7 +331,7 @@ export const SidebarLink = ({
         }}
         className={cn(
           "group-hover/sidebar:translate-x-0.5 transition duration-150 whitespace-pre",
-          isActive ? "font-medium" : "font-normal",
+          isActive ? "font-medium" : "font-normal"
         )}
       >
         {link.label}

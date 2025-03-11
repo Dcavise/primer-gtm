@@ -25,18 +25,14 @@ export const StatsCard: React.FC<StatsCardProps> = ({
       onClick={onClick}
     >
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {title}
-        </CardTitle>
+        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex items-center justify-between">
           <div className="text-2xl font-bold">{value}</div>
           <Icon className="h-5 w-5 text-muted-foreground" />
         </div>
-        {description && (
-          <p className="text-xs text-muted-foreground mt-2">{description}</p>
-        )}
+        {description && <p className="text-xs text-muted-foreground mt-2">{description}</p>}
       </CardContent>
     </Card>
   );

@@ -46,27 +46,25 @@ describe("useSyncSalesforce", () => {
 
   it("should handle successful sync for all data types", async () => {
     // Mock successful responses for all function calls
-    (supabase.functions.invoke as any).mockImplementation(
-      (functionName: string) => {
-        if (functionName === "sync-salesforce-leads") {
-          return Promise.resolve({
-            data: { success: true, synced: 10 },
-            error: null,
-          });
-        } else if (functionName === "sync-salesforce-opportunities") {
-          return Promise.resolve({
-            data: { success: true, synced: 5 },
-            error: null,
-          });
-        } else if (functionName === "sync-fellows-data") {
-          return Promise.resolve({
-            data: { success: true, result: { inserted: 15 } },
-            error: null,
-          });
-        }
-        return Promise.resolve({ data: null, error: null });
-      },
-    );
+    (supabase.functions.invoke as any).mockImplementation((functionName: string) => {
+      if (functionName === "sync-salesforce-leads") {
+        return Promise.resolve({
+          data: { success: true, synced: 10 },
+          error: null,
+        });
+      } else if (functionName === "sync-salesforce-opportunities") {
+        return Promise.resolve({
+          data: { success: true, synced: 5 },
+          error: null,
+        });
+      } else if (functionName === "sync-fellows-data") {
+        return Promise.resolve({
+          data: { success: true, result: { inserted: 15 } },
+          error: null,
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
 
     const { result } = renderHook(() => useSyncSalesforce(mockOnSyncComplete));
 
@@ -82,9 +80,7 @@ describe("useSyncSalesforce", () => {
     });
 
     // Check that toasts were displayed
-    expect(toast.info).toHaveBeenCalledWith(
-      "Starting complete Salesforce data sync...",
-    );
+    expect(toast.info).toHaveBeenCalledWith("Starting complete Salesforce data sync...");
     expect(toast.success).toHaveBeenCalledWith("Synced 10 leads");
     expect(toast.success).toHaveBeenCalledWith("Synced 5 opportunities");
     expect(toast.success).toHaveBeenCalledWith("Synced 15 fellows");
@@ -95,27 +91,25 @@ describe("useSyncSalesforce", () => {
 
   it("should handle errors in sync process", async () => {
     // Mock an error for leads sync
-    (supabase.functions.invoke as any).mockImplementation(
-      (functionName: string) => {
-        if (functionName === "sync-salesforce-leads") {
-          return Promise.resolve({
-            data: null,
-            error: { message: "API error" },
-          });
-        } else if (functionName === "sync-salesforce-opportunities") {
-          return Promise.resolve({
-            data: { success: true, synced: 5 },
-            error: null,
-          });
-        } else if (functionName === "sync-fellows-data") {
-          return Promise.resolve({
-            data: { success: true, result: { inserted: 15 } },
-            error: null,
-          });
-        }
-        return Promise.resolve({ data: null, error: null });
-      },
-    );
+    (supabase.functions.invoke as any).mockImplementation((functionName: string) => {
+      if (functionName === "sync-salesforce-leads") {
+        return Promise.resolve({
+          data: null,
+          error: { message: "API error" },
+        });
+      } else if (functionName === "sync-salesforce-opportunities") {
+        return Promise.resolve({
+          data: { success: true, synced: 5 },
+          error: null,
+        });
+      } else if (functionName === "sync-fellows-data") {
+        return Promise.resolve({
+          data: { success: true, result: { inserted: 15 } },
+          error: null,
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
 
     const { result } = renderHook(() => useSyncSalesforce(mockOnSyncComplete));
 
@@ -134,9 +128,7 @@ describe("useSyncSalesforce", () => {
 
   it("should handle unexpected errors during sync", async () => {
     // Mock a complete failure
-    (supabase.functions.invoke as any).mockRejectedValue(
-      new Error("Unexpected error"),
-    );
+    (supabase.functions.invoke as any).mockRejectedValue(new Error("Unexpected error"));
 
     const { result } = renderHook(() => useSyncSalesforce(mockOnSyncComplete));
 
@@ -146,9 +138,7 @@ describe("useSyncSalesforce", () => {
 
     // Verify error state
     expect(result.current.syncError).toBe("Unexpected error");
-    expect(toast.error).toHaveBeenCalledWith(
-      "Error in sync process: Unexpected error",
-    );
+    expect(toast.error).toHaveBeenCalledWith("Error in sync process: Unexpected error");
     expect(result.current.syncLoading).toBe(false);
   });
 });

@@ -34,7 +34,7 @@ const MapEmbed: React.FC<MapEmbedProps> = ({ address }) => {
   // Handle iframe loading errors
   const handleIframeError = () => {
     console.error(
-      "Map iframe failed to load, possibly due to Content Security Policy restrictions",
+      "Map iframe failed to load, possibly due to Content Security Policy restrictions"
     );
     setIframeError(true);
   };
@@ -47,9 +47,7 @@ const MapEmbed: React.FC<MapEmbedProps> = ({ address }) => {
     return (
       <div className="bg-slate-100 p-6 rounded-md text-center h-[300px] flex flex-col items-center justify-center">
         <AlertCircle className="h-10 w-10 text-slate-400 mb-3" />
-        <p className="text-slate-600 font-medium mb-2">
-          {error || "Map could not be loaded"}
-        </p>
+        <p className="text-slate-600 font-medium mb-2">{error || "Map could not be loaded"}</p>
         <div className="mt-2 flex items-center justify-center text-primary">
           <MapPin className="h-5 w-5 mr-2" />
           <a

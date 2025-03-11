@@ -60,9 +60,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
   useEffect(() => {
     const fetchValidCampusIds = async () => {
       try {
-        const { data, error } = await supabase
-          .from("campuses")
-          .select("campus_id");
+        const { data, error } = await supabase.from("campuses").select("campus_id");
 
         if (error) throw error;
 
@@ -89,16 +87,16 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
         const { data: wowData, error: wowError } = await supabase.rpc(
           "get_week_over_week_comparison",
           {
-            p_campus_id:
-              selectedCampusIds.length === 1 ? selectedCampusIds[0] : null,
-          },
+            p_campus_id: selectedCampusIds.length === 1 ? selectedCampusIds[0] : null,
+          }
         );
 
         if (wowError) throw wowError;
 
         // Fetch closed won by campus data
-        const { data: closedWonByData, error: closedWonError } =
-          await supabase.rpc("get_closed_won_by_campus");
+        const { data: closedWonByData, error: closedWonError } = await supabase.rpc(
+          "get_closed_won_by_campus"
+        );
 
         if (closedWonError) throw closedWonError;
 
@@ -106,8 +104,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
         let filteredClosedWonData = closedWonByData.filter(
           (item: any) =>
             validCampusIds.includes(item.campus_id) &&
-            (selectedCampusIds.length === 0 ||
-              selectedCampusIds.includes(item.campus_id)),
+            (selectedCampusIds.length === 0 || selectedCampusIds.includes(item.campus_id))
         );
 
         // Sort by win rate and limit to top 5
@@ -174,18 +171,14 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
           <Tabs defaultValue="weekly">
             <TabsList className="mb-4">
               <TabsTrigger value="weekly">Weekly Overview</TabsTrigger>
-              <TabsTrigger value="opportunities">
-                Opportunity Trends
-              </TabsTrigger>
+              <TabsTrigger value="opportunities">Opportunity Trends</TabsTrigger>
               <TabsTrigger value="sales-cycle">Sales Cycle</TabsTrigger>
               <TabsTrigger value="conversion">Lead Conversion</TabsTrigger>
             </TabsList>
 
             <TabsContent value="weekly">
               <div className="mb-6">
-                <h3 className="text-lg font-medium mb-3">
-                  Week-over-Week Comparison
-                </h3>
+                <h3 className="text-lg font-medium mb-3">Week-over-Week Comparison</h3>
                 {weekOverWeekData.length === 0 ? (
                   <div className="text-center text-gray-500 p-4">
                     No weekly comparison data available
@@ -193,21 +186,12 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {weekOverWeekData.map((metric, index) => (
-                      <div
-                        key={index}
-                        className="bg-white p-4 rounded-lg border shadow-sm"
-                      >
-                        <h4 className="text-sm font-medium text-gray-600">
-                          {metric.metric}
-                        </h4>
+                      <div key={index} className="bg-white p-4 rounded-lg border shadow-sm">
+                        <h4 className="text-sm font-medium text-gray-600">{metric.metric}</h4>
                         <div className="mt-2 flex items-baseline justify-between">
                           <div>
-                            <span className="text-2xl font-semibold">
-                              {metric.current_week}
-                            </span>
-                            <span className="ml-2 text-sm text-gray-500">
-                              Current Week
-                            </span>
+                            <span className="text-2xl font-semibold">{metric.current_week}</span>
+                            <span className="ml-2 text-sm text-gray-500">Current Week</span>
                           </div>
                           <div className="flex items-center">
                             <TrendIndicator
@@ -230,27 +214,18 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
               <div className="mt-4">
                 <h3 className="text-lg font-medium mb-3">Win Rate by Campus</h3>
                 {closedWonData.length === 0 ? (
-                  <div className="text-center text-gray-500 p-4">
-                    No win rate data available
-                  </div>
+                  <div className="text-center text-gray-500 p-4">No win rate data available</div>
                 ) : (
                   <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={closedWonData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="campus_name" />
-                      <YAxis
-                        domain={[0, 100]}
-                        tickFormatter={(value) => `${value}%`}
-                      />
+                      <YAxis domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
                       <Tooltip
                         formatter={(value: number) => [`${value}%`, "Win Rate"]}
                         labelFormatter={(label) => `Campus: ${label}`}
                       />
-                      <Bar
-                        dataKey="win_rate"
-                        fill={chartColors.closedWon}
-                        name="Win Rate"
-                      />
+                      <Bar dataKey="win_rate" fill={chartColors.closedWon} name="Win Rate" />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
@@ -259,14 +234,10 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
 
             <TabsContent value="opportunities">
               {opportunityMetrics.monthlyTrends.length === 0 ? (
-                <div className="text-center text-gray-500 p-4">
-                  Loading opportunity trends...
-                </div>
+                <div className="text-center text-gray-500 p-4">Loading opportunity trends...</div>
               ) : (
                 <div className="mt-4">
-                  <h3 className="text-lg font-medium mb-3">
-                    Monthly Opportunity Trends
-                  </h3>
+                  <h3 className="text-lg font-medium mb-3">Monthly Opportunity Trends</h3>
                   <ResponsiveContainer width="100%" height={300}>
                     <LineChart data={opportunityMetrics.monthlyTrends}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -321,9 +292,7 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
                 </div>
               ) : (
                 <div className="mt-6">
-                  <h3 className="text-lg font-medium mb-3">
-                    Stage Progression Analysis
-                  </h3>
+                  <h3 className="text-lg font-medium mb-3">Stage Progression Analysis</h3>
                   <div className="overflow-x-auto">
                     <table className="min-w-full bg-white border rounded-lg">
                       <thead className="bg-gray-50">
@@ -346,27 +315,25 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                        {opportunityMetrics.stageProgression.map(
-                          (stage, index) => (
-                            <tr key={index} className="hover:bg-gray-50">
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                {stage.stage_name}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {stage.opportunity_count}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {stage.conversion_to_next_stage}%
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {stage.avg_days_in_stage}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {stage.win_rate_from_stage}%
-                              </td>
-                            </tr>
-                          ),
-                        )}
+                        {opportunityMetrics.stageProgression.map((stage, index) => (
+                          <tr key={index} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {stage.stage_name}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {stage.opportunity_count}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {stage.conversion_to_next_stage}%
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {stage.avg_days_in_stage}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {stage.win_rate_from_stage}%
+                            </td>
+                          </tr>
+                        ))}
                       </tbody>
                     </table>
                   </div>
@@ -376,19 +343,12 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
 
             <TabsContent value="sales-cycle">
               {opportunityMetrics.salesCycles.length === 0 ? (
-                <div className="text-center text-gray-500 p-4">
-                  Loading sales cycle data...
-                </div>
+                <div className="text-center text-gray-500 p-4">Loading sales cycle data...</div>
               ) : (
                 <div className="mt-6">
-                  <h3 className="text-lg font-medium mb-3">
-                    Sales Cycle by Campus
-                  </h3>
+                  <h3 className="text-lg font-medium mb-3">Sales Cycle by Campus</h3>
                   <ResponsiveContainer width="100%" height={300}>
-                    <BarChart
-                      data={opportunityMetrics.salesCycles}
-                      layout="vertical"
-                    >
+                    <BarChart data={opportunityMetrics.salesCycles} layout="vertical">
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis
                         type="number"
@@ -398,14 +358,8 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
                           offset: -5,
                         }}
                       />
-                      <YAxis
-                        type="category"
-                        dataKey="campus_name"
-                        width={120}
-                      />
-                      <Tooltip
-                        formatter={(value: number) => [`${value} days`, ""]}
-                      />
+                      <YAxis type="category" dataKey="campus_name" width={120} />
+                      <Tooltip formatter={(value: number) => [`${value} days`, ""]} />
                       <Legend />
                       <Bar
                         dataKey="avg_days_to_win"
@@ -425,14 +379,10 @@ export const MetricsDashboard: React.FC<MetricsDashboardProps> = ({
 
             <TabsContent value="conversion">
               {opportunityMetrics.leadToWinConversion.length === 0 ? (
-                <div className="text-center text-gray-500 p-4">
-                  Loading lead conversion data...
-                </div>
+                <div className="text-center text-gray-500 p-4">Loading lead conversion data...</div>
               ) : (
                 <div className="mt-6">
-                  <h3 className="text-lg font-medium mb-3">
-                    Lead to Win Conversion
-                  </h3>
+                  <h3 className="text-lg font-medium mb-3">Lead to Win Conversion</h3>
                   <ResponsiveContainer width="100%" height={300}>
                     <LineChart data={opportunityMetrics.leadToWinConversion}>
                       <CartesianGrid strokeDasharray="3 3" />

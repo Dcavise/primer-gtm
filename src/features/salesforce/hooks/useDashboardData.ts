@@ -33,16 +33,13 @@ interface DashboardDataResult {
  * @param selectedCampusIds - Array of campus IDs to filter by
  * @returns Dashboard stats and control functions
  */
-export function useDashboardData(
-  selectedCampusIds: string[],
-): DashboardDataResult {
+export function useDashboardData(selectedCampusIds: string[]): DashboardDataResult {
   // Get the current date and date 4 weeks ago for weekly data
   const today = new Date();
   const fourWeeksAgo = new Date();
   fourWeeksAgo.setDate(today.getDate() - 28);
 
-  const campusFilter =
-    selectedCampusIds.length === 1 ? selectedCampusIds[0] : null;
+  const campusFilter = selectedCampusIds.length === 1 ? selectedCampusIds[0] : null;
 
   // Define all queries
   const results = useQueries({
@@ -51,14 +48,11 @@ export function useDashboardData(
       {
         queryKey: ["weeklyLeads", { campusIds: selectedCampusIds }],
         queryFn: async (): Promise<WeeklyLeadCount[]> => {
-          const { data, error } = await supabase.executeRPC(
-            "get_weekly_lead_counts",
-            {
-              start_date: fourWeeksAgo.toISOString().split("T")[0],
-              end_date: today.toISOString().split("T")[0],
-              campus_filter: campusFilter,
-            },
-          );
+          const { data, error } = await supabase.executeRPC("get_weekly_lead_counts", {
+            start_date: fourWeeksAgo.toISOString().split("T")[0],
+            end_date: today.toISOString().split("T")[0],
+            campus_filter: campusFilter,
+          });
 
           if (error) throw error;
 
@@ -84,7 +78,7 @@ export function useDashboardData(
             const filters = selectedCampusIds
               .map(
                 (campusId) =>
-                  `campus_id.eq.${campusId},campus.eq.${campusId},campus.ilike.%${campusId}%`,
+                  `campus_id.eq.${campusId},campus.eq.${campusId},campus.ilike.%${campusId}%`
               )
               .join(",");
 
@@ -204,21 +198,15 @@ export function useDashboardData(
   ] = results;
 
   // Calculate total leads count from weekly data
-  const leadsCount =
-    weeklyLeadsQuery.data?.reduce((sum, item) => sum + item.count, 0) || 0;
+  const leadsCount = weeklyLeadsQuery.data?.reduce((sum, item) => sum + item.count, 0) || 0;
 
   // Combined loading and error states
-  const isLoading = results.some(
-    (query) => query.isLoading || query.isFetching,
-  );
+  const isLoading = results.some((query) => query.isLoading || query.isFetching);
   const isError = results.some((query) => query.isError);
-  const errorMessages = results
-    .filter((query) => query.error)
-    .map((query) => String(query.error));
+  const errorMessages = results.filter((query) => query.error).map((query) => String(query.error));
 
   // Combine errors
-  const error =
-    errorMessages.length > 0 ? new Error(errorMessages.join("; ")) : null;
+  const error = errorMessages.length > 0 ? new Error(errorMessages.join("; ")) : null;
 
   // Refetch all queries
   const refetch = async () => {

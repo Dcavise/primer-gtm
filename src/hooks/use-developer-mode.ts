@@ -15,7 +15,7 @@ export function useDeveloperModeData(_resetFunction?: () => void) {
   const getMockDataWithDelay = async <T>(
     _dataType: string,
     _delayMs = 800,
-    _successMessage?: string,
+    _successMessage?: string
   ): Promise<T> => {
     throw new Error("Developer mode is disabled");
   };

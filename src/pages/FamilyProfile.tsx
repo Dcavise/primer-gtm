@@ -1,13 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -181,9 +175,7 @@ const FamilyProfile: React.FC = () => {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              Tuition (Out of Pocket)
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Tuition (Out of Pocket)</CardTitle>
           </CardHeader>
           <CardContent className="flex items-center">
             <DollarSignIcon className="h-4 w-4 mr-2 text-muted-foreground" />
@@ -207,9 +199,7 @@ const FamilyProfile: React.FC = () => {
                   </Avatar>
                   <div className="flex-1">
                     <h4 className="font-medium">{student.name}</h4>
-                    <div className="text-sm text-muted-foreground mb-2">
-                      {student.grade}
-                    </div>
+                    <div className="text-sm text-muted-foreground mb-2">{student.grade}</div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
                       <div className="flex items-center">
                         <CalendarIcon className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
@@ -266,15 +256,11 @@ const FamilyProfile: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-medium text-sm mb-1">Last Payment</h4>
-                    <p className="text-muted-foreground">
-                      $3,125 - March 1, 2025
-                    </p>
+                    <p className="text-muted-foreground">$3,125 - March 1, 2025</p>
                   </div>
                   <div>
                     <h4 className="font-medium text-sm mb-1">Next Payment</h4>
-                    <p className="text-muted-foreground">
-                      $3,125 - June 1, 2025
-                    </p>
+                    <p className="text-muted-foreground">$3,125 - June 1, 2025</p>
                   </div>
                 </div>
 
@@ -291,22 +277,16 @@ const FamilyProfile: React.FC = () => {
           <Card>
             <CardHeader>
               <CardTitle>Customer Support</CardTitle>
-              <CardDescription>
-                View support tickets and communication history
-              </CardDescription>
+              <CardDescription>View support tickets and communication history</CardDescription>
             </CardHeader>
             <CardContent>
               {/* Support content here */}
               <div className="space-y-4">
                 <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-center">
-                  <p className="text-yellow-700">
-                    No active support tickets for this family
-                  </p>
+                  <p className="text-yellow-700">No active support tickets for this family</p>
                 </div>
 
-                <h4 className="font-medium text-sm mb-2">
-                  Recent Communications
-                </h4>
+                <h4 className="font-medium text-sm mb-2">Recent Communications</h4>
                 <div className="border rounded-md divide-y">
                   <div className="p-3">
                     <div className="flex justify-between items-start">
@@ -322,9 +302,7 @@ const FamilyProfile: React.FC = () => {
                   <div className="p-3">
                     <div className="flex justify-between items-start">
                       <div>
-                        <h5 className="font-medium">
-                          Parent-Teacher Conference
-                        </h5>
+                        <h5 className="font-medium">Parent-Teacher Conference</h5>
                         <p className="text-sm text-muted-foreground">
                           Email confirming spring conference schedule
                         </p>

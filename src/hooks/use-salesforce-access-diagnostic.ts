@@ -1,8 +1,5 @@
 import { useState } from "react";
-import {
-  troubleshootSchemaAccess,
-  testCrossSchemaMethods,
-} from "@/utils/salesforce-access";
+import { troubleshootSchemaAccess, testCrossSchemaMethods } from "@/utils/salesforce-access";
 import { supabase } from "@/integrations/supabase-client";
 import { logger } from "@/utils/logger";
 
@@ -30,10 +27,7 @@ export const useSalesforceAccessDiagnostic = () => {
   const testSimpleQuery = async () => {
     try {
       // Try a simple query on the public schema
-      const { data, error } = await supabase
-        .from("campuses")
-        .select("count")
-        .limit(1);
+      const { data, error } = await supabase.from("campuses").select("count").limit(1);
 
       return { success: !error, data, error };
     } catch (err) {
@@ -58,9 +52,7 @@ export const useSalesforceAccessDiagnostic = () => {
 
       // Get URL info for troubleshooting
       const supabaseUrl =
-        (window as any).SUPABASE_URL ||
-        process.env.SUPABASE_URL ||
-        "Not available";
+        (window as any).SUPABASE_URL || process.env.SUPABASE_URL || "Not available";
 
       // Compile results
       const availableSchemas = schemaResults.schemas
@@ -78,9 +70,7 @@ export const useSalesforceAccessDiagnostic = () => {
       const diagnosticResults: DiagnosticResult = {
         connectionSuccess: schemaResults.success || simpleQueryResults.success,
         salesforceAccess: schemaResults.salesforceTablesAccessible, // Updated to check for salesforce tables in public schema
-        publicAccess:
-          schemaResults.schemas?.public?.accessible ||
-          simpleQueryResults.success,
+        publicAccess: schemaResults.schemas?.public?.accessible || simpleQueryResults.success,
         availableSchemas,
         availableFunctions,
         timestamp: new Date().toISOString(),

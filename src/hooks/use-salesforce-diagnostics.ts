@@ -23,9 +23,7 @@ export const useSalesforceDiagnostics = () => {
       // Step 1: Test basic connection
       const connectionTest = await testConnection();
       if (!connectionTest.success) {
-        setError(
-          "Connection to Supabase failed. Check your Supabase URL and key.",
-        );
+        setError("Connection to Supabase failed. Check your Supabase URL and key.");
         toast.error("Connection to Supabase failed");
         setResults({ connection: connectionTest });
         return;
@@ -50,9 +48,7 @@ export const useSalesforceDiagnostics = () => {
       if (schemaAccess.success && schemaAccess.salesforceAccessible) {
         toast.success("Salesforce schema is accessible!");
       } else {
-        toast.warning(
-          "Limited access to Salesforce schema. Check the results for details.",
-        );
+        toast.warning("Limited access to Salesforce schema. Check the results for details.");
       }
 
       logger.info("Salesforce diagnostics complete", diagnosticResults);

@@ -21,7 +21,7 @@ export async function exampleReadOperations() {
 
     if (campusesResult.success) {
       logger.info(
-        `Retrieved ${campusesResult.rowCount} campuses in ${campusesResult.executionTime}ms`,
+        `Retrieved ${campusesResult.rowCount} campuses in ${campusesResult.executionTime}ms`
       );
       logger.info("First campus:", campusesResult.data?.[0]);
     } else {
@@ -29,14 +29,14 @@ export async function exampleReadOperations() {
     }
 
     // Example 2: SELECT query with parameters
-    const fellowsResult = await db.select(
-      "SELECT * FROM fellows WHERE campus_id = $1 LIMIT $2",
-      ["austin", 5],
-    );
+    const fellowsResult = await db.select("SELECT * FROM fellows WHERE campus_id = $1 LIMIT $2", [
+      "austin",
+      5,
+    ]);
 
     if (fellowsResult.success) {
       logger.info(
-        `Retrieved ${fellowsResult.rowCount} fellows in ${fellowsResult.executionTime}ms`,
+        `Retrieved ${fellowsResult.rowCount} fellows in ${fellowsResult.executionTime}ms`
       );
     } else {
       logger.error("Error retrieving fellows:", fellowsResult.error);
@@ -47,7 +47,7 @@ export async function exampleReadOperations() {
 
     if (profilesResult.success) {
       logger.info(
-        `Retrieved ${profilesResult.data?.length} profiles in ${profilesResult.executionTime}ms`,
+        `Retrieved ${profilesResult.data?.length} profiles in ${profilesResult.executionTime}ms`
       );
     } else {
       logger.error("Error retrieving profiles:", profilesResult.error);
@@ -87,12 +87,12 @@ export async function exampleWriteOperations() {
       `INSERT INTO profiles (id, email, full_name, created_at, updated_at) 
        VALUES ($1, $2, $3, NOW(), NOW()) 
        RETURNING id`,
-      ["test-user-id", "test@example.com", "Test User"],
+      ["test-user-id", "test@example.com", "Test User"]
     );
 
     if (insertResult.success) {
       logger.info(
-        `Inserted profile with ID: ${insertResult.data?.id} in ${insertResult.executionTime}ms`,
+        `Inserted profile with ID: ${insertResult.data?.id} in ${insertResult.executionTime}ms`
       );
     } else {
       logger.error("Error inserting profile:", insertResult.error);
@@ -104,12 +104,12 @@ export async function exampleWriteOperations() {
        SET full_name = $1, updated_at = NOW() 
        WHERE id = $2 
        RETURNING id`,
-      ["Updated Test User", "test-user-id"],
+      ["Updated Test User", "test-user-id"]
     );
 
     if (updateResult.success) {
       logger.info(
-        `Updated profile with ID: ${updateResult.data?.id} in ${updateResult.executionTime}ms`,
+        `Updated profile with ID: ${updateResult.data?.id} in ${updateResult.executionTime}ms`
       );
     } else {
       logger.error("Error updating profile:", updateResult.error);
@@ -120,12 +120,12 @@ export async function exampleWriteOperations() {
       `DELETE FROM profiles 
        WHERE id = $1 
        RETURNING id`,
-      ["test-user-id"],
+      ["test-user-id"]
     );
 
     if (deleteResult.success) {
       logger.info(
-        `Deleted profile with ID: ${deleteResult.data?.id} in ${deleteResult.executionTime}ms`,
+        `Deleted profile with ID: ${deleteResult.data?.id} in ${deleteResult.executionTime}ms`
       );
     } else {
       logger.error("Error deleting profile:", deleteResult.error);
@@ -195,7 +195,7 @@ export async function exampleDDLOperations() {
       // Insert some test data
       const insertResult = await db.modify(
         `INSERT INTO test_table (name) VALUES ($1), ($2), ($3) RETURNING id, name`,
-        ["Test 1", "Test 2", "Test 3"],
+        ["Test 1", "Test 2", "Test 3"]
       );
 
       if (insertResult.success) {
@@ -205,9 +205,7 @@ export async function exampleDDLOperations() {
         const queryResult = await db.select("SELECT * FROM test_table");
 
         if (queryResult.success) {
-          logger.info(
-            `Retrieved test data: ${JSON.stringify(queryResult.data)}`,
-          );
+          logger.info(`Retrieved test data: ${JSON.stringify(queryResult.data)}`);
         }
 
         // Clean up by dropping the test table
@@ -263,24 +261,24 @@ export async function exampleAutoUnsafeMode() {
        VALUES ($1, $2, $3, NOW(), NOW()) 
        RETURNING id`,
       ["auto-test-user-id", "auto-test@example.com", "Auto Test User"],
-      { autoEnableUnsafe: true },
+      { autoEnableUnsafe: true }
     );
 
     if (insertResult.success) {
       logger.info(
-        `Inserted profile with ID: ${insertResult.data?.id} in ${insertResult.executionTime}ms`,
+        `Inserted profile with ID: ${insertResult.data?.id} in ${insertResult.executionTime}ms`
       );
 
       // Clean up
       const deleteResult = await db.execute(
         `DELETE FROM profiles WHERE id = $1 RETURNING id`,
         ["auto-test-user-id"],
-        { autoEnableUnsafe: true },
+        { autoEnableUnsafe: true }
       );
 
       if (deleteResult.success) {
         logger.info(
-          `Deleted profile with ID: ${deleteResult.data?.id} in ${deleteResult.executionTime}ms`,
+          `Deleted profile with ID: ${deleteResult.data?.id} in ${deleteResult.executionTime}ms`
         );
       }
     } else {

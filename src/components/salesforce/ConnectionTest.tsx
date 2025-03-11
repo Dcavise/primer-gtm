@@ -1,25 +1,9 @@
 import React, { useState } from "react";
-import {
-  testSalesforceConnection,
-  getSampleLeads,
-} from "@/utils/test-salesforce";
+import { testSalesforceConnection, getSampleLeads } from "@/utils/test-salesforce";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  CheckCircle,
-  XCircle,
-  Database,
-  User,
-  Table2,
-  List,
-} from "lucide-react";
+import { CheckCircle, XCircle, Database, User, Table2, List } from "lucide-react";
 
 export function SalesforceConnectionTest() {
   const [loading, setLoading] = useState(false);
@@ -51,9 +35,7 @@ export function SalesforceConnectionTest() {
         setLeadsData(data);
       } else {
         setError(
-          leadsError instanceof Error
-            ? leadsError.message
-            : String(leadsError || "Unknown error"),
+          leadsError instanceof Error ? leadsError.message : String(leadsError || "Unknown error")
         );
       }
     } catch (err) {
@@ -68,9 +50,7 @@ export function SalesforceConnectionTest() {
     <Card className="w-full">
       <CardHeader>
         <CardTitle>Salesforce Connection Test</CardTitle>
-        <CardDescription>
-          Test the connection to the Salesforce data source
-        </CardDescription>
+        <CardDescription>Test the connection to the Salesforce data source</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -80,11 +60,7 @@ export function SalesforceConnectionTest() {
             </Button>
 
             {results && (
-              <Badge
-                variant={
-                  results.regularClient.success ? "default" : "destructive"
-                }
-              >
+              <Badge variant={results.regularClient.success ? "default" : "destructive"}>
                 {results.regularClient.success ? "Connected" : "Failed"}
               </Badge>
             )}
@@ -125,8 +101,7 @@ export function SalesforceConnectionTest() {
                   {results.regularClient.error && (
                     <div className="text-xs text-red-600 ml-6">
                       Error:{" "}
-                      {results.regularClient.error.message ||
-                        String(results.regularClient.error)}
+                      {results.regularClient.error.message || String(results.regularClient.error)}
                     </div>
                   )}
                 </div>

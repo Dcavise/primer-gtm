@@ -73,23 +73,16 @@ describe("fetchOpportunitiesStats", () => {
     expect(result.opportunityStageCounts).toHaveLength(4); // All required stages
 
     // Check stage counts
-    expect(
-      result.opportunityStageCounts.find((s) => s.stage === "Family Interview")
-        ?.count,
-    ).toBe(2);
-    expect(
-      result.opportunityStageCounts.find(
-        (s) => s.stage === "Awaiting Documents",
-      )?.count,
-    ).toBe(1);
-    expect(
-      result.opportunityStageCounts.find((s) => s.stage === "Preparing Offer")
-        ?.count,
-    ).toBe(1);
-    expect(
-      result.opportunityStageCounts.find((s) => s.stage === "Admission Offered")
-        ?.count,
-    ).toBe(0);
+    expect(result.opportunityStageCounts.find((s) => s.stage === "Family Interview")?.count).toBe(
+      2
+    );
+    expect(result.opportunityStageCounts.find((s) => s.stage === "Awaiting Documents")?.count).toBe(
+      1
+    );
+    expect(result.opportunityStageCounts.find((s) => s.stage === "Preparing Offer")?.count).toBe(1);
+    expect(result.opportunityStageCounts.find((s) => s.stage === "Admission Offered")?.count).toBe(
+      0
+    );
   });
 
   it("should filter by campus ID when provided", async () => {
@@ -162,10 +155,7 @@ describe("fetchOpportunitiesStats", () => {
 
     await fetchOpportunitiesStats([], mockHandleError);
 
-    expect(mockHandleError).toHaveBeenCalledWith(
-      mockError,
-      "Error fetching opportunities stats",
-    );
+    expect(mockHandleError).toHaveBeenCalledWith(mockError, "Error fetching opportunities stats");
   });
 
   it("should return empty data on error", async () => {

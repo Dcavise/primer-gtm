@@ -8,11 +8,7 @@ import { Building, Check, ChevronDown, ChevronUp, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { handleError, tryCatch } from "@/utils/error-handler";
 
 interface CampusSelectorProps {
@@ -48,7 +44,7 @@ export const CampusSelector: React.FC<CampusSelectorProps> = memo(
             // Only include campuses that exist in the public.campuses table
             const validCampusIds = data.map((c: any) => c.campus_id);
             const filteredCampuses = campuses.filter((campus) =>
-              validCampusIds.includes(campus.campus_id),
+              validCampusIds.includes(campus.campus_id)
             );
 
             // If no matching campuses were found in the props, use the data from the database
@@ -72,7 +68,7 @@ export const CampusSelector: React.FC<CampusSelectorProps> = memo(
           },
           "Failed to load campus data",
           true,
-          { context: "CampusSelector.filterValidCampuses" },
+          { context: "CampusSelector.filterValidCampuses" }
         );
       };
 
@@ -86,7 +82,7 @@ export const CampusSelector: React.FC<CampusSelectorProps> = memo(
       } else {
         const searchTermLower = searchQuery.toLowerCase();
         const filtered = validCampuses.filter((campus) =>
-          campus.campus_name.toLowerCase().includes(searchTermLower),
+          campus.campus_name.toLowerCase().includes(searchTermLower)
         );
         setFilteredCampuses(filtered);
       }
@@ -115,7 +111,7 @@ export const CampusSelector: React.FC<CampusSelectorProps> = memo(
         // Update selectAll checkbox state
         setSelectAll(newSelectedIds.length === validCampuses.length);
       },
-      [selectedCampusIds, validCampuses, onSelectCampuses],
+      [selectedCampusIds, validCampuses, onSelectCampuses]
     );
 
     // Memoized handler to toggle "select all" state
@@ -126,16 +122,14 @@ export const CampusSelector: React.FC<CampusSelectorProps> = memo(
         if (checked) {
           // Select all campuses
           const allCampusIds = validCampuses.map((campus) => campus.campus_id);
-          const allCampusNames = validCampuses.map(
-            (campus) => campus.campus_name,
-          );
+          const allCampusNames = validCampuses.map((campus) => campus.campus_name);
           onSelectCampuses(allCampusIds, allCampusNames);
         } else {
           // Deselect all campuses
           onSelectCampuses([], []);
         }
       },
-      [validCampuses, onSelectCampuses],
+      [validCampuses, onSelectCampuses]
     );
 
     // Memoized handler to clear selection
@@ -150,12 +144,9 @@ export const CampusSelector: React.FC<CampusSelectorProps> = memo(
     }, []);
 
     // Memoized handler for search input changes
-    const handleSearchChange = useCallback(
-      (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchQuery(e.target.value);
-      },
-      [],
-    );
+    const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchQuery(e.target.value);
+    }, []);
 
     // Memoized selection summary text
     const selectionSummary = useMemo(() => {
@@ -191,11 +182,7 @@ export const CampusSelector: React.FC<CampusSelectorProps> = memo(
             .filter((campus) => selectedCampusIds.includes(campus.campus_id))
             .slice(0, 2)
             .map((campus) => (
-              <Badge
-                key={campus.campus_id}
-                variant="outline"
-                className="bg-anti-flash"
-              >
+              <Badge key={campus.campus_id} variant="outline" className="bg-anti-flash">
                 {campus.campus_name}
               </Badge>
             ))}
@@ -214,17 +201,13 @@ export const CampusSelector: React.FC<CampusSelectorProps> = memo(
         <div
           key={campus.campus_id}
           className={`flex items-center gap-2 p-2 rounded hover:bg-seasalt transition-colors ${
-            selectedCampusIds.includes(campus.campus_id)
-              ? "bg-seasalt border border-platinum"
-              : ""
+            selectedCampusIds.includes(campus.campus_id) ? "bg-seasalt border border-platinum" : ""
           }`}
         >
           <Checkbox
             id={campus.campus_id}
             checked={selectedCampusIds.includes(campus.campus_id)}
-            onCheckedChange={(checked) =>
-              handleCampusToggle(campus.campus_id, !!checked)
-            }
+            onCheckedChange={(checked) => handleCampusToggle(campus.campus_id, !!checked)}
             className="data-[state=checked]:bg-onyx data-[state=checked]:border-onyx"
           />
           <Label
@@ -253,9 +236,7 @@ export const CampusSelector: React.FC<CampusSelectorProps> = memo(
               <div className="flex items-center space-x-3">
                 <Building className="h-5 w-5 text-outer-space" />
                 <div>
-                  <h3 className="font-medium text-eerie-black">
-                    Campus Selection
-                  </h3>
+                  <h3 className="font-medium text-eerie-black">Campus Selection</h3>
                   <p className="text-sm text-slate-gray">{selectionSummary}</p>
                 </div>
               </div>
@@ -300,9 +281,7 @@ export const CampusSelector: React.FC<CampusSelectorProps> = memo(
                 <Checkbox
                   id="select-all"
                   checked={selectAll}
-                  onCheckedChange={(checked) =>
-                    handleSelectAllToggle(!!checked)
-                  }
+                  onCheckedChange={(checked) => handleSelectAllToggle(!!checked)}
                   className="data-[state=checked]:bg-onyx data-[state=checked]:border-onyx"
                 />
                 <Label htmlFor="select-all" className="font-medium">
@@ -316,9 +295,7 @@ export const CampusSelector: React.FC<CampusSelectorProps> = memo(
                     No campuses found matching "{searchQuery}"
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {campusGridItems}
-                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">{campusGridItems}</div>
                 )}
               </div>
 
@@ -330,5 +307,5 @@ export const CampusSelector: React.FC<CampusSelectorProps> = memo(
         </Collapsible>
       </div>
     );
-  },
+  }
 );

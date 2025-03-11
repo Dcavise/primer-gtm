@@ -31,8 +31,8 @@ const Input = ({ className, ...props }: AriaInputProps) => {
           "data-[focused]:outline-none data-[focused]:ring-2 data-[focused]:ring-ring data-[focused]:ring-offset-2",
           /* Resets */
           "focus-visible:outline-none",
-          className,
-        ),
+          className
+        )
       )}
       {...props}
     />
@@ -51,8 +51,8 @@ const TextArea = ({ className, ...props }: AriaTextAreaProps) => {
           "data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
           /* Resets */
           "focus-visible:outline-none",
-          className,
-        ),
+          className
+        )
       )}
       {...props}
     />
@@ -77,7 +77,7 @@ function JollyTextField({
   return (
     <TextField
       className={composeRenderProps(className, (className) =>
-        cn("group flex flex-col gap-2", className),
+        cn("group flex flex-col gap-2", className)
       )}
       {...props}
     >

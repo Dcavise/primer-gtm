@@ -30,7 +30,7 @@ export function hasFormFieldError<
  */
 export function createZodForm<TSchema extends z.ZodType>(
   schema: TSchema,
-  defaultValues?: z.infer<TSchema>,
+  defaultValues?: z.infer<TSchema>
 ) {
   return useForm<z.infer<TSchema>>({
     resolver: zodResolver(schema),
@@ -100,9 +100,7 @@ export function FormSection({
       {(title || description) && (
         <div className="space-y-1">
           {title && <h3 className="text-lg font-medium">{title}</h3>}
-          {description && (
-            <p className="text-sm text-muted-foreground">{description}</p>
-          )}
+          {description && <p className="text-sm text-muted-foreground">{description}</p>}
         </div>
       )}
       <div className="space-y-4">{children}</div>

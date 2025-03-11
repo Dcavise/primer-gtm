@@ -5,11 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingState } from "@/components/LoadingState";
-import {
-  RealEstateProperty,
-  PropertyPhase,
-  BooleanStatus,
-} from "@/types/realEstate";
+import { RealEstateProperty, PropertyPhase, BooleanStatus } from "@/types/realEstate";
 import { SafeSimplePhaseSelector } from "./SafeSimplePhaseSelector";
 import { BooleanStatusSelector } from "./BooleanStatusSelector";
 import { supabase } from "@/integrations/supabase-client";
@@ -22,22 +18,15 @@ interface PropertyBasicInfoProps {
   onPropertyUpdated: () => void;
 }
 
-const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
-  property,
-  onPropertyUpdated,
-}) => {
+const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({ property, onPropertyUpdated }) => {
   // Individual field edit states
-  const [editingFields, setEditingFields] = useState<Record<string, boolean>>(
-    {},
-  );
+  const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
   // Fix the type definition to include PropertyPhase, string, null, and number
   const [fieldValues, setFieldValues] = useState<
     Record<string, string | null | PropertyPhase | number | BooleanStatus>
   >({});
-  const [validationErrors, setValidationErrors] = useState<
-    Record<string, string>
-  >({});
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // Initialize field values when property changes
   useEffect(() => {
@@ -56,8 +45,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
 
   const validateField = (fieldName: string, value: any): boolean => {
     // Get the validator for this field from our schema
-    const validator =
-      fieldValidators[fieldName as keyof typeof fieldValidators];
+    const validator = fieldValidators[fieldName as keyof typeof fieldValidators];
     if (!validator) return true; // No validator defined for this field
 
     try {
@@ -98,9 +86,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
     } else if (fieldName === "fire_sprinklers" || fieldName === "fiber") {
       setFieldValues((prev) => ({
         ...prev,
-        [fieldName]:
-          (property[fieldName as keyof RealEstateProperty] as BooleanStatus) ||
-          "",
+        [fieldName]: (property[fieldName as keyof RealEstateProperty] as BooleanStatus) || "",
       }));
     } else {
       setFieldValues((prev) => ({
@@ -128,9 +114,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
     } else if (fieldName === "fire_sprinklers" || fieldName === "fiber") {
       setFieldValues((prev) => ({
         ...prev,
-        [fieldName]:
-          (property[fieldName as keyof RealEstateProperty] as BooleanStatus) ||
-          "",
+        [fieldName]: (property[fieldName as keyof RealEstateProperty] as BooleanStatus) || "",
       }));
     } else {
       setFieldValues((prev) => ({
@@ -154,7 +138,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
 
   const handleBooleanStatusFieldChange = (
     fieldName: "fire_sprinklers" | "fiber",
-    value: BooleanStatus | "",
+    value: BooleanStatus | ""
   ) => {
     console.log(`Selected ${fieldName}:`, value);
     setFieldValues((prev) => ({ ...prev, [fieldName]: value || null }));
@@ -166,9 +150,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
 
     // Get the value to validate
     const valueToValidate =
-      fieldName === "phase" && fieldValues[fieldName] === ""
-        ? null
-        : fieldValues[fieldName];
+      fieldName === "phase" && fieldValues[fieldName] === "" ? null : fieldValues[fieldName];
 
     // Validate the field value before saving
     const isValid = validateField(fieldName, valueToValidate);
@@ -185,9 +167,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
 
       // For the phase field, handle empty string as null for the database
       const valueToSave =
-        fieldName === "phase" && fieldValues[fieldName] === ""
-          ? null
-          : fieldValues[fieldName];
+        fieldName === "phase" && fieldValues[fieldName] === "" ? null : fieldValues[fieldName];
 
       const { error } = await supabase
         .from("real_estate_pipeline")
@@ -210,11 +190,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
     }
   };
 
-  const renderField = (
-    fieldName: string,
-    label: string,
-    type: string = "text",
-  ) => {
+  const renderField = (fieldName: string, label: string, type: string = "text") => {
     const isFieldEditing = editingFields[fieldName];
     const isFieldSaving = savingFields[fieldName];
     const hasError = validationErrors[fieldName];
@@ -277,8 +253,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
           <p className="font-medium">
             {fieldName === "sf_available" && property[fieldName]
               ? `${property[fieldName]} sq ft`
-              : property[fieldName as keyof RealEstateProperty] ||
-                "Not specified"}
+              : property[fieldName as keyof RealEstateProperty] || "Not specified"}
           </p>
         )}
       </div>
@@ -351,10 +326,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
     );
   };
 
-  const renderBooleanStatusField = (
-    fieldName: "fire_sprinklers" | "fiber",
-    label: string,
-  ) => {
+  const renderBooleanStatusField = (fieldName: "fire_sprinklers" | "fiber", label: string) => {
     const isFieldEditing = editingFields[fieldName];
     const isFieldSaving = savingFields[fieldName];
     const hasError = validationErrors[fieldName];
@@ -380,9 +352,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
             <ErrorBoundary>
               <BooleanStatusSelector
                 value={fieldValues[fieldName] as BooleanStatus | null}
-                onValueChange={(value) =>
-                  handleBooleanStatusFieldChange(fieldName, value)
-                }
+                onValueChange={(value) => handleBooleanStatusFieldChange(fieldName, value)}
                 disabled={isFieldSaving}
               />
             </ErrorBoundary>
@@ -415,9 +385,7 @@ const PropertyBasicInfo: React.FC<PropertyBasicInfoProps> = ({
             </div>
           </div>
         ) : (
-          <p className="font-medium">
-            {property[fieldName] || "Not specified"}
-          </p>
+          <p className="font-medium">{property[fieldName] || "Not specified"}</p>
         )}
       </div>
     );

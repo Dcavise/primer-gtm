@@ -95,12 +95,12 @@ export function FellowsDataSync() {
           const fortMeyersCampus = campuses.find(
             (c) =>
               c.campus_name.toLowerCase().includes("fort") &&
-              c.campus_name.toLowerCase().includes("meyer"),
+              c.campus_name.toLowerCase().includes("meyer")
           );
 
           if (fortMeyersCampus) {
             console.log(
-              `Associating Adam Tweet with Fort Meyers campus: ${fortMeyersCampus.campus_id}`,
+              `Associating Adam Tweet with Fort Meyers campus: ${fortMeyersCampus.campus_id}`
             );
             return {
               ...fellow,
@@ -114,7 +114,7 @@ export function FellowsDataSync() {
         // If the fellow has a campus field but no campus_id, try to match it with a campus
         if (fellow.campus && !fellow.campus_id) {
           const matchedCampus = campuses.find(
-            (c) => c.campus_name.toLowerCase() === fellow.campus?.toLowerCase(),
+            (c) => c.campus_name.toLowerCase() === fellow.campus?.toLowerCase()
           );
           if (matchedCampus) {
             return {
@@ -126,9 +126,7 @@ export function FellowsDataSync() {
         }
         // If the fellow has a campus_id, get the campus_name
         else if (fellow.campus_id) {
-          const matchedCampus = campuses.find(
-            (c) => c.campus_id === fellow.campus_id,
-          );
+          const matchedCampus = campuses.find((c) => c.campus_id === fellow.campus_id);
           if (matchedCampus) {
             return {
               ...fellow,
@@ -150,7 +148,7 @@ export function FellowsDataSync() {
       // Get the most recent updated_at timestamp
       if (data && data.length > 0) {
         const mostRecent = new Date(
-          Math.max(...data.map((f) => new Date(f.updated_at || "").getTime())),
+          Math.max(...data.map((f) => new Date(f.updated_at || "").getTime()))
         );
         setLastUpdated(mostRecent.toLocaleString());
       }
@@ -181,9 +179,7 @@ export function FellowsDataSync() {
         throw new Error(response.data.error || "Sync operation failed");
       }
 
-      toast.success(
-        `Successfully synced ${response.data.result?.inserted || 0} fellows records`,
-      );
+      toast.success(`Successfully synced ${response.data.result?.inserted || 0} fellows records`);
 
       // After sync, link fellows to campuses
       await linkFellowsToCampuses();
@@ -208,9 +204,7 @@ export function FellowsDataSync() {
       }
 
       // Get all fellows
-      const { data: fellowsData, error: fellowsError } = await supabase
-        .from("fellows")
-        .select("*");
+      const { data: fellowsData, error: fellowsError } = await supabase.from("fellows").select("*");
 
       if (fellowsError) throw fellowsError;
 
@@ -218,7 +212,7 @@ export function FellowsDataSync() {
       const fortMeyersCampus = campuses.find(
         (c) =>
           c.campus_name.toLowerCase().includes("fort") &&
-          c.campus_name.toLowerCase().includes("meyer"),
+          c.campus_name.toLowerCase().includes("meyer")
       );
 
       console.log("Fort Meyers campus:", fortMeyersCampus);
@@ -241,7 +235,7 @@ export function FellowsDataSync() {
         else if (fellow.campus && !fellow.campus_id) {
           // Try to find a matching campus
           const matchedCampus = campuses.find(
-            (c) => c.campus_name.toLowerCase() === fellow.campus?.toLowerCase(),
+            (c) => c.campus_name.toLowerCase() === fellow.campus?.toLowerCase()
           );
 
           if (matchedCampus) {
@@ -292,9 +286,7 @@ export function FellowsDataSync() {
             <CardDescription>
               View and sync fellows data from Google Sheets
               {lastUpdated && (
-                <span className="block text-sm mt-1">
-                  Last updated: {lastUpdated}
-                </span>
+                <span className="block text-sm mt-1">Last updated: {lastUpdated}</span>
               )}
             </CardDescription>
           </div>
@@ -331,22 +323,17 @@ export function FellowsDataSync() {
                         <p>Troubleshooting steps:</p>
                         <ol className="list-decimal pl-5 space-y-1 mt-2">
                           <li>
-                            Ensure the Google service account credentials are
-                            properly formatted JSON
+                            Ensure the Google service account credentials are properly formatted
+                            JSON
                           </li>
                           <li>
-                            Make sure the service account has "Viewer" access to
-                            the Google Sheet
+                            Make sure the service account has "Viewer" access to the Google Sheet
                           </li>
                           <li>Verify that the spreadsheet ID is correct</li>
                           <li>
-                            Check that all required scopes are enabled for the
-                            service account
+                            Check that all required scopes are enabled for the service account
                           </li>
-                          <li>
-                            Review Edge Function logs for more detailed error
-                            information
-                          </li>
+                          <li>Review Edge Function logs for more detailed error information</li>
                         </ol>
                       </div>
                     )}
@@ -370,10 +357,7 @@ export function FellowsDataSync() {
                   <TableBody>
                     {fellows.length === 0 ? (
                       <TableRow>
-                        <TableCell
-                          colSpan={6}
-                          className="text-center h-24 text-muted-foreground"
-                        >
+                        <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
                           No fellows data available
                         </TableCell>
                       </TableRow>
@@ -381,17 +365,11 @@ export function FellowsDataSync() {
                       fellows.map((fellow) => (
                         <TableRow key={fellow.id}>
                           <TableCell>{fellow.fellow_id}</TableCell>
-                          <TableCell className="font-medium">
-                            {fellow.fellow_name}
-                          </TableCell>
-                          <TableCell>
-                            {fellow.campus_name || fellow.campus || "-"}
-                          </TableCell>
+                          <TableCell className="font-medium">{fellow.fellow_name}</TableCell>
+                          <TableCell>{fellow.campus_name || fellow.campus || "-"}</TableCell>
                           <TableCell>{fellow.cohort || "-"}</TableCell>
                           <TableCell>{fellow.grade_band || "-"}</TableCell>
-                          <TableCell>
-                            {fellow.fte_employment_status || "-"}
-                          </TableCell>
+                          <TableCell>{fellow.fte_employment_status || "-"}</TableCell>
                         </TableRow>
                       ))
                     )}

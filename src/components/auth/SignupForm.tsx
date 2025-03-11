@@ -49,8 +49,7 @@ const SignupForm = () => {
         });
       }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "An unexpected error occurred";
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
       setRegisterError(errorMessage);
       toast.error("Registration failed", {
         description: errorMessage,
@@ -64,9 +63,7 @@ const SignupForm = () => {
     <form onSubmit={handleRegister}>
       <CardHeader>
         <CardTitle>Create an account</CardTitle>
-        <CardDescription>
-          Enter your details to create a new account
-        </CardDescription>
+        <CardDescription>Enter your details to create a new account</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {registerError && (

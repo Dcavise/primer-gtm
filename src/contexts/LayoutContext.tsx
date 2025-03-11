@@ -7,9 +7,7 @@ interface LayoutContextProps {
 
 const LayoutContext = createContext<LayoutContextProps | undefined>(undefined);
 
-export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [showUserProfile, setShowUserProfile] = useState(true);
 
   return (

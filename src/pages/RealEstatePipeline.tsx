@@ -12,13 +12,7 @@ interface SampleProperty {
 }
 import { LoadingState } from "@/components/LoadingState";
 import { CampusSelector } from "@/features/salesforce/components/CampusSelector";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -111,22 +105,8 @@ const SAMPLE_ADDRESSES = {
 
 // City data by state for filtering
 const CITIES_BY_STATE = {
-  Florida: [
-    "All Cities",
-    "Bradenton",
-    "Pensacola",
-    "Miami",
-    "Orlando",
-    "Tampa",
-  ],
-  Alabama: [
-    "All Cities",
-    "Tuscaloosa",
-    "Montgomery",
-    "Birmingham",
-    "Mobile",
-    "Huntsville",
-  ],
+  Florida: ["All Cities", "Bradenton", "Pensacola", "Miami", "Orlando", "Tampa"],
+  Alabama: ["All Cities", "Tuscaloosa", "Montgomery", "Birmingham", "Mobile", "Huntsville"],
   Arizona: ["All Cities", "Phoenix", "Tempe", "Tucson", "Scottsdale", "Mesa"],
 };
 
@@ -135,11 +115,7 @@ const STATES = ["All States", "Florida", "Alabama", "Arizona"];
 
 // Mapping old phases to new stages for compatibility
 const mapPhaseToStage = (phase: PropertyPhase): string => {
-  if (
-    phase.startsWith("1.") ||
-    phase.startsWith("2.") ||
-    phase.startsWith("3.")
-  )
+  if (phase.startsWith("1.") || phase.startsWith("2.") || phase.startsWith("3."))
     return "Diligence";
   if (phase.startsWith("4.")) return "LOI";
   if (phase.startsWith("5.")) return "Lease";
@@ -180,14 +156,8 @@ const RealEstatePipeline: React.FC = () => {
   const [selectedCampusNames, setSelectedCampusNames] = useState<string[]>([]);
   const [selectedState, setSelectedState] = useState<string>("All States");
   const [selectedCity, setSelectedCity] = useState<string>("All Cities");
-  const [availableCities, setAvailableCities] = useState<string[]>([
-    "All Cities",
-  ]);
-  const {
-    data: properties,
-    isLoading,
-    error,
-  } = useRealEstatePipeline({ campusId: null });
+  const [availableCities, setAvailableCities] = useState<string[]>(["All Cities"]);
+  const { data: properties, isLoading, error } = useRealEstatePipeline({ campusId: null });
   const { data: campuses, isLoading: isLoadingCampuses } = useCampuses();
 
   // Group properties by stage
@@ -265,19 +235,12 @@ const RealEstatePipeline: React.FC = () => {
         let includeProperty = true;
 
         // Filter by state if not "All States"
-        if (
-          selectedState !== "All States" &&
-          property.state !== selectedState
-        ) {
+        if (selectedState !== "All States" && property.state !== selectedState) {
           includeProperty = false;
         }
 
         // Filter by city if not "All Cities"
-        if (
-          includeProperty &&
-          selectedCity !== "All Cities" &&
-          property.city !== selectedCity
-        ) {
+        if (includeProperty && selectedCity !== "All Cities" && property.city !== selectedCity) {
           includeProperty = false;
         }
 
@@ -321,9 +284,7 @@ const RealEstatePipeline: React.FC = () => {
               <div className="flex items-center space-x-3 mb-3 md:mb-0">
                 <MapPin className="h-5 w-5 text-slate-gray" />
                 <div>
-                  <h3 className="font-medium text-eerie-black">
-                    Location Filter
-                  </h3>
+                  <h3 className="font-medium text-eerie-black">Location Filter</h3>
                   <p className="text-sm text-slate-gray">
                     {selectedState !== "All States"
                       ? selectedCity !== "All Cities"
@@ -411,9 +372,7 @@ const RealEstatePipeline: React.FC = () => {
                   <div
                     className={`mb-3 px-3 py-1.5 flex items-center justify-between ${stageColors.bg} rounded-md`}
                   >
-                    <h3 className={`text-sm font-medium ${stageColors.text}`}>
-                      {stage}
-                    </h3>
+                    <h3 className={`text-sm font-medium ${stageColors.text}`}>{stage}</h3>
                     <div className="flex items-center">
                       <span className={`text-xs ${stageColors.text}`}>
                         {filteredProperties[stage]?.length || 0}
@@ -437,15 +396,11 @@ const RealEstatePipeline: React.FC = () => {
                             </h4>
 
                             {/* Status detail (smaller text) */}
-                            <p className="text-xs text-gray-500 mb-1">
-                              {property.status}
-                            </p>
+                            <p className="text-xs text-gray-500 mb-1">{property.status}</p>
 
                             {/* Color-coded tag for the stage - simplified to match reference image */}
                             <div className="mt-2 pt-1 border-t border-gray-100">
-                              <span
-                                className={`inline-block text-xs ${stageColors.text}`}
-                              >
+                              <span className={`inline-block text-xs ${stageColors.text}`}>
                                 {stage}
                               </span>
                             </div>
@@ -454,9 +409,7 @@ const RealEstatePipeline: React.FC = () => {
                       ))
                     ) : (
                       <div className="flex items-center justify-center h-16 my-4 text-center">
-                        <p className={`text-sm ${stageColors.text}`}>
-                          No properties
-                        </p>
+                        <p className={`text-sm ${stageColors.text}`}>No properties</p>
                       </div>
                     )}
                   </div>

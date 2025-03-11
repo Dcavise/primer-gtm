@@ -18,14 +18,10 @@ const PropertyContactInfo: React.FC<PropertyContactInfoProps> = ({
   onPropertyUpdated,
 }) => {
   // Individual field edit states
-  const [editingFields, setEditingFields] = useState<Record<string, boolean>>(
-    {},
-  );
+  const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
   const [savingFields, setSavingFields] = useState<Record<string, boolean>>({});
   // Update type to include number
-  const [fieldValues, setFieldValues] = useState<
-    Record<string, string | null | number>
-  >({
+  const [fieldValues, setFieldValues] = useState<Record<string, string | null | number>>({
     ll_poc: "",
     ll_phone: "",
     ll_email: "",

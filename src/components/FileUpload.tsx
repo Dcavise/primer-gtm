@@ -12,10 +12,7 @@ interface FileUploadProps {
   onUploadComplete: () => void;
 }
 
-export const FileUpload: React.FC<FileUploadProps> = ({
-  propertyId,
-  onUploadComplete,
-}) => {
+export const FileUpload: React.FC<FileUploadProps> = ({ propertyId, onUploadComplete }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [displayName, setDisplayName] = useState("");
@@ -141,11 +138,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
             </div>
           </div>
 
-          <Button
-            onClick={handleUpload}
-            disabled={isUploading}
-            className="w-full"
-          >
+          <Button onClick={handleUpload} disabled={isUploading} className="w-full">
             <Upload className="h-4 w-4 mr-2" />
             {isUploading ? "Uploading..." : "Upload"}
           </Button>

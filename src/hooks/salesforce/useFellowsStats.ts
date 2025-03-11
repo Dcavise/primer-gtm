@@ -3,14 +3,12 @@ import { EmploymentStatusCount } from "./types";
 
 export const fetchFellowsStats = async (
   selectedCampusIds: string[],
-  handleError: (error: any, message?: string) => void,
+  handleError: (error: any, message?: string) => void
 ) => {
   try {
     console.log(
       "Fetching fellows stats for campuses:",
-      selectedCampusIds.length > 0
-        ? selectedCampusIds.join(", ")
-        : "all campuses",
+      selectedCampusIds.length > 0 ? selectedCampusIds.join(", ") : "all campuses"
     );
 
     // Fetch fellows count with proper filtering
@@ -25,22 +23,15 @@ export const fetchFellowsStats = async (
       // Create a filter for each campus ID
       const filters = selectedCampusIds
         .map(
-          (campusId) =>
-            `campus_id.eq.${campusId},campus.eq.${campusId},campus.ilike.%${campusId}%`,
+          (campusId) => `campus_id.eq.${campusId},campus.eq.${campusId},campus.ilike.%${campusId}%`
         )
         .join(",");
 
       query = query.or(filters);
-      console.log(
-        `Using enhanced campus filter for campus_ids: ${selectedCampusIds.join(", ")}`,
-      );
+      console.log(`Using enhanced campus filter for campus_ids: ${selectedCampusIds.join(", ")}`);
     }
 
-    const {
-      count: fellowsCount,
-      error: fellowsError,
-      data: fellowsData,
-    } = await query;
+    const { count: fellowsCount, error: fellowsError, data: fellowsData } = await query;
 
     if (fellowsError) throw fellowsError;
 
@@ -60,18 +51,16 @@ export const fetchFellowsStats = async (
           acc[status] = (acc[status] || 0) + 1;
           return acc;
         },
-        {} as Record<string, number>,
+        {} as Record<string, number>
       );
 
       console.log("Employment status distribution:", statusCounts);
 
       // Convert to array format for the chart
-      const statusCountsArray = Object.entries(statusCounts).map(
-        ([status, count]) => ({
-          status,
-          count,
-        }),
-      );
+      const statusCountsArray = Object.entries(statusCounts).map(([status, count]) => ({
+        status,
+        count,
+      }));
 
       // Sort by count in descending order
       statusCountsArray.sort((a, b) => b.count - a.count);

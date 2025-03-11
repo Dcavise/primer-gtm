@@ -102,10 +102,7 @@ describe("useSalesforceData", () => {
     renderHook(() => useSalesforceData([]));
 
     await waitFor(() => {
-      expect(supabase.rpc).toHaveBeenCalledWith(
-        "get_campuses_with_lead_counts",
-        {},
-      );
+      expect(supabase.rpc).toHaveBeenCalledWith("get_campuses_with_lead_counts", {});
     });
   });
 

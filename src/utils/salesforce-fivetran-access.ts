@@ -27,9 +27,7 @@ export const querySalesforceTable = async (tableName: string, limit = 100) => {
       return { success: false, data: null, error };
     }
 
-    logger.info(
-      `Successfully queried ${tableName}, got ${data?.length || 0} records`,
-    );
+    logger.info(`Successfully queried ${tableName}, got ${data?.length || 0} records`);
     return { success: true, data, error: null };
   } catch (error) {
     logger.error(`Exception querying Salesforce table ${tableName}:`, error);
@@ -51,10 +49,10 @@ export const querySalesforceTable = async (tableName: string, limit = 100) => {
 export const getWeeklyLeadCounts = async (
   startDate: string,
   endDate: string,
-  campusId: string | null = null,
+  campusId: string | null = null
 ) => {
   logger.info(
-    `Getting weekly lead counts from ${startDate} to ${endDate}, campus: ${campusId || "all"}`,
+    `Getting weekly lead counts from ${startDate} to ${endDate}, campus: ${campusId || "all"}`
   );
 
   try {
@@ -151,21 +149,15 @@ export const testFivetranConnection = async () => {
 
   try {
     // Check if fivetran_views schema exists
-    const { data: schemaData, error: schemaError } = await supabase.rpc(
-      "execute_sql_query",
-      {
-        query_text: `SELECT EXISTS(
+    const { data: schemaData, error: schemaError } = await supabase.rpc("execute_sql_query", {
+      query_text: `SELECT EXISTS(
         SELECT 1 FROM information_schema.schemata 
         WHERE schema_name = 'fivetran_views'
       )`,
-      },
-    );
+    });
 
     const schemaExists =
-      !schemaError &&
-      schemaData &&
-      schemaData.length > 0 &&
-      schemaData[0].exists;
+      !schemaError && schemaData && schemaData.length > 0 && schemaData[0].exists;
 
     if (!schemaExists) {
       return {
@@ -176,12 +168,9 @@ export const testFivetranConnection = async () => {
     }
 
     // Check if lead table exists
-    const { data: tableData, error: tableError } = await supabase.rpc(
-      "execute_sql_query",
-      {
-        query_text: `SELECT COUNT(*) FROM fivetran_views.lead LIMIT 1`,
-      },
-    );
+    const { data: tableData, error: tableError } = await supabase.rpc("execute_sql_query", {
+      query_text: `SELECT COUNT(*) FROM fivetran_views.lead LIMIT 1`,
+    });
 
     const leadTableAccessible = !tableError && tableData;
 

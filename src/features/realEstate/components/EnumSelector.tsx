@@ -38,7 +38,7 @@ export function EnumSelector<T extends string>({
 
   // Handle selecting "None"
   const handleSelectNone = () => {
-    onValueChange("" as "");
+    onValueChange("" as const);
     setIsOpen(false);
   };
 
@@ -49,11 +49,7 @@ export function EnumSelector<T extends string>({
         variant="outline"
         role="combobox"
         aria-expanded={isOpen}
-        className={cn(
-          "w-full justify-between border-input",
-          value ? colorClass : "",
-          className,
-        )}
+        className={cn("w-full justify-between border-input", value ? colorClass : "", className)}
         onClick={() => setIsOpen(!isOpen)}
         type="button"
         disabled={disabled}
@@ -71,16 +67,11 @@ export function EnumSelector<T extends string>({
               className={cn(
                 "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none",
                 "hover:bg-accent hover:text-accent-foreground",
-                !value ? "bg-accent text-accent-foreground" : "",
+                !value ? "bg-accent text-accent-foreground" : ""
               )}
               onClick={handleSelectNone}
             >
-              <Check
-                className={cn(
-                  "mr-2 h-4 w-4",
-                  !value ? "opacity-100" : "opacity-0",
-                )}
-              />
+              <Check className={cn("mr-2 h-4 w-4", !value ? "opacity-100" : "opacity-0")} />
               {placeholder}
             </div>
 
@@ -91,15 +82,12 @@ export function EnumSelector<T extends string>({
                 className={cn(
                   "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none",
                   "hover:bg-accent hover:text-accent-foreground",
-                  value === option ? "bg-accent text-accent-foreground" : "",
+                  value === option ? "bg-accent text-accent-foreground" : ""
                 )}
                 onClick={() => handleSelect(option)}
               >
                 <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    value === option ? "opacity-100" : "opacity-0",
-                  )}
+                  className={cn("mr-2 h-4 w-4", value === option ? "opacity-100" : "opacity-0")}
                 />
                 {option}
               </div>

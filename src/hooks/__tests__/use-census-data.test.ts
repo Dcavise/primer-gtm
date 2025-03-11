@@ -151,9 +151,7 @@ describe("useCensusData", () => {
 
   it("should handle unexpected errors", async () => {
     // Mock unexpected failure
-    (supabase.functions.invoke as any).mockRejectedValue(
-      new Error("Network failure"),
-    );
+    (supabase.functions.invoke as any).mockRejectedValue(new Error("Network failure"));
 
     const { result } = renderHook(() => useCensusData());
 

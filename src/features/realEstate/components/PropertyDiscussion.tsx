@@ -7,9 +7,7 @@ interface PropertyDiscussionProps {
   propertyId: number;
 }
 
-const PropertyDiscussion: React.FC<PropertyDiscussionProps> = ({
-  propertyId,
-}) => {
+const PropertyDiscussion: React.FC<PropertyDiscussionProps> = ({ propertyId }) => {
   return (
     <Card>
       <CardHeader>

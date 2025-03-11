@@ -25,13 +25,9 @@ const DEFAULT_DEV_MODE_OPTIONS: DevModeOptions = {
   useRealDataWhenAvailable: false,
 };
 
-const DeveloperModeContext = createContext<
-  DeveloperModeContextProps | undefined
->(undefined);
+const DeveloperModeContext = createContext<DeveloperModeContextProps | undefined>(undefined);
 
-export const DeveloperModeProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const DeveloperModeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Load the saved preference from localStorage or default to false
   const [isDeveloperMode, setIsDeveloperMode] = useState<boolean>(() => {
     const saved = localStorage.getItem("developer-mode");
@@ -52,16 +48,13 @@ export const DeveloperModeProvider: React.FC<{ children: React.ReactNode }> = ({
   // Save to localStorage whenever the value changes
   useEffect(() => {
     localStorage.setItem("developer-mode", JSON.stringify(isDeveloperMode));
-    localStorage.setItem(
-      "developer-mode-options",
-      JSON.stringify(devModeOptions),
-    );
+    localStorage.setItem("developer-mode-options", JSON.stringify(devModeOptions));
 
     // Dispatch an event so other components can react to the change
     window.dispatchEvent(
       new CustomEvent("developer-mode-changed", {
         detail: { isDeveloperMode, options: devModeOptions },
-      }),
+      })
     );
 
     // Show toast when developer mode is toggled
@@ -97,9 +90,7 @@ export const DeveloperModeProvider: React.FC<{ children: React.ReactNode }> = ({
 export const useDeveloperMode = () => {
   const context = useContext(DeveloperModeContext);
   if (context === undefined) {
-    throw new Error(
-      "useDeveloperMode must be used within a DeveloperModeProvider",
-    );
+    throw new Error("useDeveloperMode must be used within a DeveloperModeProvider");
   }
   return context;
 };

@@ -12,11 +12,7 @@ interface SearchFormProps {
   searchType: "permits" | "zoning" | "census" | "schools";
 }
 
-export const SearchForm = ({
-  onSearch,
-  isSearching,
-  searchType,
-}: SearchFormProps) => {
+export const SearchForm = ({ onSearch, isSearching, searchType }: SearchFormProps) => {
   const [address, setAddress] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,9 +26,7 @@ export const SearchForm = ({
     }
 
     try {
-      console.log(
-        `Starting ${searchType} search for address: ${address.trim()}`,
-      );
+      console.log(`Starting ${searchType} search for address: ${address.trim()}`);
 
       // For zoning searches, we can pass the address directly without geocoding
       if (searchType === "zoning") {
@@ -67,7 +61,7 @@ export const SearchForm = ({
             lat: coordinates.lat,
             lon: coordinates.lng,
           },
-          geocodeResult.address,
+          geocodeResult.address
         );
       } else if (searchType === "census") {
         // For census (which could use just address like zoning)
@@ -75,10 +69,7 @@ export const SearchForm = ({
       } else if (searchType === "permits") {
         // For permit searches, we use a very small bounding box
         const radiusInMeters = 10; // Very small radius (10 meters) to get exact matches only
-        const { bottomLeft, topRight } = createBoundingBox(
-          coordinates,
-          radiusInMeters,
-        );
+        const { bottomLeft, topRight } = createBoundingBox(coordinates, radiusInMeters);
 
         onSearch(
           {
@@ -88,7 +79,7 @@ export const SearchForm = ({
             top_right_lng: topRight.lng,
             exact_address: geocodeResult.address, // Pass the exact address for matching
           },
-          geocodeResult.address,
+          geocodeResult.address
         );
       }
     } catch (error) {

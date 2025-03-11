@@ -20,17 +20,14 @@ export function useSupabaseQuery<T>(options: UseSupabaseQueryOptions<T> = {}) {
   const handleError = useCallback(
     (err: any, context?: string) => {
       const errorMessage = err?.message || String(err);
-      logger.error(
-        `Supabase query error${context ? ` (${context})` : ""}:`,
-        err,
-      );
+      logger.error(`Supabase query error${context ? ` (${context})` : ""}:`, err);
       setError(new Error(errorMessage));
 
       if (options.errorHandler) {
         options.errorHandler(err);
       }
     },
-    [options.errorHandler],
+    [options.errorHandler]
   );
 
   /**
@@ -42,7 +39,7 @@ export function useSupabaseQuery<T>(options: UseSupabaseQueryOptions<T> = {}) {
   const executeQuery = useCallback(
     async <R>(
       queryFn: () => Promise<{ data: R | null; error: any }>,
-      queryName: string,
+      queryName: string
     ): Promise<R | null> => {
       setLoading(true);
       setError(null);
@@ -60,22 +57,18 @@ export function useSupabaseQuery<T>(options: UseSupabaseQueryOptions<T> = {}) {
 
         if (error) {
           handleError(error, queryName);
-          return options.mockDataFn
-            ? (options.mockDataFn() as unknown as R)
-            : null;
+          return options.mockDataFn ? (options.mockDataFn() as unknown as R) : null;
         }
 
         return data;
       } catch (err) {
         handleError(err, queryName);
-        return options.mockDataFn
-          ? (options.mockDataFn() as unknown as R)
-          : null;
+        return options.mockDataFn ? (options.mockDataFn() as unknown as R) : null;
       } finally {
         setLoading(false);
       }
     },
-    [handleError, options.logTiming, options.mockDataFn],
+    [handleError, options.logTiming, options.mockDataFn]
   );
 
   /**
@@ -85,16 +78,10 @@ export function useSupabaseQuery<T>(options: UseSupabaseQueryOptions<T> = {}) {
    * @returns Query result or mock data on error
    */
   const executeRpc = useCallback(
-    async <R>(
-      functionName: string,
-      params: Record<string, any> = {},
-    ): Promise<R | null> => {
-      return executeQuery(
-        () => supabase.executeRPC(functionName, params),
-        `rpc.${functionName}`,
-      );
+    async <R>(functionName: string, params: Record<string, any> = {}): Promise<R | null> => {
+      return executeQuery(() => supabase.executeRPC(functionName, params), `rpc.${functionName}`);
     },
-    [executeQuery],
+    [executeQuery]
   );
 
   /**
@@ -104,16 +91,13 @@ export function useSupabaseQuery<T>(options: UseSupabaseQueryOptions<T> = {}) {
    * @returns Query result or mock data on error
    */
   const queryTable = useCallback(
-    async <R>(
-      tableName: string,
-      queryBuilder: (query: any) => any,
-    ): Promise<R | null> => {
+    async <R>(tableName: string, queryBuilder: (query: any) => any): Promise<R | null> => {
       return executeQuery(() => {
         const query = supabase.regular.from(tableName);
         return queryBuilder(query);
       }, `query.${tableName}`);
     },
-    [executeQuery],
+    [executeQuery]
   );
 
   return {

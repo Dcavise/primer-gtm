@@ -32,8 +32,10 @@ export const testSalesforceConnection = async () => {
     }
 
     // Check if we can access the lead table via RPC
-    const { success, data, error, usingAdminClient } =
-      await supabase.querySalesforceTable("lead", 1);
+    const { success, data, error, usingAdminClient } = await supabase.querySalesforceTable(
+      "lead",
+      1
+    );
 
     // Format the results in the expected structure for backward compatibility
     return {
@@ -71,12 +73,14 @@ export const getSampleLeads = async (limit = 5) => {
     logger.info(`Fetching sample of ${limit} Salesforce leads`);
 
     // Use the unified client's querySalesforceTable method
-    const { success, data, error, usingAdminClient } =
-      await supabase.querySalesforceTable("lead", limit);
+    const { success, data, error, usingAdminClient } = await supabase.querySalesforceTable(
+      "lead",
+      limit
+    );
 
     if (success && data) {
       logger.info(
-        `Successfully fetched ${Array.isArray(data) ? data.length : 0} leads${usingAdminClient ? " (using admin client)" : ""}`,
+        `Successfully fetched ${Array.isArray(data) ? data.length : 0} leads${usingAdminClient ? " (using admin client)" : ""}`
       );
       return { success: true, error: null, data };
     }
@@ -84,8 +88,7 @@ export const getSampleLeads = async (limit = 5) => {
     // Access failed
     toast({
       title: "Data Access Error",
-      description:
-        "Could not access leads data. Please check your database configuration.",
+      description: "Could not access leads data. Please check your database configuration.",
       variant: "destructive",
     });
 

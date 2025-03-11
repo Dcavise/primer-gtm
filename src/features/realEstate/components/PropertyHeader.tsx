@@ -11,9 +11,7 @@ const PropertyHeader: React.FC<PropertyHeaderProps> = ({ property }) => {
     <header className="bg-gradient-to-r from-slate-700 to-slate-600 text-white py-6 px-6">
       <div className="container mx-auto max-w-5xl">
         <div className="mb-3">
-          <h1 className="text-2xl md:text-3xl font-semibold">
-            Property Details
-          </h1>
+          <h1 className="text-2xl md:text-3xl font-semibold">Property Details</h1>
         </div>
         {property.address && (
           <div className="flex items-center text-white/80">

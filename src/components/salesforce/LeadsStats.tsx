@@ -54,9 +54,7 @@ export const LeadsStats: React.FC<LeadsStatsProps> = ({ stats, isLoading }) => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalLeads || 0}</div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Overall leads in the system
-            </p>
+            <p className="text-xs text-muted-foreground mt-2">Overall leads in the system</p>
           </CardContent>
         </Card>
 
@@ -71,8 +69,7 @@ export const LeadsStats: React.FC<LeadsStatsProps> = ({ stats, isLoading }) => {
           <CardContent>
             <div className="text-2xl font-bold">{openLeads || 0}</div>
             <p className="text-xs text-muted-foreground mt-2">
-              {totalLeads ? Math.round((openLeads / totalLeads) * 100) : 0}% of
-              total leads
+              {totalLeads ? Math.round((openLeads / totalLeads) * 100) : 0}% of total leads
             </p>
           </CardContent>
         </Card>
@@ -88,8 +85,7 @@ export const LeadsStats: React.FC<LeadsStatsProps> = ({ stats, isLoading }) => {
           <CardContent>
             <div className="text-2xl font-bold">{convertedLeads || 0}</div>
             <p className="text-xs text-muted-foreground mt-2">
-              {totalLeads ? Math.round((convertedLeads / totalLeads) * 100) : 0}
-              % conversion rate
+              {totalLeads ? Math.round((convertedLeads / totalLeads) * 100) : 0}% conversion rate
             </p>
           </CardContent>
         </Card>
@@ -108,10 +104,7 @@ export const LeadsStats: React.FC<LeadsStatsProps> = ({ stats, isLoading }) => {
             {Object.keys(byCampus || {}).length > 0 ? (
               <div className="space-y-2">
                 {Object.entries(byCampus).map(([campus, count]) => (
-                  <div
-                    key={campus}
-                    className="flex items-center justify-between"
-                  >
+                  <div key={campus} className="flex items-center justify-between">
                     <div className="flex items-center">
                       <Badge variant="outline" className="mr-2">
                         {campus}
@@ -132,9 +125,7 @@ export const LeadsStats: React.FC<LeadsStatsProps> = ({ stats, isLoading }) => {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                No campus data available
-              </p>
+              <p className="text-sm text-muted-foreground">No campus data available</p>
             )}
           </CardContent>
         </Card>
@@ -151,10 +142,7 @@ export const LeadsStats: React.FC<LeadsStatsProps> = ({ stats, isLoading }) => {
             {Object.keys(bySource || {}).length > 0 ? (
               <div className="space-y-2">
                 {getTopSources().map(([source, count]) => (
-                  <div
-                    key={source}
-                    className="flex items-center justify-between"
-                  >
+                  <div key={source} className="flex items-center justify-between">
                     <div className="flex items-center">
                       <Badge variant="secondary" className="mr-2">
                         {source}
@@ -175,9 +163,7 @@ export const LeadsStats: React.FC<LeadsStatsProps> = ({ stats, isLoading }) => {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                No source data available
-              </p>
+              <p className="text-sm text-muted-foreground">No source data available</p>
             )}
           </CardContent>
         </Card>

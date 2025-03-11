@@ -1,10 +1,4 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[];
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
   public: {
@@ -233,9 +227,7 @@ export type Database = {
           campus_id: string | null;
           created_at: string;
           fiber: Database["public"]["Enums"]["fiber_status"] | null;
-          fire_sprinklers:
-            | Database["public"]["Enums"]["fire_sprinkler_status"]
-            | null;
+          fire_sprinklers: Database["public"]["Enums"]["fire_sprinkler_status"] | null;
           id: number;
           lease_status: Database["public"]["Enums"]["lease_status_enum"] | null;
           ll_email: string | null;
@@ -250,12 +242,8 @@ export type Database = {
           sf_available: string | null;
           site_name: string | null;
           status_notes: string | null;
-          survey_status:
-            | Database["public"]["Enums"]["survey_status_enum"]
-            | null;
-          test_fit_status:
-            | Database["public"]["Enums"]["test_fit_status_enum"]
-            | null;
+          survey_status: Database["public"]["Enums"]["survey_status_enum"] | null;
+          test_fit_status: Database["public"]["Enums"]["test_fit_status_enum"] | null;
           zoning: string | null;
         };
         Insert: {
@@ -267,13 +255,9 @@ export type Database = {
           campus_id?: string | null;
           created_at?: string;
           fiber?: Database["public"]["Enums"]["fiber_status"] | null;
-          fire_sprinklers?:
-            | Database["public"]["Enums"]["fire_sprinkler_status"]
-            | null;
+          fire_sprinklers?: Database["public"]["Enums"]["fire_sprinkler_status"] | null;
           id?: number;
-          lease_status?:
-            | Database["public"]["Enums"]["lease_status_enum"]
-            | null;
+          lease_status?: Database["public"]["Enums"]["lease_status_enum"] | null;
           ll_email?: string | null;
           ll_phone?: string | null;
           ll_poc?: string | null;
@@ -286,12 +270,8 @@ export type Database = {
           sf_available?: string | null;
           site_name?: string | null;
           status_notes?: string | null;
-          survey_status?:
-            | Database["public"]["Enums"]["survey_status_enum"]
-            | null;
-          test_fit_status?:
-            | Database["public"]["Enums"]["test_fit_status_enum"]
-            | null;
+          survey_status?: Database["public"]["Enums"]["survey_status_enum"] | null;
+          test_fit_status?: Database["public"]["Enums"]["test_fit_status_enum"] | null;
           zoning?: string | null;
         };
         Update: {
@@ -303,13 +283,9 @@ export type Database = {
           campus_id?: string | null;
           created_at?: string;
           fiber?: Database["public"]["Enums"]["fiber_status"] | null;
-          fire_sprinklers?:
-            | Database["public"]["Enums"]["fire_sprinkler_status"]
-            | null;
+          fire_sprinklers?: Database["public"]["Enums"]["fire_sprinkler_status"] | null;
           id?: number;
-          lease_status?:
-            | Database["public"]["Enums"]["lease_status_enum"]
-            | null;
+          lease_status?: Database["public"]["Enums"]["lease_status_enum"] | null;
           ll_email?: string | null;
           ll_phone?: string | null;
           ll_poc?: string | null;
@@ -322,12 +298,8 @@ export type Database = {
           sf_available?: string | null;
           site_name?: string | null;
           status_notes?: string | null;
-          survey_status?:
-            | Database["public"]["Enums"]["survey_status_enum"]
-            | null;
-          test_fit_status?:
-            | Database["public"]["Enums"]["test_fit_status_enum"]
-            | null;
+          survey_status?: Database["public"]["Enums"]["survey_status_enum"] | null;
+          test_fit_status?: Database["public"]["Enums"]["test_fit_status_enum"] | null;
           zoning?: string | null;
         };
         Relationships: [
@@ -859,10 +831,8 @@ export type Tables<
     }
     ? R
     : never
-  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
-        PublicSchema["Views"])
-    ? (PublicSchema["Tables"] &
-        PublicSchema["Views"])[PublicTableNameOrOptions] extends {
+  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] & PublicSchema["Views"])
+    ? (PublicSchema["Tables"] & PublicSchema["Views"])[PublicTableNameOrOptions] extends {
         Row: infer R;
       }
       ? R
@@ -870,9 +840,7 @@ export type Tables<
     : never;
 
 export type TablesInsert<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
-    | { schema: keyof Database },
+  PublicTableNameOrOptions extends keyof PublicSchema["Tables"] | { schema: keyof Database },
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
     : never = never,
@@ -891,9 +859,7 @@ export type TablesInsert<
     : never;
 
 export type TablesUpdate<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
-    | { schema: keyof Database },
+  PublicTableNameOrOptions extends keyof PublicSchema["Tables"] | { schema: keyof Database },
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
     : never = never,
@@ -912,9 +878,7 @@ export type TablesUpdate<
     : never;
 
 export type Enums<
-  PublicEnumNameOrOptions extends
-    | keyof PublicSchema["Enums"]
-    | { schema: keyof Database },
+  PublicEnumNameOrOptions extends keyof PublicSchema["Enums"] | { schema: keyof Database },
   EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
     ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
     : never = never,

@@ -1,18 +1,7 @@
 import React, { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "../components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -109,12 +98,7 @@ const CampusStaffTracker: React.FC = () => {
                 <div className="flex flex-col sm:flex-row sm:justify-between">
                   <h3 className="font-medium">Max Lackner</h3>
                   <button className="text-gray-400 hover:text-gray-600">
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -124,9 +108,7 @@ const CampusStaffTracker: React.FC = () => {
                     </svg>
                   </button>
                 </div>
-                <p className="text-gray-600 text-sm">
-                  Senior Visual Interaction Design
-                </p>
+                <p className="text-gray-600 text-sm">Senior Visual Interaction Design</p>
 
                 <div className="flex flex-wrap gap-1 mt-2">
                   <Badge
@@ -169,12 +151,7 @@ const CampusStaffTracker: React.FC = () => {
                 <div className="flex flex-col sm:flex-row sm:justify-between">
                   <h3 className="font-medium">Jenny Wilson</h3>
                   <button className="text-gray-400 hover:text-gray-600">
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -184,9 +161,7 @@ const CampusStaffTracker: React.FC = () => {
                     </svg>
                   </button>
                 </div>
-                <p className="text-gray-600 text-sm">
-                  Senior Design Lead at IDEO
-                </p>
+                <p className="text-gray-600 text-sm">Senior Design Lead at IDEO</p>
 
                 <div className="flex flex-wrap gap-1 mt-2">
                   <Badge
@@ -227,9 +202,7 @@ const CampusStaffTracker: React.FC = () => {
           <TabsTrigger value="table">Table View</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="cards">
-          {/* Card view is already implemented above */}
-        </TabsContent>
+        <TabsContent value="cards">{/* Card view is already implemented above */}</TabsContent>
 
         <TabsContent value="table">
           <Card>

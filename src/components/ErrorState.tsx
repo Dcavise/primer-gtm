@@ -11,11 +11,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({
 }) => {
   // Format the error message if an error object is provided
   const errorDetail =
-    error instanceof Error
-      ? error.message
-      : error
-        ? String(error)
-        : "Unknown error";
+    error instanceof Error ? error.message : error ? String(error) : "Unknown error";
 
   return (
     <div className="flex flex-col items-center justify-center p-8 rounded-lg border border-red-200 bg-red-50 text-red-800">

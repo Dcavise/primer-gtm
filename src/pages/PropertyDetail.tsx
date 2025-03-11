@@ -172,19 +172,11 @@ const PropertyDetail: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
-            {property.address && (
-              <PropertyLocation address={property.address} />
-            )}
+            {property.address && <PropertyLocation address={property.address} />}
 
-            <PropertyBasicInfo
-              property={property}
-              onPropertyUpdated={() => refetch()}
-            />
+            <PropertyBasicInfo property={property} onPropertyUpdated={() => refetch()} />
 
-            <PropertyStatusInfo
-              property={property}
-              onPropertyUpdated={() => refetch()}
-            />
+            <PropertyStatusInfo property={property} onPropertyUpdated={() => refetch()} />
 
             <PropertyNotes
               property={property}
@@ -233,10 +225,7 @@ const PropertyDetail: React.FC = () => {
           </div>
 
           <div className="space-y-6">
-            <PropertyContactInfo
-              property={property}
-              onPropertyUpdated={() => refetch()}
-            />
+            <PropertyContactInfo property={property} onPropertyUpdated={() => refetch()} />
 
             <PropertyDocuments
               propertyId={property.id}
@@ -244,10 +233,7 @@ const PropertyDetail: React.FC = () => {
               onUploadComplete={() => setFileRefreshKey((prev) => prev + 1)}
             />
 
-            <PropertyLeaseInfo
-              property={property}
-              onPropertyUpdated={() => refetch()}
-            />
+            <PropertyLeaseInfo property={property} onPropertyUpdated={() => refetch()} />
           </div>
         </div>
       </main>

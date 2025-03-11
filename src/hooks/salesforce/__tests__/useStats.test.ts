@@ -52,34 +52,28 @@ describe("useStats", () => {
     vi.clearAllMocks();
 
     // Mock return values
-    useBaseStatsMock = vi
-      .spyOn(baseStatsModule, "useBaseStats")
-      .mockReturnValue({
-        stats: {
-          fellowsCount: 0,
-          leadsCount: 0,
-          activeOpportunitiesCount: 0,
-          closedWonOpportunitiesCount: 0,
-        },
-        setStats: vi.fn(),
-        lastRefreshed: null,
-        setLastRefreshed: vi.fn(),
-        handleError: vi.fn(),
-      });
+    useBaseStatsMock = vi.spyOn(baseStatsModule, "useBaseStats").mockReturnValue({
+      stats: {
+        fellowsCount: 0,
+        leadsCount: 0,
+        activeOpportunitiesCount: 0,
+        closedWonOpportunitiesCount: 0,
+      },
+      setStats: vi.fn(),
+      lastRefreshed: null,
+      setLastRefreshed: vi.fn(),
+      handleError: vi.fn(),
+    });
 
-    fetchFellowsStatsMock = vi
-      .spyOn(fellowsStatsModule, "fetchFellowsStats")
-      .mockResolvedValue({
-        fellowsCount: 10,
-        employmentStatusCounts: [{ status: "Active", count: 10 }],
-      });
+    fetchFellowsStatsMock = vi.spyOn(fellowsStatsModule, "fetchFellowsStats").mockResolvedValue({
+      fellowsCount: 10,
+      employmentStatusCounts: [{ status: "Active", count: 10 }],
+    });
 
-    fetchLeadsStatsMock = vi
-      .spyOn(leadsStatsModule, "fetchLeadsStats")
-      .mockResolvedValue({
-        leadsCount: 20,
-        weeklyLeadCounts: [{ week: "2023-01-01", count: 5 }],
-      });
+    fetchLeadsStatsMock = vi.spyOn(leadsStatsModule, "fetchLeadsStats").mockResolvedValue({
+      leadsCount: 20,
+      weeklyLeadCounts: [{ week: "2023-01-01", count: 5 }],
+    });
 
     fetchOpportunitiesStatsMock = vi
       .spyOn(opportunitiesStatsModule, "fetchOpportunitiesStats")
@@ -95,18 +89,9 @@ describe("useStats", () => {
 
     // Verify all fetch functions were called
     await waitFor(() => {
-      expect(fetchFellowsStatsMock).toHaveBeenCalledWith(
-        null,
-        expect.any(Function),
-      );
-      expect(fetchLeadsStatsMock).toHaveBeenCalledWith(
-        null,
-        expect.any(Function),
-      );
-      expect(fetchOpportunitiesStatsMock).toHaveBeenCalledWith(
-        null,
-        expect.any(Function),
-      );
+      expect(fetchFellowsStatsMock).toHaveBeenCalledWith(null, expect.any(Function));
+      expect(fetchLeadsStatsMock).toHaveBeenCalledWith(null, expect.any(Function));
+      expect(fetchOpportunitiesStatsMock).toHaveBeenCalledWith(null, expect.any(Function));
     });
   });
 
@@ -149,18 +134,9 @@ describe("useStats", () => {
     rerender({ campusId: "campus-123" });
 
     await waitFor(() => {
-      expect(fetchFellowsStatsMock).toHaveBeenCalledWith(
-        "campus-123",
-        expect.any(Function),
-      );
-      expect(fetchLeadsStatsMock).toHaveBeenCalledWith(
-        "campus-123",
-        expect.any(Function),
-      );
-      expect(fetchOpportunitiesStatsMock).toHaveBeenCalledWith(
-        "campus-123",
-        expect.any(Function),
-      );
+      expect(fetchFellowsStatsMock).toHaveBeenCalledWith("campus-123", expect.any(Function));
+      expect(fetchLeadsStatsMock).toHaveBeenCalledWith("campus-123", expect.any(Function));
+      expect(fetchOpportunitiesStatsMock).toHaveBeenCalledWith("campus-123", expect.any(Function));
     });
   });
 

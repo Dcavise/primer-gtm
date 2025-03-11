@@ -27,13 +27,9 @@ export const querySalesforceTable = async (tableName: string, limit = 100) => {
  * @param campusId Optional campus ID to filter by
  * @returns Weekly lead count data
  */
-export const getWeeklyLeadCounts = async (
-  startDate: string,
-  endDate: string,
-  campusId = null,
-) => {
+export const getWeeklyLeadCounts = async (startDate: string, endDate: string, campusId = null) => {
   logger.info(
-    `Fetching weekly lead counts from ${startDate} to ${endDate}, campus ID: ${campusId || "all"}`,
+    `Fetching weekly lead counts from ${startDate} to ${endDate}, campus ID: ${campusId || "all"}`
   );
   return await supabase.executeRPC("get_weekly_lead_counts", {
     start_date: startDate,
@@ -49,9 +45,7 @@ export const getWeeklyLeadCounts = async (
  * @returns Daily lead count data
  */
 export const getDailyLeadCount = async (days = 30, campusId = null) => {
-  logger.info(
-    `Fetching daily lead count for past ${days} days, campus ID: ${campusId || "all"}`,
-  );
+  logger.info(`Fetching daily lead count for past ${days} days, campus ID: ${campusId || "all"}`);
   return await supabase.executeRPC("get_daily_lead_count", {
     p_days: days,
     p_campus_id: campusId,
@@ -66,7 +60,7 @@ export const getDailyLeadCount = async (days = 30, campusId = null) => {
  */
 export const getLeadToWinConversion = async (campusId = null, months = 12) => {
   logger.info(
-    `Fetching lead to win conversion for past ${months} months, campus ID: ${campusId || "all"}`,
+    `Fetching lead to win conversion for past ${months} months, campus ID: ${campusId || "all"}`
   );
   return await supabase.executeRPC("get_lead_to_win_conversion", {
     p_campus_id: campusId,
@@ -80,9 +74,7 @@ export const getLeadToWinConversion = async (campusId = null, months = 12) => {
  * @returns Week over week comparison data
  */
 export const getWeekOverWeekComparison = async (campusId = null) => {
-  logger.info(
-    `Fetching week over week comparison, campus ID: ${campusId || "all"}`,
-  );
+  logger.info(`Fetching week over week comparison, campus ID: ${campusId || "all"}`);
   return await supabase.executeRPC("get_week_over_week_comparison", {
     p_campus_id: campusId,
   });
@@ -133,8 +125,7 @@ export const troubleshootSchemaAccess = async () => {
       const { data, error } = await supabase.rpc("check_schema_tables", {
         schema_name: "fivetran_views",
       });
-      salesforceTablesAccessible =
-        !error && Array.isArray(data) && data.length > 0;
+      salesforceTablesAccessible = !error && Array.isArray(data) && data.length > 0;
     } catch (error) {
       logger.warn("Error checking fivetran_views tables:", error);
     }

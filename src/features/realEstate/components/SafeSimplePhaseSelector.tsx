@@ -13,13 +13,7 @@ interface SafeSimplePhaseSelectorProps {
 }
 
 // Safe fallback component if the selector fails
-function PhaseSelectorFallback({
-  error,
-  resetError,
-}: {
-  error: Error;
-  resetError: () => void;
-}) {
+function PhaseSelectorFallback({ error, resetError }: { error: Error; resetError: () => void }) {
   return (
     <div className="border p-2 rounded">
       <p className="text-sm text-red-500">Phase selector failed to load</p>

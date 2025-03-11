@@ -20,10 +20,7 @@ const StageProgressBar: React.FC<StageProgressBarProps> = ({ stages }) => {
 
         {/* Stages */}
         {stages.map((stage, index) => (
-          <div
-            key={index}
-            className="relative z-10 flex flex-col items-center mx-2"
-          >
+          <div key={index} className="relative z-10 flex flex-col items-center mx-2">
             {/* Circle indicator */}
             <div
               className={`w-6 h-6 rounded-full flex items-center justify-center mb-1

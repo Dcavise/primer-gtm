@@ -9,11 +9,7 @@ import {
   CommandInput,
   CommandItem,
 } from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { PropertyPhase } from "@/types/realEstate";
 import { fieldValidators } from "@/schemas/propertySchema";
 
@@ -32,9 +28,7 @@ export const VALID_PHASES: PropertyPhase[] = [
 ];
 
 // Function to get the appropriate color class based on the phase
-export const getPhaseColorClass = (
-  phase: PropertyPhase | null | undefined,
-): string => {
+export const getPhaseColorClass = (phase: PropertyPhase | null | undefined): string => {
   if (!phase) return "bg-gray-100 text-gray-800";
 
   switch (phase) {
@@ -91,11 +85,7 @@ export const PhaseSelector: React.FC<PhaseSelectorProps> = ({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn(
-            "justify-between w-full border-input",
-            value ? colorClass : "",
-            className,
-          )}
+          className={cn("justify-between w-full border-input", value ? colorClass : "", className)}
           disabled={disabled}
         >
           {displayValue}
@@ -115,12 +105,7 @@ export const PhaseSelector: React.FC<PhaseSelectorProps> = ({
                 setOpen(false);
               }}
             >
-              <Check
-                className={cn(
-                  "mr-2 h-4 w-4",
-                  !value ? "opacity-100" : "opacity-0",
-                )}
-              />
+              <Check className={cn("mr-2 h-4 w-4", !value ? "opacity-100" : "opacity-0")} />
               --None--
             </CommandItem>
             {VALID_PHASES.map((phase) => (
@@ -134,10 +119,7 @@ export const PhaseSelector: React.FC<PhaseSelectorProps> = ({
               >
                 <div className="flex items-center w-full">
                   <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === phase ? "opacity-100" : "opacity-0",
-                    )}
+                    className={cn("mr-2 h-4 w-4", value === phase ? "opacity-100" : "opacity-0")}
                   />
                   <span>{phase}</span>
                 </div>

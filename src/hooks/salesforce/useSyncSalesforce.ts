@@ -22,12 +22,8 @@ export const useSyncSalesforce = (onSyncComplete: () => void) => {
       fellows: "loading",
     });
 
-    toast.info(
-      "Data source is changing. Sync functionality is currently unavailable.",
-    );
-    console.log(
-      "Data source is changing. Sync functionality is currently unavailable.",
-    );
+    toast.info("Data source is changing. Sync functionality is currently unavailable.");
+    console.log("Data source is changing. Sync functionality is currently unavailable.");
 
     try {
       // Mock sync process since the edge functions have been removed
@@ -39,7 +35,7 @@ export const useSyncSalesforce = (onSyncComplete: () => void) => {
         });
 
         toast.info(
-          "The Salesforce sync functionality has been removed as the data source is changing.",
+          "The Salesforce sync functionality has been removed as the data source is changing."
         );
 
         onSyncComplete();

@@ -62,12 +62,9 @@ export const GoogleSheetsDataSync: React.FC = () => {
       if (keyColumn) params.keyColumn = keyColumn;
 
       // Call the Supabase Edge Function
-      const { data, error } = await supabase.functions.invoke(
-        "sync-google-sheets-data",
-        {
-          body: params,
-        },
-      );
+      const { data, error } = await supabase.functions.invoke("sync-google-sheets-data", {
+        body: params,
+      });
 
       if (error) {
         throw new Error(`Function error: ${error.message}`);
@@ -83,8 +80,7 @@ export const GoogleSheetsDataSync: React.FC = () => {
       // Show success toast
       toast({
         title: "Data synced successfully",
-        description:
-          data.message || `Processed ${data.result.processed} rows of data`,
+        description: data.message || `Processed ${data.result.processed} rows of data`,
       });
     } catch (err: any) {
       console.error("Error syncing data:", err);
@@ -107,9 +103,7 @@ export const GoogleSheetsDataSync: React.FC = () => {
         <CardDescription>
           Sync data from Google Sheets to Supabase
           {lastSynced && (
-            <div className="text-sm mt-1">
-              Last synced: {new Date(lastSynced).toLocaleString()}
-            </div>
+            <div className="text-sm mt-1">Last synced: {new Date(lastSynced).toLocaleString()}</div>
           )}
         </CardDescription>
       </CardHeader>

@@ -2,13 +2,7 @@ import { School } from "@/types/schools";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  StarIcon,
-  PhoneIcon,
-  School as SchoolIcon,
-  MapPin,
-  ExternalLink,
-} from "lucide-react";
+import { StarIcon, PhoneIcon, School as SchoolIcon, MapPin, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface SchoolCardProps {
@@ -56,9 +50,7 @@ export const SchoolCard = ({ school, delay = 0 }: SchoolCardProps) => {
             className={`h-4 w-4 ${i < roundedRating ? "text-yellow-500 fill-yellow-500" : "text-gray-300"}`}
           />
         ))}
-        <span className="ml-1 text-sm text-gray-600 dark:text-gray-400">
-          {rating}/5
-        </span>
+        <span className="ml-1 text-sm text-gray-600 dark:text-gray-400">{rating}/5</span>
       </div>
     );
   };
@@ -72,9 +64,7 @@ export const SchoolCard = ({ school, delay = 0 }: SchoolCardProps) => {
       <Card className="overflow-hidden h-full flex flex-col">
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between">
-            <CardTitle className="text-lg font-semibold line-clamp-2">
-              {school.name}
-            </CardTitle>
+            <CardTitle className="text-lg font-semibold line-clamp-2">{school.name}</CardTitle>
             {school.location.distanceMiles && (
               <Badge variant="outline" className="ml-2 whitespace-nowrap">
                 {school.location.distanceMiles.toFixed(1)} mi
@@ -83,18 +73,12 @@ export const SchoolCard = ({ school, delay = 0 }: SchoolCardProps) => {
           </div>
           <div className="flex flex-wrap gap-2 mt-2">
             {school.type && (
-              <Badge
-                className={getSchoolTypeColor(school.type)}
-                variant="secondary"
-              >
+              <Badge className={getSchoolTypeColor(school.type)} variant="secondary">
                 {school.type}
               </Badge>
             )}
             {school.educationLevel && (
-              <Badge
-                className={getEducationLevelColor(school.educationLevel)}
-                variant="secondary"
-              >
+              <Badge className={getEducationLevelColor(school.educationLevel)} variant="secondary">
                 {school.educationLevel}
               </Badge>
             )}
@@ -105,12 +89,8 @@ export const SchoolCard = ({ school, delay = 0 }: SchoolCardProps) => {
           <div>
             <p className="text-sm mb-3">
               {school.grades?.range &&
-                formatGradeRange(
-                  school.grades.range.low,
-                  school.grades.range.high,
-                )}
-              {school.enrollment &&
-                ` · ${school.enrollment.toLocaleString()} students`}
+                formatGradeRange(school.grades.range.low, school.grades.range.high)}
+              {school.enrollment && ` · ${school.enrollment.toLocaleString()} students`}
             </p>
 
             <div className="flex items-start gap-1 text-sm text-muted-foreground mb-2">
@@ -118,8 +98,7 @@ export const SchoolCard = ({ school, delay = 0 }: SchoolCardProps) => {
               <div>
                 <p>{school.location.address.streetAddress}</p>
                 <p>
-                  {school.location.address.city},{" "}
-                  {school.location.address.state}{" "}
+                  {school.location.address.city}, {school.location.address.state}{" "}
                   {school.location.address.zipCode}
                 </p>
               </div>

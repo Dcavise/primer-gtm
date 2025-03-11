@@ -63,16 +63,10 @@ export const PipelineChartDialog: React.FC<PipelineChartDialogProps> = ({
           <DialogTitle className="flex justify-between items-center">
             <span>
               Pipeline Opportunities{" "}
-              {selectedCampusName
-                ? `for ${selectedCampusName}`
-                : "(All Campuses)"}
+              {selectedCampusName ? `for ${selectedCampusName}` : "(All Campuses)"}
             </span>
             <DialogClose asChild>
-              <Button
-                variant="ghost"
-                className="h-8 w-8 p-0"
-                aria-label="Close"
-              >
+              <Button variant="ghost" className="h-8 w-8 p-0" aria-label="Close">
                 <X className="h-4 w-4" />
               </Button>
             </DialogClose>
@@ -92,16 +86,9 @@ export const PipelineChartDialog: React.FC<PipelineChartDialogProps> = ({
                 }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="stage"
-                  tickMargin={10}
-                  angle={-15}
-                  textAnchor="end"
-                />
+                <XAxis dataKey="stage" tickMargin={10} angle={-15} textAnchor="end" />
                 <YAxis allowDecimals={false} tickMargin={10} />
-                <Tooltip
-                  formatter={(value) => [`${value} opportunities`, "Count"]}
-                />
+                <Tooltip formatter={(value) => [`${value} opportunities`, "Count"]} />
                 <Bar dataKey="count" name="Opportunities">
                   {sortedData.map((entry) => (
                     <Cell

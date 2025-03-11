@@ -12,9 +12,7 @@ export interface SidebarContextProps {
   animate: boolean;
 }
 
-const SidebarContext = createContext<SidebarContextProps | undefined>(
-  undefined,
-);
+const SidebarContext = createContext<SidebarContextProps | undefined>(undefined);
 
 /**
  * Hook to access sidebar state
@@ -62,8 +60,6 @@ export const SidebarProvider = ({
   };
 
   return (
-    <SidebarContext.Provider value={{ open, setOpen, animate }}>
-      {children}
-    </SidebarContext.Provider>
+    <SidebarContext.Provider value={{ open, setOpen, animate }}>{children}</SidebarContext.Provider>
   );
 };

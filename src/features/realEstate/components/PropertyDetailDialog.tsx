@@ -47,9 +47,7 @@ export const PropertyDetailDialog: React.FC<PropertyDetailDialogProps> = ({
   }, [property]);
 
   const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >,
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setFormValues((prev) => ({ ...prev, [name]: value }));
@@ -98,9 +96,7 @@ export const PropertyDetailDialog: React.FC<PropertyDetailDialogProps> = ({
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>{property?.site_name || "Property Details"}</DialogTitle>
-          <DialogDescription>
-            Edit the property information below.
-          </DialogDescription>
+          <DialogDescription>Edit the property information below.</DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">

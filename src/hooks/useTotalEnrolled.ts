@@ -58,20 +58,15 @@ export function useTotalEnrolled({
         console.log(query);
 
         // Execute the query - use the function directly with no schema prefix
-        const { data: rawData, error: queryError } = await supabase.rpc(
-          "execute_sql_query",
-          {
-            query_text: query, // Using the correct parameter name 'query_text' as specified in the database function
-          },
-        );
+        const { data: rawData, error: queryError } = await supabase.rpc("execute_sql_query", {
+          query_text: query, // Using the correct parameter name 'query_text' as specified in the database function
+        });
 
         console.log("Total enrolled query response:", { rawData, queryError });
 
         if (queryError) {
           console.error("Query error details:", queryError);
-          throw new Error(
-            `SQL query error: ${queryError.message || "Unknown error"}`,
-          );
+          throw new Error(`SQL query error: ${queryError.message || "Unknown error"}`);
         }
 
         // Check if we have valid data

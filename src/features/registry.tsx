@@ -46,7 +46,5 @@ export const getAuthRoutes = () => {
 
 // Get features for navigation
 export const getNavigationFeatures = () => {
-  return featuresRegistry.filter(
-    (feature) => feature.navItems && feature.navItems.length > 0,
-  );
+  return featuresRegistry.filter((feature) => feature.navItems && feature.navItems.length > 0);
 };

@@ -1,12 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "../components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 import SearchBox from "../components/SearchBox";
 import {
@@ -97,8 +92,7 @@ const Search = () => {
   // Filter states
   const [selectedCampus, setSelectedCampus] = useState<string>("");
   const [selectedSchoolYear, setSelectedSchoolYear] = useState<string>("");
-  const [selectedOpportunityStatus, setSelectedOpportunityStatus] =
-    useState<string>("");
+  const [selectedOpportunityStatus, setSelectedOpportunityStatus] = useState<string>("");
   const [filtersVisible, setFiltersVisible] = useState(false);
 
   // Get campus data
@@ -142,39 +136,26 @@ const Search = () => {
 
         // Campus filter
         if (selectedCampus && family.current_campus_c) {
-          const campusName =
-            campusMap?.[family.current_campus_c] || "Unknown Campus";
+          const campusName = campusMap?.[family.current_campus_c] || "Unknown Campus";
           if (campusName !== selectedCampus) return false;
         }
 
         // School year filter
-        if (
-          selectedSchoolYear &&
-          Array.isArray(family.opportunity_school_years)
-        ) {
-          if (!family.opportunity_school_years.includes(selectedSchoolYear))
-            return false;
+        if (selectedSchoolYear && Array.isArray(family.opportunity_school_years)) {
+          if (!family.opportunity_school_years.includes(selectedSchoolYear)) return false;
         }
 
         // Opportunity status filter
         if (selectedOpportunityStatus === "active") {
           // Check if family has at least one won opportunity for the 25/26 school year
-          if (
-            !family.opportunity_is_won_flags ||
-            !family.opportunity_school_years
-          ) {
+          if (!family.opportunity_is_won_flags || !family.opportunity_school_years) {
             return false;
           }
 
           // Check for at least one opportunity that is won AND for school year 25/26
-          const hasActiveOpportunity = family.opportunity_is_won_flags.some(
-            (isWon, index) => {
-              return (
-                isWon === true &&
-                family.opportunity_school_years[index] === "25/26"
-              );
-            },
-          );
+          const hasActiveOpportunity = family.opportunity_is_won_flags.some((isWon, index) => {
+            return isWon === true && family.opportunity_school_years[index] === "25/26";
+          });
 
           if (!hasActiveOpportunity) {
             return false;
@@ -203,10 +184,7 @@ const Search = () => {
         ) {
           family.opportunity_is_won_flags.forEach((isWon, index) => {
             // Check both conditions: is_won = true AND school_year = '25/26'
-            if (
-              isWon === true &&
-              family.opportunity_school_years[index] === "25/26"
-            ) {
+            if (isWon === true && family.opportunity_school_years[index] === "25/26") {
               activeOpportunityIndices.push(index);
             }
           });
@@ -223,10 +201,7 @@ const Search = () => {
           ) {
             activeSchoolYears.push(family.opportunity_school_years[index]);
           }
-          if (
-            Array.isArray(family.opportunity_campuses) &&
-            family.opportunity_campuses[index]
-          ) {
+          if (Array.isArray(family.opportunity_campuses) && family.opportunity_campuses[index]) {
             activeCampuses.push(family.opportunity_campuses[index]);
           }
         });
@@ -234,9 +209,7 @@ const Search = () => {
         // Get campus name from campus map, but don't display raw IDs even if name not found
         const campusId = family.current_campus_c || "";
         // Instead of showing the ID, just show 'Unknown Campus' if mapping not found
-        const campusName = campusId
-          ? campusMap[campusId] || "Unknown Campus"
-          : "None";
+        const campusName = campusId ? campusMap[campusId] || "Unknown Campus" : "None";
 
         return {
           // Use the standardized ID as our primary ID for consistent navigation
@@ -334,7 +307,7 @@ const Search = () => {
         },
       ],
     }),
-    [],
+    []
   );
 
   const handleSearch = useCallback(
@@ -346,7 +319,7 @@ const Search = () => {
       // Always search for families
       await searchFamilies(query);
     },
-    [searchFamilies],
+    [searchFamilies]
   );
 
   // Effect to perform search when search query changes from SearchBox
@@ -379,11 +352,7 @@ const Search = () => {
             }
           });
           setCampusMap(campusMapping);
-          console.log(
-            "Campus mapping loaded:",
-            Object.keys(campusMapping).length,
-            "campuses",
-          );
+          console.log("Campus mapping loaded:", Object.keys(campusMapping).length, "campuses");
         }
       } catch (error) {
         console.error("Failed to fetch campus data:", error);
@@ -440,9 +409,7 @@ const Search = () => {
           <div className="flex items-center">
             <div className="flex items-center gap-2">
               <SearchIcon className="h-5 w-5 text-slate-gray" />
-              <span className="text-xl font-semibold text-outer-space">
-                Find Families
-              </span>
+              <span className="text-xl font-semibold text-outer-space">Find Families</span>
             </div>
           </div>
 
@@ -474,23 +441,15 @@ const Search = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Campus filter */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-gray">
-                    Campus
-                  </label>
-                  <Select
-                    value={selectedCampus}
-                    onValueChange={setSelectedCampus}
-                  >
+                  <label className="text-sm font-medium text-slate-gray">Campus</label>
+                  <Select value={selectedCampus} onValueChange={setSelectedCampus}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="All Campuses" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">All Campuses</SelectItem>
                       {campuses?.map((campus) => (
-                        <SelectItem
-                          key={campus.campus_id}
-                          value={campus.campus_name}
-                        >
+                        <SelectItem key={campus.campus_id} value={campus.campus_name}>
                           {campus.campus_name}
                         </SelectItem>
                       ))}
@@ -500,13 +459,8 @@ const Search = () => {
 
                 {/* School Year filter */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-gray">
-                    School Year
-                  </label>
-                  <Select
-                    value={selectedSchoolYear}
-                    onValueChange={setSelectedSchoolYear}
-                  >
+                  <label className="text-sm font-medium text-slate-gray">School Year</label>
+                  <Select value={selectedSchoolYear} onValueChange={setSelectedSchoolYear}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="All School Years" />
                     </SelectTrigger>
@@ -523,9 +477,7 @@ const Search = () => {
 
                 {/* Opportunity Status filter */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-gray">
-                    Opportunity Status
-                  </label>
+                  <label className="text-sm font-medium text-slate-gray">Opportunity Status</label>
                   <Select
                     value={selectedOpportunityStatus}
                     onValueChange={setSelectedOpportunityStatus}
@@ -553,10 +505,7 @@ const Search = () => {
                     className="bg-blue-50 text-blue-700 flex items-center gap-1"
                   >
                     <MapPin className="h-3 w-3" /> Campus: {selectedCampus}
-                    <button
-                      className="ml-1"
-                      onClick={() => setSelectedCampus("")}
-                    >
+                    <button className="ml-1" onClick={() => setSelectedCampus("")}>
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>
@@ -566,8 +515,7 @@ const Search = () => {
                     variant="outline"
                     className={`flex items-center gap-1 ${getSchoolYearClasses(selectedSchoolYear)}`}
                   >
-                    <Calendar className="h-3 w-3" /> School Year:{" "}
-                    {selectedSchoolYear}
+                    <Calendar className="h-3 w-3" /> School Year: {selectedSchoolYear}
                     <button
                       className="ml-1"
                       onClick={(e) => {
@@ -593,10 +541,7 @@ const Search = () => {
                         <Users className="h-3 w-3" /> All Families
                       </>
                     )}
-                    <button
-                      className="ml-1"
-                      onClick={() => setSelectedOpportunityStatus("")}
-                    >
+                    <button className="ml-1" onClick={() => setSelectedOpportunityStatus("")}>
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>
@@ -656,9 +601,7 @@ const Search = () => {
                       </div>
 
                       {/* Enhanced household name - increased size and weight */}
-                      <h3 className="text-2xl font-semibold text-outer-space">
-                        {result.name}
-                      </h3>
+                      <h3 className="text-2xl font-semibold text-outer-space">{result.name}</h3>
 
                       {/* Removed the School Year Information section as requested */}
                     </div>
@@ -674,9 +617,7 @@ const Search = () => {
               ))
             ) : (
               <div className="text-center py-8">
-                <p className="text-slate-gray">
-                  No results found for "{searchQuery}"
-                </p>
+                <p className="text-slate-gray">No results found for "{searchQuery}"</p>
                 <p className="text-sm text-slate-gray mt-1">
                   Try a different search term or category
                 </p>

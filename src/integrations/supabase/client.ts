@@ -3,8 +3,7 @@ import type { Database } from "./types";
 import { logger } from "@/utils/logger";
 
 const SUPABASE_URL =
-  import.meta.env.VITE_SUPABASE_URL ||
-  "https://pudncilureqpzxrxfupr.supabase.co";
+  import.meta.env.VITE_SUPABASE_URL || "https://pudncilureqpzxrxfupr.supabase.co";
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 const SUPABASE_SERVICE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_KEY || "";
 
@@ -12,12 +11,8 @@ const SUPABASE_SERVICE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_KEY || "";
 declare module "@supabase/supabase-js" {
   interface SupabaseClient<Database> {
     rpc(
-      fn:
-        | "execute_sql_query"
-        | "get_weekly_lead_counts"
-        | "query_salesforce_table"
-        | string,
-      params?: Record<string, any>,
+      fn: "execute_sql_query" | "get_weekly_lead_counts" | "query_salesforce_table" | string,
+      params?: Record<string, any>
     ): any;
   }
 }
@@ -83,22 +78,20 @@ class SupabaseUnifiedClient {
       // First try with regular client using the RPC function
       const { data: regularData, error: regularError } = await this.regular.rpc(
         "query_salesforce_table",
-        { table_name: tableName, limit_count: limit },
+        { table_name: tableName, limit_count: limit }
       );
 
       if (!regularError && regularData) {
         return { success: true, data: regularData, error: null };
       }
 
-      logger.info(
-        "Regular client failed to query Salesforce table, trying admin client...",
-      );
+      logger.info("Regular client failed to query Salesforce table, trying admin client...");
 
       // Try admin client as fallback
       if (this.hasAdminAccess()) {
         const { data: adminData, error: adminError } = await this.admin.rpc(
           "query_salesforce_table",
-          { table_name: tableName, limit_count: limit },
+          { table_name: tableName, limit_count: limit }
         );
 
         if (!adminError && adminData) {
@@ -113,9 +106,7 @@ class SupabaseUnifiedClient {
         return {
           success: false,
           data: null,
-          error:
-            adminError ||
-            new Error("Admin client failed to query Salesforce table"),
+          error: adminError || new Error("Admin client failed to query Salesforce table"),
         };
       }
 
@@ -124,9 +115,7 @@ class SupabaseUnifiedClient {
         data: null,
         error:
           regularError ||
-          new Error(
-            "Failed to query Salesforce table and admin client not available",
-          ),
+          new Error("Failed to query Salesforce table and admin client not available"),
       };
     } catch (error) {
       logger.error("Error in querySalesforceTable:", error);
@@ -140,31 +129,23 @@ class SupabaseUnifiedClient {
    * @param params The function parameters
    * @returns RPC result with success status
    */
-  public async executeRPC(
-    functionName: string,
-    params: Record<string, any> = {},
-  ) {
+  public async executeRPC(functionName: string, params: Record<string, any> = {}) {
     try {
       // First try with regular client
       const { data: regularData, error: regularError } = await this.regular.rpc(
         functionName,
-        params,
+        params
       );
 
       if (!regularError) {
         return { success: true, data: regularData, error: null };
       }
 
-      logger.info(
-        `Regular client failed to execute RPC ${functionName}, trying admin client...`,
-      );
+      logger.info(`Regular client failed to execute RPC ${functionName}, trying admin client...`);
 
       // Try admin client as fallback
       if (this.hasAdminAccess()) {
-        const { data: adminData, error: adminError } = await this.admin.rpc(
-          functionName,
-          params,
-        );
+        const { data: adminData, error: adminError } = await this.admin.rpc(functionName, params);
 
         if (!adminError) {
           return {
@@ -178,9 +159,7 @@ class SupabaseUnifiedClient {
         return {
           success: false,
           data: null,
-          error:
-            adminError ||
-            new Error(`Admin client failed to execute RPC ${functionName}`),
+          error: adminError || new Error(`Admin client failed to execute RPC ${functionName}`),
         };
       }
 
@@ -189,9 +168,7 @@ class SupabaseUnifiedClient {
         data: null,
         error:
           regularError ||
-          new Error(
-            `Failed to execute RPC ${functionName} and admin client not available`,
-          ),
+          new Error(`Failed to execute RPC ${functionName} and admin client not available`),
       };
     } catch (error) {
       logger.error(`Error in executeRPC (${functionName}):`, error);
@@ -217,9 +194,7 @@ class SupabaseUnifiedClient {
       let usedAdminClient = false;
 
       try {
-        const { success, error } = await this.executeRPC(
-          "test_salesforce_connection",
-        );
+        const { success, error } = await this.executeRPC("test_salesforce_connection");
         fivetranAccess = success;
       } catch (error) {
         logger.warn("Regular client test_salesforce_connection failed:", error);
@@ -233,16 +208,10 @@ class SupabaseUnifiedClient {
             });
 
             fivetranAccess =
-              !result.error &&
-              result.data &&
-              result.data[0] &&
-              result.data[0].exists;
+              !result.error && result.data && result.data[0] && result.data[0].exists;
             usedAdminClient = true;
           } catch (adminError) {
-            logger.error(
-              "Admin client fivetran_views schema check failed:",
-              adminError,
-            );
+            logger.error("Admin client fivetran_views schema check failed:", adminError);
           }
         }
       }

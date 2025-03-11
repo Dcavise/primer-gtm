@@ -64,14 +64,11 @@ const admissionsMetrics = [
 
 const AdmissionsAnalytics = () => {
   // State for period selection - isolated to this component only
-  const [periodType, setPeriodType] = useState<"day" | "week" | "month">(
-    "week",
-  );
+  const [periodType, setPeriodType] = useState<"day" | "week" | "month">("week");
   const [selectedCampus, setSelectedCampus] = useState<string>("all");
 
   // Default lookback units based on period - specific to this component
-  const lookbackUnits =
-    periodType === "day" ? 30 : periodType === "week" ? 12 : 6;
+  const lookbackUnits = periodType === "day" ? 30 : periodType === "week" ? 12 : 6;
 
   // This serves as documentation that the period selection is exclusive to this component
   // while the campus filter is global and can be used by other components
@@ -106,30 +103,22 @@ const AdmissionsAnalytics = () => {
   });
 
   // Immediately log the grade band data after fetching
-  console.log(
-    "%c Grade Band Data READY TO USE:",
-    "color: red; font-weight: bold;",
-    {
-      gradeBandData,
-      loadingGradeBand,
-      gradeBandError,
-      campusFilter,
-    },
-  );
+  console.log("%c Grade Band Data READY TO USE:", "color: red; font-weight: bold;", {
+    gradeBandData,
+    loadingGradeBand,
+    gradeBandError,
+    campusFilter,
+  });
 
   // Debug gradeBandData
   useEffect(() => {
-    console.log(
-      "%c Grade Band Data in component:",
-      "color: purple; font-weight: bold",
-      {
-        gradeBandData,
-        loadingGradeBand,
-        gradeBandError,
-        dataLength: gradeBandData?.length || 0,
-        campusFilter,
-      },
-    );
+    console.log("%c Grade Band Data in component:", "color: purple; font-weight: bold", {
+      gradeBandData,
+      loadingGradeBand,
+      gradeBandError,
+      dataLength: gradeBandData?.length || 0,
+      campusFilter,
+    });
 
     // Check if data is in the expected format
     if (gradeBandData) {
@@ -184,17 +173,9 @@ const AdmissionsAnalytics = () => {
   });
 
   // Helper to format values for display
-  const formatValue = (
-    value: number | null | undefined,
-    isARR: boolean = false,
-  ) => {
+  const formatValue = (value: number | null | undefined, isARR: boolean = false) => {
     // Check for null, undefined, NaN, 0, or empty string converted to a number
-    if (
-      value === null ||
-      value === undefined ||
-      isNaN(Number(value)) ||
-      Number(value) === 0
-    ) {
+    if (value === null || value === undefined || isNaN(Number(value)) || Number(value) === 0) {
       return isARR ? "$0" : "0";
     }
 
@@ -202,14 +183,10 @@ const AdmissionsAnalytics = () => {
 
     if (isARR) {
       // Format ARR values with $ and 'k' for thousands
-      return numValue >= 1000
-        ? `$${(numValue / 1000).toFixed(1)}k`
-        : `$${numValue.toFixed(0)}`;
+      return numValue >= 1000 ? `$${(numValue / 1000).toFixed(1)}k` : `$${numValue.toFixed(0)}`;
     } else {
       // Format all other metrics with just the number and 'k' for thousands
-      return numValue >= 1000
-        ? `${(numValue / 1000).toFixed(1)}k`
-        : `${numValue.toFixed(0)}`;
+      return numValue >= 1000 ? `${(numValue / 1000).toFixed(1)}k` : `${numValue.toFixed(0)}`;
     }
   };
 
@@ -227,15 +204,13 @@ const AdmissionsAnalytics = () => {
 
   // Helper to get appropriate color class for change values
   const getChangeColor = (change: number) => {
-    return change >= 0
-      ? "bg-green-100 text-green-800"
-      : "bg-red-100 text-red-800";
+    return change >= 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
   };
 
   // Generate default date columns based on period type and metric type
   const generateDefaultDateColumns = (
     periodType: "day" | "week" | "month",
-    metricType: "leads" | "converted" | "closedWon" | "arr" = "leads",
+    metricType: "leads" | "converted" | "closedWon" | "arr" = "leads"
   ) => {
     const today = new Date();
     const result = [];
@@ -326,11 +301,7 @@ const AdmissionsAnalytics = () => {
     }
 
     // Add periods from ARR metrics
-    if (
-      arrMetricsData &&
-      !loadingArrMetrics &&
-      arrMetricsData.periods.length > 0
-    ) {
+    if (arrMetricsData && !loadingArrMetrics && arrMetricsData.periods.length > 0) {
       arrMetricsData.periods.forEach((period) => periodSet.add(period));
     }
 
@@ -371,9 +342,7 @@ const AdmissionsAnalytics = () => {
     // Map periods to display format
     return allPeriods.map((period, index) => {
       // Find the formatted date for this period
-      const periodItem = metricsData?.timeSeriesData?.find(
-        (item) => item.period === period,
-      );
+      const periodItem = metricsData?.timeSeriesData?.find((item) => item.period === period);
       let displayDate = periodItem?.formatted_date || "";
 
       // For the most recent period, use a special label
@@ -394,11 +363,7 @@ const AdmissionsAnalytics = () => {
 
   // Process data for the converted leads display
   const convertedColumnData = useMemo(() => {
-    if (
-      !convertedMetricsData ||
-      loadingConvertedMetrics ||
-      allPeriods.length === 0
-    ) {
+    if (!convertedMetricsData || loadingConvertedMetrics || allPeriods.length === 0) {
       return generateDefaultDateColumns(periodType, "converted");
     }
 
@@ -406,7 +371,7 @@ const AdmissionsAnalytics = () => {
     return allPeriods.map((period, index) => {
       // Find the formatted date for this period
       const periodItem = convertedMetricsData?.timeSeriesData?.find(
-        (item) => item.period === period,
+        (item) => item.period === period
       );
       let displayDate = periodItem?.formatted_date || "";
 
@@ -428,11 +393,7 @@ const AdmissionsAnalytics = () => {
 
   // Process data for the closed won display
   const closedWonColumnData = useMemo(() => {
-    if (
-      !closedWonMetricsData ||
-      loadingClosedWonMetrics ||
-      allPeriods.length === 0
-    ) {
+    if (!closedWonMetricsData || loadingClosedWonMetrics || allPeriods.length === 0) {
       return generateDefaultDateColumns(periodType, "closedWon");
     }
 
@@ -440,7 +401,7 @@ const AdmissionsAnalytics = () => {
     return allPeriods.map((period, index) => {
       // Find the formatted date for this period
       const periodItem = closedWonMetricsData?.timeSeriesData?.find(
-        (item) => item.period === period,
+        (item) => item.period === period
       );
       let displayDate = periodItem?.formatted_date || "";
 
@@ -469,9 +430,7 @@ const AdmissionsAnalytics = () => {
     // Map periods to display format
     return allPeriods.map((period, index) => {
       // Find the formatted date for this period
-      const periodItem = arrMetricsData?.timeSeriesData?.find(
-        (item) => item.period === period,
-      );
+      const periodItem = arrMetricsData?.timeSeriesData?.find((item) => item.period === period);
       let displayDate = periodItem?.formatted_date || "";
 
       // For the most recent period, use a special label
@@ -610,27 +569,21 @@ const AdmissionsAnalytics = () => {
             <div className="flex space-x-2" data-isolated-filter="true">
               <button
                 className={`px-4 py-2 rounded-md ${periodType === "day" ? "text-seasalt" : "bg-seasalt text-outer-space border border-platinum"}`}
-                style={
-                  periodType === "day" ? { backgroundColor: "#474b4f" } : {}
-                }
+                style={periodType === "day" ? { backgroundColor: "#474b4f" } : {}}
                 onClick={() => setPeriodType("day")}
               >
                 Daily
               </button>
               <button
                 className={`px-4 py-2 rounded-md ${periodType === "week" ? "text-seasalt" : "bg-seasalt text-outer-space border border-platinum"}`}
-                style={
-                  periodType === "week" ? { backgroundColor: "#474b4f" } : {}
-                }
+                style={periodType === "week" ? { backgroundColor: "#474b4f" } : {}}
                 onClick={() => setPeriodType("week")}
               >
                 Weekly
               </button>
               <button
                 className={`px-4 py-2 rounded-md ${periodType === "month" ? "text-seasalt" : "bg-seasalt text-outer-space border border-platinum"}`}
-                style={
-                  periodType === "month" ? { backgroundColor: "#474b4f" } : {}
-                }
+                style={periodType === "month" ? { backgroundColor: "#474b4f" } : {}}
                 onClick={() => setPeriodType("month")}
               >
                 Monthly
@@ -710,23 +663,18 @@ const AdmissionsAnalytics = () => {
                         // Find the matching data item, if it exists
                         const dataItem =
                           gradeBandData && Array.isArray(gradeBandData)
-                            ? gradeBandData.find(
-                                (item) => item?.grade_band === band,
-                              )
+                            ? gradeBandData.find((item) => item?.grade_band === band)
                             : null;
 
                         // Get count from data or default to 0
                         const count =
-                          dataItem &&
-                          typeof dataItem.enrollment_count === "number"
+                          dataItem && typeof dataItem.enrollment_count === "number"
                             ? dataItem.enrollment_count
                             : 0;
 
                         // Calculate percentage of capacity
                         const capacity = 25; // Hardcoded capacity per grade band
-                        const percentFull = Math.round(
-                          (count / capacity) * 100,
-                        );
+                        const percentFull = Math.round((count / capacity) * 100);
 
                         // Determine color based on percentage full
                         const colorClass =
@@ -737,13 +685,8 @@ const AdmissionsAnalytics = () => {
                               : "bg-green-100 text-green-800";
 
                         return (
-                          <tr
-                            key={band}
-                            className="border-b border-platinum last:border-0"
-                          >
-                            <td className="py-2 text-left font-medium">
-                              {band}
-                            </td>
+                          <tr key={band} className="border-b border-platinum last:border-0">
+                            <td className="py-2 text-left font-medium">{band}</td>
                             <td className="py-2 text-right">{count}</td>
                             <td className="py-2 text-right">{capacity}</td>
                             <td className="py-2 text-right">
@@ -792,9 +735,7 @@ const AdmissionsAnalytics = () => {
             <div className="flex flex-col divide-y">
               {/* Leads Created Row - Always uses real data */}
               <div className="flex py-3 items-center border-b border-platinum hover:bg-gray-50">
-                <div className="w-1/6 font-medium text-outer-space text-sm">
-                  Leads Created
-                </div>
+                <div className="w-1/6 font-medium text-outer-space text-sm">Leads Created</div>
 
                 {/* Reverse column data for display to show older periods on the left */}
                 {[...columnData].reverse().map((item, index) => (
@@ -813,11 +754,10 @@ const AdmissionsAnalytics = () => {
                 {/* Leads Created Trend */}
                 <div className="w-1/3 h-16 pl-4">
                   <ResponsiveContainer width="100%" height="100%">
-                    {metricsData?.timeSeriesData &&
-                    metricsData.timeSeriesData.length > 0 ? (
+                    {metricsData?.timeSeriesData && metricsData.timeSeriesData.length > 0 ? (
                       <LineChart
                         data={metricsData.timeSeriesData.filter((item) =>
-                          allPeriods.includes(item.period),
+                          allPeriods.includes(item.period)
                         )}
                       >
                         <XAxis dataKey="formatted_date" hide />
@@ -861,9 +801,7 @@ const AdmissionsAnalytics = () => {
 
               {/* Leads Converted Row - Uses real data */}
               <div className="flex py-3 items-center border-b border-platinum hover:bg-gray-50">
-                <div className="w-1/6 font-medium text-outer-space text-sm">
-                  Leads Converted
-                </div>
+                <div className="w-1/6 font-medium text-outer-space text-sm">Leads Converted</div>
 
                 {/* Reverse column data for display to show older periods on the left */}
                 {[...convertedColumnData].reverse().map((item, index) => (
@@ -885,8 +823,8 @@ const AdmissionsAnalytics = () => {
                     {convertedMetricsData?.timeSeriesData &&
                     convertedMetricsData.timeSeriesData.length > 0 ? (
                       <LineChart
-                        data={convertedMetricsData.timeSeriesData.filter(
-                          (item) => allPeriods.includes(item.period),
+                        data={convertedMetricsData.timeSeriesData.filter((item) =>
+                          allPeriods.includes(item.period)
                         )}
                       >
                         <XAxis dataKey="formatted_date" hide />
@@ -931,9 +869,7 @@ const AdmissionsAnalytics = () => {
               {/* Other Metrics Rows - Using sample data */}
               {/* New Closed Won Row - Uses real data */}
               <div className="flex py-3 items-center border-b border-platinum hover:bg-gray-50">
-                <div className="w-1/6 font-medium text-outer-space text-sm">
-                  New Closed Won
-                </div>
+                <div className="w-1/6 font-medium text-outer-space text-sm">New Closed Won</div>
 
                 {/* Reverse column data for display to show older periods on the left */}
                 {[...closedWonColumnData].reverse().map((item, index) => (
@@ -955,8 +891,8 @@ const AdmissionsAnalytics = () => {
                     {closedWonMetricsData?.timeSeriesData &&
                     closedWonMetricsData.timeSeriesData.length > 0 ? (
                       <LineChart
-                        data={closedWonMetricsData.timeSeriesData.filter(
-                          (item) => allPeriods.includes(item.period),
+                        data={closedWonMetricsData.timeSeriesData.filter((item) =>
+                          allPeriods.includes(item.period)
                         )}
                       >
                         <XAxis dataKey="formatted_date" hide />
@@ -1001,9 +937,7 @@ const AdmissionsAnalytics = () => {
               {/* Other Metrics Rows - Using sample data */}
               {/* ARR Added Row - Uses real data */}
               <div className="flex py-3 items-center hover:bg-gray-50">
-                <div className="w-1/6 font-medium text-outer-space text-sm">
-                  ARR Added
-                </div>
+                <div className="w-1/6 font-medium text-outer-space text-sm">ARR Added</div>
 
                 {/* Reverse column data for display to show older periods on the left */}
                 {[...arrColumnData].reverse().map((item, index) => (
@@ -1022,11 +956,10 @@ const AdmissionsAnalytics = () => {
                 {/* ARR Added Trend */}
                 <div className="w-1/3 h-16 pl-4">
                   <ResponsiveContainer width="100%" height="100%">
-                    {arrMetricsData?.timeSeriesData &&
-                    arrMetricsData.timeSeriesData.length > 0 ? (
+                    {arrMetricsData?.timeSeriesData && arrMetricsData.timeSeriesData.length > 0 ? (
                       <LineChart
                         data={arrMetricsData.timeSeriesData.filter((item) =>
-                          allPeriods.includes(item.period),
+                          allPeriods.includes(item.period)
                         )}
                       >
                         <XAxis dataKey="formatted_date" hide />
@@ -1075,16 +1008,14 @@ const AdmissionsAnalytics = () => {
                     metric.id !== "leads-converted" &&
                     metric.id !== "admission-offered" &&
                     metric.id !== "closed-won" &&
-                    metric.id !== "arr-added",
+                    metric.id !== "arr-added"
                 )
                 .map((metric) => (
                   <div
                     key={metric.id}
                     className="flex py-3 items-center border-b border-platinum hover:bg-gray-50"
                   >
-                    <div className="w-1/6 font-medium text-outer-space text-sm">
-                      {metric.name}
-                    </div>
+                    <div className="w-1/6 font-medium text-outer-space text-sm">{metric.name}</div>
 
                     {/* Generate mock data cells based on period type - reversed for display */}
                     {[...columnData].reverse().map((_, index) => {
@@ -1094,9 +1025,7 @@ const AdmissionsAnalytics = () => {
 
                       return (
                         <div key={index} className="w-1/6 text-center">
-                          <div className="font-semibold text-eerie-black">
-                            {formatValue(value)}
-                          </div>
+                          <div className="font-semibold text-eerie-black">{formatValue(value)}</div>
                           <div
                             className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block ${getChangeColor(change)}`}
                           >
@@ -1111,7 +1040,7 @@ const AdmissionsAnalytics = () => {
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart
                           data={metricsData?.timeSeriesData.filter((item) =>
-                            allPeriods.includes(item.period),
+                            allPeriods.includes(item.period)
                           )}
                         >
                           <XAxis dataKey="formatted_date" hide />

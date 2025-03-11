@@ -32,8 +32,7 @@ import { getMockData, generateMockData } from "@/utils/mockData";
  * Only displayed when Developer Mode is active and showDevTools is enabled
  */
 export const DevModeDebugPanel: React.FC = () => {
-  const { isDeveloperMode, devModeOptions, updateDevModeOptions } =
-    useDeveloperMode();
+  const { isDeveloperMode, devModeOptions, updateDevModeOptions } = useDeveloperMode();
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [selectedTab, setSelectedTab] = useState("data");
   const [dataTypeFilter, setDataTypeFilter] = useState("");
@@ -44,8 +43,7 @@ export const DevModeDebugPanel: React.FC = () => {
   }
 
   // Mock data explorer states
-  const [selectedMockDataType, setSelectedMockDataType] =
-    useState("properties");
+  const [selectedMockDataType, setSelectedMockDataType] = useState("properties");
   const [mockDataPreview, setMockDataPreview] = useState<any>(null);
 
   // Mock data types
@@ -70,7 +68,7 @@ export const DevModeDebugPanel: React.FC = () => {
     ? mockDataTypes.filter(
         (type) =>
           type.label.toLowerCase().includes(dataTypeFilter.toLowerCase()) ||
-          type.id.toLowerCase().includes(dataTypeFilter.toLowerCase()),
+          type.id.toLowerCase().includes(dataTypeFilter.toLowerCase())
       )
     : mockDataTypes;
 
@@ -105,7 +103,7 @@ export const DevModeDebugPanel: React.FC = () => {
     window.dispatchEvent(
       new CustomEvent("developer-mode-changed", {
         detail: { isDeveloperMode, options: devModeOptions },
-      }),
+      })
     );
 
     toast.success("Data reload triggered", {
@@ -154,11 +152,7 @@ export const DevModeDebugPanel: React.FC = () => {
           <Separator />
 
           <CardContent className="pt-4">
-            <Tabs
-              defaultValue="data"
-              value={selectedTab}
-              onValueChange={setSelectedTab}
-            >
+            <Tabs defaultValue="data" value={selectedTab} onValueChange={setSelectedTab}>
               <TabsList className="w-full">
                 <TabsTrigger value="data" className="flex items-center">
                   <Database className="h-4 w-4 mr-1" />
@@ -187,10 +181,7 @@ export const DevModeDebugPanel: React.FC = () => {
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  <Select
-                    value={selectedMockDataType}
-                    onValueChange={setSelectedMockDataType}
-                  >
+                  <Select value={selectedMockDataType} onValueChange={setSelectedMockDataType}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select mock data type" />
                     </SelectTrigger>
@@ -217,10 +208,7 @@ export const DevModeDebugPanel: React.FC = () => {
               <TabsContent value="tools" className="space-y-3">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label
-                      htmlFor="enable-logging"
-                      className="cursor-pointer flex items-center"
-                    >
+                    <Label htmlFor="enable-logging" className="cursor-pointer flex items-center">
                       <span>Console Logging</span>
                     </Label>
                     <Switch
@@ -233,10 +221,7 @@ export const DevModeDebugPanel: React.FC = () => {
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <Label
-                      htmlFor="simulate-delay"
-                      className="cursor-pointer flex items-center"
-                    >
+                    <Label htmlFor="simulate-delay" className="cursor-pointer flex items-center">
                       <span>Network Delay</span>
                     </Label>
                     <Switch
@@ -282,8 +267,7 @@ export const DevModeDebugPanel: React.FC = () => {
               {/* Charts & Visualization Tab - placeholder */}
               <TabsContent value="charts" className="space-y-3">
                 <div className="text-sm text-muted-foreground">
-                  Visualization tools are coming soon. This panel will allow you
-                  to:
+                  Visualization tools are coming soon. This panel will allow you to:
                   <ul className="list-disc pl-5 mt-2 space-y-1">
                     <li>Preview generated charts with mock data</li>
                     <li>Test different data patterns and trends</li>
@@ -296,8 +280,7 @@ export const DevModeDebugPanel: React.FC = () => {
 
           <CardFooter className="pt-0">
             <div className="w-full text-xs text-muted-foreground">
-              Developer Mode active •{" "}
-              <span className="text-green-500">Using mock data</span>
+              Developer Mode active • <span className="text-green-500">Using mock data</span>
             </div>
           </CardFooter>
         </Card>

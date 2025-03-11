@@ -43,8 +43,7 @@ export const useCensusData = () => {
     };
 
     window.addEventListener("developer-mode-changed", handleDevModeChange);
-    return () =>
-      window.removeEventListener("developer-mode-changed", handleDevModeChange);
+    return () => window.removeEventListener("developer-mode-changed", handleDevModeChange);
   }, []);
 
   const fetchCensusData = async (address: string) => {
@@ -64,10 +63,8 @@ export const useCensusData = () => {
           totalPopulation: mockCensusData.demographics.totalPopulation,
           medianHouseholdIncome: mockCensusData.economics.medianHouseholdIncome,
           medianHomeValue: mockCensusData.housing.medianHomeValue,
-          educationLevelHS:
-            mockCensusData.economics.educationLevels.highSchoolOrLess,
-          educationLevelBachelor:
-            mockCensusData.economics.educationLevels.bachelors,
+          educationLevelHS: mockCensusData.economics.educationLevels.highSchoolOrLess,
+          educationLevelBachelor: mockCensusData.economics.educationLevels.bachelors,
           unemploymentRate: mockCensusData.economics.unemploymentRate,
           povertyRate: mockCensusData.economics.povertyRate,
           medianAge: mockCensusData.demographics.medianAge,
@@ -111,8 +108,7 @@ export const useCensusData = () => {
             housing: [
               {
                 name: "Total Housing Units",
-                value:
-                  mockCensusData.housing.totalHousingUnits.toLocaleString(),
+                value: mockCensusData.housing.totalHousingUnits.toLocaleString(),
               },
               {
                 name: "Occupancy Rate",
@@ -191,8 +187,7 @@ export const useCensusData = () => {
 
         if (data.isMockData) {
           toast.warning("Using estimated census data", {
-            description:
-              data.error || "Unable to find precise data for this location",
+            description: data.error || "Unable to find precise data for this location",
           });
         } else {
           const tractsMessage = data.tractsIncluded
@@ -201,18 +196,14 @@ export const useCensusData = () => {
           const blocksMessage = data.blockGroupsIncluded
             ? `${data.blockGroupsIncluded} block groups`
             : "";
-          const radiusMessage = data.radiusMiles
-            ? `${data.radiusMiles} mile radius`
-            : "";
+          const radiusMessage = data.radiusMiles ? `${data.radiusMiles} mile radius` : "";
 
           const details = [tractsMessage, blocksMessage, radiusMessage]
             .filter((msg) => msg.length > 0)
             .join(", ");
 
           toast.success("Census data retrieved", {
-            description: details
-              ? `Data covers ${details}`
-              : "Based on the provided address",
+            description: details ? `Data covers ${details}` : "Based on the provided address",
           });
         }
       }

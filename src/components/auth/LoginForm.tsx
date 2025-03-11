@@ -39,8 +39,7 @@ const LoginForm = () => {
         });
       }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "An unexpected error occurred";
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
       logger.auth("Unexpected login error from form:", error);
       setLoginError(errorMessage);
       toast.error("Login failed", {
@@ -73,9 +72,7 @@ const LoginForm = () => {
     <form onSubmit={handleLogin}>
       <CardHeader>
         <CardTitle>Sign In</CardTitle>
-        <CardDescription>
-          Enter your credentials to access your account
-        </CardDescription>
+        <CardDescription>Enter your credentials to access your account</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {loginError && (
@@ -104,17 +101,9 @@ const LoginForm = () => {
             <AlertDescription className="text-amber-700">
               <p className="font-medium">Database access issue detected</p>
               <div className="mt-1 text-sm">
-                <p>
-                  Public schema:{" "}
-                  {schemaStatus.public ? "Connected" : "Not connected"}
-                </p>
-                <p>
-                  Salesforce schema:{" "}
-                  {schemaStatus.salesforce ? "Connected" : "Not connected"}
-                </p>
-                <p className="mt-1">
-                  Some data may be unavailable after login.
-                </p>
+                <p>Public schema: {schemaStatus.public ? "Connected" : "Not connected"}</p>
+                <p>Salesforce schema: {schemaStatus.salesforce ? "Connected" : "Not connected"}</p>
+                <p className="mt-1">Some data may be unavailable after login.</p>
               </div>
             </AlertDescription>
           </Alert>

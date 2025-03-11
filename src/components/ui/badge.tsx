@@ -14,17 +14,14 @@ function Badge({ className, variant, ...props }: BadgeProps) {
 
   // Check if content looks like a Salesforce ID (18 or 15 character alphanumeric string)
   const isSalesforceId =
-    typeof children === "string" &&
-    /^[a-zA-Z0-9]{15,18}$/.test(children.toString());
+    typeof children === "string" && /^[a-zA-Z0-9]{15,18}$/.test(children.toString());
 
   // Don't render the badge if it contains a Salesforce ID
   if (isSalesforceId) {
     return null;
   }
 
-  return (
-    <span className={cn(badgeVariants({ variant }), className)} {...props} />
-  );
+  return <span className={cn(badgeVariants({ variant }), className)} {...props} />;
 }
 
 export { Badge };

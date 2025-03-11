@@ -18,10 +18,7 @@ interface CommentFormProps {
   onCommentAdded: () => void;
 }
 
-const CommentForm: React.FC<CommentFormProps> = ({
-  propertyId,
-  onCommentAdded,
-}) => {
+const CommentForm: React.FC<CommentFormProps> = ({ propertyId, onCommentAdded }) => {
   const [comment, setComment] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [userProfiles, setUserProfiles] = useState<UserProfile[]>([]);
@@ -34,9 +31,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
   // Fetch user profiles for mentions
   useEffect(() => {
     const fetchProfiles = async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, email");
+      const { data, error } = await supabase.from("profiles").select("id, full_name, email");
 
       if (error) {
         console.error("Error fetching profiles:", error);
@@ -61,10 +56,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
     if (lastAtIndex >= 0) {
       const afterAt = newValue.substring(lastAtIndex + 1);
       // If there's a space after @, don't show mention menu
-      if (
-        !afterAt.includes(" ") &&
-        lastAtIndex === newValue.length - afterAt.length - 1
-      ) {
+      if (!afterAt.includes(" ") && lastAtIndex === newValue.length - afterAt.length - 1) {
         setMentionQuery(afterAt);
         setMentionStartIndex(lastAtIndex);
         setShowMentionMenu(true);
@@ -88,9 +80,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
   const insertMention = (profile: UserProfile) => {
     if (mentionStartIndex >= 0) {
       const beforeMention = comment.substring(0, mentionStartIndex);
-      const afterMention = comment.substring(
-        mentionStartIndex + mentionQuery.length + 1,
-      );
+      const afterMention = comment.substring(mentionStartIndex + mentionQuery.length + 1);
       const mentionText = `@${profile.full_name || profile.email} `;
 
       setComment(beforeMention + mentionText + afterMention);
@@ -100,10 +90,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
       if (textareaRef.current) {
         textareaRef.current.focus();
         const newCursorPosition = beforeMention.length + mentionText.length;
-        textareaRef.current.setSelectionRange(
-          newCursorPosition,
-          newCursorPosition,
-        );
+        textareaRef.current.setSelectionRange(newCursorPosition, newCursorPosition);
       }
     }
   };
@@ -138,7 +125,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
         const mentionedUser = userProfiles.find(
           (profile) =>
             (profile.full_name && profile.full_name === mentionText) ||
-            profile.email === mentionText,
+            profile.email === mentionText
         );
 
         if (mentionedUser) {
@@ -151,9 +138,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
 
       // Insert mentions if any
       if (mentions.length > 0) {
-        const { error: mentionError } = await supabase
-          .from("comment_mentions")
-          .insert(mentions);
+        const { error: mentionError } = await supabase.from("comment_mentions").insert(mentions);
 
         if (mentionError) {
           console.error("Error adding mentions:", mentionError);
@@ -205,11 +190,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
         </div>
       </div>
       <div className="flex justify-end">
-        <Button
-          onClick={handleSubmit}
-          disabled={!comment.trim() || isSending}
-          size="sm"
-        >
+        <Button onClick={handleSubmit} disabled={!comment.trim() || isSending} size="sm">
           <Send className="h-4 w-4 mr-2" />
           {isSending ? "Sending..." : "Comment"}
         </Button>

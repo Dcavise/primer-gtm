@@ -14,13 +14,7 @@ import {
 import { supabase } from "@/integrations/supabase-client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface LeadData {
@@ -52,10 +46,7 @@ const LeadsByWeekChart = () => {
   const [lookbackWeeks, setLookbackWeeks] = useState(12);
   const [campusColors, setCampusColors] = useState<Record<string, string>>({});
   const [usingSimpleFunction, setUsingSimpleFunction] = useState(false);
-  const [functionError, setFunctionError] = useState<Record<
-    string,
-    any
-  > | null>(null);
+  const [functionError, setFunctionError] = useState<Record<string, any> | null>(null);
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   const colorPalette = [
@@ -83,16 +74,12 @@ const LeadsByWeekChart = () => {
       setDebugInfo(null);
       setUsingSimpleFunction(false);
 
-      console.log(
-        "Fetching lead data with lookback of",
-        lookbackWeeks,
-        "weeks",
-      );
+      console.log("Fetching lead data with lookback of", lookbackWeeks, "weeks");
 
       // Try the main function first
       const { data: leadData, error: fetchError } = await supabase.rpc(
         "get_fallback_lead_count_by_week_campus",
-        { weeks_back: lookbackWeeks },
+        { weeks_back: lookbackWeeks }
       );
 
       if (fetchError) {
@@ -102,13 +89,13 @@ const LeadsByWeekChart = () => {
         console.log("Trying simple lead count function...");
         const { data: simpleData, error: simpleError } = await supabase.rpc(
           "get_simple_lead_count_by_week",
-          { lookback_weeks: lookbackWeeks },
+          { lookback_weeks: lookbackWeeks }
         );
 
         if (simpleError) {
           console.error("Simple function error:", simpleError);
           throw new Error(
-            `Both functions failed. Main error: ${fetchError.message}, Simple error: ${simpleError.message}`,
+            `Both functions failed. Main error: ${fetchError.message}, Simple error: ${simpleError.message}`
           );
         }
 
@@ -132,12 +119,10 @@ const LeadsByWeekChart = () => {
           setDebugInfo(JSON.stringify(errorData, null, 2));
 
           // Try simple function as fallback
-          console.log(
-            "Main function returned error, trying simple function...",
-          );
+          console.log("Main function returned error, trying simple function...");
           const { data: simpleData, error: simpleError } = await supabase.rpc(
             "get_simple_lead_count_by_week",
-            { lookback_weeks: lookbackWeeks },
+            { lookback_weeks: lookbackWeeks }
           );
 
           if (simpleError || !simpleData) {
@@ -156,9 +141,7 @@ const LeadsByWeekChart = () => {
     } catch (err) {
       console.error("Error fetching lead data:", err);
       setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to load lead data. Please try again later.",
+        err instanceof Error ? err.message : "Failed to load lead data. Please try again later."
       );
     } finally {
       setLoading(false);
@@ -167,9 +150,7 @@ const LeadsByWeekChart = () => {
 
   const processDataForChart = (leadData: LeadData[]) => {
     // Extract all unique campus names
-    const campusNames = Array.from(
-      new Set(leadData.map((item) => item.campus_name)),
-    );
+    const campusNames = Array.from(new Set(leadData.map((item) => item.campus_name)));
 
     // Assign colors to campuses
     const colors: Record<string, string> = {};
@@ -179,9 +160,7 @@ const LeadsByWeekChart = () => {
     setCampusColors(colors);
 
     // Extract all unique weeks
-    const weeks = Array.from(
-      new Set(leadData.map((item) => item.week_start)),
-    ).sort();
+    const weeks = Array.from(new Set(leadData.map((item) => item.week_start))).sort();
 
     // Create chart data with proper structure for stacked bar chart
     const formattedData = weeks.map((week) => {
@@ -249,13 +228,9 @@ const LeadsByWeekChart = () => {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>
-          Leads by Week{usingSimpleFunction ? "" : " and Campus"}
-        </CardTitle>
+        <CardTitle>Leads by Week{usingSimpleFunction ? "" : " and Campus"}</CardTitle>
         {usingSimpleFunction && (
-          <CardDescription>
-            Using simplified data view due to schema compatibility
-          </CardDescription>
+          <CardDescription>Using simplified data view due to schema compatibility</CardDescription>
         )}
         <div className="flex space-x-2">
           <Button
@@ -282,14 +257,8 @@ const LeadsByWeekChart = () => {
         {error ? (
           <Alert variant="destructive" className="mb-4">
             <AlertTitle>Error</AlertTitle>
-            <AlertDescription className="whitespace-pre-wrap">
-              {error}
-            </AlertDescription>
-            <Button
-              onClick={() => fetchData()}
-              variant="outline"
-              className="mt-2"
-            >
+            <AlertDescription className="whitespace-pre-wrap">{error}</AlertDescription>
+            <Button onClick={() => fetchData()} variant="outline" className="mt-2">
               Retry
             </Button>
             {debugInfo && (
@@ -318,12 +287,7 @@ const LeadsByWeekChart = () => {
                   labelFormatter={(label) => `Week of ${label}`}
                 />
                 <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="Leads"
-                  stroke="#8884d8"
-                  activeDot={{ r: 8 }}
-                />
+                <Line type="monotone" dataKey="Leads" stroke="#8884d8" activeDot={{ r: 8 }} />
               </LineChart>
             ) : (
               <BarChart

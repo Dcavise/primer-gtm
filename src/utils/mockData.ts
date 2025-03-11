@@ -29,8 +29,7 @@ export const mockProperties = [
     owner: "Jane Smith",
     phone: "(415) 555-1234",
     email: "jane.smith@example.com",
-    notes:
-      "Owner is motivated to sell. Property has been well-maintained with recent renovations.",
+    notes: "Owner is motivated to sell. Property has been well-maintained with recent renovations.",
     lease: {
       startDate: "2023-06-01",
       endDate: "2028-05-31",
@@ -260,17 +259,8 @@ export const mockZoningData = [
       "Community gardens",
       "Accessory dwelling units",
     ],
-    conditional_uses: [
-      "Places of worship",
-      "Schools",
-      "Community centers",
-      "Daycare facilities",
-    ],
-    prohibited_uses: [
-      "Multi-family dwellings",
-      "Commercial uses",
-      "Industrial uses",
-    ],
+    conditional_uses: ["Places of worship", "Schools", "Community centers", "Daycare facilities"],
+    prohibited_uses: ["Multi-family dwellings", "Commercial uses", "Industrial uses"],
     description: "One dwelling unit per lot. Minimum lot size of 5,000 sq ft.",
     last_updated: "2023-01-15",
     link: "https://example.com/zoning/r1",
@@ -310,8 +300,7 @@ export const mockZoningData = [
       "Community facilities",
     ],
     prohibited_uses: ["Heavy industrial", "Warehousing", "Adult entertainment"],
-    description:
-      "Intended for small-scale commercial uses serving nearby neighborhoods.",
+    description: "Intended for small-scale commercial uses serving nearby neighborhoods.",
     last_updated: "2023-02-20",
     link: "https://example.com/zoning/c1",
     controls: {
@@ -349,11 +338,7 @@ export const mockZoningData = [
       "Breweries and distilleries",
       "Artist studios",
     ],
-    prohibited_uses: [
-      "Residential uses",
-      "Heavy industrial",
-      "Hazardous materials processing",
-    ],
+    prohibited_uses: ["Residential uses", "Heavy industrial", "Hazardous materials processing"],
     description:
       "Designed for industrial uses that do not create excessive noise, odor, or other nuisances.",
     last_updated: "2023-03-10",
@@ -496,8 +481,7 @@ export const mockFiles = [
       id: "user-2",
       name: "Robert Johnson",
     },
-    description:
-      "Detailed floor plans of all levels including measurements and room dimensions.",
+    description: "Detailed floor plans of all levels including measurements and room dimensions.",
     url: "#",
     resourceId: "mock-property-1",
     resourceType: "property",
@@ -530,8 +514,7 @@ export const mockContacts = [
     email: "sandra.williams@bayareaproperties.example.com",
     phone: "(415) 555-7890",
     address: "350 Market St, San Francisco, CA 94105",
-    notes:
-      "Excellent local knowledge, specializes in commercial properties in SF.",
+    notes: "Excellent local knowledge, specializes in commercial properties in SF.",
   },
   {
     id: "mock-contact-2",
@@ -551,8 +534,7 @@ export const mockContacts = [
     email: "l.rodriguez@pacificbanking.example.com",
     phone: "(415) 555-6543",
     address: "101 California St, San Francisco, CA 94111",
-    notes:
-      "Specializes in financing for educational institutions and non-profits.",
+    notes: "Specializes in financing for educational institutions and non-profits.",
   },
 ];
 

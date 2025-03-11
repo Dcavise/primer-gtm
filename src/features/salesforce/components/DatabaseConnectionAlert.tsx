@@ -24,9 +24,7 @@ export const DatabaseConnectionAlert: React.FC = () => {
           loading: false,
           connected: results.salesforceAccess,
           method: results.usingAdminClient ? "Admin Client" : "Regular Client",
-          error: results.salesforceAccess
-            ? null
-            : "Could not access Salesforce data tables",
+          error: results.salesforceAccess ? null : "Could not access Salesforce data tables",
         });
       } catch (error) {
         setConnectionStatus({
@@ -46,9 +44,7 @@ export const DatabaseConnectionAlert: React.FC = () => {
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Checking connection...</AlertTitle>
-        <AlertDescription>
-          Verifying connection to Salesforce data tables...
-        </AlertDescription>
+        <AlertDescription>Verifying connection to Salesforce data tables...</AlertDescription>
       </Alert>
     );
   }
@@ -57,9 +53,7 @@ export const DatabaseConnectionAlert: React.FC = () => {
     return (
       <Alert className="bg-green-50 border-green-200">
         <CheckCircle className="h-4 w-4 text-green-500" />
-        <AlertTitle className="text-green-700">
-          Connected to Salesforce Data
-        </AlertTitle>
+        <AlertTitle className="text-green-700">Connected to Salesforce Data</AlertTitle>
         <AlertDescription className="text-green-600">
           Connected to Salesforce data tables using {connectionStatus.method}.
         </AlertDescription>

@@ -54,12 +54,9 @@ describe("API Config Service", () => {
     expect(supabase.functions.invoke).toHaveBeenCalledWith("get-api-keys", {
       body: { key: "census" },
     });
-    expect(supabase.functions.invoke).toHaveBeenCalledWith(
-      "get-api-keys?key=census",
-      {
-        method: "GET",
-      },
-    );
+    expect(supabase.functions.invoke).toHaveBeenCalledWith("get-api-keys?key=census", {
+      method: "GET",
+    });
 
     // Verify the returned key
     expect(key).toBe("test-api-key");
@@ -72,9 +69,7 @@ describe("API Config Service", () => {
       error: null,
     });
 
-    await expect(getApiKey("google_maps")).rejects.toThrow(
-      "No API key returned for google_maps",
-    );
+    await expect(getApiKey("google_maps")).rejects.toThrow("No API key returned for google_maps");
   });
 
   it("should throw an error if both POST and GET methods fail", async () => {
@@ -89,8 +84,6 @@ describe("API Config Service", () => {
         error: { message: "GET method error" },
       });
 
-    await expect(getApiKey("mapbox")).rejects.toThrow(
-      "Error fetching mapbox API key with GET",
-    );
+    await expect(getApiKey("mapbox")).rejects.toThrow("Error fetching mapbox API key with GET");
   });
 });

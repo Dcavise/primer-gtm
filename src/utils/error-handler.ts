@@ -31,7 +31,7 @@ export function createError(
   type: ErrorType,
   message: string,
   original?: unknown,
-  context?: Record<string, unknown>,
+  context?: Record<string, unknown>
 ): AppError {
   return {
     type,
@@ -47,7 +47,7 @@ export function createError(
 export function handleError(
   error: unknown,
   notifyUser = true,
-  context?: Record<string, unknown>,
+  context?: Record<string, unknown>
 ): AppError {
   let appError: AppError;
 
@@ -75,11 +75,7 @@ export function handleError(
 
     appError = createError(type, (error as any).message, error);
   } else {
-    appError = createError(
-      ErrorType.Unknown,
-      "An unknown error occurred",
-      error,
-    );
+    appError = createError(ErrorType.Unknown, "An unknown error occurred", error);
   }
 
   // Add additional context
@@ -108,8 +104,7 @@ export function handleError(
 
     // Make user-facing messages more friendly
     if (appError.type === ErrorType.Network) {
-      toastMessage =
-        "Network error. Please check your connection and try again.";
+      toastMessage = "Network error. Please check your connection and try again.";
     } else if (appError.type === ErrorType.Database) {
       toastMessage = "Database error. Please try again later.";
     } else if (appError.type === ErrorType.Authentication) {
@@ -129,7 +124,7 @@ export async function tryCatch<T>(
   fn: () => Promise<T>,
   errorMessage = "An error occurred",
   notifyUser = true,
-  context?: Record<string, unknown>,
+  context?: Record<string, unknown>
 ): Promise<T | null> {
   try {
     return await fn();

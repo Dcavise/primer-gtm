@@ -32,21 +32,13 @@ export async function getApiKey(keyName: string): Promise<string> {
 
       // If POST fails, try using GET method as fallback
       console.log(`Falling back to GET method for ${keyName} API key`);
-      const getResponse = await supabase.functions.invoke(
-        `get-api-keys?key=${keyName}`,
-        {
-          method: "GET",
-        },
-      );
+      const getResponse = await supabase.functions.invoke(`get-api-keys?key=${keyName}`, {
+        method: "GET",
+      });
 
       if (getResponse.error) {
-        console.error(
-          `GET method also failed for ${keyName} API key:`,
-          getResponse.error.message,
-        );
-        throw new Error(
-          `Error fetching ${keyName} API key with GET: ${getResponse.error.message}`,
-        );
+        console.error(`GET method also failed for ${keyName} API key:`, getResponse.error.message);
+        throw new Error(`Error fetching ${keyName} API key with GET: ${getResponse.error.message}`);
       }
 
       if (!getResponse.data || !getResponse.data.key) {
@@ -72,7 +64,7 @@ export async function getApiKey(keyName: string): Promise<string> {
  * Geocode an address using Google Maps API via Supabase function
  */
 export const geocodeAddress = async (
-  address: string,
+  address: string
 ): Promise<{
   address: string;
   coordinates: Coordinates;
@@ -98,9 +90,7 @@ export const geocodeAddress = async (
     if (error) {
       console.error(`Geocoding edge function error:`, error);
       toast.error("Geocoding failed", {
-        description:
-          error.message ||
-          "Could not find coordinates for the provided address.",
+        description: error.message || "Could not find coordinates for the provided address.",
       });
       return null;
     }
@@ -108,14 +98,13 @@ export const geocodeAddress = async (
     if (!data || !data.coordinates) {
       console.error("Invalid geocoding result structure:", data);
       toast.error("Address location error", {
-        description:
-          "The system couldn't determine exact coordinates for this address.",
+        description: "The system couldn't determine exact coordinates for this address.",
       });
       return null;
     }
 
     console.log(
-      `Successfully geocoded address to: ${data.formattedAddress} (${data.coordinates.lat}, ${data.coordinates.lng})`,
+      `Successfully geocoded address to: ${data.formattedAddress} (${data.coordinates.lat}, ${data.coordinates.lng})`
     );
 
     return {
@@ -142,7 +131,7 @@ export const geocodeAddress = async (
  */
 export const createBoundingBox = (
   center: Coordinates,
-  radiusInMeters: number,
+  radiusInMeters: number
 ): {
   bottomLeft: Coordinates;
   topRight: Coordinates;
@@ -157,13 +146,11 @@ export const createBoundingBox = (
   return {
     bottomLeft: {
       lat: center.lat - radiusInDegrees,
-      lng:
-        center.lng - radiusInDegrees / Math.cos((center.lat * Math.PI) / 180),
+      lng: center.lng - radiusInDegrees / Math.cos((center.lat * Math.PI) / 180),
     },
     topRight: {
       lat: center.lat + radiusInDegrees,
-      lng:
-        center.lng + radiusInDegrees / Math.cos((center.lat * Math.PI) / 180),
+      lng: center.lng + radiusInDegrees / Math.cos((center.lat * Math.PI) / 180),
     },
   };
 };
@@ -196,16 +183,10 @@ export const checkDatabaseConnection = async () => {
   try {
     // First check public schema access with retry
     const publicCheckOperation = async () => {
-      const publicCheck = await supabase
-        .from("campuses")
-        .select("count")
-        .limit(1);
+      const publicCheck = await supabase.from("campuses").select("count").limit(1);
 
       if (publicCheck.error) {
-        console.error(
-          "Public schema connectivity check failed:",
-          publicCheck.error,
-        );
+        console.error("Public schema connectivity check failed:", publicCheck.error);
         throw publicCheck.error;
       }
 
@@ -214,10 +195,7 @@ export const checkDatabaseConnection = async () => {
 
     let publicSchemaAccess = false;
     try {
-      publicSchemaAccess = await retryOperation(
-        publicCheckOperation,
-        MAX_RETRIES,
-      );
+      publicSchemaAccess = await retryOperation(publicCheckOperation, MAX_RETRIES);
     } catch (error) {
       console.error("Public schema access failed after retries:", error);
       return {
@@ -231,30 +209,19 @@ export const checkDatabaseConnection = async () => {
     try {
       // Use an RPC function that attempts to access the salesforce schema
       const salesforceCheckOperation = async () => {
-        const salesforceCheck = await supabase.rpc(
-          "test_salesforce_connection",
-        );
+        const salesforceCheck = await supabase.rpc("test_salesforce_connection");
 
         if (salesforceCheck.error) {
-          console.error(
-            "Salesforce schema connectivity check failed:",
-            salesforceCheck.error,
-          );
+          console.error("Salesforce schema connectivity check failed:", salesforceCheck.error);
           throw salesforceCheck.error;
         }
 
         return salesforceCheck.data?.salesforce_schema_access === true;
       };
 
-      salesforceAccess = await retryOperation(
-        salesforceCheckOperation,
-        MAX_RETRIES,
-      );
+      salesforceAccess = await retryOperation(salesforceCheckOperation, MAX_RETRIES);
     } catch (schemaError) {
-      console.error(
-        "Salesforce schema access check failed after retries:",
-        schemaError,
-      );
+      console.error("Salesforce schema access check failed after retries:", schemaError);
       // Continue even if this fails - we still have public schema access
     }
 
@@ -267,10 +234,7 @@ export const checkDatabaseConnection = async () => {
       },
     };
   } catch (error) {
-    console.error(
-      "Unexpected error during database connectivity check:",
-      error,
-    );
+    console.error("Unexpected error during database connectivity check:", error);
     return { connected: false, schemas: { public: false, salesforce: false } };
   }
 };

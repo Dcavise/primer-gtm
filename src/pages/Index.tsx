@@ -7,13 +7,7 @@ import {
   LayoutDashboard,
   // GraduationCap removed (was used for PL Hiring)
 } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Index = () => {
   // Mock user for demo purposes
@@ -22,8 +16,7 @@ const Index = () => {
   const features = [
     {
       title: "Property Research",
-      description:
-        "Search property data including permits, zoning, and schools",
+      description: "Search property data including permits, zoning, and schools",
       icon: <SearchIcon className="h-10 w-10 text-blue-500 mb-4" />,
       path: "/property-research",
       color: "bg-blue-50",
@@ -51,8 +44,8 @@ const Index = () => {
               Welcome, {mockUser.full_name}!
             </h2>
             <p className="text-lg md:text-xl text-white/90 mb-8 max-w-2xl">
-              Comprehensive property data and analytics to power your real
-              estate investments and decision-making.
+              Comprehensive property data and analytics to power your real estate investments and
+              decision-making.
             </p>
           </motion.div>
         </div>
@@ -65,12 +58,10 @@ const Index = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.6 }}
         >
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">
-            Start Exploring
-          </h2>
+          <h2 className="text-2xl md:text-3xl font-bold mb-4">Start Exploring</h2>
           <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            Choose from our suite of real estate tools to research properties,
-            analyze markets, and build your investment pipeline.
+            Choose from our suite of real estate tools to research properties, analyze markets, and
+            build your investment pipeline.
           </p>
         </motion.div>
 

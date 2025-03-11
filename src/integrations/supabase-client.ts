@@ -12,25 +12,17 @@ const SUPABASE_SERVICE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_KEY || "";
 
 // Validate that we have the required environment variables
 if (!SUPABASE_URL) {
-  throw new Error(
-    "VITE_SUPABASE_URL is required. Make sure it's set in your .env file.",
-  );
+  throw new Error("VITE_SUPABASE_URL is required. Make sure it's set in your .env file.");
 }
 
 if (!SUPABASE_ANON_KEY) {
-  throw new Error(
-    "VITE_SUPABASE_ANON_KEY is required. Make sure it's set in your .env file.",
-  );
+  throw new Error("VITE_SUPABASE_ANON_KEY is required. Make sure it's set in your .env file.");
 }
 
 // Log configuration for debugging
 logger.info(`Supabase URL: ${SUPABASE_URL}`);
-logger.info(
-  `Supabase Anon Key configured: ${SUPABASE_ANON_KEY ? "Yes" : "No"}`,
-);
-logger.info(
-  `Supabase Service Key configured: ${SUPABASE_SERVICE_KEY ? "Yes" : "No"}`,
-);
+logger.info(`Supabase Anon Key configured: ${SUPABASE_ANON_KEY ? "Yes" : "No"}`);
+logger.info(`Supabase Service Key configured: ${SUPABASE_SERVICE_KEY ? "Yes" : "No"}`);
 
 // Family search result interface with standardized IDs
 export interface FamilySearchResult {
@@ -67,7 +59,7 @@ declare module "@supabase/supabase-js" {
         | "fivetran_views.search_families_consistent"
         | "fivetran_views.get_family_by_standard_id"
         | string,
-      params?: Record<string, unknown>,
+      params?: Record<string, unknown>
     ): Promise<{ data: T | null; error: Error | null }>;
   }
 }
@@ -140,7 +132,7 @@ export class SupabaseUnifiedClient {
   public async executeRPC<T = unknown>(
     functionName: string,
     params: Record<string, unknown> = {},
-    schema?: string,
+    schema?: string
   ): Promise<OperationResponse<T>> {
     try {
       let fullFunctionName = functionName;
@@ -153,25 +145,19 @@ export class SupabaseUnifiedClient {
 
       // Direct RPC approach
       try {
-        const { data, error } = await this.regular.rpc<T>(
-          fullFunctionName,
-          params,
-        );
+        const { data, error } = await this.regular.rpc<T>(fullFunctionName, params);
 
         if (error) {
           // If we get an error about missing function in public schema, it means
           // Supabase is still trying to prefix with public.
           if (error.message && error.message.includes("public") && schema) {
             logger.warn(
-              `Supabase tried to use public schema when we specified ${schema}. Trying direct SQL...`,
+              `Supabase tried to use public schema when we specified ${schema}. Trying direct SQL...`
             );
             throw new Error("Schema prefix issue detected");
           }
 
-          logger.error(
-            `Error executing RPC function ${fullFunctionName}:`,
-            error,
-          );
+          logger.error(`Error executing RPC function ${fullFunctionName}:`, error);
           return { success: false, data: null, error: error.message };
         }
 
@@ -179,16 +165,13 @@ export class SupabaseUnifiedClient {
       } catch (rpcErr) {
         // If we're here and we have a schema, try direct SQL query as a fallback
         if (schema) {
-          logger.warn(
-            `RPC call to ${fullFunctionName} failed. Attempting direct SQL query...`,
-          );
+          logger.warn(`RPC call to ${fullFunctionName} failed. Attempting direct SQL query...`);
 
           // Construct a direct SQL query to call the function
           const sqlParams = Object.entries(params)
             .map(([key, value]) => {
               // For simplicity, handling just strings and numbers
-              const formattedValue =
-                typeof value === "string" ? `'${value}'` : value;
+              const formattedValue = typeof value === "string" ? `'${value}'` : value;
               return `${key} => ${formattedValue}`;
             })
             .join(", ");
@@ -198,12 +181,9 @@ export class SupabaseUnifiedClient {
           logger.debug(`Executing direct SQL: ${sql}`);
 
           try {
-            const { data, error } = await this.regular.rpc<T>(
-              "execute_sql_query",
-              {
-                query: sql,
-              },
-            );
+            const { data, error } = await this.regular.rpc<T>("execute_sql_query", {
+              query: sql,
+            });
 
             if (error) {
               logger.error(`Direct SQL query failed:`, error);
@@ -214,18 +194,13 @@ export class SupabaseUnifiedClient {
           } catch (sqlErr) {
             // Both approaches failed
             logger.error(`Both RPC and direct SQL approaches failed:`, sqlErr);
-            const errorMessage =
-              sqlErr instanceof Error ? sqlErr.message : "Unknown error";
+            const errorMessage = sqlErr instanceof Error ? sqlErr.message : "Unknown error";
             return { success: false, data: null, error: errorMessage };
           }
         } else {
           // No schema provided, just return the original error
-          const errorMessage =
-            rpcErr instanceof Error ? rpcErr.message : "Unknown error";
-          logger.error(
-            `Exception executing RPC function ${fullFunctionName}:`,
-            rpcErr,
-          );
+          const errorMessage = rpcErr instanceof Error ? rpcErr.message : "Unknown error";
+          logger.error(`Exception executing RPC function ${fullFunctionName}:`, rpcErr);
           return { success: false, data: null, error: errorMessage };
         }
       }
@@ -263,7 +238,7 @@ export class SupabaseUnifiedClient {
    * @returns Array of family search results with standardized IDs added on the client side
    */
   public async searchFamilies(
-    searchTerm: string,
+    searchTerm: string
   ): Promise<OperationResponse<FamilySearchResult[]>> {
     try {
       logger.info(`Searching for families with term: ${searchTerm}`);
@@ -274,24 +249,18 @@ export class SupabaseUnifiedClient {
 
       // First try the dedicated search_families_consistent RPC function
       try {
-        logger.debug(
-          `Trying to use search_families_consistent RPC with term: '${searchTerm}'`,
-        );
+        logger.debug(`Trying to use search_families_consistent RPC with term: '${searchTerm}'`);
         const { data: rpcData, error: rpcError } = await this.regular.rpc(
           "search_families_consistent",
           {
             search_term: searchTerm,
-          },
+          }
         );
 
         if (!rpcError && rpcData) {
           // Success with RPC - process the data
-          logger.debug(
-            "Successfully retrieved data from search_families_consistent RPC",
-          );
-          const processedResults = this.processSearchResults(
-            rpcData as Record<string, unknown>[],
-          );
+          logger.debug("Successfully retrieved data from search_families_consistent RPC");
+          const processedResults = this.processSearchResults(rpcData as Record<string, unknown>[]);
 
           // Add to unique family map
           processedResults.forEach((family) => {
@@ -301,15 +270,10 @@ export class SupabaseUnifiedClient {
           });
 
           foundResults = true;
-          logger.debug(
-            `Found ${processedResults.length} families from search_families_consistent`,
-          );
+          logger.debug(`Found ${processedResults.length} families from search_families_consistent`);
         } else {
           // RPC had an error, log and continue to fallback
-          logger.warn(
-            `Error using search_families_consistent RPC: ${rpcError?.message}`,
-            rpcError,
-          );
+          logger.warn(`Error using search_families_consistent RPC: ${rpcError?.message}`, rpcError);
           logger.debug("Falling back to regular search_families");
         }
       } catch (rpcSearchError) {
@@ -319,18 +283,13 @@ export class SupabaseUnifiedClient {
 
       // Try the regular search_families function
       try {
-        const { data: regData, error: regError } = await this.regular.rpc(
-          "search_families",
-          {
-            search_term: searchTerm,
-          },
-        );
+        const { data: regData, error: regError } = await this.regular.rpc("search_families", {
+          search_term: searchTerm,
+        });
 
         if (!regError && regData) {
           logger.debug("Successfully retrieved data from search_families RPC");
-          const processedResults = this.processSearchResults(
-            regData as Record<string, unknown>[],
-          );
+          const processedResults = this.processSearchResults(regData as Record<string, unknown>[]);
 
           // Add to unique family map
           processedResults.forEach((family) => {
@@ -340,14 +299,9 @@ export class SupabaseUnifiedClient {
           });
 
           foundResults = true;
-          logger.debug(
-            `Found ${processedResults.length} families from search_families`,
-          );
+          logger.debug(`Found ${processedResults.length} families from search_families`);
         } else {
-          logger.warn(
-            `Error using search_families RPC: ${regError?.message}`,
-            regError,
-          );
+          logger.warn(`Error using search_families RPC: ${regError?.message}`, regError);
           logger.debug("Falling back to direct SQL query");
         }
       } catch (regSearchError) {
@@ -393,9 +347,7 @@ export class SupabaseUnifiedClient {
             LIMIT 20
           `;
 
-          logger.debug(
-            "Executing family search query using execute_sql_query RPC",
-          );
+          logger.debug("Executing family search query using execute_sql_query RPC");
           const { data, error } = await this.regular.rpc("execute_sql_query", {
             query_text: sqlQuery,
           });
@@ -416,19 +368,15 @@ export class SupabaseUnifiedClient {
               } else if (typeof data === "object") {
                 if ("rows" in data && Array.isArray(data.rows)) {
                   resultRows = data.rows as Record<string, unknown>[];
-                  logger.debug(
-                    `Data has rows array with ${resultRows.length} items`,
-                  );
+                  logger.debug(`Data has rows array with ${resultRows.length} items`);
                 } else if ("result" in data && Array.isArray(data.result)) {
                   resultRows = data.result as Record<string, unknown>[];
-                  logger.debug(
-                    `Data has result array with ${resultRows.length} items`,
-                  );
+                  logger.debug(`Data has result array with ${resultRows.length} items`);
                 } else {
                   // Last attempt - check if it's a single object that should be wrapped in array
                   logger.debug(
                     `Data is object without standard array property, keys:`,
-                    Object.keys(data),
+                    Object.keys(data)
                   );
                   if (Object.keys(data).length > 0) {
                     resultRows = [data as Record<string, unknown>];
@@ -441,7 +389,7 @@ export class SupabaseUnifiedClient {
               `Raw result structure:`,
               typeof data,
               Array.isArray(data) ? "is array" : "not array",
-              `Extracted ${resultRows.length} rows`,
+              `Extracted ${resultRows.length} rows`
             );
 
             // Process the results to add standardized IDs
@@ -456,7 +404,7 @@ export class SupabaseUnifiedClient {
 
             foundResults = true;
             logger.debug(
-              `Found ${processedResults.length} families from comprehensive_family_records SQL query`,
+              `Found ${processedResults.length} families from comprehensive_family_records SQL query`
             );
           }
         } catch (sqlRpcError) {
@@ -497,29 +445,22 @@ export class SupabaseUnifiedClient {
             LIMIT 20
           `;
 
-          const response = await fetch(
-            `${SUPABASE_URL}/rest/v1/rpc/execute_sql_query`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                apikey: SUPABASE_ANON_KEY,
-                Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-              },
-              body: JSON.stringify({
-                query_text: sqlQuery,
-              }),
+          const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/execute_sql_query`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
             },
-          );
+            body: JSON.stringify({
+              query_text: sqlQuery,
+            }),
+          });
 
           if (!response.ok) {
             const errorText = await response.text();
-            logger.warn(
-              `Error with direct SQL POST: ${response.status} - ${errorText}`,
-            );
-            throw new Error(
-              `SQL query failed: ${response.status} - ${errorText}`,
-            );
+            logger.warn(`Error with direct SQL POST: ${response.status} - ${errorText}`);
+            throw new Error(`SQL query failed: ${response.status} - ${errorText}`);
           }
 
           const data = await response.json();
@@ -528,10 +469,7 @@ export class SupabaseUnifiedClient {
           const resultRows =
             data && typeof data === "object" && "rows" in data
               ? (data.rows as Record<string, unknown>[])
-              : ((Array.isArray(data) ? data : []) as Record<
-                  string,
-                  unknown
-                >[]);
+              : ((Array.isArray(data) ? data : []) as Record<string, unknown>[]);
 
           // Process the results to add standardized IDs
           const processedResults = this.processSearchResults(resultRows);
@@ -544,9 +482,7 @@ export class SupabaseUnifiedClient {
           });
 
           foundResults = true;
-          logger.debug(
-            `Found ${processedResults.length} families via direct POST request`,
-          );
+          logger.debug(`Found ${processedResults.length} families via direct POST request`);
         } catch (fetchError) {
           logger.error("Final fallback family search failed", fetchError);
           // If we have no other results, return this error
@@ -570,24 +506,19 @@ export class SupabaseUnifiedClient {
 
       const filteredResults = uniqueResults.filter((family) => {
         // Check if the family has any opportunities with the target stages
-        if (
-          !family.opportunity_stages ||
-          !Array.isArray(family.opportunity_stages)
-        ) {
+        if (!family.opportunity_stages || !Array.isArray(family.opportunity_stages)) {
           return false;
         }
 
         // Look for any opportunity stage that matches one of our target stages
-        return family.opportunity_stages.some(
-          (stage) => stage && targetStages.includes(stage),
-        );
+        return family.opportunity_stages.some((stage) => stage && targetStages.includes(stage));
       });
 
       logger.debug(
-        `Filtered from ${uniqueResults.length} to ${filteredResults.length} families with specific opportunity stages`,
+        `Filtered from ${uniqueResults.length} to ${filteredResults.length} families with specific opportunity stages`
       );
       logger.debug(
-        `Returning ${filteredResults.length} unique families matching '${searchTerm}' with specific opportunity stages`,
+        `Returning ${filteredResults.length} unique families matching '${searchTerm}' with specific opportunity stages`
       );
       return { success: true, data: filteredResults, error: null };
     } catch (err: unknown) {
@@ -607,15 +538,9 @@ export class SupabaseUnifiedClient {
    * @param results Raw results from the database query
    * @returns Processed results with standardized IDs
    */
-  public processSearchResults(
-    results: Record<string, unknown>[],
-  ): FamilySearchResult[] {
+  public processSearchResults(results: Record<string, unknown>[]): FamilySearchResult[] {
     if (!Array.isArray(results)) {
-      logger.warn(
-        "Expected array of results but received:",
-        typeof results,
-        results,
-      );
+      logger.warn("Expected array of results but received:", typeof results, results);
       return [];
     }
 
@@ -654,9 +579,7 @@ export class SupabaseUnifiedClient {
       const opportunityStages = family.opportunity_stages
         ? Array.isArray(family.opportunity_stages)
           ? (family.opportunity_stages as string[])
-              .map((stage) =>
-                typeof stage === "string" ? stage.trim() : stage,
-              ) // Trim whitespace
+              .map((stage) => (typeof stage === "string" ? stage.trim() : stage)) // Trim whitespace
               .filter(Boolean)
           : []
         : [];
@@ -703,7 +626,7 @@ export class SupabaseUnifiedClient {
    * @returns Result with success status and family data
    */
   public async getFamilyRecord(
-    familyId: string,
+    familyId: string
   ): Promise<OperationResponse<Record<string, unknown>>> {
     try {
       if (!familyId) {
@@ -779,9 +702,7 @@ export class SupabaseUnifiedClient {
       `;
 
       try {
-        logger.debug(
-          "Executing direct SQL query on comprehensive_family_records",
-        );
+        logger.debug("Executing direct SQL query on comprehensive_family_records");
         const { data, error } = await this.regular.rpc("execute_sql_query", {
           query_text: query,
         });
@@ -817,9 +738,7 @@ export class SupabaseUnifiedClient {
               : "N/A",
           });
         } else {
-          logger.debug(
-            "No opportunity_stages field found in the family record",
-          );
+          logger.debug("No opportunity_stages field found in the family record");
         }
 
         // Clean opportunity stages data
@@ -832,14 +751,10 @@ export class SupabaseUnifiedClient {
             .map((stage) => {
               // Convert stage to string and trim if it's a string
               const cleanedStage =
-                typeof stage === "string"
-                  ? stage.trim()
-                  : String(stage || "").trim();
+                typeof stage === "string" ? stage.trim() : String(stage || "").trim();
 
               // Log initial cleaning
-              logger.debug(
-                `Stage initial cleaning: '${stage}' -> '${cleanedStage}'`,
-              );
+              logger.debug(`Stage initial cleaning: '${stage}' -> '${cleanedStage}'`);
 
               // Check for codes or partial matches that might indicate known stages
               // This helps when the database has abbreviated codes or formatting issues
@@ -888,7 +803,7 @@ export class SupabaseUnifiedClient {
                 if (lowerStage === key || lowerStage.includes(key)) {
                   normalizedStage = value;
                   logger.debug(
-                    `Stage normalized from '${cleanedStage}' to '${normalizedStage}' based on pattern match`,
+                    `Stage normalized from '${cleanedStage}' to '${normalizedStage}' based on pattern match`
                   );
                   break;
                 }
@@ -916,35 +831,25 @@ export class SupabaseUnifiedClient {
         return { success: true, data: processedRecord, error: null };
       } catch (sqlError) {
         // Try direct POST request if RPC fails
-        logger.warn(
-          "RPC execute_sql_query failed, trying direct POST request",
-          sqlError,
-        );
+        logger.warn("RPC execute_sql_query failed, trying direct POST request", sqlError);
 
         try {
-          const response = await fetch(
-            `${SUPABASE_URL}/rest/v1/rpc/execute_sql_query`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                apikey: SUPABASE_ANON_KEY,
-                Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-              },
-              body: JSON.stringify({
-                query: query,
-              }),
+          const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/execute_sql_query`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
             },
-          );
+            body: JSON.stringify({
+              query: query,
+            }),
+          });
 
           if (!response.ok) {
             const errorText = await response.text();
-            logger.warn(
-              `Error with direct SQL POST: ${response.status} - ${errorText}`,
-            );
-            throw new Error(
-              `SQL query failed: ${response.status} - ${errorText}`,
-            );
+            logger.warn(`Error with direct SQL POST: ${response.status} - ${errorText}`);
+            throw new Error(`SQL query failed: ${response.status} - ${errorText}`);
           }
 
           const data = await response.json();
@@ -968,10 +873,7 @@ export class SupabaseUnifiedClient {
 
           return { success: true, data: processedRecord, error: null };
         } catch (directError) {
-          logger.error(
-            "All family record fetch approaches failed",
-            directError,
-          );
+          logger.error("All family record fetch approaches failed", directError);
           throw directError;
         }
       }
@@ -991,9 +893,7 @@ export class SupabaseUnifiedClient {
         .limit(1);
 
       // Test fivetran_views schema access
-      const { error: fivetranError } = await this.executeRPC(
-        "test_salesforce_connection",
-      );
+      const { error: fivetranError } = await this.executeRPC("test_salesforce_connection");
 
       return {
         success: true,

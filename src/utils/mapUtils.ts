@@ -44,7 +44,7 @@ export function addressToQueryString(
   address: string,
   city: string,
   state: string,
-  zip: string,
+  zip: string
 ): string {
   return encodeURIComponent(`${address}, ${city}, ${state} ${zip}`);
 }

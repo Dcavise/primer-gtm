@@ -35,7 +35,7 @@ const Comment: React.FC<CommentProps> = ({ data }) => {
       return <p>{data.comment}</p>;
     }
 
-    let commentText = data.comment;
+    const commentText = data.comment;
     const elements: React.ReactNode[] = [];
     let lastIndex = 0;
 
@@ -55,13 +55,9 @@ const Comment: React.FC<CommentProps> = ({ data }) => {
         elements.push(commentText.substring(lastIndex, index));
       }
       elements.push(
-        <Badge
-          key={mention.id}
-          variant="secondary"
-          className="mr-1 font-normal"
-        >
+        <Badge key={mention.id} variant="secondary" className="mr-1 font-normal">
           @{mention.full_name || mention.email}
-        </Badge>,
+        </Badge>
       );
       lastIndex = index + text.length;
     });

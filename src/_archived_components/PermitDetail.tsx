@@ -21,12 +21,9 @@ interface PermitDetailProps {
 export const PermitDetail = ({ permit }: PermitDetailProps) => {
   const getStatusColor = (status: string) => {
     const lowerStatus = status.toLowerCase();
-    if (lowerStatus.includes("approved") || lowerStatus.includes("complete"))
-      return "bg-green-500";
-    if (lowerStatus.includes("pending") || lowerStatus.includes("review"))
-      return "bg-amber-500";
-    if (lowerStatus.includes("denied") || lowerStatus.includes("reject"))
-      return "bg-red-500";
+    if (lowerStatus.includes("approved") || lowerStatus.includes("complete")) return "bg-green-500";
+    if (lowerStatus.includes("pending") || lowerStatus.includes("review")) return "bg-amber-500";
+    if (lowerStatus.includes("denied") || lowerStatus.includes("reject")) return "bg-red-500";
     return "bg-blue-500";
   };
 
@@ -53,13 +50,7 @@ export const PermitDetail = ({ permit }: PermitDetailProps) => {
     </div>
   );
 
-  const DetailItem = ({
-    label,
-    value,
-  }: {
-    label: string;
-    value: string | React.ReactNode;
-  }) => (
+  const DetailItem = ({ label, value }: { label: string; value: string | React.ReactNode }) => (
     <div className="grid grid-cols-3 py-1.5">
       <span className="text-muted-foreground col-span-1">{label}</span>
       <div className="col-span-2 font-medium">{value || "Not specified"}</div>
@@ -70,9 +61,7 @@ export const PermitDetail = ({ permit }: PermitDetailProps) => {
     <div className="animate-fade-in px-1">
       <div className="flex justify-between items-start mb-4">
         <div>
-          <h2 className="text-xl font-semibold">
-            {permit.project_type || "Unknown Project"}
-          </h2>
+          <h2 className="text-xl font-semibold">{permit.project_type || "Unknown Project"}</h2>
           <p className="text-muted-foreground mt-1">{permit.address}</p>
         </div>
         <Badge
@@ -94,16 +83,11 @@ export const PermitDetail = ({ permit }: PermitDetailProps) => {
           <DetailItem label="Description" value={permit.project_brief} />
           <DetailItem label="Record ID" value={permit.record_id} />
           <DetailItem label="Permit Type" value={permit.project_type} />
-          {permit.remarks && (
-            <DetailItem label="Remarks" value={permit.remarks} />
-          )}
+          {permit.remarks && <DetailItem label="Remarks" value={permit.remarks} />}
         </div>
       </DetailSection>
 
-      <DetailSection
-        title="Applicant"
-        icon={<User className="h-5 w-5 text-zoneomics-blue" />}
-      >
+      <DetailSection title="Applicant" icon={<User className="h-5 w-5 text-zoneomics-blue" />}>
         <div className="space-y-1">
           <DetailItem label="Name" value={permit.applicant} />
           <DetailItem label="Contact" value={permit.applicant_contact} />
@@ -124,10 +108,7 @@ export const PermitDetail = ({ permit }: PermitDetailProps) => {
             <DetailItem
               label="Email"
               value={
-                <a
-                  href={`mailto:${permit.contact_email}`}
-                  className="text-primary hover:underline"
-                >
+                <a href={`mailto:${permit.contact_email}`} className="text-primary hover:underline">
                   {permit.contact_email}
                 </a>
               }
@@ -136,26 +117,17 @@ export const PermitDetail = ({ permit }: PermitDetailProps) => {
         </div>
       </DetailSection>
 
-      <DetailSection
-        title="Location"
-        icon={<MapPin className="h-5 w-5 text-zoneomics-blue" />}
-      >
+      <DetailSection title="Location" icon={<MapPin className="h-5 w-5 text-zoneomics-blue" />}>
         <div className="space-y-1">
           <DetailItem label="Address" value={permit.address} />
-          <DetailItem
-            label="City"
-            value={`${permit.city || "Unknown"}, ${permit.state || ""}`}
-          />
+          <DetailItem label="City" value={`${permit.city || "Unknown"}, ${permit.state || ""}`} />
           <DetailItem label="Postal Code" value={permit.postcode} />
           {permit.block && <DetailItem label="Block" value={permit.block} />}
           {permit.lot && <DetailItem label="Lot" value={permit.lot} />}
         </div>
       </DetailSection>
 
-      <DetailSection
-        title="Zoning"
-        icon={<Building className="h-5 w-5 text-zoneomics-blue" />}
-      >
+      <DetailSection title="Zoning" icon={<Building className="h-5 w-5 text-zoneomics-blue" />}>
         <div className="space-y-1">
           <DetailItem
             label="Pre-Classification"
@@ -169,10 +141,7 @@ export const PermitDetail = ({ permit }: PermitDetailProps) => {
         </div>
       </DetailSection>
 
-      <DetailSection
-        title="Dates"
-        icon={<Calendar className="h-5 w-5 text-zoneomics-blue" />}
-      >
+      <DetailSection title="Dates" icon={<Calendar className="h-5 w-5 text-zoneomics-blue" />}>
         <div className="space-y-1">
           <DetailItem
             label="Filed Date"
@@ -180,17 +149,11 @@ export const PermitDetail = ({ permit }: PermitDetailProps) => {
           />
           <DetailItem
             label="Created"
-            value={
-              permit.created_date ? formatDate(permit.created_date) : "Unknown"
-            }
+            value={permit.created_date ? formatDate(permit.created_date) : "Unknown"}
           />
           <DetailItem
             label="Last Updated"
-            value={
-              permit.last_updated_date
-                ? formatDate(permit.last_updated_date)
-                : "Unknown"
-            }
+            value={permit.last_updated_date ? formatDate(permit.last_updated_date) : "Unknown"}
           />
         </div>
       </DetailSection>
@@ -238,10 +201,7 @@ export const PermitDetail = ({ permit }: PermitDetailProps) => {
 
       <div className="text-xs text-muted-foreground mt-6 flex items-center">
         <Clock className="h-3 w-3 mr-1" />
-        Last updated:{" "}
-        {permit.last_updated_date
-          ? formatDate(permit.last_updated_date)
-          : "Unknown"}
+        Last updated: {permit.last_updated_date ? formatDate(permit.last_updated_date) : "Unknown"}
       </div>
     </div>
   );

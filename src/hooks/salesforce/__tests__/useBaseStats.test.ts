@@ -57,9 +57,7 @@ describe("useBaseStats", () => {
       result.current.handleError(testError);
     });
 
-    expect(mockToast.error).toHaveBeenCalledWith(
-      "Failed to load analytics data",
-    );
+    expect(mockToast.error).toHaveBeenCalledWith("Failed to load analytics data");
   });
 
   it("should handle error with custom message", () => {

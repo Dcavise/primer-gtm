@@ -40,10 +40,7 @@ function App() {
           <Outlet />
           <SonnerToaster position="bottom-right" />
           {/* Global Search Box */}
-          <SearchBox
-            isOpen={isSearchOpen}
-            onClose={() => setIsSearchOpen(false)}
-          />
+          <SearchBox isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
         </LayoutProvider>
       </QueryClientProvider>
     </ThemeProvider>

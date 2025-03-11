@@ -11,10 +11,7 @@ export const useBaseStats = () => {
   });
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
 
-  const handleError = (
-    error: any,
-    message: string = "Failed to load analytics data",
-  ) => {
+  const handleError = (error: any, message: string = "Failed to load analytics data") => {
     console.error(message, error);
     toast.error(message);
   };

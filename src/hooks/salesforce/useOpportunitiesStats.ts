@@ -4,7 +4,7 @@ import { logger } from "@/utils/logger";
 
 export const fetchOpportunitiesStats = async (
   selectedCampusIds: string[],
-  handleError: (error: any, message?: string) => void,
+  handleError: (error: any, message?: string) => void
 ) => {
   try {
     logger.timeStart("fetchOpportunitiesStats");
@@ -14,23 +14,18 @@ export const fetchOpportunitiesStats = async (
     let closedWonOpportunitiesCount = 0;
 
     logger.info(
-      `Fetching opportunities stats for campuses: ${selectedCampusIds.length > 0 ? selectedCampusIds.join(", ") : "all campuses"}`,
+      `Fetching opportunities stats for campuses: ${selectedCampusIds.length > 0 ? selectedCampusIds.join(", ") : "all campuses"}`
     );
 
     // Try to get data using the RPC function first
     try {
-      logger.debug(
-        "Attempting to fetch data using get_opportunities_by_stage_campus RPC",
-      );
+      logger.debug("Attempting to fetch data using get_opportunities_by_stage_campus RPC");
       const { data: stagesData, error: stagesError } = await supabase.rpc(
-        "get_opportunities_by_stage_campus",
+        "get_opportunities_by_stage_campus"
       );
 
       if (stagesError) {
-        logger.warn(
-          "RPC function failed, falling back to mock data:",
-          stagesError,
-        );
+        logger.warn("RPC function failed, falling back to mock data:", stagesError);
         throw stagesError; // Will be caught by the outer try-catch and trigger the fallback
       }
 
@@ -41,11 +36,9 @@ export const fetchOpportunitiesStats = async (
         let filteredData = stagesData;
         if (selectedCampusIds.length > 0) {
           filteredData = stagesData.filter((item: any) =>
-            selectedCampusIds.includes(item.campus_id),
+            selectedCampusIds.includes(item.campus_id)
           );
-          logger.debug(
-            `Filtered to ${filteredData.length} records for selected campuses`,
-          );
+          logger.debug(`Filtered to ${filteredData.length} records for selected campuses`);
         }
 
         // Group and count by stage
@@ -65,15 +58,11 @@ export const fetchOpportunitiesStats = async (
         // Sum up the counts for each stage
         filteredData.forEach((item: any) => {
           if (requiredStages.includes(item.stage_name)) {
-            stageCounts[item.stage_name] =
-              (stageCounts[item.stage_name] || 0) + Number(item.count);
+            stageCounts[item.stage_name] = (stageCounts[item.stage_name] || 0) + Number(item.count);
           }
 
           // Also count active opportunities (those not in Closed stages)
-          if (
-            item.stage_name !== "Closed Won" &&
-            item.stage_name !== "Closed Lost"
-          ) {
+          if (item.stage_name !== "Closed Won" && item.stage_name !== "Closed Lost") {
             activeOpportunitiesCount += Number(item.count);
           }
 
@@ -85,7 +74,7 @@ export const fetchOpportunitiesStats = async (
 
         logger.debug("Stage counts:", stageCounts);
         logger.debug(
-          `Active opportunities: ${activeOpportunitiesCount}, Closed won: ${closedWonOpportunitiesCount}`,
+          `Active opportunities: ${activeOpportunitiesCount}, Closed won: ${closedWonOpportunitiesCount}`
         );
 
         // Format the data for the component
@@ -98,11 +87,10 @@ export const fetchOpportunitiesStats = async (
       // If we still need closed won counts, try the specific function
       if (closedWonOpportunitiesCount === 0) {
         try {
-          logger.debug(
-            "Fetching closed won data using get_closed_won_by_campus RPC",
+          logger.debug("Fetching closed won data using get_closed_won_by_campus RPC");
+          const { data: closedWonData, error: closedWonError } = await supabase.rpc(
+            "get_closed_won_by_campus"
           );
-          const { data: closedWonData, error: closedWonError } =
-            await supabase.rpc("get_closed_won_by_campus");
 
           if (!closedWonError && closedWonData) {
             logger.debug("Received closed won data:", closedWonData);
@@ -110,21 +98,19 @@ export const fetchOpportunitiesStats = async (
             let filteredClosedWonData = closedWonData;
             if (selectedCampusIds.length > 0) {
               filteredClosedWonData = closedWonData.filter((item: any) =>
-                selectedCampusIds.includes(item.campus_id),
+                selectedCampusIds.includes(item.campus_id)
               );
               logger.debug(
-                `Filtered to ${filteredClosedWonData.length} closed won records for selected campuses`,
+                `Filtered to ${filteredClosedWonData.length} closed won records for selected campuses`
               );
             }
 
             closedWonOpportunitiesCount = filteredClosedWonData.reduce(
               (sum: number, item: any) => sum + Number(item.closed_won_count),
-              0,
+              0
             );
 
-            logger.info(
-              `Updated closed won count: ${closedWonOpportunitiesCount}`,
-            );
+            logger.info(`Updated closed won count: ${closedWonOpportunitiesCount}`);
           }
         } catch (error) {
           logger.warn("Failed to get closed won data:", error);
@@ -132,10 +118,7 @@ export const fetchOpportunitiesStats = async (
       }
     } catch (rpcError) {
       // Fallback: Generate mock data if there's an error
-      logger.warn(
-        "Generating mock opportunity data due to database access error",
-        rpcError,
-      );
+      logger.warn("Generating mock opportunity data due to database access error", rpcError);
 
       // Mock stages data
       const requiredStages = [
@@ -150,10 +133,7 @@ export const fetchOpportunitiesStats = async (
       }));
 
       opportunityStageCounts = mockStageCounts;
-      activeOpportunitiesCount = mockStageCounts.reduce(
-        (sum, item) => sum + item.count,
-        0,
-      );
+      activeOpportunitiesCount = mockStageCounts.reduce((sum, item) => sum + item.count, 0);
       closedWonOpportunitiesCount = Math.floor(Math.random() * 15) + 5; // Random between 5 and 20
 
       logger.debug("Using mock opportunity data:", {
@@ -165,7 +145,7 @@ export const fetchOpportunitiesStats = async (
 
     logger.timeEnd("fetchOpportunitiesStats");
     logger.info(
-      `Returning ${opportunityStageCounts.length} stages with ${activeOpportunitiesCount} active and ${closedWonOpportunitiesCount} closed won opportunities`,
+      `Returning ${opportunityStageCounts.length} stages with ${activeOpportunitiesCount} active and ${closedWonOpportunitiesCount} closed won opportunities`
     );
 
     return {

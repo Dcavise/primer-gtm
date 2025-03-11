@@ -22,9 +22,7 @@ interface FellowsStats {
  */
 export function useFellowsStats(selectedCampusIds: string[]): FellowsStats {
   const [fellowsCount, setFellowsCount] = useState(0);
-  const [employmentStatusCounts, setEmploymentStatusCounts] = useState<
-    EmploymentStatusCount[]
-  >([]);
+  const [employmentStatusCounts, setEmploymentStatusCounts] = useState<EmploymentStatusCount[]>([]);
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
 
   // Use our base Supabase query hook
@@ -43,7 +41,7 @@ export function useFellowsStats(selectedCampusIds: string[]): FellowsStats {
   // Function to fetch fellows stats
   const fetchFellowsStats = useCallback(async () => {
     logger.info(
-      `Fetching fellows stats for campuses: ${selectedCampusIds.length > 0 ? selectedCampusIds.join(", ") : "all campuses"}`,
+      `Fetching fellows stats for campuses: ${selectedCampusIds.length > 0 ? selectedCampusIds.join(", ") : "all campuses"}`
     );
 
     // Query fellows data
@@ -60,14 +58,12 @@ export function useFellowsStats(selectedCampusIds: string[]): FellowsStats {
         const filters = selectedCampusIds
           .map(
             (campusId) =>
-              `campus_id.eq.${campusId},campus.eq.${campusId},campus.ilike.%${campusId}%`,
+              `campus_id.eq.${campusId},campus.eq.${campusId},campus.ilike.%${campusId}%`
           )
           .join(",");
 
         baseQuery = baseQuery.or(filters);
-        logger.info(
-          `Using enhanced campus filter for campus_ids: ${selectedCampusIds.join(", ")}`,
-        );
+        logger.info(`Using enhanced campus filter for campus_ids: ${selectedCampusIds.join(", ")}`);
       }
 
       return baseQuery;
@@ -86,16 +82,14 @@ export function useFellowsStats(selectedCampusIds: string[]): FellowsStats {
             acc[status] = (acc[status] || 0) + 1;
             return acc;
           },
-          {} as Record<string, number>,
+          {} as Record<string, number>
         );
 
         // Convert to array format for the chart
-        const statusCountsArray = Object.entries(statusCounts).map(
-          ([status, count]) => ({
-            status,
-            count,
-          }),
-        );
+        const statusCountsArray = Object.entries(statusCounts).map(([status, count]) => ({
+          status,
+          count,
+        }));
 
         // Sort by count in descending order
         statusCountsArray.sort((a, b) => b.count - a.count);
@@ -132,10 +126,7 @@ export function useFellowsStats(selectedCampusIds: string[]): FellowsStats {
       count: Math.floor(Math.random() * 20) + 5,
     }));
 
-    const totalFellows = mockStatusCounts.reduce(
-      (sum, item) => sum + item.count,
-      0,
-    );
+    const totalFellows = mockStatusCounts.reduce((sum, item) => sum + item.count, 0);
 
     return {
       fellowsCount: totalFellows,

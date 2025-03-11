@@ -32,7 +32,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ propertyId }) => {
             full_name,
             email
           )
-        `,
+        `
         )
         .eq("property_id", propertyId)
         .order("created_at", { ascending: false });
@@ -52,7 +52,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ propertyId }) => {
               full_name,
               email
             )
-          `,
+          `
           )
           .in("comment_id", commentIds);
 
@@ -109,9 +109,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ propertyId }) => {
       {user ? (
         <CommentForm propertyId={propertyId} onCommentAdded={fetchComments} />
       ) : (
-        <div className="text-center text-muted-foreground py-4">
-          Please sign in to add comments
-        </div>
+        <div className="text-center text-muted-foreground py-4">Please sign in to add comments</div>
       )}
 
       <div className="space-y-4 mt-6">

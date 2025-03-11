@@ -14,15 +14,12 @@ export const CAMPUS_QUERY_KEY = ["campuses"] as const;
 export async function fetchCampuses(): Promise<Campus[]> {
   try {
     // Get unique campus names directly from the lead table's preferred_campus_c field
-    const { data: campusData, error: campusError } = await supabase.rpc(
-      "execute_sql_query",
-      {
-        query_text: `SELECT DISTINCT preferred_campus_c as campus_name
+    const { data: campusData, error: campusError } = await supabase.rpc("execute_sql_query", {
+      query_text: `SELECT DISTINCT preferred_campus_c as campus_name
                   FROM fivetran_views.lead
                   WHERE preferred_campus_c IS NOT NULL
                   ORDER BY preferred_campus_c`,
-      },
-    );
+    });
 
     if (campusError) {
       console.error("Error fetching campus data from lead table:", campusError);
@@ -46,8 +43,7 @@ export async function fetchCampuses(): Promise<Campus[]> {
   } catch (err) {
     console.error("Error in fetchCampuses:", err);
     throw new Error(
-      "Failed to fetch campuses data: " +
-        (err instanceof Error ? err.message : String(err)),
+      "Failed to fetch campuses data: " + (err instanceof Error ? err.message : String(err))
     );
   }
 }
@@ -77,7 +73,7 @@ export const useCampuses = () => {
         },
         "Failed to refresh campuses",
         true,
-        { context: "refreshCampuses" },
+        { context: "refreshCampuses" }
       ) !== null
     );
   };

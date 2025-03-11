@@ -20,10 +20,9 @@ const SchemaDebugger = () => {
       setLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await supabase.rpc(
-        "check_schema_tables",
-        { schema_name: schemaName },
-      );
+      const { data, error: fetchError } = await supabase.rpc("check_schema_tables", {
+        schema_name: schemaName,
+      });
 
       if (fetchError) throw fetchError;
 
@@ -81,11 +80,7 @@ const SchemaDebugger = () => {
                     placeholder="e.g. salesforce"
                   />
                 </div>
-                <Button
-                  onClick={checkSchema}
-                  disabled={loading}
-                  className="mt-3"
-                >
+                <Button onClick={checkSchema} disabled={loading} className="mt-3">
                   {loading ? "Checking..." : "Check Schema"}
                 </Button>
               </div>
@@ -99,17 +94,11 @@ const SchemaDebugger = () => {
 
               {schemaInfo && (
                 <div className="border rounded-md p-4 bg-muted/50">
-                  <h3 className="font-medium mb-2">
-                    Schema: {schemaInfo.schema_name}
-                  </h3>
-                  <p>
-                    Schema exists: {schemaInfo.schema_exists ? "Yes" : "No"}
-                  </p>
+                  <h3 className="font-medium mb-2">Schema: {schemaInfo.schema_name}</h3>
+                  <p>Schema exists: {schemaInfo.schema_exists ? "Yes" : "No"}</p>
                   {schemaInfo.schema_exists && schemaInfo.tables && (
                     <div className="mt-2">
-                      <h4 className="font-medium mb-1">
-                        Tables ({schemaInfo.tables.length}):
-                      </h4>
+                      <h4 className="font-medium mb-1">Tables ({schemaInfo.tables.length}):</h4>
                       <ul className="text-sm list-disc pl-5 grid grid-cols-2 md:grid-cols-3 gap-1">
                         {schemaInfo.tables.map((table: string) => (
                           <li key={table}>{table}</li>
@@ -119,9 +108,7 @@ const SchemaDebugger = () => {
                   )}
                   {schemaInfo.schema_exists &&
                     (!schemaInfo.tables || schemaInfo.tables.length === 0) && (
-                      <p className="text-muted-foreground">
-                        No tables found in this schema.
-                      </p>
+                      <p className="text-muted-foreground">No tables found in this schema.</p>
                     )}
                 </div>
               )}
@@ -149,11 +136,7 @@ const SchemaDebugger = () => {
                     placeholder="e.g. lead"
                   />
                 </div>
-                <Button
-                  onClick={describeTable}
-                  disabled={loading}
-                  className="mt-auto"
-                >
+                <Button onClick={describeTable} disabled={loading} className="mt-auto">
                   {loading ? "Loading..." : "Describe Table"}
                 </Button>
               </div>
@@ -183,18 +166,9 @@ const SchemaDebugger = () => {
                     </thead>
                     <tbody className="bg-card divide-y divide-border">
                       {tableInfo.map((column: any, index: number) => (
-                        <tr
-                          key={index}
-                          className={
-                            index % 2 === 0 ? "bg-card" : "bg-muted/20"
-                          }
-                        >
-                          <td className="px-4 py-2 text-sm">
-                            {column.column_name}
-                          </td>
-                          <td className="px-4 py-2 text-sm">
-                            {column.data_type}
-                          </td>
+                        <tr key={index} className={index % 2 === 0 ? "bg-card" : "bg-muted/20"}>
+                          <td className="px-4 py-2 text-sm">{column.column_name}</td>
+                          <td className="px-4 py-2 text-sm">{column.data_type}</td>
                           <td className="px-4 py-2 text-sm">
                             {column.is_nullable === "YES" ? "Yes" : "No"}
                           </td>
@@ -204,9 +178,7 @@ const SchemaDebugger = () => {
                   </table>
                 </div>
               ) : tableInfo ? (
-                <p className="text-muted-foreground">
-                  No columns found for this table.
-                </p>
+                <p className="text-muted-foreground">No columns found for this table.</p>
               ) : null}
             </div>
           </TabsContent>

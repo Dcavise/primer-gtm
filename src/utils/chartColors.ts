@@ -70,11 +70,7 @@ export function getKpiColor(value: number): string {
  * @param max Maximum value in range
  * @returns A color representing the value's position in the range
  */
-export function getSequentialColorScale(
-  value: number,
-  min: number,
-  max: number,
-): string {
+export function getSequentialColorScale(value: number, min: number, max: number): string {
   // Simple implementation - could be enhanced with interpolation
   if (value <= min) return "#F7FBFF"; // Light blue
   if (value >= max) return "#08306B"; // Dark blue
@@ -87,7 +83,7 @@ export function getSequentialColorScale(
  * @returns An array of colors appropriate for the chart type
  */
 export function getColorsByChartType(
-  chartType: "leads" | "opportunities" | "enrollments" | "conversions",
+  chartType: "leads" | "opportunities" | "enrollments" | "conversions"
 ): string[] {
   switch (chartType) {
     case "leads":

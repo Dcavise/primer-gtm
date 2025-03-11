@@ -11,11 +11,7 @@ interface AuthContextProps {
   user: User | null;
   profile: any | null;
   signIn: (email: string, password: string) => Promise<{ error: any | null }>;
-  signUp: (
-    email: string,
-    password: string,
-    fullName: string,
-  ) => Promise<{ error: any | null }>;
+  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any | null }>;
   signOut: () => Promise<void>;
   loading: boolean;
   databaseConnected: boolean;
@@ -25,9 +21,7 @@ interface AuthContextProps {
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Create a mock user for development
   const mockUser = {
     id: "mock-user-id",

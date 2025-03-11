@@ -26,8 +26,8 @@ const Checkbox = ({ className, children, ...props }: AriaCheckboxProps) => (
         /* Disabled */
         "data-[disabled]:cursor-not-allowed data-[disabled]:opacity-70",
         labelVariants,
-        className,
-      ),
+        className
+      )
     )}
     {...props}
   >
@@ -45,7 +45,7 @@ const Checkbox = ({ className, children, ...props }: AriaCheckboxProps) => (
             /* Invalid */
             "group-data-[invalid]/checkbox:border-destructive group-data-[invalid]/checkbox:group-data-[selected]/checkbox:bg-destructive group-data-[invalid]/checkbox:group-data-[selected]/checkbox:text-destructive-foreground",
             /* Resets */
-            "focus:outline-none focus-visible:outline-none",
+            "focus:outline-none focus-visible:outline-none"
           )}
         >
           {renderProps.isIndeterminate ? (
@@ -77,7 +77,7 @@ function JollyCheckboxGroup({
   return (
     <CheckboxGroup
       className={composeRenderProps(className, (className) =>
-        cn("group flex flex-col gap-2", className),
+        cn("group flex flex-col gap-2", className)
       )}
       {...props}
     >

@@ -18,20 +18,18 @@ export const useMetrics = (selectedCampusIds: string[]) => {
     timeSeriesData: [],
   });
 
-  const [opportunityMetrics, setOpportunityMetrics] =
-    useState<OpportunityMetricsData>({
-      isLoading: true,
-      monthlyTrends: [],
-      salesCycles: [],
-      stageProgression: [],
-      leadToWinConversion: [],
-    });
+  const [opportunityMetrics, setOpportunityMetrics] = useState<OpportunityMetricsData>({
+    isLoading: true,
+    monthlyTrends: [],
+    salesCycles: [],
+    stageProgression: [],
+    leadToWinConversion: [],
+  });
 
-  const [attendanceMetrics, setAttendanceMetrics] =
-    useState<AttendanceMetricsData>({
-      metrics: [],
-      timeSeriesData: [],
-    });
+  const [attendanceMetrics, setAttendanceMetrics] = useState<AttendanceMetricsData>({
+    metrics: [],
+    timeSeriesData: [],
+  });
 
   const [validCampusIds, setValidCampusIds] = useState<string[]>([]);
 
@@ -43,9 +41,7 @@ export const useMetrics = (selectedCampusIds: string[]) => {
   useEffect(() => {
     const fetchValidCampusIds = async () => {
       try {
-        const { data, error } = await supabase
-          .from("campuses")
-          .select("campus_id");
+        const { data, error } = await supabase.from("campuses").select("campus_id");
 
         if (error) throw error;
 
@@ -82,16 +78,15 @@ export const useMetrics = (selectedCampusIds: string[]) => {
         {
           start_date: startDate.toISOString().split("T")[0],
           end_date: today.toISOString().split("T")[0],
-          p_campus_id:
-            selectedCampusIds.length === 1 ? selectedCampusIds[0] : null,
-        },
+          p_campus_id: selectedCampusIds.length === 1 ? selectedCampusIds[0] : null,
+        }
       );
 
       if (trendError) throw trendError;
 
       // 2. Get sales cycle by campus
       const { data: cycleData, error: cycleError } = await supabase.rpc(
-        "get_sales_cycle_by_campus",
+        "get_sales_cycle_by_campus"
       );
 
       if (cycleError) throw cycleError;
@@ -102,45 +97,42 @@ export const useMetrics = (selectedCampusIds: string[]) => {
         {
           start_date: startDate.toISOString().split("T")[0],
           end_date: today.toISOString().split("T")[0],
-          p_campus_id:
-            selectedCampusIds.length === 1 ? selectedCampusIds[0] : null,
-        },
+          p_campus_id: selectedCampusIds.length === 1 ? selectedCampusIds[0] : null,
+        }
       );
 
       if (stageError) throw stageError;
 
       // 4. Get lead to win conversion
-      const { data: conversionData, error: conversionError } =
-        await supabase.rpc("get_lead_to_win_conversion", {
-          p_campus_id:
-            selectedCampusIds.length === 1 ? selectedCampusIds[0] : null,
+      const { data: conversionData, error: conversionError } = await supabase.rpc(
+        "get_lead_to_win_conversion",
+        {
+          p_campus_id: selectedCampusIds.length === 1 ? selectedCampusIds[0] : null,
           p_months: 12,
-        });
+        }
+      );
 
       if (conversionError) throw conversionError;
 
       // Format the data for our components
-      const formattedTrends: MonthlyOpportunityTrend[] = trendData.map(
-        (item: any) => ({
-          month: new Date(item.month).toLocaleDateString("en-US", {
-            month: "short",
-            year: "numeric",
-          }),
-          new_opportunities: Number(item.new_opportunities),
-          closed_won: Number(item.closed_won),
-          closed_lost: Number(item.closed_lost),
-          win_rate: Number(item.win_rate),
-          average_days_to_close: Number(item.average_days_to_close),
+      const formattedTrends: MonthlyOpportunityTrend[] = trendData.map((item: any) => ({
+        month: new Date(item.month).toLocaleDateString("en-US", {
+          month: "short",
+          year: "numeric",
         }),
-      );
+        new_opportunities: Number(item.new_opportunities),
+        closed_won: Number(item.closed_won),
+        closed_lost: Number(item.closed_lost),
+        win_rate: Number(item.win_rate),
+        average_days_to_close: Number(item.average_days_to_close),
+      }));
 
       // Filter sales cycle data to only include campuses in our valid list
       const formattedCycles: SalesCycleMetric[] = cycleData
         .filter(
           (item: any) =>
             validCampusIds.includes(item.campus_id) ||
-            (selectedCampusIds.length > 0 &&
-              selectedCampusIds.includes(item.campus_id)),
+            (selectedCampusIds.length > 0 && selectedCampusIds.includes(item.campus_id))
         )
         .map((item: any) => ({
           campus_name: item.campus_name,
@@ -150,30 +142,26 @@ export const useMetrics = (selectedCampusIds: string[]) => {
           avg_days_to_lose: Number(item.avg_days_to_lose),
         }));
 
-      const formattedStages: StageProgressionMetric[] = stageData.map(
-        (item: any) => ({
-          stage_name: item.stage_name,
-          opportunity_count: Number(item.opportunity_count),
-          conversion_to_next_stage: Number(item.conversion_to_next_stage),
-          avg_days_in_stage: Number(item.avg_days_in_stage),
-          win_rate_from_stage: Number(item.win_rate_from_stage),
-        }),
-      );
+      const formattedStages: StageProgressionMetric[] = stageData.map((item: any) => ({
+        stage_name: item.stage_name,
+        opportunity_count: Number(item.opportunity_count),
+        conversion_to_next_stage: Number(item.conversion_to_next_stage),
+        avg_days_in_stage: Number(item.avg_days_in_stage),
+        win_rate_from_stage: Number(item.win_rate_from_stage),
+      }));
 
-      const formattedConversion: LeadToWinConversion[] = conversionData.map(
-        (item: any) => ({
-          month: new Date(item.month).toLocaleDateString("en-US", {
-            month: "short",
-            year: "numeric",
-          }),
-          new_leads: Number(item.new_leads),
-          new_opportunities: Number(item.new_opportunities),
-          closed_won: Number(item.closed_won),
-          lead_to_opp_rate: Number(item.lead_to_opp_rate),
-          opp_to_win_rate: Number(item.opp_to_win_rate),
-          lead_to_win_rate: Number(item.lead_to_win_rate),
+      const formattedConversion: LeadToWinConversion[] = conversionData.map((item: any) => ({
+        month: new Date(item.month).toLocaleDateString("en-US", {
+          month: "short",
+          year: "numeric",
         }),
-      );
+        new_leads: Number(item.new_leads),
+        new_opportunities: Number(item.new_opportunities),
+        closed_won: Number(item.closed_won),
+        lead_to_opp_rate: Number(item.lead_to_opp_rate),
+        opp_to_win_rate: Number(item.opp_to_win_rate),
+        lead_to_win_rate: Number(item.lead_to_win_rate),
+      }));
 
       setOpportunityMetrics({
         isLoading: false,

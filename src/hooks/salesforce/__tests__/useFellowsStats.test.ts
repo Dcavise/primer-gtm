@@ -95,10 +95,7 @@ describe("fetchFellowsStats", () => {
 
     await fetchFellowsStats([], mockHandleError);
 
-    expect(mockHandleError).toHaveBeenCalledWith(
-      mockError,
-      "Error fetching fellows stats",
-    );
+    expect(mockHandleError).toHaveBeenCalledWith(mockError, "Error fetching fellows stats");
   });
 
   it("should return empty data on error", async () => {

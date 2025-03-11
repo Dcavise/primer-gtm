@@ -56,7 +56,7 @@ export function formatPeriodDate(date: string, period: PeriodType): string {
  */
 export function calculatePeriodChanges(
   periods: string[],
-  totals: Record<string, number>,
+  totals: Record<string, number>
 ): PeriodChanges {
   const raw: Record<string, number> = {};
   const percentage: Record<string, number> = {};
@@ -83,8 +83,7 @@ export function calculatePeriodChanges(
       // If previous value is 0, we can't calculate percentage change
       percentage[currentPeriod] = currentValue > 0 ? 100 : 0;
     } else {
-      percentage[currentPeriod] =
-        ((currentValue - previousValue) / previousValue) * 100;
+      percentage[currentPeriod] = ((currentValue - previousValue) / previousValue) * 100;
     }
   }
 
@@ -103,7 +102,7 @@ export function calculatePeriodChanges(
  */
 export function getSortedPeriods(data: FormattedLeadMetric[]): string[] {
   return [...new Set(data.map((item) => item.period_date))].sort(
-    (a, b) => new Date(b).getTime() - new Date(a).getTime(),
+    (a, b) => new Date(b).getTime() - new Date(a).getTime()
   );
 }
 
@@ -112,17 +111,14 @@ export function getSortedPeriods(data: FormattedLeadMetric[]): string[] {
  */
 export function getUniqueCampuses(data: FormattedLeadMetric[]): string[] {
   return [...new Set(data.map((item) => item.campus_name))].filter(
-    (name) => name !== "No Campus Match",
+    (name) => name !== "No Campus Match"
   );
 }
 
 /**
  * Gets the SQL query date filter based on period type and lookback units
  */
-export function getPeriodDateFilter(
-  period: PeriodType,
-  lookbackUnits: number,
-): string {
+export function getPeriodDateFilter(period: PeriodType, lookbackUnits: number): string {
   const intervalUnit = getIntervalUnit(period);
   return `DATE_TRUNC('${intervalUnit}', CURRENT_DATE) - INTERVAL '${lookbackUnits} ${intervalUnit}'`;
 }

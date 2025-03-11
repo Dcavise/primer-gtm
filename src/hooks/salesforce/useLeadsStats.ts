@@ -5,7 +5,7 @@ import { logger } from "@/utils/logger";
 
 export const fetchLeadsStats = async (
   selectedCampusIds: string[],
-  handleError: (error: any, message?: string) => void,
+  handleError: (error: any, message?: string) => void
 ) => {
   try {
     logger.timeStart("fetchLeadsStats");
@@ -19,10 +19,10 @@ export const fetchLeadsStats = async (
     fourWeeksAgo.setDate(today.getDate() - 28); // 4 weeks = 28 days
 
     logger.info(
-      `Fetching weekly lead counts from ${fourWeeksAgo.toISOString()} to ${today.toISOString()}`,
+      `Fetching weekly lead counts from ${fourWeeksAgo.toISOString()} to ${today.toISOString()}`
     );
     logger.info(
-      `Campus filter: ${selectedCampusIds.length > 0 ? selectedCampusIds.join(", ") : "none (all campuses)"}`,
+      `Campus filter: ${selectedCampusIds.length > 0 ? selectedCampusIds.join(", ") : "none (all campuses)"}`
     );
 
     // First check auth status
@@ -40,19 +40,17 @@ export const fetchLeadsStats = async (
     // Try to get data using the RPC function first
     try {
       logger.debug("Attempting to fetch data using get_weekly_lead_counts RPC");
-      const { data: weeklyLeadData, error: weeklyLeadError } =
-        await supabase.rpc("get_weekly_lead_counts", {
+      const { data: weeklyLeadData, error: weeklyLeadError } = await supabase.rpc(
+        "get_weekly_lead_counts",
+        {
           start_date: fourWeeksAgo.toISOString().split("T")[0],
           end_date: today.toISOString().split("T")[0],
-          campus_filter:
-            selectedCampusIds.length === 1 ? selectedCampusIds[0] : null,
-        });
+          campus_filter: selectedCampusIds.length === 1 ? selectedCampusIds[0] : null,
+        }
+      );
 
       if (weeklyLeadError) {
-        logger.warn(
-          "RPC function failed, falling back to direct query:",
-          weeklyLeadError,
-        );
+        logger.warn("RPC function failed, falling back to direct query:", weeklyLeadError);
         throw weeklyLeadError; // Will be caught by the outer try-catch and trigger the fallback
       }
 
@@ -68,7 +66,7 @@ export const fetchLeadsStats = async (
         // Calculate total leads from the weekly data
         leadsCount = typedWeeklyData.reduce(
           (sum: number, item) => sum + Number(item.lead_count),
-          0,
+          0
         );
 
         weeklyLeadCounts = typedWeeklyData.map((item) => ({
@@ -77,7 +75,7 @@ export const fetchLeadsStats = async (
         }));
 
         logger.info(
-          `Successfully retrieved ${leadsCount} leads across ${weeklyLeadCounts.length} weeks`,
+          `Successfully retrieved ${leadsCount} leads across ${weeklyLeadCounts.length} weeks`
         );
       }
     } catch (rpcError) {
@@ -85,19 +83,13 @@ export const fetchLeadsStats = async (
       try {
         logger.debug("Attempting fallback with fivetran_views direct access");
 
-        const { querySalesforceTable } = await import(
-          "@/utils/salesforce-fivetran-access"
-        );
+        const { querySalesforceTable } = await import("@/utils/salesforce-fivetran-access");
 
         // Query lead data directly
-        const { data: directData, error: directError } =
-          await querySalesforceTable("lead");
+        const { data: directData, error: directError } = await querySalesforceTable("lead");
 
         if (directError) {
-          logger.warn(
-            "Direct query failed, falling back to mock data:",
-            directError,
-          );
+          logger.warn("Direct query failed, falling back to mock data:", directError);
           throw directError;
         }
 
@@ -108,18 +100,15 @@ export const fetchLeadsStats = async (
           const typedDirectData = directData as { created_date: string }[];
 
           // Group leads by week
-          const groupedByWeek = typedDirectData.reduce(
-            (acc: { [key: string]: number }, lead) => {
-              const createdDate = new Date(lead.created_date);
-              const weekStart = new Date(createdDate);
-              weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Get Sunday of the week
-              const weekKey = weekStart.toISOString().split("T")[0];
+          const groupedByWeek = typedDirectData.reduce((acc: { [key: string]: number }, lead) => {
+            const createdDate = new Date(lead.created_date);
+            const weekStart = new Date(createdDate);
+            weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Get Sunday of the week
+            const weekKey = weekStart.toISOString().split("T")[0];
 
-              acc[weekKey] = (acc[weekKey] || 0) + 1;
-              return acc;
-            },
-            {},
-          );
+            acc[weekKey] = (acc[weekKey] || 0) + 1;
+            return acc;
+          }, {});
 
           logger.debug("Grouped leads by week:", groupedByWeek);
 
@@ -128,21 +117,14 @@ export const fetchLeadsStats = async (
               week,
               count: count as number,
             }))
-            .sort(
-              (a, b) => new Date(a.week).getTime() - new Date(b.week).getTime(),
-            );
+            .sort((a, b) => new Date(a.week).getTime() - new Date(b.week).getTime());
 
           leadsCount = directData.length;
-          logger.info(
-            `Successfully processed ${leadsCount} leads from direct query`,
-          );
+          logger.info(`Successfully processed ${leadsCount} leads from direct query`);
         }
       } catch (directError) {
         // Fallback to mock data if both approaches fail
-        logger.error(
-          "Both data retrieval methods failed, falling back to mock data",
-          directError,
-        );
+        logger.error("Both data retrieval methods failed, falling back to mock data", directError);
         return generateMockLeadsData(fourWeeksAgo);
       }
     }

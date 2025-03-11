@@ -35,20 +35,10 @@ const PropertyNotes: React.FC<PropertyNotesProps> = ({
           <div className="space-x-2">
             {isEditing ? (
               <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onCancel}
-                  disabled={isSaving}
-                >
+                <Button variant="outline" size="sm" onClick={onCancel} disabled={isSaving}>
                   <X className="h-4 w-4 mr-1" /> Cancel
                 </Button>
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={onSave}
-                  disabled={isSaving}
-                >
+                <Button variant="default" size="sm" onClick={onSave} disabled={isSaving}>
                   {isSaving ? (
                     <span className="flex items-center">
                       <LoadingState message="Saving..." showSpinner={true} />
@@ -77,9 +67,7 @@ const PropertyNotes: React.FC<PropertyNotesProps> = ({
             className="min-h-[150px]"
           />
         ) : (
-          <p className="whitespace-pre-line">
-            {property.status_notes || "No notes added yet."}
-          </p>
+          <p className="whitespace-pre-line">{property.status_notes || "No notes added yet."}</p>
         )}
       </CardContent>
     </Card>

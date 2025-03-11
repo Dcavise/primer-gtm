@@ -23,9 +23,7 @@ interface LeadStats {
  */
 export function useLeadsStats(selectedCampusIds: string[]): LeadStats {
   const [leadsCount, setLeadsCount] = useState(0);
-  const [weeklyLeadCounts, setWeeklyLeadCounts] = useState<WeeklyLeadCount[]>(
-    [],
-  );
+  const [weeklyLeadCounts, setWeeklyLeadCounts] = useState<WeeklyLeadCount[]>([]);
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
 
   // Use our base Supabase query hook
@@ -49,28 +47,25 @@ export function useLeadsStats(selectedCampusIds: string[]): LeadStats {
     fourWeeksAgo.setDate(today.getDate() - 28); // 4 weeks = 28 days
 
     logger.info(
-      `Fetching weekly lead counts from ${fourWeeksAgo.toISOString()} to ${today.toISOString()}`,
+      `Fetching weekly lead counts from ${fourWeeksAgo.toISOString()} to ${today.toISOString()}`
     );
     logger.info(
-      `Campus filter: ${selectedCampusIds.length > 0 ? selectedCampusIds.join(", ") : "none (all campuses)"}`,
+      `Campus filter: ${selectedCampusIds.length > 0 ? selectedCampusIds.join(", ") : "none (all campuses)"}`
     );
 
     // Get weekly lead counts data
-    const weeklyLeadData = await executeRpc<
-      Array<{ week: string; lead_count: number }>
-    >("get_weekly_lead_counts", {
-      start_date: fourWeeksAgo.toISOString().split("T")[0],
-      end_date: today.toISOString().split("T")[0],
-      campus_filter:
-        selectedCampusIds.length === 1 ? selectedCampusIds[0] : null,
-    });
+    const weeklyLeadData = await executeRpc<Array<{ week: string; lead_count: number }>>(
+      "get_weekly_lead_counts",
+      {
+        start_date: fourWeeksAgo.toISOString().split("T")[0],
+        end_date: today.toISOString().split("T")[0],
+        campus_filter: selectedCampusIds.length === 1 ? selectedCampusIds[0] : null,
+      }
+    );
 
     if (weeklyLeadData && Array.isArray(weeklyLeadData)) {
       // Calculate total leads from the weekly data
-      const totalLeads = weeklyLeadData.reduce(
-        (sum, item) => sum + Number(item.lead_count),
-        0,
-      );
+      const totalLeads = weeklyLeadData.reduce((sum, item) => sum + Number(item.lead_count), 0);
       setLeadsCount(totalLeads);
 
       // Transform the weekly data
@@ -114,10 +109,7 @@ export function useLeadsStats(selectedCampusIds: string[]): LeadStats {
       });
     }
 
-    const totalLeadsCount = mockWeeks.reduce(
-      (sum, item) => sum + item.count,
-      0,
-    );
+    const totalLeadsCount = mockWeeks.reduce((sum, item) => sum + item.count, 0);
 
     return { leadsCount: totalLeadsCount, weeklyLeadCounts: mockWeeks };
   }

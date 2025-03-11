@@ -1,18 +1,11 @@
 import React, { useState } from "react";
 import { supabase } from "@/integrations/supabase-client";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 
 export const SupabaseConnectionTest: React.FC = () => {
-  const [connectionStatus, setConnectionStatus] =
-    useState<string>("Not tested");
+  const [connectionStatus, setConnectionStatus] = useState<string>("Not tested");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [sfStatus, setSfStatus] = useState<string>("Not tested");
   const [sfLoading, setSfLoading] = useState<boolean>(false);
@@ -48,9 +41,7 @@ export const SupabaseConnectionTest: React.FC = () => {
           variant: publicAccess ? "default" : "warning",
         });
       } else {
-        setConnectionStatus(
-          `Error: ${result.error?.message || "Connection failed"}`,
-        );
+        setConnectionStatus(`Error: ${result.error?.message || "Connection failed"}`);
         toast({
           title: "Connection Failed",
           description: `Error: ${result.error?.message || "Unknown error"}`,
@@ -76,8 +67,10 @@ export const SupabaseConnectionTest: React.FC = () => {
 
     try {
       // Test Salesforce table access using querySalesforceTable
-      const { success, data, error, usingAdminClient } =
-        await supabase.querySalesforceTable("lead", 1);
+      const { success, data, error, usingAdminClient } = await supabase.querySalesforceTable(
+        "lead",
+        1
+      );
 
       if (success && data) {
         // Check for additional SF tables
@@ -86,7 +79,7 @@ export const SupabaseConnectionTest: React.FC = () => {
           tables.map(async (table) => {
             const result = await supabase.querySalesforceTable(table, 1);
             return { table, accessible: result.success };
-          }),
+          })
         );
 
         const accessibleTables = tableResults
@@ -131,9 +124,7 @@ export const SupabaseConnectionTest: React.FC = () => {
             - Error: ${error?.message || "Unknown error"}
           `);
         } catch (schemaError) {
-          setSfStatus(
-            `Error: ${error?.message || schemaError.message || "Unknown error"}`,
-          );
+          setSfStatus(`Error: ${error?.message || schemaError.message || "Unknown error"}`);
         }
 
         toast({
@@ -193,11 +184,7 @@ export const SupabaseConnectionTest: React.FC = () => {
           <div className="space-y-2">
             <h3 className="text-sm font-medium">Database Connection Test</h3>
             <div className="flex space-x-2">
-              <Button
-                onClick={testConnection}
-                disabled={isLoading}
-                variant="outline"
-              >
+              <Button onClick={testConnection} disabled={isLoading} variant="outline">
                 {isLoading ? "Testing..." : "Test Connection"}
               </Button>
             </div>
@@ -207,15 +194,9 @@ export const SupabaseConnectionTest: React.FC = () => {
           </div>
 
           <div className="space-y-2">
-            <h3 className="text-sm font-medium">
-              Fivetran Views Schema Access
-            </h3>
+            <h3 className="text-sm font-medium">Fivetran Views Schema Access</h3>
             <div className="flex space-x-2">
-              <Button
-                onClick={testSalesforceSchema}
-                disabled={sfLoading}
-                variant="outline"
-              >
+              <Button onClick={testSalesforceSchema} disabled={sfLoading} variant="outline">
                 {sfLoading ? "Testing..." : "Test Fivetran Views Schema"}
               </Button>
             </div>
@@ -227,19 +208,13 @@ export const SupabaseConnectionTest: React.FC = () => {
           <div className="space-y-2">
             <h3 className="text-sm font-medium">Environment Variables</h3>
             <div className="flex space-x-2">
-              <Button
-                onClick={dumpEnvVariables}
-                disabled={envLoading}
-                variant="outline"
-              >
+              <Button onClick={dumpEnvVariables} disabled={envLoading} variant="outline">
                 {envLoading ? "Loading..." : "Show Environment Variables"}
               </Button>
             </div>
             {envVariables && (
               <div className="bg-muted p-2 rounded-md">
-                <pre className="text-xs whitespace-pre-wrap">
-                  {envVariables}
-                </pre>
+                <pre className="text-xs whitespace-pre-wrap">{envVariables}</pre>
               </div>
             )}
           </div>

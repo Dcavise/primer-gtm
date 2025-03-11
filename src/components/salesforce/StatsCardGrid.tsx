@@ -26,8 +26,10 @@ interface StatsCardGridProps {
 export const StatsCardGrid: React.FC<StatsCardGridProps> = memo(
   ({ selectedCampusIds, selectedCampusNames }) => {
     // Use the custom hook for data fetching
-    const { weeklyLeadData, opportunityData, isLoading, error } =
-      useDashboardCharts(selectedCampusIds, selectedCampusNames);
+    const { weeklyLeadData, opportunityData, isLoading, error } = useDashboardCharts(
+      selectedCampusIds,
+      selectedCampusNames
+    );
 
     // Memoized chart colors to prevent re-creation
     const colors = useMemo(
@@ -35,7 +37,7 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = memo(
         leads: chartColors.slice(0, 4),
         opportunities: chartColors.slice(0, 5),
       }),
-      [],
+      []
     );
 
     // Memoized chart rendering functions
@@ -60,10 +62,7 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = memo(
             />
             <Bar dataKey="count" fill="#1F77B4" name="Leads">
               {weeklyLeadData.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={colors.leads[index % colors.leads.length]}
-                />
+                <Cell key={`cell-${index}`} fill={colors.leads[index % colors.leads.length]} />
               ))}
             </Bar>
           </BarChart>
@@ -73,11 +72,7 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = memo(
 
     const renderOpportunityChart = useMemo(() => {
       if (opportunityData.length === 0) {
-        return (
-          <div className="text-center text-gray-500 p-4">
-            No opportunity data available
-          </div>
-        );
+        return <div className="text-center text-gray-500 p-4">No opportunity data available</div>;
       }
 
       return (
@@ -86,16 +81,12 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = memo(
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis type="number" />
             <YAxis type="category" dataKey="stage_name" width={120} />
-            <Tooltip
-              formatter={(value: number) => [`${value} opportunities`, "Count"]}
-            />
+            <Tooltip formatter={(value: number) => [`${value} opportunities`, "Count"]} />
             <Bar dataKey="count" fill="#1F77B4" name="Opportunities">
               {opportunityData.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
-                  fill={
-                    colors.opportunities[index % colors.opportunities.length]
-                  }
+                  fill={colors.opportunities[index % colors.opportunities.length]}
                 />
               ))}
             </Bar>
@@ -134,9 +125,7 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = memo(
             </div>
 
             <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
-              <h3 className="text-lg font-medium mb-4">
-                Opportunities by Stage
-              </h3>
+              <h3 className="text-lg font-medium mb-4">Opportunities by Stage</h3>
               {isLoading ? (
                 <div className="space-y-2">
                   <Skeleton className="h-[250px] w-full" />
@@ -149,5 +138,5 @@ export const StatsCardGrid: React.FC<StatsCardGridProps> = memo(
         </CardContent>
       </Card>
     );
-  },
+  }
 );

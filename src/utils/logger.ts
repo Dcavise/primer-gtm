@@ -1,6 +1,5 @@
 // Set debug mode based on environment
-const isDebugMode =
-  import.meta.env.DEV || import.meta.env.MODE === "development";
+const isDebugMode = import.meta.env.DEV || import.meta.env.MODE === "development";
 
 // Maximum number of logs to keep in localStorage
 const MAX_PERSISTENT_LOGS = 100;
@@ -100,11 +99,7 @@ export const logger = {
     if (isDebugMode) {
       console.info(`[INFO] ${message}`, ...data);
     }
-    savePersistentLog(
-      LogLevel.INFO,
-      message,
-      data.length > 0 ? data : undefined,
-    );
+    savePersistentLog(LogLevel.INFO, message, data.length > 0 ? data : undefined);
   },
 
   /**
@@ -114,11 +109,7 @@ export const logger = {
     if (isDebugMode) {
       console.warn(`[WARN] ${message}`, ...data);
     }
-    savePersistentLog(
-      LogLevel.WARN,
-      message,
-      data.length > 0 ? data : undefined,
-    );
+    savePersistentLog(LogLevel.WARN, message, data.length > 0 ? data : undefined);
   },
 
   /**
@@ -126,11 +117,7 @@ export const logger = {
    */
   error: (message: string, ...data: any[]) => {
     console.error(`[ERROR] ${message}`, ...data);
-    savePersistentLog(
-      LogLevel.ERROR,
-      message,
-      data.length > 0 ? data : undefined,
-    );
+    savePersistentLog(LogLevel.ERROR, message, data.length > 0 ? data : undefined);
   },
 
   /**
@@ -138,11 +125,7 @@ export const logger = {
    */
   auth: (message: string, ...data: any[]) => {
     console.error(`[AUTH] ${message}`, ...data);
-    savePersistentLog(
-      LogLevel.AUTH,
-      message,
-      data.length > 0 ? data : undefined,
-    );
+    savePersistentLog(LogLevel.AUTH, message, data.length > 0 ? data : undefined);
   },
 
   /**
@@ -152,11 +135,7 @@ export const logger = {
     if (isDebugMode) {
       console.debug(`[DEBUG] ${message}`, ...data);
     }
-    savePersistentLog(
-      LogLevel.DEBUG,
-      message,
-      data.length > 0 ? data : undefined,
-    );
+    savePersistentLog(LogLevel.DEBUG, message, data.length > 0 ? data : undefined);
   },
 
   /**

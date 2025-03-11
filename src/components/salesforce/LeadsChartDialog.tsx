@@ -87,16 +87,10 @@ export const LeadsChartDialog: React.FC<LeadsChartDialogProps> = ({
           <DialogTitle className="flex justify-between items-center">
             <span>
               Weekly Lead Generation{" "}
-              {selectedCampusName
-                ? `for ${selectedCampusName}`
-                : "(All Campuses)"}
+              {selectedCampusName ? `for ${selectedCampusName}` : "(All Campuses)"}
             </span>
             <DialogClose asChild>
-              <Button
-                variant="ghost"
-                className="h-8 w-8 p-0"
-                aria-label="Close"
-              >
+              <Button variant="ghost" className="h-8 w-8 p-0" aria-label="Close">
                 <X className="h-4 w-4" />
               </Button>
             </DialogClose>
@@ -109,11 +103,7 @@ export const LeadsChartDialog: React.FC<LeadsChartDialogProps> = ({
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="formattedWeek" tickMargin={10} />
-                <YAxis
-                  allowDecimals={false}
-                  tickMargin={10}
-                  domain={[0, "auto"]}
-                />
+                <YAxis allowDecimals={false} tickMargin={10} domain={[0, "auto"]} />
                 <Tooltip
                   formatter={(value) => [`${value} leads`, "Count"]}
                   labelFormatter={(label) => `Week of ${label}`}
@@ -150,20 +140,14 @@ export const LeadsChartDialog: React.FC<LeadsChartDialogProps> = ({
 
                 return (
                   <div key={index} className="bg-white p-2 rounded border">
-                    <div className="text-xs text-gray-500">
-                      Week of {item.formattedWeek}
-                    </div>
-                    <div className="text-lg font-semibold">
-                      {item.count} leads
-                    </div>
+                    <div className="text-xs text-gray-500">Week of {item.formattedWeek}</div>
+                    <div className="text-lg font-semibold">{item.count} leads</div>
 
                     {/* Growth percentage badge */}
                     {index > 0 && item.growthPercent !== null && (
                       <div className="mt-1">
                         <Badge
-                          variant={
-                            item.growthPercent >= 0 ? "default" : "destructive"
-                          }
+                          variant={item.growthPercent >= 0 ? "default" : "destructive"}
                           className={`bg-opacity-20 text-${item.growthPercent >= 0 ? "green" : "red"}-800`}
                           style={{
                             backgroundColor: `${growthColor}20`,

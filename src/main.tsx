@@ -1,10 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import {
-  createBrowserRouter,
-  RouterProvider,
-  Navigate,
-} from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import App from "./App";
 import "./index.css";
 import NotFound from "./pages/NotFound";
@@ -47,9 +43,7 @@ class ErrorBoundary extends React.Component<
       return (
         <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-anti-flash">
           <div className="w-full max-w-md p-6 bg-seasalt rounded-lg shadow-md">
-            <h2 className="text-2xl font-bold text-red-600 mb-4">
-              Something went wrong
-            </h2>
+            <h2 className="text-2xl font-bold text-red-600 mb-4">Something went wrong</h2>
             <p className="text-outer-space mb-4">
               An unexpected error occurred. Please try refreshing the page.
             </p>
@@ -148,5 +142,5 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         }
       />
     </ErrorBoundary>
-  </React.StrictMode>,
+  </React.StrictMode>
 );

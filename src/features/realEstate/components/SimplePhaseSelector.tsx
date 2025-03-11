@@ -59,11 +59,7 @@ export function SimplePhaseSelector({
         variant="outline"
         role="combobox"
         aria-expanded={isOpen}
-        className={cn(
-          "w-full justify-between border-input",
-          value ? colorClass : "",
-          className,
-        )}
+        className={cn("w-full justify-between border-input", value ? colorClass : "", className)}
         onClick={() => setIsOpen(!isOpen)}
         type="button"
         disabled={disabled}
@@ -81,16 +77,11 @@ export function SimplePhaseSelector({
               className={cn(
                 "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none",
                 "hover:bg-accent hover:text-accent-foreground",
-                !value ? "bg-accent text-accent-foreground" : "",
+                !value ? "bg-accent text-accent-foreground" : ""
               )}
               onClick={handleSelectNone}
             >
-              <Check
-                className={cn(
-                  "mr-2 h-4 w-4",
-                  !value ? "opacity-100" : "opacity-0",
-                )}
-              />
+              <Check className={cn("mr-2 h-4 w-4", !value ? "opacity-100" : "opacity-0")} />
               --None--
             </div>
 
@@ -101,15 +92,12 @@ export function SimplePhaseSelector({
                 className={cn(
                   "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none",
                   "hover:bg-accent hover:text-accent-foreground",
-                  value === phase ? "bg-accent text-accent-foreground" : "",
+                  value === phase ? "bg-accent text-accent-foreground" : ""
                 )}
                 onClick={() => handleSelect(phase)}
               >
                 <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    value === phase ? "opacity-100" : "opacity-0",
-                  )}
+                  className={cn("mr-2 h-4 w-4", value === phase ? "opacity-100" : "opacity-0")}
                 />
                 {phase}
               </div>

@@ -19,9 +19,7 @@ export function Spinner({
     lg: "h-8 w-8",
   };
 
-  return (
-    <Loader2 className={cn(`animate-spin ${sizeClass[size]}`, className)} />
-  );
+  return <Loader2 className={cn(`animate-spin ${sizeClass[size]}`, className)} />;
 }
 
 /**
@@ -50,7 +48,7 @@ export function LoadingOverlay({
           className={cn(
             "absolute inset-0 flex items-center justify-center bg-seasalt/80",
             blur && "backdrop-blur-[2px]",
-            overlayClassName,
+            overlayClassName
           )}
         >
           <Spinner size={spinnerSize} />
@@ -88,10 +86,7 @@ export function TableRowSkeleton({
   return (
     <div className={cn("flex items-center space-x-4 py-3", className)}>
       {Array.from({ length: columns }).map((_, i) => (
-        <Skeleton
-          key={i}
-          className={`h-4 w-[${100 / columns - 5}%] bg-platinum`}
-        />
+        <Skeleton key={i} className={`h-4 w-[${100 / columns - 5}%] bg-platinum`} />
       ))}
     </div>
   );
@@ -100,13 +95,7 @@ export function TableRowSkeleton({
 /**
  * Form skeleton component
  */
-export function FormSkeleton({
-  rows = 3,
-  className,
-}: {
-  rows?: number;
-  className?: string;
-}) {
+export function FormSkeleton({ rows = 3, className }: { rows?: number; className?: string }) {
   return (
     <div className={cn("space-y-6", className)}>
       {Array.from({ length: rows }).map((_, i) => (

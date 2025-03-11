@@ -62,8 +62,7 @@ export function useFormattedConvertedLeadsMetrics({
 
         // Add date filter based on lookback units
         // Note: The views already include date filters, but we'll add this for extra control
-        const intervalUnit =
-          period === "day" ? "day" : period === "week" ? "week" : "month";
+        const intervalUnit = period === "day" ? "day" : period === "week" ? "week" : "month";
         query += `
           AND period_date >= DATE_TRUNC('${intervalUnit}', CURRENT_DATE) - INTERVAL '${lookbackUnits} ${intervalUnit}'
           ORDER BY period_date DESC
@@ -73,28 +72,20 @@ export function useFormattedConvertedLeadsMetrics({
         console.log(query);
 
         // Execute the query
-        const { data: rawData, error: queryError } = await supabase.rpc(
-          "execute_sql_query",
-          {
-            query_text: query,
-          },
-        );
+        const { data: rawData, error: queryError } = await supabase.rpc("execute_sql_query", {
+          query_text: query,
+        });
 
         console.log("Query response:", { rawData, queryError });
 
         if (queryError) {
           console.error("Query error details:", queryError);
-          throw new Error(
-            `SQL query error: ${queryError.message || "Unknown error"}`,
-          );
+          throw new Error(`SQL query error: ${queryError.message || "Unknown error"}`);
         }
 
         // Check if we have valid data - Supabase might return raw data as undefined or null even if no error
         if (!rawData || !Array.isArray(rawData)) {
-          console.warn(
-            "No data returned from formatted converted metrics query:",
-            typeof rawData,
-          );
+          console.warn("No data returned from formatted converted metrics query:", typeof rawData);
           console.log("Raw data value:", rawData);
           setData(createEmptyResponse(period));
           setError(null);
@@ -162,43 +153,37 @@ function createEmptyResponse(period: string): FormattedLeadsResponse {
 // Process the raw data into the expected format for the UI
 function processFormattedMetrics(
   rawData: FormattedLeadMetric[],
-  period: string,
+  period: string
 ): FormattedLeadsResponse {
   // Get unique periods, sorted by date (newest to oldest)
   // This matches the DESC order from our SQL query
   const periods = [...new Set(rawData.map((item) => item.period_date))].sort(
-    (a, b) => new Date(b).getTime() - new Date(a).getTime(),
+    (a, b) => new Date(b).getTime() - new Date(a).getTime()
   );
 
   // Get unique campuses
   const campuses = [...new Set(rawData.map((item) => item.campus_name))].filter(
-    (name) => name !== "No Campus Match",
+    (name) => name !== "No Campus Match"
   );
 
   // Calculate period totals
   const totals = periods.reduce(
     (acc, period) => {
       const periodData = rawData.filter((item) => item.period_date === period);
-      acc[period] = periodData.reduce(
-        (sum, item) => sum + Number(item.lead_count),
-        0,
-      );
+      acc[period] = periodData.reduce((sum, item) => sum + Number(item.lead_count), 0);
       return acc;
     },
-    {} as Record<string, number>,
+    {} as Record<string, number>
   );
 
   // Calculate campus totals across all periods
   const campusTotals = campuses.reduce(
     (acc, campus) => {
       const campusData = rawData.filter((item) => item.campus_name === campus);
-      acc[campus] = campusData.reduce(
-        (sum, item) => sum + Number(item.lead_count),
-        0,
-      );
+      acc[campus] = campusData.reduce((sum, item) => sum + Number(item.lead_count), 0);
       return acc;
     },
-    {} as Record<string, number>,
+    {} as Record<string, number>
   );
 
   // Calculate period-over-period changes
@@ -207,8 +192,7 @@ function processFormattedMetrics(
   // Format data for time series charts - use the formatted_date for display
   const timeSeriesData = periods.map((period) => {
     const periodItems = rawData.filter((item) => item.period_date === period);
-    const displayDate =
-      periodItems.length > 0 ? periodItems[0].formatted_date : period;
+    const displayDate = periodItems.length > 0 ? periodItems[0].formatted_date : period;
 
     return {
       period,
@@ -220,7 +204,7 @@ function processFormattedMetrics(
           acc[campus] = match ? Number(match.lead_count) : 0;
           return acc;
         },
-        {} as Record<string, number>,
+        {} as Record<string, number>
       ),
     };
   });
@@ -228,8 +212,7 @@ function processFormattedMetrics(
   // Helper function to get lead count for a specific period and campus
   const getLeadCount = (periodDate: string, campusName: string): number => {
     const match = rawData.find(
-      (item) =>
-        item.period_date === periodDate && item.campus_name === campusName,
+      (item) => item.period_date === periodDate && item.campus_name === campusName
     );
     return match ? Number(match.lead_count) : 0;
   };

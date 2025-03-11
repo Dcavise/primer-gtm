@@ -11,9 +11,7 @@ export function CMDKPatcher() {
     Array.from = function safePatchedArrayFrom(items, ...rest) {
       // If items is undefined or null, return an empty array
       if (items == null) {
-        console.warn(
-          "CMDK Patch: Array.from received undefined/null, returning empty array",
-        );
+        console.warn("CMDK Patch: Array.from received undefined/null, returning empty array");
         return [];
       }
 

@@ -24,18 +24,11 @@ const PropertyDocuments: React.FC<PropertyDocumentsProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <FileUpload
-          propertyId={propertyId}
-          onUploadComplete={onUploadComplete}
-        />
+        <FileUpload propertyId={propertyId} onUploadComplete={onUploadComplete} />
 
         <div className="border-t pt-4">
           <h3 className="font-medium text-sm mb-3">Uploaded Documents</h3>
-          <FileList
-            key={fileRefreshKey}
-            propertyId={propertyId}
-            onFileDeleted={onUploadComplete}
-          />
+          <FileList key={fileRefreshKey} propertyId={propertyId} onFileDeleted={onUploadComplete} />
         </div>
       </CardContent>
     </Card>

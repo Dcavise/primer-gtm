@@ -36,11 +36,7 @@ export const MobileNavigation = ({ features }: MobileNavigationProps) => {
           className="w-56 mt-2 bg-slate-800 border border-slate-700 shadow-lg"
         >
           {navItems.map((item) => (
-            <DropdownMenuItem
-              key={item.path}
-              asChild
-              className="focus:bg-slate-700"
-            >
+            <DropdownMenuItem key={item.path} asChild className="focus:bg-slate-700">
               <NavLink
                 to={item.path}
                 className={({ isActive }) =>

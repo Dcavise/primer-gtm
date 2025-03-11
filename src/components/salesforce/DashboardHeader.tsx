@@ -6,10 +6,7 @@ interface DashboardHeaderProps {
   lastRefreshed: Date | null;
 }
 
-export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
-  title,
-  lastRefreshed,
-}) => {
+export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title, lastRefreshed }) => {
   return (
     <div className="flex justify-between items-center mb-6">
       <h1 className="text-2xl font-bold">{title}</h1>

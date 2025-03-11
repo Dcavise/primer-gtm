@@ -37,10 +37,7 @@ function FormDescription({ className, ...props }: AriaTextProps) {
 
 function FieldError({ className, ...props }: AriaFieldErrorProps) {
   return (
-    <AriaFieldError
-      className={cn("text-sm font-medium text-destructive", className)}
-      {...props}
-    />
+    <AriaFieldError className={cn("text-sm font-medium text-destructive", className)} {...props} />
   );
 }
 
@@ -62,26 +59,17 @@ const fieldGroupVariants = cva("", {
   },
 });
 
-interface GroupProps
-  extends AriaGroupProps,
-    VariantProps<typeof fieldGroupVariants> {}
+interface GroupProps extends AriaGroupProps, VariantProps<typeof fieldGroupVariants> {}
 
 function FieldGroup({ className, variant, ...props }: GroupProps) {
   return (
     <AriaGroup
       className={composeRenderProps(className, (className) =>
-        cn(fieldGroupVariants({ variant }), className),
+        cn(fieldGroupVariants({ variant }), className)
       )}
       {...props}
     />
   );
 }
 
-export {
-  Label,
-  labelVariants,
-  FieldGroup,
-  fieldGroupVariants,
-  FieldError,
-  FormDescription,
-};
+export { Label, labelVariants, FieldGroup, fieldGroupVariants, FieldError, FormDescription };

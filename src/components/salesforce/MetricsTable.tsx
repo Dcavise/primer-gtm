@@ -16,10 +16,7 @@ interface MetricsTableProps {
   period: "daily" | "weekly" | "monthly";
 }
 
-export const MetricsTable: React.FC<MetricsTableProps> = ({
-  metrics,
-  period,
-}) => {
+export const MetricsTable: React.FC<MetricsTableProps> = ({ metrics, period }) => {
   return (
     <div className="overflow-x-auto">
       <Table>

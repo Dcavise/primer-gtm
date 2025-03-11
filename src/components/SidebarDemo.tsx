@@ -1,10 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import {
-  Sidebar,
-  SidebarBody,
-  SidebarLink,
-} from "@/components/ui/animated-sidebar";
+import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/animated-sidebar";
 import { LayoutDashboard, UserCog, Settings, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -22,23 +18,17 @@ export function SidebarDemo() {
     {
       label: "Profile",
       href: "/profile",
-      icon: (
-        <UserCog className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
-      ),
+      icon: <UserCog className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />,
     },
     {
       label: "Settings",
       href: "/settings",
-      icon: (
-        <Settings className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
-      ),
+      icon: <Settings className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />,
     },
     {
       label: "Logout",
       href: "/logout",
-      icon: (
-        <LogOut className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
-      ),
+      icon: <LogOut className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />,
     },
   ];
   const [open, setOpen] = useState(false);
@@ -46,7 +36,7 @@ export function SidebarDemo() {
     <div
       className={cn(
         "rounded-md flex flex-col md:flex-row bg-gray-100 dark:bg-neutral-800 w-full flex-1 max-w-7xl mx-auto border border-neutral-200 dark:border-neutral-700 overflow-hidden",
-        "h-[60vh]", // for your use case, use `h-screen` instead of `h-[60vh]`
+        "h-[60vh]" // for your use case, use `h-screen` instead of `h-[60vh]`
       )}
     >
       <Sidebar open={open} setOpen={setOpen}>

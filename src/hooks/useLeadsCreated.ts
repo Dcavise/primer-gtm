@@ -97,28 +97,20 @@ export function useLeadsCreated({
           // The parameter is named campus_name to match the updated function
           console.log(
             `%c 🔍 EDGE FUNCTION CAMPUS FILTER`,
-            "background: #ffe0e0; color: #ff0000; font-weight: bold",
+            "background: #ffe0e0; color: #ff0000; font-weight: bold"
           );
           console.log(`- Campus name parameter: "${campusId}"`);
           console.log(`- Parameter type: ${typeof campusId}`);
-          console.log(
-            `- Null check: ${campusId === null ? "IS NULL" : "NOT NULL"}`,
-          );
+          console.log(`- Null check: ${campusId === null ? "IS NULL" : "NOT NULL"}`);
           if (campusId) {
             console.log(`- Length: ${campusId.length}`);
-            console.log(
-              `- Whitespace check: "${campusId}" vs "${campusId.trim()}"`,
-            );
-            console.log(
-              `- Has leading/trailing whitespace: ${campusId !== campusId.trim()}`,
-            );
+            console.log(`- Whitespace check: "${campusId}" vs "${campusId.trim()}"`);
+            console.log(`- Has leading/trailing whitespace: ${campusId !== campusId.trim()}`);
 
             // Based on the SQL query example, we need to make the campus name match exactly
+            console.log(`- SQL filter will use: preferred_campus_c = '${campusId}'`);
             console.log(
-              `- SQL filter will use: preferred_campus_c = '${campusId}'`,
-            );
-            console.log(
-              `- For a fuzzy match, the filter would be: preferred_campus_c ILIKE '%${campusId}%'`,
+              `- For a fuzzy match, the filter would be: preferred_campus_c ILIKE '%${campusId}%'`
             );
           }
 
@@ -137,14 +129,10 @@ export function useLeadsCreated({
           // For 'all campuses', add include_all_campuses=true to signal no WHERE clause
           if (campusId !== null) {
             functionParams.campus_name = campusId;
-            console.log(
-              `- Adding campus_name parameter to edge function call: ${campusId}`,
-            );
+            console.log(`- Adding campus_name parameter to edge function call: ${campusId}`);
           } else {
             functionParams.include_all_campuses = true;
-            console.log(
-              `- Setting include_all_campuses=true (removes WHERE clause completely)`,
-            );
+            console.log(`- Setting include_all_campuses=true (removes WHERE clause completely)`);
           }
 
           console.log("Final edge function parameters:", functionParams);
@@ -155,15 +143,11 @@ export function useLeadsCreated({
             });
 
           if (edgeFunctionError) throw new Error(edgeFunctionError.message);
-          if (!edgeFunctionData.success)
-            throw new Error(edgeFunctionData.error || "Unknown error");
+          if (!edgeFunctionData.success) throw new Error(edgeFunctionData.error || "Unknown error");
 
           responseData = edgeFunctionData.data;
         } catch (edgeFunctionError) {
-          console.warn(
-            "Edge function failed, falling back to direct SQL:",
-            edgeFunctionError,
-          );
+          console.warn("Edge function failed, falling back to direct SQL:", edgeFunctionError);
 
           // Fall back to direct SQL query if edge function fails
           let query = `
@@ -183,32 +167,24 @@ export function useLeadsCreated({
           console.log("Lookback interval:", `${lookbackUnits} ${period}`);
           console.log(
             "Expected date range: from",
-            new Date(
-              Date.now() - lookbackUnits * getMillisecondsForPeriod(period),
-            ).toISOString(),
+            new Date(Date.now() - lookbackUnits * getMillisecondsForPeriod(period)).toISOString(),
             "to",
-            new Date().toISOString(),
+            new Date().toISOString()
           );
 
           console.log(
             `%c 🔍 SQL FALLBACK CAMPUS FILTER`,
-            "background: #e0e0ff; color: #0000ff; font-weight: bold",
+            "background: #e0e0ff; color: #0000ff; font-weight: bold"
           );
           console.log(`- Campus name parameter: "${campusId}"`);
           console.log(`- Parameter type: ${typeof campusId}`);
-          console.log(
-            `- Null check: ${campusId === null ? "IS NULL" : "NOT NULL"}`,
-          );
+          console.log(`- Null check: ${campusId === null ? "IS NULL" : "NOT NULL"}`);
 
           // Different handling for specific campus vs. all campuses
           if (campusId !== null) {
             console.log(`- Length: ${campusId.length}`);
-            console.log(
-              `- Whitespace check: "${campusId}" vs "${campusId.trim()}"`,
-            );
-            console.log(
-              `- Has leading/trailing whitespace: ${campusId !== campusId.trim()}`,
-            );
+            console.log(`- Whitespace check: "${campusId}" vs "${campusId.trim()}"`);
+            console.log(`- Has leading/trailing whitespace: ${campusId !== campusId.trim()}`);
 
             // Ensure we're properly escaping single quotes for SQL
             const escapedCampusId = campusId.replace(/'/g, "''");
@@ -217,15 +193,11 @@ export function useLeadsCreated({
             query += `
             AND l.preferred_campus_c ILIKE '${escapedCampusId}'`;
 
+            console.log(`- Final SQL parameter (escaped): '${escapedCampusId}'`);
             console.log(
-              `- Final SQL parameter (escaped): '${escapedCampusId}'`,
+              `- SQL will use: AND preferred_campus_c ILIKE '${escapedCampusId}' (case-insensitive)`
             );
-            console.log(
-              `- SQL will use: AND preferred_campus_c ILIKE '${escapedCampusId}' (case-insensitive)`,
-            );
-            console.log(
-              `- This applies to ALL campus selections for consistent behavior`,
-            );
+            console.log(`- This applies to ALL campus selections for consistent behavior`);
           } else {
             // For 'all campuses', we don't add any WHERE clause for preferred_campus_c
             console.log(`- No campus filter added - will show all campuses`);
@@ -248,10 +220,7 @@ export function useLeadsCreated({
 
           console.log("Today date:", currentDate.toISOString().split("T")[0]);
           console.log("Yesterday date:", yesterday.toISOString().split("T")[0]);
-          console.log(
-            "Day before yesterday:",
-            dayBefore.toISOString().split("T")[0],
-          );
+          console.log("Day before yesterday:", dayBefore.toISOString().split("T")[0]);
 
           console.log(`FULL SQL QUERY: ${query}`);
 
@@ -272,12 +241,9 @@ export function useLeadsCreated({
             ORDER BY lead_date DESC;`);
 
           // Try execute_sql_query RPC first
-          const { data: sqlData, error: sqlError } = await supabase.rpc(
-            "execute_sql_query",
-            {
-              query_text: query,
-            },
-          );
+          const { data: sqlData, error: sqlError } = await supabase.rpc("execute_sql_query", {
+            query_text: query,
+          });
 
           if (sqlError) {
             console.error("SQL RPC Error:", sqlError);
@@ -291,10 +257,12 @@ export function useLeadsCreated({
             console.log("Executing SQL query directly through Supabase...");
             try {
               // Make a direct SQL query with the Supabase client
-              const { data: directData, error: directError } =
-                await supabase.rpc("execute_sql_query", {
+              const { data: directData, error: directError } = await supabase.rpc(
+                "execute_sql_query",
+                {
                   query_text: query,
-                });
+                }
+              );
 
               if (directError) {
                 console.error("Direct SQL query error:", directError);
@@ -306,11 +274,7 @@ export function useLeadsCreated({
                 return processLeadMetrics([], period);
               }
 
-              console.log(
-                "Direct SQL query returned:",
-                directData.length,
-                "rows",
-              );
+              console.log("Direct SQL query returned:", directData.length, "rows");
               return processLeadMetrics(directData, period);
             } catch (error) {
               console.error("All SQL query methods failed:", error);
@@ -360,10 +324,7 @@ function mapToLeadMetric(raw: RawLeadMetric[]): LeadMetric[] {
 }
 
 // Fallback processor in case the edge function isn't available
-function processLeadMetrics(
-  rawData: RawLeadMetric[],
-  period: string,
-): LeadMetricsResponse {
+function processLeadMetrics(rawData: RawLeadMetric[], period: string): LeadMetricsResponse {
   if (!rawData || !rawData.length) {
     return {
       periods: [],
@@ -382,45 +343,37 @@ function processLeadMetrics(
 
   // Get unique periods, sorted by date
   const periods = [...new Set(rawData.map((item) => item.period_start))].sort(
-    (a, b) => new Date(b).getTime() - new Date(a).getTime(),
+    (a, b) => new Date(b).getTime() - new Date(a).getTime()
   );
 
   // Get unique campuses
   const campuses = [...new Set(rawData.map((item) => item.campus_name))].filter(
-    (name) => name !== "No Campus Match",
+    (name) => name !== "No Campus Match"
   ); // Optionally filter out "No Campus Match"
 
   // Calculate period totals
   const totals = periods.reduce(
     (acc, period) => {
       const periodData = rawData.filter((item) => item.period_start === period);
-      acc[period] = periodData.reduce(
-        (sum, item) => sum + Number(item.lead_count),
-        0,
-      );
+      acc[period] = periodData.reduce((sum, item) => sum + Number(item.lead_count), 0);
       return acc;
     },
-    {} as Record<string, number>,
+    {} as Record<string, number>
   );
 
   // Calculate campus totals across all periods
   const campusTotals = campuses.reduce(
     (acc, campus) => {
       const campusData = rawData.filter((item) => item.campus_name === campus);
-      acc[campus] = campusData.reduce(
-        (sum, item) => sum + Number(item.lead_count),
-        0,
-      );
+      acc[campus] = campusData.reduce((sum, item) => sum + Number(item.lead_count), 0);
       return acc;
     },
-    {} as Record<string, number>,
+    {} as Record<string, number>
   );
 
   // Calculate week-over-week or period-over-period changes
   const changes =
-    periods.length > 1
-      ? calculatePeriodChanges(periods, totals)
-      : { raw: {}, percentage: {} };
+    periods.length > 1 ? calculatePeriodChanges(periods, totals) : { raw: {}, percentage: {} };
 
   // Format data for time series chart
   const timeSeriesData = periods
@@ -430,13 +383,12 @@ function processLeadMetrics(
       campuses: campuses.reduce(
         (acc, campus) => {
           const match = rawData.find(
-            (item) =>
-              item.period_start === period && item.campus_name === campus,
+            (item) => item.period_start === period && item.campus_name === campus
           );
           acc[campus] = match ? Number(match.lead_count) : 0;
           return acc;
         },
-        {} as Record<string, number>,
+        {} as Record<string, number>
       ),
     }))
     .reverse(); // Reverse to get chronological order
@@ -465,8 +417,7 @@ function processLeadMetrics(
     // Helper function
     getLeadCount: (periodStart: string, campusName: string) => {
       const match = rawData.find(
-        (item) =>
-          item.period_start === periodStart && item.campus_name === campusName,
+        (item) => item.period_start === periodStart && item.campus_name === campusName
       );
       return match ? Number(match.lead_count) : 0;
     },
@@ -477,10 +428,7 @@ function processLeadMetrics(
 }
 
 // Helper to calculate period-over-period changes
-function calculatePeriodChanges(
-  periods: string[],
-  totals: Record<string, number>,
-) {
+function calculatePeriodChanges(periods: string[], totals: Record<string, number>) {
   const raw: Record<string, number> = {};
   const percentage: Record<string, number> = {};
 
@@ -494,8 +442,7 @@ function calculatePeriodChanges(
     raw[currentPeriod] = currentValue - previousValue;
 
     if (previousValue !== 0) {
-      percentage[currentPeriod] =
-        ((currentValue - previousValue) / previousValue) * 100;
+      percentage[currentPeriod] = ((currentValue - previousValue) / previousValue) * 100;
     } else {
       percentage[currentPeriod] = currentValue > 0 ? 100 : 0;
     }

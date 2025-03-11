@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import {
-  X,
-  Search,
-  ArrowRight,
-  Users,
-  Briefcase,
-  Building,
-} from "lucide-react";
+import { X, Search, ArrowRight, Users, Briefcase, Building } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase-client";
 import debounce from "lodash.debounce";
@@ -96,36 +89,28 @@ const SearchBox: React.FC<SearchBoxProps> = ({
           let familyData = [];
           try {
             // Use the searchFamilies helper method which properly handles the schema
-            console.log(
-              `Attempting to search for families with term: "${query}"`,
-            );
-            const { success, data, error } =
-              await supabase.searchFamilies(query);
+            console.log(`Attempting to search for families with term: "${query}"`);
+            const { success, data, error } = await supabase.searchFamilies(query);
 
             if (!success || error) {
               console.warn("Error searching families:", error);
               // Log more detailed error information if it's a JSON string
               try {
-                const errorObj =
-                  typeof error === "string" ? JSON.parse(error) : error;
+                const errorObj = typeof error === "string" ? JSON.parse(error) : error;
                 console.warn("Detailed error info:", errorObj);
               } catch (e) {
                 // If it's not valid JSON, just log as-is
                 console.warn("Error details:", error);
               }
-              throw new Error(
-                typeof error === "string" ? error : "Search failed",
-              );
+              throw new Error(typeof error === "string" ? error : "Search failed");
             }
 
-            console.log(
-              `Search successful, found ${data?.length || 0} results`,
-            );
+            console.log(`Search successful, found ${data?.length || 0} results`);
             familyData = data || [];
           } catch (searchError) {
             console.error(
               "All database search attempts failed, falling back to local data:",
-              searchError,
+              searchError
             );
             // Fall back to local data if RPC fails
             const response = await fetch("/assets/data/searchbox.json");
@@ -201,7 +186,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({
       // Return the cancel function for cleanup
       return debouncedFn.cancel;
     },
-    [], // No dependencies needed here since we're using useState setters which are stable
+    [] // No dependencies needed here since we're using useState setters which are stable
   );
 
   // Simple wrapper for the debounced function that returns the cancel function
@@ -209,7 +194,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({
     (query: string) => {
       return fetchResultsWithDebounce(query);
     },
-    [fetchResultsWithDebounce],
+    [fetchResultsWithDebounce]
   );
 
   // Call the debounced search function when the search query changes
@@ -246,9 +231,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({
           break;
         case "ArrowDown":
           e.preventDefault();
-          setSelectedIndex((prev) =>
-            prev < results.length - 1 ? prev + 1 : prev,
-          );
+          setSelectedIndex((prev) => (prev < results.length - 1 ? prev + 1 : prev));
           break;
         case "ArrowUp":
           e.preventDefault();
@@ -294,8 +277,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({
   // Determine the inner container component and its props
   const innerContainerProps = inline
     ? {
-        className:
-          "w-full bg-white rounded-lg overflow-hidden border border-gray-200",
+        className: "w-full bg-white rounded-lg overflow-hidden border border-gray-200",
       }
     : {
         className:
@@ -318,19 +300,14 @@ const SearchBox: React.FC<SearchBoxProps> = ({
             onChange={(e) => setSearchQuery(e.target.value)}
           />
           {!inline && (
-            <button
-              className="p-1 rounded-full hover:bg-gray-100"
-              onClick={onClose}
-            >
+            <button className="p-1 rounded-full hover:bg-gray-100" onClick={onClose}>
               <X className="h-5 w-5 text-gray-400" />
             </button>
           )}
         </div>
 
         {/* Only show loading, no results message, and results list if hideResults is false */}
-        {!hideResults && loading && (
-          <div className="p-4 text-center text-gray-500">Loading...</div>
-        )}
+        {!hideResults && loading && <div className="p-4 text-center text-gray-500">Loading...</div>}
 
         {!hideResults && !loading && results.length === 0 && searchQuery && (
           <div className="p-4 text-center text-gray-500">No results found</div>
@@ -365,12 +342,8 @@ const SearchBox: React.FC<SearchBoxProps> = ({
                   </div>
                   <div className="flex-1">
                     <div className="font-medium">{result.title}</div>
-                    <div className="text-sm text-gray-500">
-                      {result.description}
-                    </div>
-                    <div className="text-xs text-gray-400 mt-1">
-                      {result.category}
-                    </div>
+                    <div className="text-sm text-gray-500">{result.description}</div>
+                    <div className="text-xs text-gray-400 mt-1">{result.category}</div>
                   </div>
                   <ArrowRight className="h-4 w-4 text-gray-400 mt-1 ml-2" />
                 </div>
@@ -383,20 +356,14 @@ const SearchBox: React.FC<SearchBoxProps> = ({
           <div className="p-2 text-xs text-gray-400 bg-gray-50 border-t border-gray-100">
             <div className="flex justify-between">
               <span>
-                Press{" "}
-                <kbd className="px-2 py-1 bg-gray-100 rounded border">↑</kbd>{" "}
-                <kbd className="px-2 py-1 bg-gray-100 rounded border">↓</kbd> to
-                navigate
+                Press <kbd className="px-2 py-1 bg-gray-100 rounded border">↑</kbd>{" "}
+                <kbd className="px-2 py-1 bg-gray-100 rounded border">↓</kbd> to navigate
               </span>
               <span>
-                <kbd className="px-2 py-1 bg-gray-100 rounded border">
-                  Enter
-                </kbd>{" "}
-                to select
+                <kbd className="px-2 py-1 bg-gray-100 rounded border">Enter</kbd> to select
               </span>
               <span>
-                <kbd className="px-2 py-1 bg-gray-100 rounded border">Esc</kbd>{" "}
-                to close
+                <kbd className="px-2 py-1 bg-gray-100 rounded border">Esc</kbd> to close
               </span>
             </div>
           </div>

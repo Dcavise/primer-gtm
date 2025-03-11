@@ -131,12 +131,12 @@ export const disableUnsafeMode = async (): Promise<QueryResult<boolean>> => {
  */
 export const executeReadQuery = async <T = any>(
   query: string,
-  params: any[] = [],
+  params: any[] = []
 ): Promise<QueryResult<T[]>> => {
   try {
     const startTime = performance.now();
     logger.info(
-      `Executing read query: ${query.substring(0, 100)}${query.length > 100 ? "..." : ""}`,
+      `Executing read query: ${query.substring(0, 100)}${query.length > 100 ? "..." : ""}`
     );
 
     if (!query.trim().toLowerCase().startsWith("select")) {
@@ -193,12 +193,12 @@ export const executeReadQuery = async <T = any>(
 export const executeWriteQuery = async <T = any>(
   query: string,
   params: any[] = [],
-  autoEnableUnsafe: boolean = false,
+  autoEnableUnsafe: boolean = false
 ): Promise<QueryResult<T>> => {
   try {
     const startTime = performance.now();
     logger.info(
-      `Executing write query: ${query.substring(0, 100)}${query.length > 100 ? "..." : ""}`,
+      `Executing write query: ${query.substring(0, 100)}${query.length > 100 ? "..." : ""}`
     );
 
     const queryLower = query.trim().toLowerCase();
@@ -211,9 +211,7 @@ export const executeWriteQuery = async <T = any>(
       return {
         success: false,
         data: null,
-        error: new Error(
-          "Only INSERT, UPDATE, DELETE queries are allowed for write operations",
-        ),
+        error: new Error("Only INSERT, UPDATE, DELETE queries are allowed for write operations"),
         executionTime: 0,
       };
     }
@@ -227,9 +225,7 @@ export const executeWriteQuery = async <T = any>(
           return {
             success: false,
             data: null,
-            error: new Error(
-              `Failed to enable unsafe mode: ${enableResult.error?.message}`,
-            ),
+            error: new Error(`Failed to enable unsafe mode: ${enableResult.error?.message}`),
             executionTime: enableResult.executionTime || 0,
           };
         }
@@ -238,7 +234,7 @@ export const executeWriteQuery = async <T = any>(
           success: false,
           data: null,
           error: new Error(
-            "Unsafe mode must be enabled for write operations. Use enableUnsafeMode() first or set autoEnableUnsafe to true.",
+            "Unsafe mode must be enabled for write operations. Use enableUnsafeMode() first or set autoEnableUnsafe to true."
           ),
           executionTime: 0,
         };
@@ -298,7 +294,7 @@ export const executeWriteQuery = async <T = any>(
  */
 export const executeDDLTransaction = async <T = any>(
   queries: string[],
-  autoEnableUnsafe: boolean = false,
+  autoEnableUnsafe: boolean = false
 ): Promise<QueryResult<T>> => {
   try {
     const startTime = performance.now();
@@ -329,7 +325,7 @@ export const executeDDLTransaction = async <T = any>(
         success: false,
         data: null,
         error: new Error(
-          "Transaction must contain at least one DDL statement (CREATE, ALTER, DROP)",
+          "Transaction must contain at least one DDL statement (CREATE, ALTER, DROP)"
         ),
         executionTime: 0,
       };
@@ -344,9 +340,7 @@ export const executeDDLTransaction = async <T = any>(
           return {
             success: false,
             data: null,
-            error: new Error(
-              `Failed to enable unsafe mode: ${enableResult.error?.message}`,
-            ),
+            error: new Error(`Failed to enable unsafe mode: ${enableResult.error?.message}`),
             executionTime: enableResult.executionTime || 0,
           };
         }
@@ -355,7 +349,7 @@ export const executeDDLTransaction = async <T = any>(
           success: false,
           data: null,
           error: new Error(
-            "Unsafe mode must be enabled for DDL operations. Use enableUnsafeMode() first or set autoEnableUnsafe to true.",
+            "Unsafe mode must be enabled for DDL operations. Use enableUnsafeMode() first or set autoEnableUnsafe to true."
           ),
           executionTime: 0,
         };
@@ -415,7 +409,7 @@ export const executeSQL = async <T = any>(
   options: {
     autoEnableUnsafe?: boolean;
     forceTransaction?: boolean;
-  } = {},
+  } = {}
 ): Promise<QueryResult<T>> => {
   const { autoEnableUnsafe = false, forceTransaction = false } = options;
 
@@ -448,7 +442,7 @@ export const executeSQL = async <T = any>(
       success: false,
       data: null,
       error: new Error(
-        "Unsupported query type. Query must start with SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, or DROP.",
+        "Unsupported query type. Query must start with SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, or DROP."
       ),
       executionTime: 0,
     };

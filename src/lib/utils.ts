@@ -8,11 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * Conditionally apply classes based on a condition
  */
-export function cond(
-  condition: boolean,
-  trueClasses: string,
-  falseClasses: string = "",
-): string {
+export function cond(condition: boolean, trueClasses: string, falseClasses: string = ""): string {
   return condition ? trueClasses : falseClasses;
 }
 
@@ -21,7 +17,7 @@ export function cond(
  */
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
-  wait: number,
+  wait: number
 ): (...args: Parameters<T>) => void {
   let timeout: ReturnType<typeof setTimeout> | null = null;
 

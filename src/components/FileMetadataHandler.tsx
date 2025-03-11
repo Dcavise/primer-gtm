@@ -72,10 +72,7 @@ export const getAllFileMetadata = async (propertyId: number) => {
   }
 };
 
-export const deleteFileMetadata = async (
-  propertyId: number,
-  filePath: string,
-) => {
+export const deleteFileMetadata = async (propertyId: number, filePath: string) => {
   try {
     const { error } = await supabase
       .from("property_file_metadata")

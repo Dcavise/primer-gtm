@@ -13,22 +13,13 @@ import { fetchOpportunitiesStats } from "./useOpportunitiesStats";
 import { logger } from "@/utils/logger";
 
 export const useStats = (selectedCampusIds: string[]) => {
-  const { stats, setStats, lastRefreshed, setLastRefreshed, handleError } =
-    useBaseStats();
-  const [employmentStatusCounts, setEmploymentStatusCounts] = useState<
-    EmploymentStatusCount[]
-  >([]);
-  const [weeklyLeadCounts, setWeeklyLeadCounts] = useState<WeeklyLeadCount[]>(
-    [],
-  );
-  const [opportunityStageCounts, setOpportunityStageCounts] = useState<
-    OpportunityStageCount[]
-  >([]);
+  const { stats, setStats, lastRefreshed, setLastRefreshed, handleError } = useBaseStats();
+  const [employmentStatusCounts, setEmploymentStatusCounts] = useState<EmploymentStatusCount[]>([]);
+  const [weeklyLeadCounts, setWeeklyLeadCounts] = useState<WeeklyLeadCount[]>([]);
+  const [opportunityStageCounts, setOpportunityStageCounts] = useState<OpportunityStageCount[]>([]);
 
   useEffect(() => {
-    logger.info(
-      `useStats effect triggered with ${selectedCampusIds.length} campus IDs`,
-    );
+    logger.info(`useStats effect triggered with ${selectedCampusIds.length} campus IDs`);
     fetchStats();
     setLastRefreshed(new Date());
   }, [selectedCampusIds]);
@@ -37,7 +28,7 @@ export const useStats = (selectedCampusIds: string[]) => {
     try {
       logger.timeStart("fetchAllStats");
       logger.info(
-        `Fetching stats for campuses: ${selectedCampusIds.length > 0 ? selectedCampusIds.join(", ") : "all campuses"}`,
+        `Fetching stats for campuses: ${selectedCampusIds.length > 0 ? selectedCampusIds.join(", ") : "all campuses"}`
       );
 
       // Log available campuses for debugging
@@ -53,10 +44,7 @@ export const useStats = (selectedCampusIds: string[]) => {
 
       // Fetch fellows stats
       logger.timeStart("fetchFellowsStats");
-      const fellowsResult = await fetchFellowsStats(
-        selectedCampusIds,
-        handleError,
-      );
+      const fellowsResult = await fetchFellowsStats(selectedCampusIds, handleError);
       logger.timeEnd("fetchFellowsStats");
       logger.debug("Fellows stats result:", fellowsResult);
       setEmploymentStatusCounts(fellowsResult.employmentStatusCounts);
@@ -70,10 +58,7 @@ export const useStats = (selectedCampusIds: string[]) => {
 
       // Fetch opportunities stats
       logger.timeStart("fetchOpportunitiesStats-fromUseStats");
-      const opportunitiesResult = await fetchOpportunitiesStats(
-        selectedCampusIds,
-        handleError,
-      );
+      const opportunitiesResult = await fetchOpportunitiesStats(selectedCampusIds, handleError);
       logger.timeEnd("fetchOpportunitiesStats-fromUseStats");
       logger.debug("Opportunities stats result:", opportunitiesResult);
       setOpportunityStageCounts(opportunitiesResult.opportunityStageCounts);
@@ -83,8 +68,7 @@ export const useStats = (selectedCampusIds: string[]) => {
         fellowsCount: fellowsResult.fellowsCount,
         leadsCount: leadsResult.leadsCount,
         activeOpportunitiesCount: opportunitiesResult.activeOpportunitiesCount,
-        closedWonOpportunitiesCount:
-          opportunitiesResult.closedWonOpportunitiesCount,
+        closedWonOpportunitiesCount: opportunitiesResult.closedWonOpportunitiesCount,
       };
 
       logger.info("Stats fetched successfully:", updatedStats);

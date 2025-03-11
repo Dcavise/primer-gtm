@@ -27,21 +27,13 @@ export async function getApiKey(keyName: string): Promise<string> {
 
       // If POST fails, try using GET method as fallback
       console.log(`Falling back to GET method for ${keyName} API key`);
-      const getResponse = await supabase.functions.invoke(
-        `get-api-keys?key=${keyName}`,
-        {
-          method: "GET",
-        },
-      );
+      const getResponse = await supabase.functions.invoke(`get-api-keys?key=${keyName}`, {
+        method: "GET",
+      });
 
       if (getResponse.error) {
-        console.error(
-          `GET method also failed for ${keyName} API key:`,
-          getResponse.error.message,
-        );
-        throw new Error(
-          `Error fetching ${keyName} API key with GET: ${getResponse.error.message}`,
-        );
+        console.error(`GET method also failed for ${keyName} API key:`, getResponse.error.message);
+        throw new Error(`Error fetching ${keyName} API key with GET: ${getResponse.error.message}`);
       }
 
       if (!getResponse.data || !getResponse.data.key) {

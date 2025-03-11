@@ -7,9 +7,7 @@ interface UseRealEstatePipelineOptions {
   campusId?: string | null;
 }
 
-export const useRealEstatePipeline = (
-  options: UseRealEstatePipelineOptions = {},
-) => {
+export const useRealEstatePipeline = (options: UseRealEstatePipelineOptions = {}) => {
   const { campusId } = options;
 
   return useQuery({
@@ -36,9 +34,7 @@ export const useRealEstatePipeline = (
       logger.debug(`Fetched ${data?.length || 0} real estate properties`);
 
       if (campusId) {
-        logger.debug(
-          `Filtered by campus ID: ${campusId}, found ${data?.length || 0} properties`,
-        );
+        logger.debug(`Filtered by campus ID: ${campusId}, found ${data?.length || 0} properties`);
       }
 
       return data || [];

@@ -24,9 +24,7 @@ export const Navigation = ({ features }: NavigationProps) => {
   return (
     <nav className="flex flex-col space-y-0.5 px-4">
       {navItems.map((item) => {
-        const icon = navIcons[item.label] || (
-          <MessageSquare className="h-5 w-5" />
-        );
+        const icon = navIcons[item.label] || <MessageSquare className="h-5 w-5" />;
 
         return (
           <NavLink
@@ -40,9 +38,7 @@ export const Navigation = ({ features }: NavigationProps) => {
               }`
             }
           >
-            <span className="mr-3 opacity-90 flex items-center justify-center">
-              {icon}
-            </span>
+            <span className="mr-3 opacity-90 flex items-center justify-center">{icon}</span>
             {item.label}
           </NavLink>
         );

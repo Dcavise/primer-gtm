@@ -8,10 +8,7 @@ interface SyncErrorAlertProps {
   details?: Record<string, any>;
 }
 
-export const SyncErrorAlert: React.FC<SyncErrorAlertProps> = ({
-  error,
-  details,
-}) => {
+export const SyncErrorAlert: React.FC<SyncErrorAlertProps> = ({ error, details }) => {
   const [showDetailedError, setShowDetailedError] = useState(false);
 
   return (

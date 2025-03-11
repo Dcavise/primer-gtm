@@ -24,7 +24,7 @@ export async function fetchCampuses(): Promise<Campus[]> {
         message: error.message,
       },
       false,
-      { context: "fetchCampuses" },
+      { context: "fetchCampuses" }
     );
 
     throw new Error("Failed to fetch campuses data");
@@ -58,7 +58,7 @@ export const useCampuses = () => {
         },
         "Failed to refresh campuses",
         true,
-        { context: "refreshCampuses" },
+        { context: "refreshCampuses" }
       ) !== null
     );
   };

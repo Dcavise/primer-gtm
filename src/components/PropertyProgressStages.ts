@@ -48,9 +48,7 @@ export const getProgressStages = (): Stage[] => {
 };
 
 // This function maps a property's phase to the corresponding progress stages
-export const mapPhaseToProgressStages = (
-  phase: PropertyPhase | null,
-): Stage[] => {
+export const mapPhaseToProgressStages = (phase: PropertyPhase | null): Stage[] => {
   const stages = getProgressStages();
 
   if (!phase) return stages;

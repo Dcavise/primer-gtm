@@ -83,20 +83,17 @@ export function LeaseStatusSelector({
                 className={cn(
                   "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none",
                   "hover:bg-accent hover:text-accent-foreground",
-                  value === status ? "bg-accent text-accent-foreground" : "",
+                  value === status ? "bg-accent text-accent-foreground" : ""
                 )}
                 onClick={() => handleSelect(status)}
               >
                 <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    value === status ? "opacity-100" : "opacity-0",
-                  )}
+                  className={cn("mr-2 h-4 w-4", value === status ? "opacity-100" : "opacity-0")}
                 />
                 <span
                   className={cn(
                     "px-2 py-0.5 rounded text-xs font-medium mr-2",
-                    getStatusColor(status),
+                    getStatusColor(status)
                   )}
                 >
                   {formatStatus(status)}

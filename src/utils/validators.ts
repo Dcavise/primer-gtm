@@ -1,9 +1,7 @@
 import { z } from "zod";
 
 // Basic string validation
-export const validateText = (
-  value: unknown,
-): { valid: boolean; error?: string } => {
+export const validateText = (value: unknown): { valid: boolean; error?: string } => {
   try {
     z.string().parse(value);
     return { valid: true };
@@ -18,9 +16,7 @@ export const validateText = (
 // Email validation
 export const emailSchema = z.string().email("Must be a valid email address");
 
-export const validateEmail = (
-  value: unknown,
-): { valid: boolean; error?: string } => {
+export const validateEmail = (value: unknown): { valid: boolean; error?: string } => {
   try {
     emailSchema.parse(value);
     return { valid: true };
@@ -38,9 +34,7 @@ export const positiveIntegerSchema = z
   .int("Must be an integer")
   .positive("Must be a positive integer");
 
-export const validatePositiveInteger = (
-  value: unknown,
-): { valid: boolean; error?: string } => {
+export const validatePositiveInteger = (value: unknown): { valid: boolean; error?: string } => {
   try {
     // First convert string to number if needed
     const numberValue = typeof value === "string" ? Number(value) : value;
@@ -55,13 +49,9 @@ export const validatePositiveInteger = (
 };
 
 // Phone number validation (simple format)
-export const phoneSchema = z
-  .string()
-  .regex(/^\+?[\d\s-()]{7,15}$/, "Must be a valid phone number");
+export const phoneSchema = z.string().regex(/^\+?[\d\s-()]{7,15}$/, "Must be a valid phone number");
 
-export const validatePhone = (
-  value: unknown,
-): { valid: boolean; error?: string } => {
+export const validatePhone = (value: unknown): { valid: boolean; error?: string } => {
   try {
     phoneSchema.parse(value);
     return { valid: true };
