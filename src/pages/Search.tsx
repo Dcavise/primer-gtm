@@ -4,8 +4,9 @@ import { Card } from "../components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 import SearchBox from "../components/SearchBox";
-import { Checkbox, Divider, Table } from "antd";
-import type { CheckboxOptionType, TableColumnsType } from "antd";
+import { Checkbox, Divider, Table, Input, Space, Button as AntButton } from "antd";
+import type { CheckboxOptionType, TableColumnsType, TableProps } from "antd";
+import { SearchOutlined, FilterOutlined } from '@ant-design/icons';
 import {
   Search as SearchIcon,
   Users,
@@ -87,6 +88,8 @@ interface DataType {
   name: string;
   age: number;
   address: string;
+  campus: string;
+  stage: string;
 }
 
 /**
@@ -436,45 +439,103 @@ const Search = () => {
     }
   };
 
-  // Ant Design Table setup
-  const tableColumns: TableColumnsType<DataType> = [
-    { title: 'Column 1', dataIndex: 'address', key: '1' },
-    { title: 'Column 2', dataIndex: 'address', key: '2' },
-    { title: 'Column 3', dataIndex: 'address', key: '3' },
-    { title: 'Column 4', dataIndex: 'address', key: '4' },
-    { title: 'Column 5', dataIndex: 'address', key: '5' },
-    { title: 'Column 6', dataIndex: 'address', key: '6' },
-    { title: 'Column 7', dataIndex: 'address', key: '7' },
-    { title: 'Column 8', dataIndex: 'address', key: '8' },
-  ];
+  // Define our available campus options for filtering
+  const campusOptions = ["East Campus", "West Campus", "North Campus", "South Campus", "Downtown"];
+  
+  // Define stage options for filtering
+  const stageOptions = ["Application", "Interviewed", "Offered", "Enrolled", "Declined"];
 
+  // Ant Design Table setup
   const tableData: DataType[] = [
     {
       key: '1',
       name: 'John Brown',
       age: 32,
       address: 'New York Park',
+      campus: 'Downtown',
+      stage: 'Enrolled',
     },
     {
       key: '2',
       name: 'Jim Green',
       age: 40,
       address: 'London Park',
+      campus: 'West Campus',
+      stage: 'Application',
+    },
+    {
+      key: '3',
+      name: 'Sarah Miller',
+      age: 35,
+      address: 'Chicago Central',
+      campus: 'North Campus',
+      stage: 'Interviewed',
+    },
+    {
+      key: '4',
+      name: 'Michael Taylor',
+      age: 28,
+      address: 'Boston Heights',
+      campus: 'East Campus',
+      stage: 'Offered',
+    },
+    {
+      key: '5',
+      name: 'Emma Wilson',
+      age: 45,
+      address: 'Dallas Downtown',
+      campus: 'South Campus',
+      stage: 'Declined',
     },
   ];
 
-  const defaultCheckedList = tableColumns.map((item) => item.key);
-  const [checkedList, setCheckedList] = useState(defaultCheckedList);
+  // Table column definitions with filters
+  const tableColumns: TableColumnsType<DataType> = [
+    {
+      title: 'Name',
+      dataIndex: 'name',
+      key: 'name',
+      sorter: (a, b) => a.name.localeCompare(b.name),
+    },
+    {
+      title: 'Age',
+      dataIndex: 'age',
+      key: 'age',
+      sorter: (a, b) => a.age - b.age,
+    },
+    {
+      title: 'Address',
+      dataIndex: 'address',
+      key: 'address',
+    },
+    {
+      title: 'Campus',
+      dataIndex: 'campus',
+      key: 'campus',
+      filters: campusOptions.map(campus => ({ text: campus, value: campus })),
+      onFilter: (value, record) => record.campus === value,
+      filterSearch: true,
+    },
+    {
+      title: 'Stage',
+      dataIndex: 'stage',
+      key: 'stage',
+      filters: stageOptions.map(stage => ({ text: stage, value: stage })),
+      onFilter: (value, record) => record.stage === value,
+      filterSearch: true,
+    },
+  ];
+
+  const [checkedList, setCheckedList] = useState<React.Key[]>(tableColumns.map(col => col.key as React.Key));
 
   const options = tableColumns.map(({ key, title }) => ({
     label: title,
     value: key,
   }));
 
-  const newColumns = tableColumns.map((item) => ({
-    ...item,
-    hidden: !checkedList.includes(item.key as string),
-  }));
+  const filteredColumns = tableColumns.filter(column => 
+    checkedList.includes(column.key as React.Key)
+  );
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -504,23 +565,6 @@ const Search = () => {
           hideResults={false}
         />
         
-        {/* Ant Design Table Component */}
-        <div className="bg-white rounded-lg shadow-sm p-6 space-y-4 mb-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Building className="h-5 w-5 text-slate-gray" />
-            <span className="text-xl font-semibold text-outer-space">Table Example</span>
-          </div>
-          <Divider>Columns displayed</Divider>
-          <Checkbox.Group
-            value={checkedList}
-            options={options as CheckboxOptionType[]}
-            onChange={(value) => {
-              setCheckedList(value as string[]);
-            }}
-          />
-          <Table<DataType> columns={newColumns} dataSource={tableData} style={{ marginTop: 24 }} />
-        </div>
-
         <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -748,6 +792,30 @@ const Search = () => {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Ant Design Table Component */}
+        <div className="bg-white rounded-lg shadow-sm p-6 space-y-4 mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Building className="h-5 w-5 text-slate-gray" />
+            <span className="text-xl font-semibold text-outer-space">Table Example</span>
+          </div>
+          <div className="mb-4">
+            <Divider orientation="left">Columns displayed</Divider>
+            <Checkbox.Group
+              value={checkedList}
+              options={options as CheckboxOptionType[]}
+              onChange={(value) => {
+                setCheckedList(value as React.Key[]);
+              }}
+            />
+          </div>
+          <Table 
+            columns={filteredColumns} 
+            dataSource={tableData} 
+            pagination={{ pageSize: 5 }}
+            bordered
+          />
         </div>
       </div>
     </div>
