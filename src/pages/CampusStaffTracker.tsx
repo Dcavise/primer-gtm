@@ -14,6 +14,7 @@ import { ChevronDown, Plus, UserRound, InfoIcon, AlertCircle } from "lucide-reac
 import { supabase } from "../integrations/supabase-client";
 import { logger } from "@/utils/logger";
 import { format } from "date-fns";
+import { Collapse } from "antd";
 
 // Define a type for the fellow data we'll be fetching
 interface FellowData {
@@ -193,6 +194,118 @@ const CampusStaffTracker: React.FC = () => {
     return !orderedStages.includes(fellow.hiring_stage);
   });
 
+  // Create fellow card component for reuse
+  const FellowCard = ({ fellow }: { fellow: FellowData }) => (
+    <Card key={fellow.id} className="border hover:shadow-md transition-shadow">
+      <CardContent className="p-4">
+        <div className="flex items-start gap-4">
+          <div className="flex-shrink-0 w-12 h-12 bg-gray-200 rounded-md flex items-center justify-center text-gray-500 text-lg font-medium">
+            {fellow.fellow_name.charAt(0)}
+          </div>
+          <div className="flex-grow">
+            <div className="flex flex-col sm:flex-row sm:justify-between">
+              <h3 className="font-medium">{fellow.fellow_name}</h3>
+            </div>
+            <p className="text-gray-600 text-sm">
+              {fellow.grade_band || "No grade band specified"}
+            </p>
+
+            <div className="flex flex-wrap gap-1 mt-2">
+              {fellow.cohort && (
+                <Badge
+                  variant="outline"
+                  className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100"
+                >
+                  Cohort {fellow.cohort}
+                </Badge>
+              )}
+              <Badge
+                variant="outline"
+                className={`text-xs ${
+                  fellow.hiring_stage === "Hired"
+                    ? "bg-green-100 text-green-800 hover:bg-green-100"
+                    : fellow.hiring_stage === "Offer"
+                      ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
+                      : fellow.hiring_stage === "Fellow"
+                        ? "bg-purple-100 text-purple-800 hover:bg-purple-100"
+                        : fellow.hiring_stage === "New"
+                          ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
+                          : fellow.hiring_stage === "Rejected/Declined"
+                            ? "bg-red-100 text-red-800 hover:bg-red-100"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                {fellow.hiring_stage}
+              </Badge>
+              {fellow.applied_date && (
+                <Badge
+                  variant="outline"
+                  className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100"
+                >
+                  Applied: {formatDate(fellow.applied_date)}
+                </Badge>
+              )}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  // Generate unknown fellows content for collapse component
+  const generateUnknownFellowsContent = () => {
+    if (unknownFellows.length === 0) return null;
+    
+    return (
+      <div className="space-y-4 mt-2">
+        {unknownFellows.map((fellow) => (
+          <Card key={fellow.id} className="border hover:shadow-md transition-shadow border-amber-200">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-12 h-12 bg-amber-100 rounded-md flex items-center justify-center text-amber-700 text-lg font-medium">
+                  {fellow.fellow_name.charAt(0)}
+                </div>
+                <div className="flex-grow">
+                  <div className="flex flex-col sm:flex-row sm:justify-between">
+                    <h3 className="font-medium">{fellow.fellow_name}</h3>
+                  </div>
+                  <p className="text-gray-600 text-sm">
+                    {fellow.grade_band || "No grade band specified"}
+                  </p>
+
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {fellow.cohort && (
+                      <Badge
+                        variant="outline"
+                        className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100"
+                      >
+                        Cohort {fellow.cohort}
+                      </Badge>
+                    )}
+                    <Badge
+                      variant="outline"
+                      className="text-xs bg-amber-100 text-amber-800 hover:bg-amber-100"
+                    >
+                      Stage: {fellow.hiring_stage || "Unknown"}
+                    </Badge>
+                    {fellow.applied_date && (
+                      <Badge
+                        variant="outline"
+                        className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100"
+                      >
+                        Applied: {formatDate(fellow.applied_date)}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="container mx-auto p-4">
       <div className="flex flex-col space-y-4 mb-6">
@@ -292,117 +405,29 @@ const CampusStaffTracker: React.FC = () => {
         )}
         
         {filteredFellows.map((fellow) => (
-          <Card key={fellow.id} className="border hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-12 h-12 bg-gray-200 rounded-md flex items-center justify-center text-gray-500 text-lg font-medium">
-                  {fellow.fellow_name.charAt(0)}
-                </div>
-                <div className="flex-grow">
-                  <div className="flex flex-col sm:flex-row sm:justify-between">
-                    <h3 className="font-medium">{fellow.fellow_name}</h3>
-                  </div>
-                  <p className="text-gray-600 text-sm">
-                    {fellow.grade_band || "No grade band specified"}
-                  </p>
-
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {fellow.cohort && (
-                      <Badge
-                        variant="outline"
-                        className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100"
-                      >
-                        Cohort {fellow.cohort}
-                      </Badge>
-                    )}
-                    <Badge
-                      variant="outline"
-                      className={`text-xs ${
-                        fellow.hiring_stage === "Hired"
-                          ? "bg-green-100 text-green-800 hover:bg-green-100"
-                          : fellow.hiring_stage === "Offer"
-                            ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
-                            : fellow.hiring_stage === "Fellow"
-                              ? "bg-purple-100 text-purple-800 hover:bg-purple-100"
-                              : fellow.hiring_stage === "New"
-                                ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
-                                : fellow.hiring_stage === "Rejected/Declined"
-                                  ? "bg-red-100 text-red-800 hover:bg-red-100"
-                                  : "bg-gray-100 text-gray-700 hover:bg-gray-100"
-                      }`}
-                    >
-                      {fellow.hiring_stage}
-                    </Badge>
-                    {fellow.applied_date && (
-                      <Badge
-                        variant="outline"
-                        className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100"
-                      >
-                        Applied: {formatDate(fellow.applied_date)}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <FellowCard key={fellow.id} fellow={fellow} />
         ))}
       </div>
       
-      {/* Unknown Fellows Section */}
+      {/* Unknown Fellows Section with Collapse */}
       {!fetchingFellows && unknownFellows.length > 0 && (
         <div className="mt-10">
-          <div className="flex items-center mb-4">
-            <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
-            <h2 className="text-lg font-semibold">Unknown Stage Fellows</h2>
-          </div>
-          
-          <div className="space-y-4">
-            {unknownFellows.map((fellow) => (
-              <Card key={fellow.id} className="border hover:shadow-md transition-shadow border-amber-200">
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-12 h-12 bg-amber-100 rounded-md flex items-center justify-center text-amber-700 text-lg font-medium">
-                      {fellow.fellow_name.charAt(0)}
-                    </div>
-                    <div className="flex-grow">
-                      <div className="flex flex-col sm:flex-row sm:justify-between">
-                        <h3 className="font-medium">{fellow.fellow_name}</h3>
-                      </div>
-                      <p className="text-gray-600 text-sm">
-                        {fellow.grade_band || "No grade band specified"}
-                      </p>
-
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {fellow.cohort && (
-                          <Badge
-                            variant="outline"
-                            className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100"
-                          >
-                            Cohort {fellow.cohort}
-                          </Badge>
-                        )}
-                        <Badge
-                          variant="outline"
-                          className="text-xs bg-amber-100 text-amber-800 hover:bg-amber-100"
-                        >
-                          Stage: {fellow.hiring_stage || "Unknown"}
-                        </Badge>
-                        {fellow.applied_date && (
-                          <Badge
-                            variant="outline"
-                            className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100"
-                          >
-                            Applied: {formatDate(fellow.applied_date)}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
+          <Collapse
+            collapsible="header"
+            defaultActiveKey={['1']}
+            items={[
+              {
+                key: '1',
+                label: (
+                  <div className="flex items-center">
+                    <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
+                    <span className="text-lg font-semibold">Unknown Stage Fellows ({unknownFellows.length})</span>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                ),
+                children: generateUnknownFellowsContent(),
+              },
+            ]}
+          />
         </div>
       )}
     </div>
