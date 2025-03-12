@@ -85,11 +85,15 @@ const getSchoolYearClasses = (year: string): string => {
 // Define ant design table types
 interface DataType {
   key: React.Key;
+  id: string;
   name: string;
-  age: number;
-  address: string;
   campus: string;
   stage: string;
+  familyIds?: {
+    standard_id?: string;
+    family_id?: string;
+    alternate_id?: string;
+  };
 }
 
 /**
@@ -440,73 +444,69 @@ const Search = () => {
   };
 
   // Define our available campus options for filtering
-  const campusOptions = ["East Campus", "West Campus", "North Campus", "South Campus", "Downtown"];
+  const campusOptions = useMemo(() => {
+    return campuses?.map(campus => campus.campus_name) || [];
+  }, [campuses]);
   
   // Define stage options for filtering
   const stageOptions = ["Application", "Interviewed", "Offered", "Enrolled", "Declined"];
 
-  // Ant Design Table setup
-  const tableData: DataType[] = [
-    {
-      key: '1',
-      name: 'John Brown',
-      age: 32,
-      address: 'New York Park',
-      campus: 'Downtown',
-      stage: 'Enrolled',
-    },
-    {
-      key: '2',
-      name: 'Jim Green',
-      age: 40,
-      address: 'London Park',
-      campus: 'West Campus',
-      stage: 'Application',
-    },
-    {
-      key: '3',
-      name: 'Sarah Miller',
-      age: 35,
-      address: 'Chicago Central',
-      campus: 'North Campus',
-      stage: 'Interviewed',
-    },
-    {
-      key: '4',
-      name: 'Michael Taylor',
-      age: 28,
-      address: 'Boston Heights',
-      campus: 'East Campus',
-      stage: 'Offered',
-    },
-    {
-      key: '5',
-      name: 'Emma Wilson',
-      age: 45,
-      address: 'Dallas Downtown',
-      campus: 'South Campus',
-      stage: 'Declined',
-    },
-  ];
+  // Ant Design Table setup - convert family search results to table data
+  const tableData: DataType[] = useMemo(() => {
+    return (familySearchResults || []).map((family, index) => {
+      // Extract IDs for consistent navigation
+      const standardId = family.standard_id || "";
+      const familyId = family.family_id || "";
+      const alternateId = family.alternate_id || "";
+      const bestId = standardId || familyId || alternateId;
+      
+      // Get campus name from campus map, don't display raw IDs
+      const campusId = family.current_campus_c || "";
+      const campusName = campusId ? campusMap[campusId] || "Unknown Campus" : "None";
+      
+      // Try to determine stage - this is an example, adjust based on your data structure
+      let stage = "Unknown";
+      if (family.opportunity_stages && family.opportunity_stages.length > 0) {
+        // Use the most recent stage if multiple exist
+        stage = family.opportunity_stages[0] || "Unknown";
+      }
+      
+      return {
+        key: index.toString(),
+        id: bestId,
+        name: family.family_name || "Unnamed Family",
+        campus: campusName,
+        stage: stage,
+        familyIds: {
+          standard_id: standardId,
+          family_id: familyId,
+          alternate_id: alternateId,
+        }
+      };
+    });
+  }, [familySearchResults, campusMap]);
+
+  // Handle row click to navigate to family detail
+  const handleRowClick = (record: DataType) => {
+    if (!record.id) {
+      console.error("Cannot navigate - missing family ID", record);
+      return;
+    }
+    
+    // Log for debugging
+    console.log(`Table: Navigating to family detail with ID: ${record.id}`);
+    
+    // Navigate to the family detail page
+    navigate(`/family-detail/${record.id}`);
+  };
 
   // Table column definitions with filters
   const tableColumns: TableColumnsType<DataType> = [
     {
-      title: 'Name',
+      title: 'Family Name',
       dataIndex: 'name',
       key: 'name',
       sorter: (a, b) => a.name.localeCompare(b.name),
-    },
-    {
-      title: 'Age',
-      dataIndex: 'age',
-      key: 'age',
-      sorter: (a, b) => a.age - b.age,
-    },
-    {
-      title: 'Address',
-      dataIndex: 'address',
-      key: 'address',
     },
     {
       title: 'Campus',
@@ -523,7 +523,7 @@ const Search = () => {
       filters: stageOptions.map(stage => ({ text: stage, value: stage })),
       onFilter: (value, record) => record.stage === value,
       filterSearch: true,
-    },
+    }
   ];
 
   const [checkedList, setCheckedList] = useState<React.Key[]>(tableColumns.map(col => col.key as React.Key));
@@ -754,7 +754,7 @@ const Search = () => {
                         <div className="flex items-center gap-2">
                           <h3 className="font-semibold text-outer-space">{result.name}</h3>
                           {result.hasWonOpportunities && (
-                            <Badge color="green" text="Active" className="font-medium" />
+                            <Badge className="bg-green-100 text-green-800 font-medium">Active</Badge>
                           )}
                           {/* If we want to add the "Open" badge here, we'd need additional logic */}
                         </div>
@@ -798,7 +798,7 @@ const Search = () => {
         <div className="bg-white rounded-lg shadow-sm p-6 space-y-4 mb-6">
           <div className="flex items-center gap-2 mb-4">
             <Building className="h-5 w-5 text-slate-gray" />
-            <span className="text-xl font-semibold text-outer-space">Table Example</span>
+            <span className="text-xl font-semibold text-outer-space">Family Records</span>
           </div>
           <div className="mb-4">
             <Divider orientation="left">Columns displayed</Divider>
@@ -810,12 +810,25 @@ const Search = () => {
               }}
             />
           </div>
-          <Table 
-            columns={filteredColumns} 
-            dataSource={tableData} 
-            pagination={{ pageSize: 5 }}
-            bordered
-          />
+          {tableData.length > 0 ? (
+            <Table 
+              columns={filteredColumns} 
+              dataSource={tableData} 
+              pagination={{ pageSize: 5 }}
+              bordered
+              onRow={(record) => ({
+                onClick: () => handleRowClick(record),
+                style: { cursor: 'pointer' }
+              })}
+            />
+          ) : (
+            <div className="text-center py-8 border rounded-lg bg-gray-50">
+              <p className="text-slate-gray">No family records available</p>
+              <p className="text-slate-400 text-sm mt-1">
+                Use the search bar above to find families
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
