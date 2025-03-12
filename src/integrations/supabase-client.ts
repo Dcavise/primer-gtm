@@ -31,6 +31,7 @@ export interface FamilySearchResult {
   alternate_id: string;
   family_name: string;
   current_campus_c: string;
+  current_campus_name: string;
   contact_count: number;
   opportunity_count: number;
   opportunity_is_won_flags?: boolean[]; // Array of booleans indicating if any opportunity is won
@@ -320,6 +321,7 @@ export class SupabaseUnifiedClient {
               family_name,
               pdc_family_id_c, 
               current_campus_c,
+              c.name as current_campus_name,
               contact_count,
               opportunity_count,
               opportunity_is_won_flags,
@@ -327,10 +329,12 @@ export class SupabaseUnifiedClient {
               opportunity_preferred_campuses as opportunity_campuses,
               opportunity_stages
             FROM 
-              fivetran_views.comprehensive_family_records
+              fivetran_views.comprehensive_family_records_with_students fs
+            LEFT JOIN
+              fivetran_views.campus_c c ON fs.current_campus_c = c.id
             WHERE 
               family_name ILIKE '%${searchTerm}%' OR
-              current_campus_c ILIKE '%${searchTerm}%' OR
+              c.name ILIKE '%${searchTerm}%' OR
               EXISTS (
                   SELECT 1 
                   FROM generate_subscripts(opportunity_names, 1) AS i 
@@ -339,12 +343,47 @@ export class SupabaseUnifiedClient {
               ) OR
               EXISTS (
                   SELECT 1 
+                  FROM fivetran_views.opportunity o
+                  WHERE 
+                      o.account_id = fs.family_id AND
+                      (o.student_first_name_c ILIKE '%${searchTerm}%' OR
+                       o.student_last_name_c ILIKE '%${searchTerm}%')
+              ) OR
+              EXISTS (
+                  SELECT 1 
+                  FROM fivetran_views.derived_students s
+                  WHERE 
+                      s.family_id = fs.family_id AND
+                      (s.first_name ILIKE '%${searchTerm}%' OR
+                       s.last_name ILIKE '%${searchTerm}%' OR
+                       s.full_name ILIKE '%${searchTerm}%')
+              ) OR
+              EXISTS (
+                  SELECT 1 
                   FROM generate_subscripts(contact_last_names, 1) AS i 
                   WHERE 
                       contact_last_names[i] ILIKE '%${searchTerm}%' OR
                       contact_emails[i] ILIKE '%${searchTerm}%' OR
                       contact_phones[i] ILIKE '%${searchTerm}%'
-              )
+              ) OR
+              EXISTS (
+                  SELECT 1 
+                  FROM fivetran_views.contact c
+                  WHERE 
+                      c.account_id = fs.family_id AND
+                      (c.first_name ILIKE '%${searchTerm}%' OR
+                       c.last_name ILIKE '%${searchTerm}%' OR
+                       c.email ILIKE '%${searchTerm}%' OR
+                       c.phone ILIKE '%${searchTerm}%')
+              ) OR
+              EXISTS (
+                  SELECT 1 
+                  FROM generate_subscripts(student_first_names, 1) AS i 
+                  WHERE 
+                      student_first_names[i] ILIKE '%${searchTerm}%' OR
+                      student_last_names[i] ILIKE '%${searchTerm}%' OR
+                      student_full_names[i] ILIKE '%${searchTerm}%'
+              ) 
             LIMIT 20
           `;
 
@@ -405,7 +444,7 @@ export class SupabaseUnifiedClient {
 
             foundResults = true;
             logger.debug(
-              `Found ${processedResults.length} families from comprehensive_family_records SQL query`
+              `Found ${processedResults.length} families from comprehensive_family_records_with_students SQL query`
             );
           }
         } catch (sqlRpcError) {
@@ -426,6 +465,7 @@ export class SupabaseUnifiedClient {
               family_name,
               pdc_family_id_c, 
               current_campus_c,
+              c.name as current_campus_name,
               contact_count,
               opportunity_count,
               ARRAY[false]::boolean[] as opportunity_is_won_flags,
@@ -433,63 +473,127 @@ export class SupabaseUnifiedClient {
               ARRAY['']::text[] as opportunity_campuses,
               ARRAY['']::text[] as opportunity_stages
             FROM 
-              fivetran_views.family_standard_ids
+              fivetran_views.family_standard_ids fs
+            LEFT JOIN
+              fivetran_views.campus_c c ON fs.current_campus_c = c.id
             WHERE 
               family_name ILIKE '%${searchTerm}%' OR
-              current_campus_c ILIKE '%${searchTerm}%' OR
+              c.name ILIKE '%${searchTerm}%' OR
               EXISTS (
                   SELECT 1 
                   FROM generate_subscripts(opportunity_names, 1) AS i 
                   WHERE 
                       opportunity_names[i] ILIKE '%${searchTerm}%'
-              )
+              ) OR
+              EXISTS (
+                  SELECT 1 
+                  FROM fivetran_views.opportunity o
+                  WHERE 
+                      o.account_id = fs.family_id AND
+                      (o.student_first_name_c ILIKE '%${searchTerm}%' OR
+                       o.student_last_name_c ILIKE '%${searchTerm}%')
+              ) OR
+              EXISTS (
+                  SELECT 1 
+                  FROM fivetran_views.derived_students s
+                  WHERE 
+                      s.family_id = fs.family_id AND
+                      (s.first_name ILIKE '%${searchTerm}%' OR
+                       s.last_name ILIKE '%${searchTerm}%' OR
+                       s.full_name ILIKE '%${searchTerm}%')
+              ) OR
+              EXISTS (
+                  SELECT 1 
+                  FROM generate_subscripts(contact_last_names, 1) AS i 
+                  WHERE 
+                      contact_last_names[i] ILIKE '%${searchTerm}%' OR
+                      contact_emails[i] ILIKE '%${searchTerm}%' OR
+                      contact_phones[i] ILIKE '%${searchTerm}%'
+              ) OR
+              EXISTS (
+                  SELECT 1 
+                  FROM fivetran_views.contact c
+                  WHERE 
+                      c.account_id = fs.family_id AND
+                      (c.first_name ILIKE '%${searchTerm}%' OR
+                       c.last_name ILIKE '%${searchTerm}%' OR
+                       c.email ILIKE '%${searchTerm}%' OR
+                       c.phone ILIKE '%${searchTerm}%')
+              ) OR
+              EXISTS (
+                  SELECT 1 
+                  FROM generate_subscripts(student_first_names, 1) AS i 
+                  WHERE 
+                      student_first_names[i] ILIKE '%${searchTerm}%' OR
+                      student_last_names[i] ILIKE '%${searchTerm}%' OR
+                      student_full_names[i] ILIKE '%${searchTerm}%'
+              ) 
             LIMIT 20
           `;
 
-          const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/execute_sql_query`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              apikey: SUPABASE_ANON_KEY,
-              Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-            },
-            body: JSON.stringify({
-              query_text: sqlQuery,
-            }),
+          logger.debug("Executing family search query using execute_sql_query RPC");
+          const { data, error } = await this.regular.rpc("execute_sql_query", {
+            query_text: sqlQuery,
           });
 
-          if (!response.ok) {
-            const errorText = await response.text();
-            logger.warn(`Error with direct SQL POST: ${response.status} - ${errorText}`);
-            throw new Error(`SQL query failed: ${response.status} - ${errorText}`);
-          }
+          if (error) {
+            logger.warn(`Error executing SQL query: ${error.message}`, error);
+          } else {
+            // The execute_sql_query RPC returns results in a 'rows' property
+            logger.debug(`Raw result data:`, data);
 
-          const data = await response.json();
+            // Better handling of response structure
+            let resultRows: Record<string, unknown>[] = [];
 
-          // Get the rows from the response if available
-          const resultRows =
-            data && typeof data === "object" && "rows" in data
-              ? (data.rows as Record<string, unknown>[])
-              : ((Array.isArray(data) ? data : []) as Record<string, unknown>[]);
-
-          // Process the results to add standardized IDs
-          const processedResults = this.processSearchResults(resultRows);
-
-          // Add to unique family map
-          processedResults.forEach((family) => {
-            if (family.family_id && !familyMap.has(family.family_id)) {
-              familyMap.set(family.family_id, family);
+            if (data) {
+              if (Array.isArray(data)) {
+                resultRows = data;
+                logger.debug(`Data is direct array with ${data.length} items`);
+              } else if (typeof data === "object") {
+                if ("rows" in data && Array.isArray(data.rows)) {
+                  resultRows = data.rows as Record<string, unknown>[];
+                  logger.debug(`Data has rows array with ${resultRows.length} items`);
+                } else if ("result" in data && Array.isArray(data.result)) {
+                  resultRows = data.result as Record<string, unknown>[];
+                  logger.debug(`Data has result array with ${resultRows.length} items`);
+                } else {
+                  // Last attempt - check if it's a single object that should be wrapped in array
+                  logger.debug(
+                    `Data is object without standard array property, keys:`,
+                    Object.keys(data)
+                  );
+                  if (Object.keys(data).length > 0) {
+                    resultRows = [data as Record<string, unknown>];
+                  }
+                }
+              }
             }
-          });
 
-          foundResults = true;
-          logger.debug(`Found ${processedResults.length} families via direct POST request`);
-        } catch (fetchError) {
-          logger.error("Final fallback family search failed", fetchError);
-          // If we have no other results, return this error
-          if (familyMap.size === 0) {
-            return { success: false, data: [], error: String(fetchError) };
+            logger.debug(
+              `Raw result structure:`,
+              typeof data,
+              Array.isArray(data) ? "is array" : "not array",
+              `Extracted ${resultRows.length} rows`
+            );
+
+            // Process the results to add standardized IDs
+            const processedResults = this.processSearchResults(resultRows);
+
+            // Add to unique family map
+            processedResults.forEach((family) => {
+              if (family.family_id && !familyMap.has(family.family_id)) {
+                familyMap.set(family.family_id, family);
+              }
+            });
+
+            foundResults = true;
+            logger.debug(
+              `Found ${processedResults.length} families from family_standard_ids SQL query`
+            );
           }
+        } catch (sqlRpcError) {
+          logger.warn("execute_sql_query RPC failed", sqlRpcError);
+          // Continue to next approach
         }
       }
 
@@ -601,6 +705,7 @@ export class SupabaseUnifiedClient {
         // Keep all other fields with safe fallbacks
         family_name: (family.family_name as string) || "",
         current_campus_c: (family.current_campus_c as string) || "",
+        current_campus_name: (family.current_campus_name as string) || "",
         contact_count:
           typeof family.contact_count === "number"
             ? family.contact_count
@@ -635,18 +740,74 @@ export class SupabaseUnifiedClient {
       // Use the fivetran_views schema for the query
       const query = `
         SELECT 
-          family_id,
-          family_name,
-          pdc_family_id_c,
-          current_campus_c,
-          current_campus_name,
-          students,
-          contacts
+          f.family_id::uuid,
+          f.family_name,
+          f.pdc_family_id_c,
+          f.current_campus_c,
+          (f.contact_ids)::uuid[],
+          f.contact_first_names,
+          f.contact_last_names,
+          f.contact_phones,
+          f.contact_emails,
+          f.contact_last_activity_dates,
+          -- Student arrays with type casting
+          ARRAY(
+              SELECT s.id::uuid
+              FROM fivetran_views.derived_students s
+              WHERE s.family_id = family_id_param::varchar
+          ) AS student_ids,
+          ARRAY(
+              SELECT s.first_name
+              FROM fivetran_views.derived_students s
+              WHERE s.family_id = family_id_param::varchar
+          ) AS student_first_names,
+          ARRAY(
+              SELECT s.last_name
+              FROM fivetran_views.derived_students s
+              WHERE s.family_id = family_id_param::varchar
+          ) AS student_last_names,
+          ARRAY(
+              SELECT s.full_name
+              FROM fivetran_views.derived_students s
+              WHERE s.family_id = family_id_param::varchar
+          ) AS student_full_names,
+          -- Rest of existing fields
+          (f.opportunity_ids)::uuid[],
+          f.opportunity_record_types,
+          f.opportunity_names,
+          f.opportunity_stages,
+          f.opportunity_is_won_flags,
+          f.opportunity_created_dates,
+          f.opportunity_last_stage_change_dates,
+          f.opportunity_lead_notes,
+          f.opportunity_family_interview_notes,
+          f.opportunity_preferred_campuses,
+          f.opportunity_family_last_names,
+          f.opportunity_pdc_user_ids,
+          f.opportunity_grades,
+          f.opportunity_pdc_profile_urls,
+          f.opportunity_campuses,
+          f.opportunity_actualized_financial_aids,
+          (f.tuition_offer_ids)::uuid[],
+          f.tuition_offer_created_dates,
+          f.tuition_offer_accepted_dates,
+          f.tuition_offer_enrollment_fees,
+          f.tuition_offer_family_contributions,
+          f.tuition_offer_statuses,
+          f.tuition_offer_start_dates,
+          f.tuition_offer_state_scholarships,
+          f.tuition_offer_last_viewed_dates,
+          f.contact_count,
+          f.opportunity_count,
+          (SELECT COUNT(*) FROM fivetran_views.derived_students s WHERE s.family_id = family_id_param::varchar) AS student_count,
+          f.tuition_offer_count,
+          f.latest_opportunity_date,
+          f.latest_contact_activity_date,
+          f.latest_tuition_offer_date
         FROM 
-          fivetran_views.family_enhanced
+          fivetran_views.comprehensive_family_records_with_students f
         WHERE 
-          family_id = $1
-        LIMIT 1
+          f.family_id::varchar = family_id_param::varchar;
       `;
 
       // Sanitize the input to prevent SQL injection

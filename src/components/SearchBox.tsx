@@ -4,6 +4,21 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase-client";
 import debounce from "lodash.debounce";
 
+/**
+ * Format a campus ID to be more readable
+ * @param campusId The campus ID to format
+ * @returns A more readable version of the campus ID
+ */
+const formatCampusId = (campusId: string | undefined): string => {
+  if (!campusId) return "Not Assigned";
+  
+  // If it's already a readable name, return it
+  if (!campusId.startsWith("a0NUH")) return campusId;
+  
+  // Remove the prefix and any numbers
+  return campusId.replace(/^a0NUH/, "").replace(/[0-9]/g, "") || campusId;
+};
+
 // Search result interface for dynamic search results
 interface SearchResult {
   id: string;
@@ -15,6 +30,7 @@ interface SearchResult {
     contact_count?: number;
     opportunity_count?: number;
     current_campus_c?: string;
+    current_campus_name?: string;
   };
 }
 
@@ -32,6 +48,7 @@ interface FamilySearchResult {
   family_id: string;
   family_name: string;
   current_campus_c: string;
+  current_campus_name: string;
   contact_count: number;
   opportunity_count: number;
 }
@@ -155,7 +172,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({
             : (familyData || []).map((family: FamilySearchResult) => ({
                 id: family.family_id,
                 title: family.family_name || "Unnamed Family",
-                description: `Campus: ${family.current_campus_c || "None"}, Contacts: ${family.contact_count || 0}, Opportunities: ${family.opportunity_count || 0}`,
+                description: "",
                 category: "Family",
                 url: `/family-detail/${family.family_id}`,
                 extraData: family,
@@ -342,8 +359,6 @@ const SearchBox: React.FC<SearchBoxProps> = ({
                   </div>
                   <div className="flex-1">
                     <div className="font-medium">{result.title}</div>
-                    <div className="text-sm text-gray-500">{result.description}</div>
-                    <div className="text-xs text-gray-400 mt-1">{result.category}</div>
                   </div>
                   <ArrowRight className="h-4 w-4 text-gray-400 mt-1 ml-2" />
                 </div>

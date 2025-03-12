@@ -32,6 +32,7 @@ interface DataType {
     family_id: string;
   };
   account_id: string;
+  account_name: string;
 }
 
 // Define interface for search result
@@ -281,6 +282,7 @@ const Search = () => {
           campus: opp.campus_name || "Unknown Campus",
           tuition: typeof opp.tuition === 'number' ? opp.tuition : 0,
           account_id: opp.account_id || "",
+          account_name: opp.account_name || "",
           familyIds: {
             family_id: opp.account_id || "",
           }
@@ -385,10 +387,14 @@ const Search = () => {
 
   const tableColumns: TableColumnsType<DataType> = [
     {
-      title: 'Opportunity Name',
+      title: 'Opportunity',
       dataIndex: 'name',
       key: 'name',
-      sorter: (a, b) => a.name.localeCompare(b.name),
+    },
+    {
+      title: 'Campus',
+      dataIndex: 'campus',
+      key: 'campus',
     },
     {
       title: 'Student',
@@ -424,11 +430,6 @@ const Search = () => {
       title: 'Grade',
       dataIndex: 'grade',
       key: 'grade',
-    },
-    {
-      title: 'Campus',
-      dataIndex: 'campus',
-      key: 'campus',
     },
     {
       title: 'Tuition',
@@ -477,11 +478,8 @@ const Search = () => {
         <div className="bg-white rounded-lg shadow-sm p-6 space-y-4"></div>
 
         {/* Opportunity Table Component */}
-        <div className="bg-white rounded-lg shadow-sm p-6 space-y-4 mb-6" data-component-name="Search">
-          <div className="flex items-center gap-2 mb-4">
-            <Building className="h-5 w-5 text-slate-gray" />
-            <span className="text-xl font-semibold text-outer-space">Opportunities</span>
-          </div>
+        <div className="bg-white rounded-lg shadow-sm p-6 space-y-4 mb-6">
+          <h2 className="text-2xl font-semibold text-outer-space mb-4">25/26 Opportunities</h2>
           
           {/* Filters */}
           <div className="flex flex-wrap gap-4 mb-4 pb-4 border-b">
