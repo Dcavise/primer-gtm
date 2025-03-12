@@ -89,89 +89,6 @@ const formatSchoolYearForDisplay = (schoolYear: string | undefined): string => {
   return schoolYear;
 };
 
-// Opportunity Card component
-interface OpportunityCardProps {
-  opportunity: StudentOpportunity;
-  studentName: string;
-}
-
-const OpportunityCard: React.FC<OpportunityCardProps> = ({ opportunity, studentName }) => {
-  const normalizedStage = opportunity.stage ? opportunity.stage.trim() : "New Application";
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{formatSchoolYearForDisplay(opportunity.school_year)} School Year</CardTitle>
-        <CardDescription>
-          <Badge
-            color={opportunity.is_won ? "green" : getOpportunityStageColor(normalizedStage)}
-            text={opportunity.is_won ? "Won" : normalizedStage}
-          />
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Left column - Student Info */}
-          <div className="space-y-4">
-            <div>
-              <h3 className="font-medium text-base mb-2">Student Information</h3>
-
-              <div className="space-y-3">
-                {opportunity.grade && (
-                  <div>
-                    <h5 className="text-sm font-medium text-muted-foreground">Grade</h5>
-                    <p className="text-sm font-medium">{opportunity.grade}</p>
-                  </div>
-                )}
-
-                {opportunity.campus_name && (
-                  <div>
-                    <h5 className="text-sm font-medium text-muted-foreground">Campus</h5>
-                    <p className="text-sm font-medium">{opportunity.campus_name}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Right column - Opportunity Details */}
-          <div className="space-y-4">
-            <div>
-              <h3 className="font-medium text-base mb-2">Opportunity Details</h3>
-
-              <div className="space-y-3">
-                <div>
-                  <h5 className="text-sm font-medium text-muted-foreground">School Year</h5>
-                  <p className="text-sm font-medium">{opportunity.school_year || "Unknown"}</p>
-                </div>
-
-                {opportunity.created_date && (
-                  <div>
-                    <h5 className="text-sm font-medium text-muted-foreground">Created Date</h5>
-                    <p className="text-sm font-medium">
-                      {new Date(opportunity.created_date).toLocaleDateString()}
-                    </p>
-                  </div>
-                )}
-
-                {/* Debug information */}
-                <div className="mt-4 pt-2 border-t border-dashed border-gray-200">
-                  <div>
-                    <h5 className="text-xs font-medium text-muted-foreground">
-                      Opportunity ID (Debug)
-                    </h5>
-                    <p className="text-xs font-mono bg-gray-50 p-1 rounded">{opportunity.id}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
 // Timeline component for student opportunities
 const StudentTimeline: React.FC<{ opportunities: StudentOpportunity[] }> = ({ opportunities }) => {
   // Sort opportunities by school year (most recent first)
@@ -708,22 +625,6 @@ const EnhancedFamilyDetail: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* Student opportunities */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Current Opportunities</h3>
-                    {student.opportunities && student.opportunities.length > 0 ? (
-                      student.opportunities.map((opportunity) => (
-                        <OpportunityCard
-                          key={opportunity.id}
-                          opportunity={opportunity}
-                          studentName={student.full_name}
-                        />
-                      ))
-                    ) : (
-                      <div className="text-muted-foreground">No opportunities found</div>
-                    )}
                   </div>
                   
                   {/* Student Timeline */}
