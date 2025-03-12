@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { LoadingState } from "@/components/LoadingState";
 import ErrorState from "@/components/ErrorState";
-import { Collapse } from "antd";
+import { Collapse, Splitter } from "antd";
 
 // Format school year for display (e.g., "2024-2025" -> "24/25")
 const formatSchoolYearForDisplay = (schoolYear: string | undefined): string => {
@@ -446,10 +446,10 @@ const EnhancedFamilyDetail: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   
-                  {/* Two-column layout for student information and opportunities */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                    {/* Left Column - Student Information */}
-                    <div className="space-y-6">
+                  {/* Use Splitter for student information and opportunities */}
+                  <Splitter style={{ marginTop: 20 }}>
+                    {/* Left Panel - Student Information */}
+                    <Splitter.Panel size="40%">
                       <div className="bg-card border border-muted/20 rounded-md p-4">
                         <div className="space-y-4">
                           <div>
@@ -511,10 +511,10 @@ const EnhancedFamilyDetail: React.FC = () => {
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </Splitter.Panel>
                     
-                    {/* Right Column - Opportunities Accordion */}
-                    <div className="space-y-4">
+                    {/* Right Panel - Opportunities */}
+                    <Splitter.Panel size="60%">
                       <div className="bg-card border border-muted/20 rounded-md p-4">
                         <h3 className="font-medium text-base mb-4 pb-2 border-b border-gray-200">Opportunities ({student.opportunities.length})</h3>
                         
@@ -543,8 +543,8 @@ const EnhancedFamilyDetail: React.FC = () => {
                           </div>
                         )}
                       </div>
-                    </div>
-                  </div>
+                    </Splitter.Panel>
+                  </Splitter>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -566,10 +566,10 @@ const EnhancedFamilyDetail: React.FC = () => {
           </CardHeader>
           <CardContent>
             
-            {/* Two-column layout for student information and opportunities */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-              {/* Left Column - Student Information */}
-              <div className="space-y-6">
+            {/* Use Splitter for student information and opportunities */}
+            <Splitter style={{ marginTop: 20 }}>
+              {/* Left Panel - Student Information */}
+              <Splitter.Panel size="40%">
                 <div className="bg-card border border-muted/20 rounded-md p-4">
                   <div className="space-y-4">
                     <div>
@@ -631,10 +631,10 @@ const EnhancedFamilyDetail: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              </div>
+              </Splitter.Panel>
               
-              {/* Right Column - Opportunities Accordion */}
-              <div className="space-y-4">
+              {/* Right Panel - Opportunities */}
+              <Splitter.Panel size="60%">
                 <div className="bg-card border border-muted/20 rounded-md p-4">
                   <h3 className="font-medium text-base mb-4 pb-2 border-b border-gray-200">Opportunities ({student.opportunities.length})</h3>
                   
@@ -663,8 +663,8 @@ const EnhancedFamilyDetail: React.FC = () => {
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
+              </Splitter.Panel>
+            </Splitter>
           </CardContent>
         </Card>
       );
