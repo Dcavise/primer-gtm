@@ -55,6 +55,7 @@
 - `campus_c` - Campus locations (contains both ID and name fields)
 - `derived_students` - Virtual students derived from opportunities
 - `opportunity_student_map` - Maps opportunities to students
+- `fellows` - Track fellowship program participants and their hiring process
 
 ### Important Functions
 - **get_family_record**: Retrieves detailed family record by family ID (now includes campus names)
@@ -163,6 +164,32 @@ The frontend now includes:
 - `useEnhancedFamilyData` hook for the new data structure
 - `EnhancedFamilyDetail` component to display structured student data
 - Improved display of student enrollment across multiple school years
+
+### Fellows Table Structure
+The `fellows` table tracks fellowship program participants and their hiring process:
+
+```typescript
+interface Fellow {
+  id: string;                 // UUID primary key
+  fellow_name: string;        // Required name of the fellow
+  cohort: '1' | '2' | '3' | 'unknown';  // Cohort group
+  grade_band: string;         // Grade band the fellow teaches
+  hiring_stage: 'new' | 'fellow' | 'offer' | 'hired' | 'rejected' | 'declined';  // Current stage in hiring process
+  campus_id: string;          // Foreign key to campus_c table
+  applied_date: Date;         // When the fellow applied
+  offered_date: Date;         // When an offer was extended
+  status: 'hired' | 'open' | 'closed' | 'unknown';  // Current status
+  comment_id: string;         // UUID for associated comments
+  created_at: Date;           // Auto-populated timestamp
+  updated_at: Date;           // Auto-updated timestamp via trigger
+}
+```
+
+Key features of the fellows table:
+- Indexed `campus_id` field for efficient joins with the campus_c table
+- Constrained enumeration fields (cohort, hiring_stage, status)
+- Automatic timestamp management via trigger for tracking record changes
+- Designed for tracking the fellowship program pipeline from application to hiring
 
 ### Documentation
 Full database documentation is available in the `/docs/` directory:
