@@ -19,15 +19,20 @@ export interface Campus {
 }
 
 export interface Fellow {
-  id: number;
-  fellow_id: number | null;
+  id: string;
   fellow_name: string;
   campus: string | null;
   campus_id: string | null;
   campus_name?: string | null;
-  cohort: number | null;
+  cohort: string | null;
   grade_band: string | null;
   fte_employment_status: string | null;
+  hiring_stage: string;
+  applied_date: string | null;
+  offered_date: string | null;
+  accepted_at: string | null;
+  status: string;
+  comment_id: string[] | null;
   updated_at: string | null;
 }
 

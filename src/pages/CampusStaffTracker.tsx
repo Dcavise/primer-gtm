@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
@@ -11,9 +11,14 @@ import {
 } from "../components/ui/select";
 import { Badge } from "../components/ui/badge";
 import { ChevronDown, Plus, UserRound } from "lucide-react";
+import { supabase } from "../integrations/supabase-client";
 
 const CampusStaffTracker: React.FC = () => {
   const [selectedCampus, setSelectedCampus] = useState<string>("riverdale");
+  const [stages, setStages] = useState<string[]>([]);
+  const [selectedStage, setSelectedStage] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Campus data
   const campuses = [
@@ -23,6 +28,46 @@ const CampusStaffTracker: React.FC = () => {
     { id: "bronx", name: "Bronx Campus" },
     { id: "manhattan", name: "Manhattan Campus" },
   ];
+
+  // Fetch the distinct stage values from fivetran_views.fellows
+  useEffect(() => {
+    const fetchStages = async () => {
+      setLoading(true);
+      try {
+        const { success, data, error } = await supabase.getFellowStages();
+        
+        if (success && data && data.length > 0) {
+          setStages(data);
+          setSelectedStage(data[0]); // Select the first stage by default
+        } else {
+          // Fallback to default stages if the API call fails
+          const defaultStages = ["Applied", "Interviewing", "Fellowship", "Made Offer", "Hired"];
+          setStages(defaultStages);
+          setSelectedStage(defaultStages[0]);
+          if (error) {
+            console.error("Error fetching fellow stages:", error);
+            setError(`Failed to fetch stages: ${error}`);
+          }
+        }
+      } catch (err) {
+        console.error("Exception fetching fellow stages:", err);
+        // Fallback to default stages
+        const defaultStages = ["Applied", "Interviewing", "Fellowship", "Made Offer", "Hired"];
+        setStages(defaultStages);
+        setSelectedStage(defaultStages[0]);
+        setError("An error occurred while fetching stages");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStages();
+  }, []);
+
+  // Handle stage selection
+  const handleStageSelect = (stage: string) => {
+    setSelectedStage(stage);
+  };
 
   return (
     <div className="container mx-auto p-4">
@@ -54,25 +99,38 @@ const CampusStaffTracker: React.FC = () => {
       </div>
 
       {/* Pipeline Stages Tabs */}
-      <div className="border-b mb-6">
-        <div className="grid grid-cols-5 w-full">
-          <button className="border-b-2 border-black py-3 text-center font-medium text-black">
-            Applied
-          </button>
-          <button className="py-3 text-center text-gray-500 hover:text-black hover:border-b-2 hover:border-gray-300">
-            Interviewing
-          </button>
-          <button className="py-3 text-center text-gray-500 hover:text-black hover:border-b-2 hover:border-gray-300">
-            Fellowship
-          </button>
-          <button className="py-3 text-center text-gray-500 hover:text-black hover:border-b-2 hover:border-gray-300">
-            Made Offer
-          </button>
-          <button className="py-3 text-center text-gray-500 hover:text-black hover:border-b-2 hover:border-gray-300">
-            Hired
-          </button>
+      {loading ? (
+        <div className="border-b mb-6">
+          <div className="py-3 text-center">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-black mx-auto"></div>
+            <p className="text-sm text-gray-500 mt-1">Loading stages...</p>
+          </div>
         </div>
-      </div>
+      ) : error ? (
+        <div className="border-b mb-6">
+          <div className="py-3 text-center text-red-500">
+            <p>Error loading stages. Using default values.</p>
+          </div>
+        </div>
+      ) : (
+        <div className="border-b mb-6">
+          <div className={`grid grid-cols-${Math.min(stages.length, 5)} w-full`}>
+            {stages.map((stage, index) => (
+              <button
+                key={index}
+                className={`py-3 text-center ${
+                  selectedStage === stage
+                    ? "border-b-2 border-black font-medium text-black"
+                    : "text-gray-500 hover:text-black hover:border-b-2 hover:border-gray-300"
+                }`}
+                onClick={() => handleStageSelect(stage)}
+              >
+                {stage}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Qualified/Disqualified Filter section removed */}
 

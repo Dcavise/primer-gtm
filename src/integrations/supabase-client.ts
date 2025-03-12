@@ -58,6 +58,7 @@ declare module "@supabase/supabase-js" {
         | "fivetran_views.search_families"
         | "fivetran_views.search_families_consistent"
         | "fivetran_views.get_family_by_standard_id"
+        | "fivetran_views.get_distinct_fellow_stages"
         | string,
       params?: Record<string, unknown>
     ): Promise<{ data: T | null; error: Error | null }>;
@@ -621,311 +622,87 @@ export class SupabaseUnifiedClient {
   }
 
   /**
-   * Fetch a family record by ID using the existing database schema
-   * @param familyId The ID of the family to fetch
+   * Get a family record by ID
+   * @param familyId ID of the family to retrieve
    * @returns Result with success status and family data
    */
   public async getFamilyRecord(
     familyId: string
   ): Promise<OperationResponse<Record<string, unknown>>> {
     try {
-      if (!familyId) {
-        return { success: false, data: null, error: "No family ID provided" };
-      }
-
       logger.debug(`Fetching family record for ID: ${familyId}`);
 
-      // Query the comprehensive_family_records table directly from fivetran_views schema
-      // According to docs, this is the correct schema, not public schema
-      // We'll try to match by any identifier (family_id or pdc_family_id_c or standard_id)
-      // and handle potential format issues with more lenient matching
-
-      // Clean and sanitize the ID input to prevent SQL injection
-      const sanitizedId = familyId.replace(/'/g, "''");
-      logger.debug(`Using sanitized ID for family record query: ${sanitizedId}`);
-
+      // Use the fivetran_views schema for the query
       const query = `
-        WITH family_data AS (
-          SELECT 
-            family_id,
-            family_name,
-            pdc_family_id_c,
-            current_campus_c,
-            contact_ids,
-            contact_first_names,
-            contact_last_names,
-            contact_phones,
-            contact_emails,
-            contact_last_activity_dates,
-            opportunity_ids,
-            opportunity_names,
-            opportunity_grades,
-            opportunity_campuses,
-            opportunity_lead_notes,
-            opportunity_family_interview_notes,
-            opportunity_created_dates,
-            opportunity_record_types,
-            tuition_offer_ids,
-            tuition_offer_statuses,
-            tuition_offer_family_contributions,
-            tuition_offer_state_scholarships,
-            contact_count,
-            opportunity_count,
-            tuition_offer_count
-          FROM fivetran_views.comprehensive_family_records
-          WHERE 
-            -- Try to match by any ID field
-            family_id = '${sanitizedId}' 
-            OR pdc_family_id_c = '${sanitizedId}'
-            OR family_id LIKE '${sanitizedId}%' -- Try partial matching for truncated IDs
-            OR pdc_family_id_c LIKE '${sanitizedId}%' -- Try partial matching for truncated IDs
-          LIMIT 1
-        ),
-        -- Get the campus name for the current_campus_c field
-        campus_data AS (
-          SELECT
-            c.id as campus_id,
-            c.name as campus_name
-          FROM
-            fivetran_views.campus_c c
-          JOIN
-            family_data fd ON fd.current_campus_c = c.id
-        ),
-        -- Get campus names for all opportunity campuses
-        opportunity_campus_names AS (
-          SELECT
-            array_agg(c.name ORDER BY ids.index) as opportunity_campus_names
-          FROM 
-            family_data fd,
-            LATERAL (
-              SELECT
-                UNNEST(fd.opportunity_campuses) as campus_id,
-                generate_subscripts(fd.opportunity_campuses, 1) as index
-            ) ids
-          LEFT JOIN LATERAL (
-            SELECT
-              c.name
-            FROM
-              fivetran_views.campus_c c
-            WHERE
-              c.id = ids.campus_id
-          ) c ON true
-        ),
-        -- Now get the actual stage names directly from the opportunity table
-        -- We'll get them in a way that preserves the exact order as in opportunity_ids
-        opportunity_data AS (
-          SELECT 
-            array_agg(s.stage ORDER BY ids.index) as opportunity_stages,
-            array_agg(s.school_year ORDER BY ids.index) as opportunity_school_years,
-            array_agg(s.is_won ORDER BY ids.index) as opportunity_is_won
-          FROM family_data fd,
-          LATERAL (
-            SELECT 
-              UNNEST(fd.opportunity_ids) as opp_id,
-              generate_subscripts(fd.opportunity_ids, 1) as index
-          ) ids
-          LEFT JOIN LATERAL (
-            SELECT 
-              o.stage_name as stage,
-              o.school_year_c as school_year,
-              CASE WHEN o.stage_name = 'Closed Won' THEN true ELSE false END as is_won
-            FROM fivetran_views.opportunity o
-            WHERE o.id = ids.opp_id
-          ) s ON true
-        ),
-        -- Calculate the lifetime value by summing up relevant financial values from tuition offers
-        lifetime_value_calc AS (
-          SELECT
-            COALESCE(
-              SUM(
-                CASE 
-                  WHEN to_status LIKE '%Accept%' OR to_status LIKE '%Won%' THEN 
-                    COALESCE(to_family_contribution, 0) + 
-                    COALESCE(to_state_scholarship, 0)
-                  ELSE 0 
-                END
-              ), 
-              0
-            ) as lifetime_value
-          FROM (
-            SELECT
-              UNNEST(fd.tuition_offer_statuses) as to_status,
-              UNNEST(fd.tuition_offer_family_contributions) as to_family_contribution,
-              UNNEST(fd.tuition_offer_state_scholarships) as to_state_scholarship
-            FROM family_data fd
-          ) tuition_offers
-        )
         SELECT 
-          fd.*,
-          COALESCE(cd.campus_name, 'Unknown Campus') as current_campus_name,
-          COALESCE(od.opportunity_stages, ARRAY[]::text[]) as opportunity_stages,
-          COALESCE(od.opportunity_school_years, ARRAY[]::text[]) as opportunity_school_years,
-          COALESCE(od.opportunity_is_won, ARRAY[]::boolean[]) as opportunity_is_won,
-          COALESCE(ocn.opportunity_campus_names, ARRAY[]::text[]) as opportunity_campus_names,
-          COALESCE(lvc.lifetime_value, 0) as lifetime_value
-        FROM family_data fd
-        LEFT JOIN campus_data cd ON true
-        LEFT JOIN opportunity_data od ON true
-        LEFT JOIN opportunity_campus_names ocn ON true
-        LEFT JOIN lifetime_value_calc lvc ON true
+          family_id,
+          family_name,
+          pdc_family_id_c,
+          current_campus_c,
+          current_campus_name,
+          students,
+          contacts
+        FROM 
+          fivetran_views.family_enhanced
+        WHERE 
+          family_id = $1
+        LIMIT 1
       `;
 
+      // Sanitize the input to prevent SQL injection
+      const sanitizedId = familyId.replace(/'/g, "''");
+
       try {
-        logger.debug("Executing direct SQL query on comprehensive_family_records");
+        // First approach: Use the execute_sql_query RPC function
         const { data, error } = await this.regular.rpc("execute_sql_query", {
           query_text: query,
+          query_params: [sanitizedId],
         });
 
         if (error) {
-          logger.error("Failed to fetch family record using SQL query", error);
-          return { success: false, data: null, error: error.message };
+          throw new Error(`SQL query failed: ${error.message}`);
         }
 
-        if (!data || (Array.isArray(data) && data.length === 0)) {
-          logger.warn(
-            `No family found with ID: ${familyId} in fivetran_views.comprehensive_family_records`
-          );
+        // Extract the result from the response
+        let result = null;
+        if (data && typeof data === "object" && "rows" in data) {
+          const rows = data.rows as any[];
+          result = rows.length > 0 ? rows[0] : null;
+        }
 
-          // Provide more detailed debugging information
-          logger.debug("Query that produced no results:", query);
-
-          // Try to check if the table even exists and has data
-          try {
-            const tableCheckQuery = `SELECT count(*) FROM fivetran_views.comprehensive_family_records LIMIT 1`;
-            logger.debug("Checking if table has data with query:", tableCheckQuery);
-            this.regular
-              .rpc("execute_sql_query", { query_text: tableCheckQuery })
-              .then(({ data: checkData, error: checkError }) => {
-                if (checkError) {
-                  logger.error("Error checking table existence:", checkError);
-                } else {
-                  logger.debug("Table check result:", checkData);
-                }
-              });
-          } catch (checkError) {
-            logger.error("Error during table existence check:", checkError);
-          }
-
+        if (!result) {
           return {
             success: false,
             data: null,
-            error: `Family with ID ${familyId} not found in the database. Please check the ID and try again.`,
+            error: `Family with ID ${familyId} not found in the database.`,
           };
         }
 
-        // If data is an array, return the first item
-        const familyRecord = Array.isArray(data) ? data[0] : data;
-
-        // Print raw data for debugging
-        logger.debug("Raw family record from database:", familyRecord);
-
-        // Debug opportunity stages specifically
-        if (familyRecord && familyRecord.opportunity_stages) {
-          logger.debug("Raw opportunity stages before processing:", {
-            type: typeof familyRecord.opportunity_stages,
-            isArray: Array.isArray(familyRecord.opportunity_stages),
-            value: familyRecord.opportunity_stages,
-            length: Array.isArray(familyRecord.opportunity_stages)
-              ? familyRecord.opportunity_stages.length
-              : "N/A",
-          });
-        } else {
-          logger.debug("No opportunity_stages field found in the family record");
-        }
-
-        // Clean opportunity stages data
-        if (familyRecord && Array.isArray(familyRecord.opportunity_stages)) {
-          // Store original values for comparison
-          const originalStages = [...familyRecord.opportunity_stages];
-
-          // Process the stages with improved handling for known stage values
-          familyRecord.opportunity_stages = familyRecord.opportunity_stages
-            .map((stage) => {
-              // Convert stage to string and trim if it's a string
-              const cleanedStage =
-                typeof stage === "string" ? stage.trim() : String(stage || "").trim();
-
-              // Log initial cleaning
-              logger.debug(`Stage initial cleaning: '${stage}' -> '${cleanedStage}'`);
-
-              // Check for codes or partial matches that might indicate known stages
-              // This helps when the database has abbreviated codes or formatting issues
-              let normalizedStage = cleanedStage;
-
-              // Common stage name variations to normalize
-              const stageMapping = {
-                // Handle 'Family Interview' variations
-                family: "Family Interview",
-                "family int": "Family Interview",
-                "family interview": "Family Interview",
-                interview: "Family Interview",
-
-                // Handle 'Awaiting Documents' variations
-                await: "Awaiting Documents",
-                awaiting: "Awaiting Documents",
-                "awaiting doc": "Awaiting Documents",
-                "awaiting documents": "Awaiting Documents",
-                documents: "Awaiting Documents",
-
-                // Handle 'Education Review' variations
-                "ed review": "Education Review",
-                edu: "Education Review",
-                education: "Education Review",
-                "education review": "Education Review",
-                review: "Education Review",
-
-                // Handle 'Admission Offered' variations
-                admission: "Admission Offered",
-                "admission offered": "Admission Offered",
-                admit: "Admission Offered",
-                offered: "Admission Offered",
-
-                // Handle 'Closed Won/Lost' variations
-                "closed w": "Closed Won",
-                won: "Closed Won",
-                "closed won": "Closed Won",
-                "closed l": "Closed Lost",
-                lost: "Closed Lost",
-                "closed lost": "Closed Lost",
-              };
-
-              // Try to match against our known variations
-              const lowerStage = cleanedStage.toLowerCase();
-              for (const [key, value] of Object.entries(stageMapping)) {
-                if (lowerStage === key || lowerStage.includes(key)) {
-                  normalizedStage = value;
-                  logger.debug(
-                    `Stage normalized from '${cleanedStage}' to '${normalizedStage}' based on pattern match`
-                  );
-                  break;
-                }
-              }
-
-              return normalizedStage;
-            })
-            .filter(Boolean); // Remove empty strings
-
-          // Log the stages before and after cleaning for comparison
-          logger.debug("Opportunity stages comparison:", {
-            before: originalStages,
-            after: familyRecord.opportunity_stages,
-          });
-        }
-
-        // Add standard ID fields for consistency
-        const processedRecord = {
-          ...familyRecord,
-          standard_id: familyRecord.family_id,
-          alternate_id: familyRecord.pdc_family_id_c || null,
-        };
-
-        logger.debug(`Successfully fetched family record for ID: ${familyId}`);
-        return { success: true, data: processedRecord, error: null };
-      } catch (sqlError) {
-        // Try direct POST request if RPC fails
-        logger.warn("RPC execute_sql_query failed, trying direct POST request", sqlError);
+        logger.info("Retrieved family record using SQL query");
+        return { success: true, data: result, error: null };
+      } catch (sqlErr) {
+        logger.warn("Primary SQL approach failed, trying direct fetch:", sqlErr);
 
         try {
+          // Construct a simpler direct query that should work even with minimal permissions
+          const fallbackQuery = `
+            SELECT 
+              a.id as family_id,
+              a.name as family_name,
+              a.pdc_family_id_c,
+              a.current_campus_c,
+              c.name as current_campus_name
+            FROM 
+              fivetran_views.account a
+            LEFT JOIN
+              fivetran_views.campus_c c ON a.current_campus_c = c.id
+            WHERE 
+              a.id = '${sanitizedId}'
+            LIMIT 1
+          `;
+
+          logger.debug("Using fallback direct fetch with simplified query");
+
           const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/execute_sql_query`, {
             method: "POST",
             headers: {
@@ -934,45 +711,139 @@ export class SupabaseUnifiedClient {
               Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
             },
             body: JSON.stringify({
-              query: query,
+              query_text: fallbackQuery,
             }),
           });
 
           if (!response.ok) {
-            const errorText = await response.text();
-            logger.warn(`Error with direct SQL POST: ${response.status} - ${errorText}`);
-            throw new Error(`SQL query failed: ${response.status} - ${errorText}`);
+            throw new Error(`Direct fetch failed: ${response.status}`);
           }
 
           const data = await response.json();
 
-          if (!data || (Array.isArray(data) && data.length === 0)) {
+          // Extract the result from the response
+          let result;
+          if (Array.isArray(data)) {
+            result = data.length > 0 ? data[0] : null;
+          } else if (data && typeof data === "object" && "rows" in data) {
+            const rows = data.rows as any[];
+            result = rows.length > 0 ? rows[0] : null;
+          } else {
+            result = data;
+          }
+
+          if (!result) {
             return {
               success: false,
               data: null,
-              error: `Family with ID ${familyId} not found`,
+              error: `Family with ID ${familyId} not found in the database.`,
             };
           }
 
-          const familyRecord = Array.isArray(data) ? data[0] : data;
+          // This is a minimal record - mark it as such
+          result.is_minimal_record = true;
+          result.students = [];
+          result.contacts = [];
 
-          // Add standard ID fields for consistency
-          const processedRecord = {
-            ...familyRecord,
-            standard_id: familyRecord.family_id,
-            alternate_id: familyRecord.pdc_family_id_c || null,
+          logger.info("Retrieved minimal family record using fallback method");
+          return { success: true, data: result, error: null };
+        } catch (directErr) {
+          const errorMessage = directErr instanceof Error ? directErr.message : "Unknown error";
+          logger.error("All family record fetch approaches failed:", directErr);
+          return {
+            success: false,
+            data: null,
+            error: `Failed to fetch family record: ${errorMessage}`,
           };
-
-          return { success: true, data: processedRecord, error: null };
-        } catch (directError) {
-          logger.error("All family record fetch approaches failed", directError);
-          throw directError;
         }
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
       logger.error(`Error fetching family record for ID ${familyId}:`, err);
       return { success: false, data: null, error: errorMessage };
+    }
+  }
+
+  /**
+   * Get all family records
+   * @returns Result with success status and family data
+   */
+  public async getAllFamilies(): Promise<OperationResponse<FamilySearchResult[]>> {
+    try {
+      logger.debug("Fetching all family records");
+      
+      // Use the fivetran_views schema for the query
+      const { data, error } = await this.regular.rpc("fivetran_views.get_all_families");
+      
+      if (error) {
+        logger.error("Error fetching all families:", error);
+        return { success: false, data: [], error: error.message };
+      }
+      
+      if (!data || !Array.isArray(data)) {
+        logger.warn("No family records found or invalid response format");
+        return { success: true, data: [], error: null };
+      }
+      
+      // Process the results to add standardized IDs
+      const processedResults = this.processSearchResults(data as Record<string, unknown>[]);
+      
+      logger.debug(`Retrieved ${processedResults.length} family records`);
+      return { success: true, data: processedResults, error: null };
+    } catch (err: unknown) {
+      // Provide detailed error information
+      const errorObj =
+        err instanceof Error
+          ? { message: err.message, stack: err.stack, name: err.name }
+          : { error: String(err) };
+
+      logger.error("Get all families failed:", JSON.stringify(errorObj, null, 2));
+      return { success: false, data: [], error: JSON.stringify(errorObj) };
+    }
+  }
+
+  /**
+   * Get distinct fellow stages from fivetran_views.fellows
+   * @returns Result with success status and array of distinct stage values
+   */
+  public async getFellowStages(): Promise<OperationResponse<string[]>> {
+    try {
+      logger.debug("Fetching distinct fellow stages from fivetran_views.fellows");
+      
+      // Use the fivetran_views schema directly as per project standards
+      // Use hiring_stage column instead of stage (which doesn't exist)
+      const query = `
+        SELECT DISTINCT hiring_stage as stage 
+        FROM fivetran_views.fellows 
+        WHERE hiring_stage IS NOT NULL 
+        ORDER BY hiring_stage
+      `;
+      
+      // Execute the SQL query directly
+      const { data, error } = await this.regular.rpc("execute_sql_query", {
+        query_text: query
+      });
+      
+      if (error) {
+        logger.error("Error executing SQL query for fellow stages:", error);
+        return { success: false, data: [], error: error.message };
+      }
+      
+      // Extract the stage values from the result
+      const stages = Array.isArray(data?.rows) 
+        ? data.rows.map(row => row.stage as string).filter(Boolean)
+        : [];
+        
+      logger.debug(`Found ${stages.length} distinct fellow stages`);
+      return { success: true, data: stages, error: null };
+    } catch (err: unknown) {
+      const errorObj =
+        err instanceof Error
+          ? { message: err.message, stack: err.stack, name: err.name }
+          : { error: String(err) };
+
+      logger.error("Failed to fetch fellow stages:", JSON.stringify(errorObj, null, 2));
+      return { success: false, data: [], error: JSON.stringify(errorObj) };
     }
   }
 
@@ -1005,8 +876,6 @@ export class SupabaseUnifiedClient {
 
 // Export a singleton instance
 export const supabase = new SupabaseUnifiedClient();
-
-// Types are already exported above
 
 // Export the admin client directly for convenience
 export const supabaseAdminClient = supabase.admin;
