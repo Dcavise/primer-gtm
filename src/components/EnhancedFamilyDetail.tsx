@@ -422,7 +422,7 @@ const EnhancedFamilyDetail: React.FC = () => {
                     <CardHeader className="pb-0">
                       <div className="flex justify-between items-center">
                         <div className="flex flex-col space-y-2">
-                          <CardTitle className="text-xl font-semibold student-header-purple">
+                          <CardTitle className="text-xl font-semibold">
                             {getFixedStudentName(student)}
                           </CardTitle>
                         </div>
@@ -533,7 +533,7 @@ const EnhancedFamilyDetail: React.FC = () => {
       return (
         <Card className="mt-6" style={{ border: 'none' }}>
           <CardHeader className="pb-0">
-            <CardTitle className="text-xl font-semibold student-header-purple">
+            <CardTitle className="text-xl font-semibold">
               {getFixedStudentName(student)}
               {student.opportunities && student.opportunities.some(opp => opp.is_won) && (
                 <Badge color="green" text="Enrolled" className="ml-2" />
@@ -743,7 +743,7 @@ const EnhancedFamilyDetail: React.FC = () => {
               >
                 <Building className="h-3.5 w-3.5 text-muted-foreground" />
                 <span className="text-sm font-medium">
-                  {familyRecord.current_campus_name || "Not Assigned"}
+                  {familyRecord.current_campus_name || "Health District"}
                 </span>
               </Tag>
               
