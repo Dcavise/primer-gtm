@@ -31,6 +31,7 @@ interface DataType {
   familyIds: {
     family_id: string;
   };
+  account_id: string;
 }
 
 // Define interface for search result
@@ -279,6 +280,7 @@ const Search = () => {
           school_year: opp.school_year || "",
           campus: opp.campus_name || "Unknown Campus",
           tuition: typeof opp.tuition === 'number' ? opp.tuition : 0,
+          account_id: opp.account_id || "",
           familyIds: {
             family_id: opp.account_id || "",
           }
@@ -437,6 +439,23 @@ const Search = () => {
         const numValue = typeof value === 'number' ? value : 0;
         return `$${numValue.toLocaleString()}`;
       },
+    },
+    {
+      title: 'Family Profile',
+      key: 'family_profile',
+      render: (_, record) => (
+        <Button
+          type="primary"
+          size="small"
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent row click from triggering
+            navigate(`/family-detail/${record.account_id}`);
+          }}
+          className="bg-blue-500 hover:bg-blue-600"
+        >
+          View Family
+        </Button>
+      ),
     }
   ];
 
