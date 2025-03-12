@@ -20,7 +20,8 @@ import {
   User,
 } from "lucide-react";
 import { useFamilyData } from "@/hooks/useFamilyData";
-import { FamilySearchResult, supabase } from "@/integrations/supabase-client";
+import { FamilySearchResult, supabase, getEnhancedFamilyRecord } from "@/integrations/supabase-client";
+import { EnhancedFamilyRecord, StudentOpportunity } from "@/hooks/useEnhancedFamilyData";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -89,6 +90,8 @@ interface DataType {
   campus: string;
   stage: string;
   grade?: string;
+  school_year?: string;
+  student_name?: string;
   familyIds?: {
     standard_id?: string;
     family_id?: string;
@@ -420,41 +423,106 @@ const Search = () => {
   // Define stage options for filtering
   const stageOptions = ["Application", "Interviewed", "Offered", "Enrolled", "Declined"];
 
-  // Ant Design Table setup - convert family search results to table data
-  const tableData: DataType[] = useMemo(() => {
-    return (familySearchResults || []).map((family, index) => {
-      // Extract IDs for consistent navigation
-      const standardId = family.standard_id || "";
-      const familyId = family.family_id || "";
-      const alternateId = family.alternate_id || "";
-      const bestId = standardId || familyId || alternateId;
+  // State for opportunities table data
+  const [tableData, setTableData] = useState<DataType[]>([]);
+  const [loadingOpportunities, setLoadingOpportunities] = useState(true);
+
+  // Fetch opportunities directly from fivetran_views.opportunity
+  useEffect(() => {
+    const fetchOpportunities = async () => {
+      setLoadingOpportunities(true);
       
-      // Get campus name from campus map, don't display raw IDs
-      const campusId = family.current_campus_c || "";
-      const campusName = campusId ? campusMap[campusId] || "Unknown Campus" : "None";
-      
-      // Try to determine stage - this is an example, adjust based on your data structure
-      let stage = "Unknown";
-      if (family.opportunity_stages && family.opportunity_stages.length > 0) {
-        // Use the most recent stage if multiple exist
-        stage = family.opportunity_stages[0] || "Unknown";
-      }
-      
-      return {
-        key: index.toString(),
-        id: bestId,
-        name: family.family_name || "Unnamed Opportunity",
-        campus: campusName,
-        stage: stage,
-        grade: "K-8", // Placeholder - we'll need to extract real grade data if available
-        familyIds: {
-          standard_id: standardId,
-          family_id: familyId,
-          alternate_id: alternateId,
+      try {
+        // Direct SQL query to get the first 10 opportunities with required fields
+        const query = `
+          SELECT 
+            o.id, 
+            o.name, 
+            o.stagename as stage, 
+            coalesce(o.student_grade_c, 'K-8') as grade,
+            o.student_first_name_c || ' ' || o.student_last_name_c as student_name,
+            o.school_year_c as school_year,
+            cc.name as campus_name,
+            a.name as account_name,
+            a.id as account_id
+          FROM 
+            fivetran_views.opportunity o
+          LEFT JOIN 
+            fivetran_views.campus_c cc ON o.campus_c = cc.id
+          LEFT JOIN
+            fivetran_views.account a ON o.account_id = a.id
+          WHERE 
+            o.isdeleted = false
+          ORDER BY 
+            o.createddate DESC
+          LIMIT 10
+        `;
+        
+        console.log("Executing opportunity query:", query);
+        
+        // Execute the query using the regular client
+        const { data, error } = await supabase.regular.rpc("execute_sql_query", {
+          query_text: query
+        });
+        
+        if (error) {
+          console.error("Error fetching opportunities:", error);
+          setTableData([]);
+          return;
         }
-      };
-    });
-  }, [familySearchResults, campusMap]);
+        
+        console.log("Opportunity data result:", data);
+        
+        // Process the data based on its structure
+        let opportunityData = [];
+        if (Array.isArray(data)) {
+          opportunityData = data;
+        } else if (data && typeof data === 'object') {
+          if (Array.isArray(data.rows)) {
+            opportunityData = data.rows;
+          } else if (data.result && Array.isArray(data.result)) {
+            opportunityData = data.result;
+          } else {
+            // Try to find any array in the response
+            for (const key in data) {
+              if (Array.isArray(data[key])) {
+                opportunityData = data[key];
+                break;
+              }
+            }
+          }
+        }
+        
+        console.log("Processed opportunity data:", opportunityData);
+        
+        // Map to DataType format
+        const mappedData = opportunityData.map((opp, index) => ({
+          key: index.toString(),
+          id: opp.id || "",
+          name: opp.name || "Unnamed Opportunity",
+          student_name: opp.student_name || "",
+          stage: opp.stage || "Unknown",
+          grade: opp.grade || "K-8",
+          school_year: opp.school_year || "",
+          campus: opp.campus_name || "Unknown Campus",
+          familyIds: {
+            family_id: opp.account_id || "",
+          }
+        }));
+        
+        console.log("Mapped table data:", mappedData);
+        setTableData(mappedData);
+      } catch (err) {
+        console.error("Failed to fetch opportunities:", err);
+        setTableData([]);
+      } finally {
+        setLoadingOpportunities(false);
+      }
+    };
+    
+    // Load opportunities on component mount
+    fetchOpportunities();
+  }, []);
 
   // Handle row click to navigate to family detail
   const handleRowClick = (record: DataType) => {
@@ -479,6 +547,11 @@ const Search = () => {
       sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
+      title: 'Student',
+      dataIndex: 'student_name',
+      key: 'student_name',
+    },
+    {
       title: 'Stage',
       dataIndex: 'stage',
       key: 'stage',
@@ -487,7 +560,11 @@ const Search = () => {
       title: 'Grade',
       dataIndex: 'grade',
       key: 'grade',
-      render: () => 'K-8' // Placeholder - we'll need real grade data
+    },
+    {
+      title: 'School Year',
+      dataIndex: 'school_year',
+      key: 'school_year',
     },
     {
       title: 'Campus',
@@ -521,7 +598,12 @@ const Search = () => {
             <Building className="h-5 w-5 text-slate-gray" />
             <span className="text-xl font-semibold text-outer-space">Opportunities</span>
           </div>
-          {tableData.length > 0 ? (
+          {loadingOpportunities ? (
+            <div className="text-center py-8 border rounded-lg bg-gray-50">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+              <p className="text-slate-gray">Loading opportunities...</p>
+            </div>
+          ) : tableData.length > 0 ? (
             <Table 
               columns={tableColumns} 
               dataSource={tableData} 
@@ -536,7 +618,7 @@ const Search = () => {
             <div className="text-center py-8 border rounded-lg bg-gray-50">
               <p className="text-slate-gray">No opportunity records available</p>
               <p className="text-slate-400 text-sm mt-1">
-                Press <kbd className="px-1 py-0.5 rounded border shadow-sm text-xs">k</kbd> to search for opportunities
+                Press <kbd className="px-1 py-0.5 rounded border shadow-sm text-xs">k</kbd> to search for a family
               </p>
             </div>
           )}
