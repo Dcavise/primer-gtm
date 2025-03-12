@@ -397,6 +397,26 @@ const Search = () => {
       title: 'Stage',
       dataIndex: 'stage',
       key: 'stage',
+      render: (stage) => {
+        // Define badge colors based on stage
+        let badgeColor = '';
+        
+        if (stage === 'Closed Won') {
+          badgeColor = 'bg-green-100 text-green-800 border-green-200';
+        } else if (['Awaiting Documents', 'Family Interview', 'Admission Offered', 'Education Review', 'Preparing Offer'].includes(stage)) {
+          badgeColor = 'bg-orange-100 text-orange-800 border-orange-200';
+        } else if (stage === 'Closed Lost') {
+          badgeColor = 'bg-red-100 text-red-800 border-red-200';
+        } else {
+          badgeColor = 'bg-gray-100 text-gray-800 border-gray-200';
+        }
+        
+        return (
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${badgeColor}`}>
+            {stage}
+          </span>
+        );
+      }
     },
     {
       title: 'Grade',
