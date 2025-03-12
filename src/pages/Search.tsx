@@ -4,9 +4,8 @@ import { Card } from "../components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 import SearchBox from "../components/SearchBox";
-import { Checkbox, Divider, Table, Input, Space, Button as AntButton } from "antd";
-import type { CheckboxOptionType, TableColumnsType, TableProps } from "antd";
-import { SearchOutlined, FilterOutlined } from '@ant-design/icons';
+import { Table } from "antd";
+import type { TableColumnsType, TableProps } from "antd";
 import {
   Search as SearchIcon,
   Users,
@@ -89,6 +88,7 @@ interface DataType {
   name: string;
   campus: string;
   stage: string;
+  grade?: string;
   familyIds?: {
     standard_id?: string;
     family_id?: string;
@@ -443,9 +443,10 @@ const Search = () => {
       return {
         key: index.toString(),
         id: bestId,
-        name: family.family_name || "Unnamed Family",
+        name: family.family_name || "Unnamed Opportunity",
         campus: campusName,
         stage: stage,
+        grade: "K-8", // Placeholder - we'll need to extract real grade data if available
         familyIds: {
           standard_id: standardId,
           family_id: familyId,
@@ -469,42 +470,33 @@ const Search = () => {
     navigate(`/family-detail/${record.id}`);
   };
 
-  // Table column definitions with filters
+  // Table column definitions with the required fields
   const tableColumns: TableColumnsType<DataType> = [
     {
-      title: 'Family Name',
+      title: 'Opportunity Name',
       dataIndex: 'name',
       key: 'name',
       sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
-      title: 'Campus',
-      dataIndex: 'campus',
-      key: 'campus',
-      filters: campusOptions.map(campus => ({ text: campus, value: campus })),
-      onFilter: (value, record) => record.campus === value,
-      filterSearch: true,
-    },
-    {
       title: 'Stage',
       dataIndex: 'stage',
       key: 'stage',
-      filters: stageOptions.map(stage => ({ text: stage, value: stage })),
-      onFilter: (value, record) => record.stage === value,
-      filterSearch: true,
+    },
+    {
+      title: 'Grade',
+      dataIndex: 'grade',
+      key: 'grade',
+      render: () => 'K-8' // Placeholder - we'll need real grade data
+    },
+    {
+      title: 'Campus',
+      dataIndex: 'campus',
+      key: 'campus',
     }
   ];
 
-  const [checkedList, setCheckedList] = useState<React.Key[]>(tableColumns.map(col => col.key as React.Key));
-
-  const options = tableColumns.map(({ key, title }) => ({
-    label: title,
-    value: key,
-  }));
-
-  const filteredColumns = tableColumns.filter(column => 
-    checkedList.includes(column.key as React.Key)
-  );
+  // Table is now fixed with the required columns
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -523,25 +515,15 @@ const Search = () => {
         
         <div className="bg-white rounded-lg shadow-sm p-6 space-y-4"></div>
 
-        {/* Ant Design Table Component */}
+        {/* Opportunity Table Component */}
         <div className="bg-white rounded-lg shadow-sm p-6 space-y-4 mb-6">
           <div className="flex items-center gap-2 mb-4">
             <Building className="h-5 w-5 text-slate-gray" />
-            <span className="text-xl font-semibold text-outer-space">Family Records</span>
-          </div>
-          <div className="mb-4">
-            <Divider orientation="left">Columns displayed</Divider>
-            <Checkbox.Group
-              value={checkedList}
-              options={options as CheckboxOptionType[]}
-              onChange={(value) => {
-                setCheckedList(value as React.Key[]);
-              }}
-            />
+            <span className="text-xl font-semibold text-outer-space">Opportunities</span>
           </div>
           {tableData.length > 0 ? (
             <Table 
-              columns={filteredColumns} 
+              columns={tableColumns} 
               dataSource={tableData} 
               pagination={{ pageSize: 5 }}
               bordered
@@ -552,9 +534,9 @@ const Search = () => {
             />
           ) : (
             <div className="text-center py-8 border rounded-lg bg-gray-50">
-              <p className="text-slate-gray">No family records available</p>
+              <p className="text-slate-gray">No opportunity records available</p>
               <p className="text-slate-400 text-sm mt-1">
-                Press <kbd className="px-1 py-0.5 rounded border shadow-sm text-xs">k</kbd> to search for families
+                Press <kbd className="px-1 py-0.5 rounded border shadow-sm text-xs">k</kbd> to search for opportunities
               </p>
             </div>
           )}
