@@ -65,8 +65,10 @@ const Search = () => {
   const [loadingOpportunities, setLoadingOpportunities] = useState(true);
   const [campusFilter, setCampusFilter] = useState<string | null>(null);
   const [stageFilter, setStageFilter] = useState<string | null>(null);
+  const [gradeFilter, setGradeFilter] = useState<string | null>(null);
   const [availableCampuses, setAvailableCampuses] = useState<string[]>([]);
   const [availableStages, setAvailableStages] = useState<string[]>([]);
+  const [availableGrades, setAvailableGrades] = useState<string[]>([]);
 
   const schoolYearOptions = ["23/24", "24/25", "25/26"];
   const opportunityStatusOptions = [
@@ -180,6 +182,7 @@ const Search = () => {
   const resetFilters = () => {
     setCampusFilter(null);
     setStageFilter(null);
+    setGradeFilter(null);
   };
 
   useEffect(() => {
@@ -196,6 +199,10 @@ const Search = () => {
         
         if (stageFilter) {
           whereClause += ` AND o.stage_name = '${stageFilter}'`;
+        }
+        
+        if (gradeFilter) {
+          whereClause += ` AND o.grade_c = '${gradeFilter}'`;
         }
         
         // Direct SQL query to get the opportunities with required fields and filters
@@ -279,6 +286,16 @@ const Search = () => {
         
         console.log("Mapped table data:", mappedData);
         setTableData(mappedData);
+        
+        // Extract unique stages and campuses for filters
+        const uniqueCampuses = Array.from(new Set(opportunityData.map(item => item.campus_name).filter(Boolean)));
+        setAvailableCampuses(uniqueCampuses);
+        
+        const uniqueStages = Array.from(new Set(opportunityData.map(item => item.stage).filter(Boolean)));
+        setAvailableStages(uniqueStages);
+        
+        const uniqueGrades = Array.from(new Set(opportunityData.map(item => item.grade).filter(Boolean)));
+        setAvailableGrades(uniqueGrades);
       } catch (err) {
         console.error("Failed to fetch opportunities:", err);
         setTableData([]);
@@ -289,7 +306,7 @@ const Search = () => {
     
     // Load opportunities on component mount
     fetchOpportunities();
-  }, [campusFilter, stageFilter]);
+  }, [campusFilter, stageFilter, gradeFilter]);
 
   useEffect(() => {
     const fetchFilterOptions = async () => {
@@ -311,10 +328,19 @@ const Search = () => {
           ORDER BY stage_name
         `;
         
+        // Query to get distinct grades
+        const gradesQuery = `
+          SELECT DISTINCT grade_c
+          FROM fivetran_views.opportunity
+          WHERE grade_c IS NOT NULL
+          ORDER BY grade_c
+        `;
+        
         // Execute all queries
-        const [campusesResult, stagesResult] = await Promise.all([
+        const [campusesResult, stagesResult, gradesResult] = await Promise.all([
           supabase.regular.rpc("execute_sql_query", { query_text: campusesQuery }),
-          supabase.regular.rpc("execute_sql_query", { query_text: stagesQuery })
+          supabase.regular.rpc("execute_sql_query", { query_text: stagesQuery }),
+          supabase.regular.rpc("execute_sql_query", { query_text: gradesQuery })
         ]);
         
         // Process campuses
@@ -327,6 +353,12 @@ const Search = () => {
         if (stagesResult.data && Array.isArray(stagesResult.data)) {
           const stages = stagesResult.data.map(row => row.stage_name).filter(Boolean);
           setAvailableStages(stages);
+        }
+        
+        // Process grades
+        if (gradesResult.data && Array.isArray(gradesResult.data)) {
+          const grades = gradesResult.data.map(row => row.grade_c).filter(Boolean);
+          setAvailableGrades(grades);
         }
       } catch (err) {
         console.error("Failed to fetch filter options:", err);
@@ -438,6 +470,18 @@ const Search = () => {
               />
             </div>
             
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Grade</label>
+              <Select
+                placeholder="Select grade"
+                style={{ width: 200 }}
+                allowClear
+                value={gradeFilter}
+                onChange={(value) => setGradeFilter(value)}
+                options={availableGrades.map(grade => ({ label: grade, value: grade }))}
+              />
+            </div>
+            
             <div className="flex items-end">
               <Button 
                 onClick={resetFilters}
@@ -454,6 +498,7 @@ const Search = () => {
               {loadingOpportunities ? 'Loading...' : `Showing ${tableData.length} opportunities for 25/26 school year`}
               {campusFilter && ` at ${campusFilter}`}
               {stageFilter && ` in ${stageFilter} stage`}
+              {gradeFilter && ` for grade ${gradeFilter}`}
             </span>
           </div>
           
