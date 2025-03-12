@@ -64,8 +64,6 @@ const Search = () => {
   const [loadingOpportunities, setLoadingOpportunities] = useState(true);
   const [campusFilter, setCampusFilter] = useState<string | null>(null);
   const [stageFilter, setStageFilter] = useState<string | null>(null);
-  const [schoolYearFilter, setSchoolYearFilter] = useState<string | null>(null);
-  const [availableSchoolYears, setAvailableSchoolYears] = useState<string[]>([]);
   const [availableCampuses, setAvailableCampuses] = useState<string[]>([]);
   const [availableStages, setAvailableStages] = useState<string[]>([]);
 
@@ -181,7 +179,6 @@ const Search = () => {
   const resetFilters = () => {
     setCampusFilter(null);
     setStageFilter(null);
-    setSchoolYearFilter(null);
   };
 
   useEffect(() => {
@@ -190,7 +187,7 @@ const Search = () => {
       
       try {
         // Build WHERE clause with filters
-        let whereClause = "o.is_deleted = false";
+        let whereClause = "o.is_deleted = false AND o.school_year_c = '25/26'";
         
         if (campusFilter) {
           whereClause += ` AND cc.name = '${campusFilter}'`;
@@ -198,10 +195,6 @@ const Search = () => {
         
         if (stageFilter) {
           whereClause += ` AND o.stage_name = '${stageFilter}'`;
-        }
-        
-        if (schoolYearFilter) {
-          whereClause += ` AND o.school_year_c = '${schoolYearFilter}'`;
         }
         
         // Direct SQL query to get the opportunities with required fields and filters
@@ -293,19 +286,11 @@ const Search = () => {
     
     // Load opportunities on component mount
     fetchOpportunities();
-  }, [campusFilter, stageFilter, schoolYearFilter]);
+  }, [campusFilter, stageFilter]);
 
   useEffect(() => {
     const fetchFilterOptions = async () => {
       try {
-        // Query to get distinct school years
-        const schoolYearsQuery = `
-          SELECT DISTINCT school_year_c
-          FROM fivetran_views.opportunity
-          WHERE school_year_c IS NOT NULL
-          ORDER BY school_year_c DESC
-        `;
-        
         // Query to get distinct campuses
         const campusesQuery = `
           SELECT DISTINCT cc.name
@@ -324,17 +309,10 @@ const Search = () => {
         `;
         
         // Execute all queries
-        const [schoolYearsResult, campusesResult, stagesResult] = await Promise.all([
-          supabase.regular.rpc("execute_sql_query", { query_text: schoolYearsQuery }),
+        const [campusesResult, stagesResult] = await Promise.all([
           supabase.regular.rpc("execute_sql_query", { query_text: campusesQuery }),
           supabase.regular.rpc("execute_sql_query", { query_text: stagesQuery })
         ]);
-        
-        // Process school years
-        if (schoolYearsResult.data && Array.isArray(schoolYearsResult.data)) {
-          const years = schoolYearsResult.data.map(row => row.school_year_c).filter(Boolean);
-          setAvailableSchoolYears(years);
-        }
         
         // Process campuses
         if (campusesResult.data && Array.isArray(campusesResult.data)) {
@@ -449,18 +427,6 @@ const Search = () => {
                 value={stageFilter}
                 onChange={(value) => setStageFilter(value)}
                 options={availableStages.map(stage => ({ label: stage, value: stage }))}
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">School Year</label>
-              <Select
-                placeholder="Select school year"
-                style={{ width: 200 }}
-                allowClear
-                value={schoolYearFilter}
-                onChange={(value) => setSchoolYearFilter(value)}
-                options={availableSchoolYears.map(year => ({ label: year, value: year }))}
               />
             </div>
             
