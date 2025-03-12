@@ -897,28 +897,6 @@ const EnhancedFamilyDetail: React.FC = () => {
                         <div className="text-xs text-muted-foreground">Total tuition revenue</div>
                       </div>
                     </div>
-                    
-                    {/* Current Status */}
-                    <div className="flex items-center">
-                      <CheckCircle2 className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <div>
-                        <div className="text-sm text-muted-foreground">Current Status</div>
-                        <div className="font-medium">
-                          {mergedStudents?.some(s => 
-                            s.opportunities && s.opportunities.some(o => 
-                              o.is_won && 
-                              formatSchoolYearForDisplay(o.school_year).includes("25/26")
-                            )
-                          ) ? 
-                            "Active Enrollment" : 
-                            mergedStudents?.some(s => s.opportunities && s.opportunities.some(o => o.is_won)) ?
-                              "Previous Enrollment" :
-                              "Lead / Prospect"
-                          }
-                        </div>
-                        <div className="text-xs text-muted-foreground">Current family status</div>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
