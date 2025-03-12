@@ -819,6 +819,8 @@ export class SupabaseUnifiedClient {
         ORDER BY hiring_stage
       `;
       
+      logger.debug(`Executing query: ${query}`);
+      
       // Execute the SQL query directly
       const { data, error } = await this.regular.rpc("execute_sql_query", {
         query_text: query
@@ -829,12 +831,46 @@ export class SupabaseUnifiedClient {
         return { success: false, data: [], error: error.message };
       }
       
-      // Extract the stage values from the result
-      const stages = Array.isArray(data?.rows) 
-        ? data.rows.map(row => row.stage as string).filter(Boolean)
-        : [];
+      // Log the raw response for debugging
+      logger.debug("Raw response from execute_sql_query:", data);
+      
+      // Handle different response formats
+      let stages: string[] = [];
+      
+      if (Array.isArray(data)) {
+        // If data is already an array, extract the stage values
+        logger.debug("Response is an array, extracting stages directly");
+        stages = data.map(item => item.stage).filter(Boolean);
+      } else if (data && typeof data === 'object') {
+        if (Array.isArray(data.rows)) {
+          // If data has a rows property that is an array
+          logger.debug("Response has rows array, extracting stages from rows");
+          stages = data.rows.map(row => row.stage).filter(Boolean);
+        } else if (data.result && Array.isArray(data.result)) {
+          // If data has a result property that is an array
+          logger.debug("Response has result array, extracting stages from result");
+          stages = data.result.map(item => item.stage).filter(Boolean);
+        } else {
+          // Try to extract values from any array property in the data
+          const arrayProps = Object.entries(data)
+            .find(([_, value]) => Array.isArray(value));
+          
+          if (arrayProps) {
+            const [propName, arrayValue] = arrayProps;
+            logger.debug(`Found array property ${propName}, extracting stages`);
+            stages = (arrayValue as any[]).map(item => item.stage).filter(Boolean);
+          } else {
+            logger.warn("Could not find any array in the response:", data);
+          }
+        }
+      }
+      
+      if (stages.length === 0) {
+        logger.warn("No stages found in the response");
+        return { success: false, data: [], error: "No stages found in the response" };
+      }
         
-      logger.debug(`Found ${stages.length} distinct fellow stages`);
+      logger.debug(`Found ${stages.length} distinct fellow stages:`, stages);
       return { success: true, data: stages, error: null };
     } catch (err: unknown) {
       const errorObj =
@@ -847,6 +883,9 @@ export class SupabaseUnifiedClient {
     }
   }
 
+  /**
+   * Test database connection and schema access
+   */
   public async testConnection() {
     try {
       // Test public schema access
@@ -996,7 +1035,7 @@ export async function getEnhancedFamilyRecord(
       // Handle different result formats
       let result;
 
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         result = data[0];
       } else if (data && typeof data === "object") {
         if ("rows" in data) {

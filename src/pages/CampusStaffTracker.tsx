@@ -105,7 +105,6 @@ const CampusStaffTracker: React.FC = () => {
         logger.info("Starting to fetch fellows data");
         
         // Direct SQL query to get fellow data with the required fields
-        // Remove the WHERE clause for now to see if we get any data at all
         const query = `
           SELECT 
             id,
@@ -118,6 +117,8 @@ const CampusStaffTracker: React.FC = () => {
             status
           FROM 
             fivetran_views.fellows
+          WHERE 
+            hiring_stage IS NOT NULL
           ORDER BY 
             fellow_name ASC
         `;
@@ -128,17 +129,47 @@ const CampusStaffTracker: React.FC = () => {
           query_text: query
         });
         
+        // Log the raw response for debugging
+        logger.debug("Raw response from fellows query:", data);
+        
         if (error) {
           logger.error("Error fetching fellows data:", error);
           setError(`Failed to load fellows: ${error.message}`);
           setFellows([]);
         } else {
-          // Extract fellows data from the response
-          const fellowsData = Array.isArray(data?.rows) ? data.rows : [];
-          logger.info(`Received ${fellowsData.length} fellow records`);
+          // Handle the direct array response format
+          let fellowsData: FellowData[] = [];
+          
+          if (Array.isArray(data)) {
+            // Direct array response (expected format based on the function implementation)
+            logger.info(`Received ${data.length} fellow records as direct array`);
+            fellowsData = data;
+          } else if (data && typeof data === 'object') {
+            // Handle other possible formats for robustness
+            if (Array.isArray(data.rows)) {
+              logger.info(`Received ${data.rows.length} fellow records from rows property`);
+              fellowsData = data.rows;
+            } else if (data.result && Array.isArray(data.result)) {
+              logger.info(`Received ${data.result.length} fellow records from result property`);
+              fellowsData = data.result;
+            } else {
+              // Try to find any array property in the response
+              const arrayProp = Object.entries(data)
+                .find(([_, value]) => Array.isArray(value));
+              
+              if (arrayProp) {
+                const [propName, arrayValue] = arrayProp;
+                logger.info(`Found array property ${propName} with ${arrayValue.length} records`);
+                fellowsData = arrayValue as FellowData[];
+              } else {
+                logger.warn("No array found in response:", data);
+              }
+            }
+          }
           
           if (fellowsData.length === 0) {
             logger.warn("No fellow records were returned despite successful query");
+            logger.debug("Full response object:", JSON.stringify(data));
           } else {
             logger.debug("Sample fellow record:", fellowsData[0]);
           }
@@ -160,7 +191,7 @@ const CampusStaffTracker: React.FC = () => {
     };
     
     fetchFellows();
-  }, []); // Remove selectedStage dependency for now
+  }, [selectedStage, selectedCampus]); // Add dependencies back
   
   // Filter fellows based on search query and selected stage
   const filteredFellows = fellows.filter(fellow => {
