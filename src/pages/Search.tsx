@@ -15,6 +15,7 @@ import {
   Award,
   Filter,
   X,
+  User,
 } from "lucide-react";
 import { useFamilyData } from "@/hooks/useFamilyData";
 import { FamilySearchResult, supabase } from "@/integrations/supabase-client";
@@ -84,8 +85,7 @@ const getSchoolYearClasses = (year: string): string => {
  */
 const Search = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  // Removed tabs functionality to focus solely on family search
-  // Removed search box toggle since it's now always visible
+  const [isSearchBoxOpen, setIsSearchBoxOpen] = useState(false);
   const navigate = useNavigate();
   const [campusMap, setCampusMap] = useState<Record<string, string>>({});
 
@@ -125,6 +125,23 @@ const Search = () => {
     setSelectedCampus("");
     setSelectedSchoolYear("");
     setSelectedOpportunityStatus("");
+  };
+
+  // Handle search box open
+  const handleOpenSearchBox = () => {
+    setIsSearchBoxOpen(true);
+  };
+
+  // Handle search box close
+  const handleCloseSearchBox = () => {
+    setIsSearchBoxOpen(false);
+  };
+
+  // Handle search query submission
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setIsSearchBoxOpen(false);
+    searchFamilies(query);
   };
 
   // Transform family search results to match our SearchResultItem interface
@@ -302,7 +319,7 @@ const Search = () => {
         {
           id: 6,
           type: "Campus",
-          name: "North Campus",
+          name: "Westside Campus",
           details: "85 Students Enrolled",
         },
       ],
@@ -310,45 +327,24 @@ const Search = () => {
     []
   );
 
-  const handleSearch = useCallback(
-    async (query: string) => {
-      if (!query.trim()) return;
-
-      setSearchQuery(query);
-
-      // Always search for families
-      await searchFamilies(query);
-    },
-    [searchFamilies]
-  );
-
-  // Effect to perform search when search query changes from SearchBox
+  // Call the search API when the search query changes
   useEffect(() => {
-    if (searchQuery.trim()) {
-      handleSearch(searchQuery);
+    // Only search if there's a query
+    if (searchQuery) {
+      searchFamilies(searchQuery);
     }
-  }, [searchQuery, handleSearch]);
+  }, [searchQuery, searchFamilies]);
 
-  // Fetch campus data from fivetran_views.campus_c
+  // Fetch campus data to populate the campus mapping object
   useEffect(() => {
     const fetchCampusData = async () => {
       try {
-        // Use the RPC function to access the fivetran_views schema
-        // Call the function directly without schema qualification as per user memories
-        const { data, error } = await supabase.rpc("query_campus_data");
-
-        if (error) {
-          console.error("Error fetching campus data:", error);
-          return;
-        }
-
-        if (data && Array.isArray(data)) {
-          // Create a map of campus IDs to campus names
+        if (campuses && campuses.length > 0) {
           const campusMapping: Record<string, string> = {};
-          // With the new function, data is now a simpler array of objects with id and name
-          (data as CampusData[]).forEach((campus) => {
-            if (campus && campus.id && campus.name) {
-              campusMapping[campus.id] = campus.name;
+
+          campuses.forEach((campus) => {
+            if (campus.campus_id && campus.campus_name) {
+              campusMapping[campus.campus_id] = campus.campus_name;
             }
           });
           setCampusMap(campusMapping);
@@ -360,24 +356,40 @@ const Search = () => {
     };
 
     fetchCampusData();
-  }, []);
+  }, [campuses]);
 
-  // Removed tab-change effect as we now only focus on family search
+  // Keyboard shortcut to open search
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Check for Control+K or Command+K (macOS)
+      if ((event.ctrlKey || event.metaKey) && event.key === "k") {
+        event.preventDefault();
+        setIsSearchBoxOpen(true);
+      }
+      
+      // Check for Escape key to close search
+      if (event.key === "Escape" && isSearchBoxOpen) {
+        event.preventDefault();
+        setIsSearchBoxOpen(false);
+      }
+    };
 
-  // Removed keyboard shortcut listener since search is now always visible
-
-  // Removed tab change handler as we now only focus on family search
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isSearchBoxOpen]);
 
   const handleResultClick = (result: SearchResultItem) => {
     // With the new buttons, card click should default to the standard view
     // But let's keep the code clean with proper type handling
-    
+
     // Log detailed information to help diagnose any ID format issues
     console.log("Result card clicked:", {
       id: result.id,
       allIds: result.familyIds,
       name: result.name,
-      details: result.details
+      details: result.details,
     });
 
     if (!result.id) {
@@ -387,13 +399,14 @@ const Search = () => {
     }
 
     // Extract the most reliable ID to use for navigation
-    const bestId = result.familyIds?.standard_id || 
-                  result.familyIds?.family_id || 
-                  result.familyIds?.alternate_id ||
-                  result.id;
-                  
+    const bestId =
+      result.familyIds?.standard_id ||
+      result.familyIds?.family_id ||
+      result.familyIds?.alternate_id ||
+      result.id;
+
     console.log(`Search: Navigating to family detail with best ID: ${bestId}`);
-    
+
     // Navigate based on result type
     switch (result.type) {
       case "Family":
@@ -416,25 +429,55 @@ const Search = () => {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex flex-col gap-6">
-        <h1 className="text-3xl font-bold text-outer-space">Search</h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-outer-space">Search</h1>
+          <Button 
+            onClick={handleOpenSearchBox} 
+            variant="outline" 
+            className="flex items-center gap-2 border border-slate-200 rounded-lg shadow-sm"
+          >
+            <SearchIcon className="h-4 w-4 text-slate-400" />
+            <span className="text-slate-600">Search families...</span>
+            <span className="ml-2 text-xs text-slate-400 border border-slate-200 rounded px-1">
+              ⌘K
+            </span>
+          </Button>
+        </div>
+
+        {/* Hovering SearchBox Component */}
+        <SearchBox
+          isOpen={isSearchBoxOpen}
+          onClose={handleCloseSearchBox}
+          onSearch={handleSearch}
+          initialQuery={searchQuery}
+          inline={false}
+          hideResults={false}
+        />
 
         <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
-          <div className="flex items-center">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <SearchIcon className="h-5 w-5 text-slate-gray" />
-              <span className="text-xl font-semibold text-outer-space">Find Families</span>
+              <Users className="h-5 w-5 text-slate-gray" />
+              <span className="text-xl font-semibold text-outer-space">Families</span>
+              {searchQuery && (
+                <span className="text-sm text-slate-500 ml-2">
+                  Results for "{searchQuery}"
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleFilters}
+                className="flex items-center gap-1"
+              >
+                <Filter className="h-4 w-4" />
+                {filtersVisible ? "Hide Filters" : "Show Filters"}
+              </Button>
             </div>
           </div>
-
-          {/* Inline SearchBox Component */}
-          <SearchBox
-            isOpen={true}
-            onClose={() => {}}
-            onSearch={setSearchQuery}
-            initialQuery={searchQuery}
-            inline={true}
-            hideResults={true}
-          />
 
           {/* Filters section */}
           {filtersVisible && (
@@ -554,7 +597,13 @@ const Search = () => {
                         <Users className="h-3 w-3" /> All Families
                       </>
                     )}
-                    <button className="ml-1" onClick={() => setSelectedOpportunityStatus("")}>
+                    <button
+                      className="ml-1"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setSelectedOpportunityStatus("");
+                      }}
+                    >
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>
@@ -562,97 +611,77 @@ const Search = () => {
               </div>
             </div>
           )}
-        </div>
 
-        {searchQuery.trim() && (
-          <div className="grid gap-4">
+          {/* Search results */}
+          <div className="grid grid-cols-1 gap-4 mt-4">
             {isSearching ? (
-              <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-outer-space"></div>
+              // Loading state
+              <div className="flex flex-col items-center justify-center py-8 text-slate-gray">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-2"></div>
+                <p>Searching families...</p>
               </div>
             ) : searchResults.length > 0 ? (
+              // Results found
               searchResults.map((result) => (
                 <Card
-                  key={result.id}
-                  className={`p-4 bg-white hover:shadow-lg cursor-pointer transition-all duration-200 border border-gray-100 rounded-lg ${result.hasWonOpportunities ? "border-l-4 border-l-green-500" : ""} mb-2 shadow-sm`}
-                  onClick={() => handleResultClick(result)}
+                  key={result.id.toString()}
+                  className="p-4 hover:bg-slate-50 transition-colors duration-200 border-slate-200 relative group overflow-hidden"
                 >
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0">
-                      {result.type === "Family" ? (
-                        <div className="bg-blue-100 p-3 rounded-full shadow-sm">
-                          <Users className="h-5 w-5 text-blue-600" />
-                        </div>
-                      ) : result.type === "Student" ? (
-                        <div className="bg-green-100 p-3 rounded-full shadow-sm">
-                          <Briefcase className="h-5 w-5 text-green-600" />
-                        </div>
-                      ) : (
-                        <div className="bg-purple-100 p-3 rounded-full shadow-sm">
-                          <Building className="h-5 w-5 text-purple-600" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      {/* Campus badge row */}
-                      <div className="flex items-center mb-1">
-                        {result.hasWonOpportunities && (
-                          <Badge
-                            variant="outline"
-                            className="mr-2 px-3 py-1 bg-emerald-100 text-emerald-800 border-emerald-200 flex items-center gap-1"
-                          >
-                            <Award className="h-3 w-3" /> Active
-                          </Badge>
+                  <div className="absolute inset-0 border-l-4 border-primary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-start space-x-4">
+                      <div className="bg-blue-100 text-blue-800 rounded-full h-10 w-10 flex items-center justify-center shrink-0">
+                        {result.type === "Family" ? (
+                          <Users className="h-5 w-5" />
+                        ) : result.type === "Student" ? (
+                          <User className="h-5 w-5" />
+                        ) : (
+                          <Building className="h-5 w-5" />
                         )}
-                        <Badge
-                          variant="outline"
-                          className="px-2 py-1 bg-gray-100 text-gray-700 border-gray-200 flex items-center gap-1"
-                        >
-                          <MapPin className="h-3 w-3" />{" "}
-                          {result.details.replace("Campus:", "").trim()}
-                        </Badge>
                       </div>
-
-                      {/* Enhanced household name - increased size and weight */}
-                      <h3 className="text-2xl font-semibold text-outer-space">{result.name}</h3>
-
-                      {/* Removed the School Year Information section as requested */}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-outer-space">{result.name}</h3>
+                          {result.hasWonOpportunities && (
+                            <Badge color="green" text="Active" className="font-medium" />
+                          )}
+                          {/* If we want to add the "Open" badge here, we'd need additional logic */}
+                        </div>
+                        <p className="text-sm text-slate-gray mt-1">{result.details}</p>
+                      </div>
                     </div>
-                    <div className="flex flex-col gap-2">
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="self-start"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const bestId = result.familyIds?.standard_id || 
-                                        result.familyIds?.family_id || 
-                                        result.familyIds?.alternate_id ||
-                                        result.id;
-                          navigate(`/family-detail/${bestId}`);
-                        }}
-                      >
-                        View Family
-                      </Button>
-                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="shrink-0"
+                      onClick={() => handleResultClick(result)}
+                    >
+                      View Family
+                    </Button>
                   </div>
                 </Card>
               ))
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-slate-gray">No results found for "{searchQuery}"</p>
-                <p className="text-sm text-slate-gray mt-1">
-                  Try a different search term or category
+            ) : searchQuery ? (
+              // No results found
+              <div className="text-center py-8 border rounded-lg bg-gray-50">
+                <p className="text-slate-gray">No families found matching "{searchQuery}"</p>
+                <p className="text-slate-400 text-sm mt-1">
+                  Try a different search term or reset filters
                 </p>
-                {searchError && (
-                  <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-md text-red-600 text-sm">
-                    Error: {searchError}
-                  </div>
-                )}
+              </div>
+            ) : (
+              // No search performed yet
+              <div className="text-center py-8 border rounded-lg bg-gray-50">
+                <p className="text-slate-gray">
+                  Use the search bar at the top to find families
+                </p>
+                <p className="text-slate-400 text-sm mt-1">
+                  or press <kbd className="px-1 py-0.5 rounded border shadow-sm text-xs">⌘K</kbd> to search
+                </p>
               </div>
             )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
