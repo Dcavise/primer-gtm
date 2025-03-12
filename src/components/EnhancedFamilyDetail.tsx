@@ -702,7 +702,7 @@ const EnhancedFamilyDetail: React.FC = () => {
             <div className="flex items-center mt-2 space-x-2">
               {/* Campus Badge with Icon */}
               <Tag
-                className="flex items-center gap-1 py-1.5 pl-2 pr-3 border border-muted/40"
+                className="flex items-center gap-1 py-1.5 pl-2 pr-3 border-2 border-black"
                 bordered={true}
               >
                 <Building className="h-3.5 w-3.5 text-muted-foreground" />
@@ -713,7 +713,7 @@ const EnhancedFamilyDetail: React.FC = () => {
               
               {/* Students Count Badge */}
               <Tag
-                className="flex items-center gap-1 py-1.5 pl-2 pr-3 border border-muted/40"
+                className="flex items-center gap-1 py-1.5 pl-2 pr-3 border-2 border-black"
                 bordered={true}
               >
                 <GraduationCap className="h-3.5 w-3.5 text-muted-foreground" />
