@@ -16,6 +16,7 @@ import FamilyProfile from "./pages/FamilyProfile";
 import FamilyDetail from "./pages/FamilyDetail";
 import EnhancedFamilyDetail from "./components/EnhancedFamilyDetail";
 import Search from "./pages/Search";
+import TypographyExample from "./pages/TypographyExample"; // Import the TypographyExample component
 
 // Global error boundary component
 class ErrorBoundary extends React.Component<
@@ -129,6 +130,11 @@ const router = createBrowserRouter([
           {
             path: "search",
             element: <Search />,
+          },
+          // Typography Example Page
+          {
+            path: "typography-example",
+            element: <TypographyExample />,
           },
           // Include all other routes from features
           ...getAuthenticatedRoutes(),
