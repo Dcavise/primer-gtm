@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { Badge } from "../components/ui/badge";
-import { ChevronDown, Plus, UserRound, Search, InfoIcon } from "lucide-react";
+import { ChevronDown, Plus, UserRound, InfoIcon, AlertCircle } from "lucide-react";
 import { supabase } from "../integrations/supabase-client";
 import { logger } from "@/utils/logger";
 import { format } from "date-fns";
@@ -30,13 +30,14 @@ interface FellowData {
 
 const CampusStaffTracker: React.FC = () => {
   const [selectedCampus, setSelectedCampus] = useState<string>("riverdale");
-  const [stages, setStages] = useState<string[]>([]);
-  const [selectedStage, setSelectedStage] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [fellows, setFellows] = useState<FellowData[]>([]);
-  const [searchQuery, setSearchQuery] = useState<string>("");
   const [fetchingFellows, setFetchingFellows] = useState<boolean>(true);
+  const [selectedStage, setSelectedStage] = useState<string>("New");
+
+  // Define the ordered stages
+  const orderedStages = ["New", "Fellow", "Offer", "Hired", "Rejected/Declined"];
 
   // Format date helper function
   const formatDate = (dateString: string | null) => {
@@ -56,41 +57,6 @@ const CampusStaffTracker: React.FC = () => {
     { id: "bronx", name: "Bronx Campus" },
     { id: "manhattan", name: "Manhattan Campus" },
   ];
-
-  // Fetch the distinct stage values from fivetran_views.fellows
-  useEffect(() => {
-    const fetchStages = async () => {
-      setLoading(true);
-      try {
-        const { success, data, error } = await supabase.getFellowStages();
-        
-        if (success && data && data.length > 0) {
-          setStages(data);
-          setSelectedStage(data[0]); // Select the first stage by default
-        } else {
-          // Fallback to default stages if the API call fails
-          const defaultStages = ["Applied", "Interviewing", "Fellowship", "Made Offer", "Hired"];
-          setStages(defaultStages);
-          setSelectedStage(defaultStages[0]);
-          if (error) {
-            console.error("Error fetching fellow stages:", error);
-            setError(`Failed to fetch stages: ${error}`);
-          }
-        }
-      } catch (err) {
-        console.error("Exception fetching fellow stages:", err);
-        // Fallback to default stages
-        const defaultStages = ["Applied", "Interviewing", "Fellowship", "Made Offer", "Hired"];
-        setStages(defaultStages);
-        setSelectedStage(defaultStages[0]);
-        setError("An error occurred while fetching stages");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStages();
-  }, []);
 
   // Handle stage selection
   const handleStageSelect = (stage: string) => {
@@ -117,8 +83,6 @@ const CampusStaffTracker: React.FC = () => {
             status
           FROM 
             fivetran_views.fellows
-          WHERE 
-            hiring_stage IS NOT NULL
           ORDER BY 
             fellow_name ASC
         `;
@@ -159,7 +123,7 @@ const CampusStaffTracker: React.FC = () => {
               
               if (arrayProp) {
                 const [propName, arrayValue] = arrayProp;
-                logger.info(`Found array property ${propName} with ${arrayValue.length} records`);
+                logger.info(`Found array property ${propName} with ${(arrayValue as any[]).length} records`);
                 fellowsData = arrayValue as FellowData[];
               } else {
                 logger.warn("No array found in response:", data);
@@ -177,6 +141,30 @@ const CampusStaffTracker: React.FC = () => {
           // Add this for extra debugging
           console.log("Fellows data:", fellowsData);
           
+          // Map database hiring stages to our ordered stages
+          fellowsData = fellowsData.map(fellow => {
+            let mappedStage = fellow.hiring_stage;
+            const stageLC = fellow.hiring_stage ? fellow.hiring_stage.toLowerCase() : '';
+            
+            // Map database stages to our ordered stages (case-insensitive)
+            if (stageLC === "applied" || stageLC === "interviewing") {
+              mappedStage = "New";
+            } else if (stageLC === "fellowship") {
+              mappedStage = "Fellow";
+            } else if (stageLC === "made offer") {
+              mappedStage = "Offer";
+            } else if (stageLC === "hired") {
+              mappedStage = "Hired";
+            } else if (stageLC === "declined" || stageLC === "rejected") {
+              mappedStage = "Rejected/Declined";
+            }
+            
+            return {
+              ...fellow,
+              hiring_stage: mappedStage
+            };
+          });
+          
           setFellows(fellowsData);
         }
       } catch (err) {
@@ -186,31 +174,29 @@ const CampusStaffTracker: React.FC = () => {
         setFellows([]);
       } finally {
         setFetchingFellows(false);
+        setLoading(false);
         logger.info("Finished fellows data fetch attempt");
       }
     };
     
     fetchFellows();
-  }, [selectedStage, selectedCampus]); // Add dependencies back
+  }, [selectedCampus]);
   
-  // Filter fellows based on search query and selected stage
+  // Filter fellows based on selected stage
   const filteredFellows = fellows.filter(fellow => {
-    // First check if it matches the search query
-    const matchesSearch = 
-      searchQuery === "" || 
-      fellow.fellow_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (fellow.grade_band && fellow.grade_band.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    // Then check if it matches the selected stage
-    const matchesStage = !selectedStage || fellow.hiring_stage === selectedStage;
-    
-    return matchesSearch && matchesStage;
+    // Check if it matches the selected stage
+    return fellow.hiring_stage === selectedStage;
+  });
+  
+  // Unknown fellows (those with hiring_stage not in our ordered stages)
+  const unknownFellows = fellows.filter(fellow => {
+    return !orderedStages.includes(fellow.hiring_stage);
   });
 
   return (
     <div className="container mx-auto p-4">
       <div className="flex flex-col space-y-4 mb-6">
-        {/* Campus Selector Header - similar to the wireframe */}
+        {/* Campus Selector Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <Select value={selectedCampus} onValueChange={setSelectedCampus}>
@@ -229,14 +215,10 @@ const CampusStaffTracker: React.FC = () => {
               </SelectContent>
             </Select>
           </div>
-
-          <div className="flex items-center">{/* Filter button removed */}</div>
         </div>
-
-        {/* Descriptive paragraph removed */}
       </div>
 
-      {/* Pipeline Stages Tabs */}
+      {/* Pipeline Stages Tabs - Horizontal Alignment */}
       {loading ? (
         <div className="border-b mb-6">
           <div className="py-3 text-center">
@@ -252,8 +234,8 @@ const CampusStaffTracker: React.FC = () => {
         </div>
       ) : (
         <div className="border-b mb-6">
-          <div className={`grid grid-cols-${Math.min(stages.length, 5)} w-full`}>
-            {stages.map((stage, index) => (
+          <div className="grid grid-cols-5 w-full">
+            {orderedStages.map((stage, index) => (
               <button
                 key={index}
                 className={`py-3 text-center ${
@@ -269,20 +251,6 @@ const CampusStaffTracker: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Search */}
-      <div className="mb-6 relative">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Search className="h-5 w-5 text-gray-400" />
-        </div>
-        <input
-          type="text"
-          placeholder="Search by name or grade band"
-          className="w-full p-3 pl-10 border border-gray-300 rounded-md"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-      </div>
 
       {/* Error state */}
       {error && (
@@ -319,7 +287,7 @@ const CampusStaffTracker: React.FC = () => {
       <div className="space-y-4">
         {!fetchingFellows && filteredFellows.length === 0 && (
           <p className="text-center text-gray-500 py-8">
-            No fellows found matching your search. Try adjusting your search term or stage filter.
+            No fellows found in the "{selectedStage}" stage. Try selecting a different stage.
           </p>
         )}
         
@@ -349,82 +317,94 @@ const CampusStaffTracker: React.FC = () => {
                     )}
                     <Badge
                       variant="outline"
-                      className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100"
+                      className={`text-xs ${
+                        fellow.hiring_stage === "Hired"
+                          ? "bg-green-100 text-green-800 hover:bg-green-100"
+                          : fellow.hiring_stage === "Offer"
+                            ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
+                            : fellow.hiring_stage === "Fellow"
+                              ? "bg-purple-100 text-purple-800 hover:bg-purple-100"
+                              : fellow.hiring_stage === "New"
+                                ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
+                                : fellow.hiring_stage === "Rejected/Declined"
+                                  ? "bg-red-100 text-red-800 hover:bg-red-100"
+                                  : "bg-gray-100 text-gray-700 hover:bg-gray-100"
+                      }`}
                     >
-                      {fellow.hiring_stage || "Unknown stage"}
+                      {fellow.hiring_stage}
                     </Badge>
-                    {fellow.status && (
+                    {fellow.applied_date && (
                       <Badge
                         variant="outline"
                         className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100"
                       >
-                        {fellow.status}
+                        Applied: {formatDate(fellow.applied_date)}
                       </Badge>
                     )}
                   </div>
-
-                  <div className="flex items-center mt-3 text-xs text-gray-500">
-                    <span>Applied: {formatDate(fellow.applied_date)}</span>
-                  </div>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        ))}
-      </div>
-
-      {/* Tabs UI for different view modes */}
-      <Tabs defaultValue="cards" className="w-full mt-6">
-        <TabsList className="mb-4">
-          <TabsTrigger value="cards">Cards View</TabsTrigger>
-          <TabsTrigger value="table">Table View</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="cards">{/* Card view is already implemented above */}</TabsContent>
-
-        <TabsContent value="table">
-          <Card>
-            <CardContent className="p-4">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-2">Name</th>
-                    <th className="text-left py-2">Grade Band</th>
-                    <th className="text-left py-2">Campus</th>
-                    <th className="text-left py-2">Status</th>
-                    <th className="text-left py-2">Applied Date</th>
-                    <th className="text-left py-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {!fetchingFellows && filteredFellows.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="text-center py-8 text-gray-500">
-                        No fellows found matching your search. Try adjusting your search term or stage filter.
-                      </td>
-                    </tr>
-                  )}
-                  
-                  {filteredFellows.map((fellow) => (
-                    <tr key={fellow.id} className="border-b">
-                      <td className="py-2">{fellow.fellow_name}</td>
-                      <td className="py-2">{fellow.grade_band || "N/A"}</td>
-                      <td className="py-2">{fellow.campus_id || "N/A"}</td>
-                      <td className="py-2">{fellow.hiring_stage}</td>
-                      <td className="py-2">{formatDate(fellow.applied_date)}</td>
-                      <td className="py-2">
-                        <Button variant="ghost" size="sm">
-                          View
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        ))}
+      </div>
+      
+      {/* Unknown Fellows Section */}
+      {!fetchingFellows && unknownFellows.length > 0 && (
+        <div className="mt-10">
+          <div className="flex items-center mb-4">
+            <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
+            <h2 className="text-lg font-semibold">Unknown Stage Fellows</h2>
+          </div>
+          
+          <div className="space-y-4">
+            {unknownFellows.map((fellow) => (
+              <Card key={fellow.id} className="border hover:shadow-md transition-shadow border-amber-200">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-12 h-12 bg-amber-100 rounded-md flex items-center justify-center text-amber-700 text-lg font-medium">
+                      {fellow.fellow_name.charAt(0)}
+                    </div>
+                    <div className="flex-grow">
+                      <div className="flex flex-col sm:flex-row sm:justify-between">
+                        <h3 className="font-medium">{fellow.fellow_name}</h3>
+                      </div>
+                      <p className="text-gray-600 text-sm">
+                        {fellow.grade_band || "No grade band specified"}
+                      </p>
+
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {fellow.cohort && (
+                          <Badge
+                            variant="outline"
+                            className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100"
+                          >
+                            Cohort {fellow.cohort}
+                          </Badge>
+                        )}
+                        <Badge
+                          variant="outline"
+                          className="text-xs bg-amber-100 text-amber-800 hover:bg-amber-100"
+                        >
+                          Stage: {fellow.hiring_stage || "Unknown"}
+                        </Badge>
+                        {fellow.applied_date && (
+                          <Badge
+                            variant="outline"
+                            className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100"
+                          >
+                            Applied: {formatDate(fellow.applied_date)}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
