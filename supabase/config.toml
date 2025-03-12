@@ -6,9 +6,9 @@ project_id = "pudncilureqpzxrxfupr"
   # Port for the API URL
   port = 54321
   # Schemas to expose in your API
-  schemas = ["public", "storage"]
+  schemas = ["fivetran_views", "storage"]
   # Extra schemas to add to the search_path of every request
-  extra_search_path = ["public", "extensions"]
+  extra_search_path = ["fivetran_views", "extensions"]
   # Max rows to return from a view, table, or stored procedure
   max_rows = 1000
 
@@ -19,5 +19,4 @@ project_id = "pudncilureqpzxrxfupr"
 
 # Edge Functions Configuration
 [functions]
-  # Port for the Functions URL
-  port = 54321
+  serve = { port = 54321 }

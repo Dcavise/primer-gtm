@@ -38,7 +38,7 @@ class SupabaseUnifiedClient {
         },
       },
       db: {
-        schema: "public",
+        schema: "fivetran_views",
       },
     });
 
@@ -55,7 +55,7 @@ class SupabaseUnifiedClient {
         },
       },
       db: {
-        schema: "public",
+        schema: "fivetran_views",
       },
     });
   }

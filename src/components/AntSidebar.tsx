@@ -4,6 +4,7 @@ import {
   BarChartOutlined,
   HomeOutlined,
   TeamOutlined,
+  BankOutlined,
 } from '@ant-design/icons';
 import { Menu } from 'antd';
 import type { GetProp, MenuProps } from 'antd';
@@ -33,6 +34,11 @@ const items: MenuItem[] = [
     key: 'campus-staff',
     icon: <TeamOutlined />,
     label: <Link to="/campus-staff">Campus Staff</Link>,
+  },
+  {
+    key: 'real-estate',
+    icon: <BankOutlined />,
+    label: <Link to="/real-estate-pipeline">Real Estate</Link>,
   },
 ];
 

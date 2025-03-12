@@ -117,3 +117,4 @@ Returns campus name for a single campus ID
 - Multiple get_lead_metrics functions exist with different parameter signatures
 - Always use the fivetran_views schema when calling these functions, not the public schema
 - When making function calls, either use the schema-qualified name (e.g., 'fivetran_views.search_families') or just the function name without schema qualification when appropriate
+Helop
