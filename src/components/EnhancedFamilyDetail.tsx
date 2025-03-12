@@ -10,7 +10,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Tag } from "antd";
 import { Button } from "@/components/ui/button";
 import { useEnhancedFamilyData, Student, StudentOpportunity } from "@/hooks/useEnhancedFamilyData";
 import {
@@ -74,25 +74,12 @@ const OpportunityCard: React.FC<OpportunityCardProps> = ({ opportunity, studentN
           {formatSchoolYearForDisplay(opportunity.school_year)} School Year
         </CardTitle>
         <CardDescription>
-          <Badge
-            variant={
-              normalizedStage === "Closed Won"
-                ? "success"
-                : normalizedStage === "Closed Lost"
-                ? "destructive"
-                : normalizedStage === "Family Interview"
-                ? "secondary"
-                : normalizedStage === "Awaiting Documents"
-                ? "default"
-                : normalizedStage === "Education Review"
-                ? "secondary"
-                : normalizedStage === "Admission Offered"
-                ? "default"
-                : "outline"
-            }
+          <Tag 
+            color={opportunity.is_won ? "green" : getOpportunityStageColor(normalizedStage)} 
+            bordered={false}
           >
             {normalizedStage || "New Application"}
-          </Badge>
+          </Tag>
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -444,7 +431,7 @@ const EnhancedFamilyDetail: React.FC = () => {
               <TabsTrigger key={`tab-${student.id}`} value={student.id}>
                 {getFixedStudentName(student)}
                 {student.opportunities.some(opp => opp.is_won) && (
-                  <Badge variant="success" className="ml-2">Enrolled</Badge>
+                  <Tag color="green" bordered={false} className="ml-2">Enrolled</Tag>
                 )}
               </TabsTrigger>
             ))}
@@ -471,18 +458,16 @@ const EnhancedFamilyDetail: React.FC = () => {
                               {student.opportunities.some(opp => opp.is_won && 
                                 formatSchoolYearForDisplay(opp.school_year).includes("25/26")) ? (
                                 <>
-                                  <CheckCircle2 className="h-4 w-4 text-green-500 mr-1" />
-                                  <span>Enrolled for 25/26</span>
+                                  <Tag color="green" bordered={false}>Enrolled for 25/26</Tag>
                                 </>
                               ) : student.opportunities.some(opp => opp.is_won && 
                                 formatSchoolYearForDisplay(opp.school_year).includes("24/25")) ? (
                                 <>
-                                  <CheckCircle2 className="h-4 w-4 text-green-500 mr-1" />
-                                  <span>Currently Enrolled (24/25)</span>
+                                  <Tag color="green" bordered={false}>Currently Enrolled (24/25)</Tag>
                                 </>
                               ) : (
                                 <>
-                                  <span>Prospective Student</span>
+                                  <Tag color="blue" bordered={false}>Prospective Student</Tag>
                                 </>
                               )}
                             </div>
@@ -518,14 +503,9 @@ const EnhancedFamilyDetail: React.FC = () => {
                                   .filter(opp => opp.school_year)
                                   .map(opp => formatSchoolYearForDisplay(opp.school_year))
                               )).map(year => (
-                                <Badge key={year} variant={
-                                  student.opportunities.some(opp => 
-                                    formatSchoolYearForDisplay(opp.school_year) === year && 
-                                    opp.is_won
-                                  ) ? "success" : "outline"
-                                } className="mr-1 mb-1">
+                                <Tag key={year} bordered={false} color={year === "24/25" ? "green" : "blue"}>
                                   {year}
-                                </Badge>
+                                </Tag>
                               ))}
                             </div>
                           </div>
@@ -546,9 +526,12 @@ const EnhancedFamilyDetail: React.FC = () => {
                               label: (
                                 <div className="flex justify-between items-center">
                                   <span>{opportunity.name}</span>
-                                  <Badge variant={opportunity.is_won ? "success" : "secondary"} className="ml-2">
+                                  <Tag 
+                                    color={opportunity.is_won ? "green" : getOpportunityStageColor(opportunity.stage)} 
+                                    bordered={false}
+                                  >
                                     {opportunity.is_won ? "Won" : opportunity.stage}
-                                  </Badge>
+                                  </Tag>
                                 </div>
                               ),
                               children: <OpportunityCard opportunity={opportunity} studentName={getFixedStudentName(student)} />
@@ -577,7 +560,7 @@ const EnhancedFamilyDetail: React.FC = () => {
             <CardTitle className="text-xl font-semibold flex items-center">
               {getFixedStudentName(student)}
               {student.opportunities && student.opportunities.some(opp => opp.is_won) && (
-                <Badge variant="success" className="ml-2">Enrolled</Badge>
+                <Tag color="green" bordered={false} className="ml-2">Enrolled</Tag>
               )}
             </CardTitle>
           </CardHeader>
@@ -595,18 +578,16 @@ const EnhancedFamilyDetail: React.FC = () => {
                         {student.opportunities.some(opp => opp.is_won && 
                           formatSchoolYearForDisplay(opp.school_year).includes("25/26")) ? (
                           <>
-                            <CheckCircle2 className="h-4 w-4 text-green-500 mr-1" />
-                            <span>Enrolled for 25/26</span>
+                            <Tag color="green" bordered={false}>Enrolled for 25/26</Tag>
                           </>
                         ) : student.opportunities.some(opp => opp.is_won && 
                           formatSchoolYearForDisplay(opp.school_year).includes("24/25")) ? (
                           <>
-                            <CheckCircle2 className="h-4 w-4 text-green-500 mr-1" />
-                            <span>Currently Enrolled (24/25)</span>
+                            <Tag color="green" bordered={false}>Currently Enrolled (24/25)</Tag>
                           </>
                         ) : (
                           <>
-                            <span>Prospective Student</span>
+                            <Tag color="blue" bordered={false}>Prospective Student</Tag>
                           </>
                         )}
                       </div>
@@ -642,14 +623,9 @@ const EnhancedFamilyDetail: React.FC = () => {
                             .filter(opp => opp.school_year)
                             .map(opp => formatSchoolYearForDisplay(opp.school_year))
                         )).map(year => (
-                          <Badge key={year} variant={
-                            student.opportunities.some(opp => 
-                              formatSchoolYearForDisplay(opp.school_year) === year && 
-                              opp.is_won
-                            ) ? "success" : "outline"
-                          } className="mr-1 mb-1">
+                          <Tag key={year} bordered={false} color={year === "24/25" ? "green" : "blue"}>
                             {year}
-                          </Badge>
+                          </Tag>
                         ))}
                       </div>
                     </div>
@@ -670,9 +646,12 @@ const EnhancedFamilyDetail: React.FC = () => {
                         label: (
                           <div className="flex justify-between items-center">
                             <span>{opportunity.name}</span>
-                            <Badge variant={opportunity.is_won ? "success" : "secondary"} className="ml-2">
+                            <Tag 
+                              color={opportunity.is_won ? "green" : getOpportunityStageColor(opportunity.stage)} 
+                              bordered={false}
+                            >
                               {opportunity.is_won ? "Won" : opportunity.stage}
-                            </Badge>
+                            </Tag>
                           </div>
                         ),
                         children: <OpportunityCard opportunity={opportunity} studentName={getFixedStudentName(student)} />
@@ -715,36 +694,33 @@ const EnhancedFamilyDetail: React.FC = () => {
                   formatSchoolYearForDisplay(opp.school_year).includes("25/26")
                 )
               ) && (
-                <div className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-sm font-medium text-green-800">
-                  <div className="mr-1 h-1.5 w-1.5 rounded-full bg-green-500"></div>
-                  Active
-                </div>
+                <Tag color="green" bordered={false}>Active</Tag>
               )}
             </div>
 
             {/* Badges for key information */}
             <div className="flex items-center mt-2 space-x-2">
               {/* Campus Badge with Icon */}
-              <Badge
-                variant="outline"
-                className="flex items-center gap-1 py-1.5 pl-2 pr-3 border-muted/40"
+              <Tag
+                className="flex items-center gap-1 py-1.5 pl-2 pr-3 border border-muted/40"
+                bordered={true}
               >
-                <Building className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                <Building className="h-3.5 w-3.5 text-muted-foreground" />
                 <span className="text-sm font-medium">
                   {familyRecord.current_campus_name || "Not Assigned"}
                 </span>
-              </Badge>
+              </Tag>
               
               {/* Students Count Badge */}
-              <Badge
-                variant="outline"
-                className="flex items-center gap-1 py-1.5 pl-2 pr-3 border-muted/40"
+              <Tag
+                className="flex items-center gap-1 py-1.5 pl-2 pr-3 border border-muted/40"
+                bordered={true}
               >
                 <GraduationCap className="h-3.5 w-3.5 text-muted-foreground" />
                 <span className="text-sm font-medium">
                   {mergedStudents?.length || 0} Students
                 </span>
-              </Badge>
+              </Tag>
             </div>
           </div>
 
@@ -866,7 +842,7 @@ const EnhancedFamilyDetail: React.FC = () => {
                     </div>
                   )
                 ) : (
-                  <div className="text-muted-foreground italic p-4 bg-muted/10 rounded-lg border border-muted/20">
+                  <div className="text-muted-foreground italic">
                     No parent contacts found
                   </div>
                 )}
@@ -1064,6 +1040,22 @@ const EnhancedFamilyDetail: React.FC = () => {
       </div>
     </div>
   );
+};
+
+// Function to determine color based on opportunity stage
+const getOpportunityStageColor = (stage: string): string => {
+  switch (stage) {
+    case "Closed Won":
+      return "green";
+    case "Closed Lost":
+      return "red";
+    case "Application":
+      return "blue";
+    case "Qualified Lead":
+      return "orange";
+    default:
+      return "default";
+  }
 };
 
 export default EnhancedFamilyDetail;
