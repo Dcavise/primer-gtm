@@ -1,402 +1,161 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { Button } from "../components/ui/button";
-import { Card } from "../components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import SearchBox from "../components/SearchBox";
-import { Table } from "antd";
-import type { TableColumnsType, TableProps } from "antd";
+import { Table, Select, Button } from "antd";
+import type { TableColumnsType } from "antd";
 import {
   Search as SearchIcon,
-  Users,
-  Briefcase,
   Building,
-  MapPin,
-  Phone,
-  Calendar,
-  Award,
   Filter,
-  X,
-  User,
+  X
 } from "lucide-react";
-import { useFamilyData } from "@/hooks/useFamilyData";
-import { FamilySearchResult, supabase, getEnhancedFamilyRecord } from "@/integrations/supabase-client";
-import { EnhancedFamilyRecord, StudentOpportunity } from "@/hooks/useEnhancedFamilyData";
-import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useCampuses } from "@/hooks/useCampuses";
+import { supabase } from "../integrations/supabase-client";
 
 // Define interface for campus data returned from RPC
 interface CampusData {
   id: string;
-  name: string;
+  campus_name: string;
 }
 
-// Define search result item interface
-interface SearchResultItem {
-  id: string | number; // Updated to accept both string and number IDs
-  type: "Family" | "Student" | "Campus";
-  name: string;
-  details: string;
-  hasWonOpportunities?: boolean; // Flag indicating if family has won opportunities
-  wonOpportunityDetails?: {
-    schoolYears: string[];
-    campuses: string[];
-  }; // Details of won opportunities
-  familyIds?: {
-    // Optional object to store all family ID formats for debugging
-    standard_id?: string;
-    family_id?: string;
-    alternate_id?: string;
-  };
-}
-
-// Define mock results interface
-interface MockResultsData {
-  all: SearchResultItem[];
-  families: SearchResultItem[];
-  students: SearchResultItem[];
-  campuses: SearchResultItem[];
-  [key: string]: SearchResultItem[];
-}
-
-// Helper function to get appropriate CSS classes for school year badges
-const getSchoolYearClasses = (year: string): string => {
-  switch (year) {
-    case "23/24":
-      return "bg-orange-100 text-orange-800";
-    case "24/25":
-      return "bg-green-100 text-green-800";
-    case "25/26":
-      return "bg-blue-100 text-blue-800";
-    default:
-      return "bg-purple-100 text-purple-800";
-  }
-};
-
-// Define ant design table types
+// Define interface for table data
 interface DataType {
-  key: React.Key;
+  key: string;
   id: string;
   name: string;
-  campus: string;
+  student_name: string;
   stage: string;
-  grade?: string;
-  school_year?: string;
-  student_name?: string;
-  familyIds?: {
-    standard_id?: string;
-    family_id?: string;
-    alternate_id?: string;
+  grade: string;
+  school_year: string;
+  campus: string;
+  familyIds: {
+    family_id: string;
   };
 }
 
-/**
- * Search page component
- * Provides functionality to search across different data entities
- */
+// Define interface for search result
+interface SearchResult {
+  id: string;
+  name: string;
+  type: string;
+  campus?: string;
+  grade?: string;
+  stage?: string;
+  school_year?: string;
+  family_id?: string;
+  student_id?: string;
+  opportunity_id?: string;
+  campus_id?: string;
+}
+
 const Search = () => {
-  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const [campusMap, setCampusMap] = useState<Record<string, string>>({});
-
-  // Filter states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [campuses, setCampuses] = useState<CampusData[]>([]);
+  const [isLoadingCampuses, setIsLoadingCampuses] = useState(true);
   const [selectedCampus, setSelectedCampus] = useState<string>("");
   const [selectedSchoolYear, setSelectedSchoolYear] = useState<string>("");
   const [selectedOpportunityStatus, setSelectedOpportunityStatus] = useState<string>("");
   const [filtersVisible, setFiltersVisible] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [familySearchResults, setFamilySearchResults] = useState<any[]>([]);
+  const [tableData, setTableData] = useState<DataType[]>([]);
+  const [loadingOpportunities, setLoadingOpportunities] = useState(true);
+  const [campusFilter, setCampusFilter] = useState<string | null>(null);
+  const [stageFilter, setStageFilter] = useState<string | null>(null);
+  const [schoolYearFilter, setSchoolYearFilter] = useState<string | null>(null);
+  const [availableSchoolYears, setAvailableSchoolYears] = useState<string[]>([]);
+  const [availableCampuses, setAvailableCampuses] = useState<string[]>([]);
+  const [availableStages, setAvailableStages] = useState<string[]>([]);
 
-  // Get campus data
-  const { data: campuses = [], isLoading: isLoadingCampuses } = useCampuses();
-
-  // School year options
   const schoolYearOptions = ["23/24", "24/25", "25/26"];
-
-  // Opportunity status options
   const opportunityStatusOptions = [
     { value: "active", label: "Active Families" },
     { value: "all", label: "All Families" },
   ];
+  const stageOptions = ["Application", "Interviewed", "Offered", "Enrolled", "Declined"];
 
-  // Use our custom hook for family data operations
-  const {
-    loading: isSearching,
-    error: searchError,
-    searchResults: familySearchResults,
-    searchFamilies,
-  } = useFamilyData();
-
-  // Toggle filters visibility
   const toggleFilters = () => {
     setFiltersVisible(!filtersVisible);
   };
 
-  // Reset all filters
-  const resetFilters = () => {
+  const resetFamilyFilters = () => {
     setSelectedCampus("");
     setSelectedSchoolYear("");
     setSelectedOpportunityStatus("");
   };
 
-  // Handle search query submission
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    searchFamilies(query);
+  const searchFamilies = async (query: string) => {
+    setIsSearching(true);
+    try {
+      const { data, error } = await supabase.searchFamilies(query);
+      if (error) {
+        setSearchError(error);
+        setFamilySearchResults([]);
+      } else if (data) {
+        setFamilySearchResults(data);
+        setSearchError(null);
+      }
+    } catch (err) {
+      console.error("Error searching families:", err);
+      setSearchError("An unexpected error occurred");
+      setFamilySearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
-  // Transform family search results to match our SearchResultItem interface
-  const searchResults = useMemo(() => {
-    // Apply filters to the search results
-    return (familySearchResults || [])
-      .filter((family) => {
-        if (!family) return false;
-
-        // Campus filter
-        if (selectedCampus && family.current_campus_c) {
-          const campusName = campusMap?.[family.current_campus_c] || "Unknown Campus";
-          if (campusName !== selectedCampus) return false;
-        }
-
-        // School year filter
-        if (selectedSchoolYear && Array.isArray(family.opportunity_school_years)) {
-          if (!family.opportunity_school_years.includes(selectedSchoolYear)) return false;
-        }
-
-        // Opportunity status filter
-        if (selectedOpportunityStatus === "active") {
-          // Check if family has at least one won opportunity for the 25/26 school year
-          if (!family.opportunity_is_won_flags || !family.opportunity_school_years) {
-            return false;
-          }
-
-          // Check for at least one opportunity that is won AND for school year 25/26
-          const hasActiveOpportunity = family.opportunity_is_won_flags.some((isWon, index) => {
-            return isWon === true && family.opportunity_school_years[index] === "25/26";
-          });
-
-          if (!hasActiveOpportunity) {
-            return false;
-          }
-        }
-
-        return true;
-      })
-      .map((family) => {
-        // Log the available IDs for debugging
-        const standardId = family.standard_id || "";
-        const familyId = family.family_id || "";
-        const alternateId = family.alternate_id || "";
-
-        console.log("Family search result with IDs:", {
-          standard_id: standardId,
-          family_id: familyId,
-          alternate_id: alternateId,
-        });
-
-        // Find the indices of active opportunities (won AND in 25/26 school year)
-        const activeOpportunityIndices: number[] = [];
-        if (
-          Array.isArray(family.opportunity_is_won_flags) &&
-          Array.isArray(family.opportunity_school_years)
-        ) {
-          family.opportunity_is_won_flags.forEach((isWon, index) => {
-            // Check both conditions: is_won = true AND school_year = '25/26'
-            if (isWon === true && family.opportunity_school_years[index] === "25/26") {
-              activeOpportunityIndices.push(index);
-            }
-          });
-        }
-
-        // Get details of active opportunities
-        const activeSchoolYears: string[] = [];
-        const activeCampuses: string[] = [];
-
-        activeOpportunityIndices.forEach((index) => {
-          if (
-            Array.isArray(family.opportunity_school_years) &&
-            family.opportunity_school_years[index]
-          ) {
-            activeSchoolYears.push(family.opportunity_school_years[index]);
-          }
-          if (Array.isArray(family.opportunity_campuses) && family.opportunity_campuses[index]) {
-            activeCampuses.push(family.opportunity_campuses[index]);
-          }
-        });
-
-        // Get campus name from campus map, but don't display raw IDs even if name not found
-        const campusId = family.current_campus_c || "";
-        // Instead of showing the ID, just show 'Unknown Campus' if mapping not found
-        const campusName = campusId ? campusMap[campusId] || "Unknown Campus" : "None";
-
-        return {
-          // Use the standardized ID as our primary ID for consistent navigation
-          id: standardId || familyId || alternateId,
-          // Store all IDs for debugging and fallback
-          familyIds: {
-            standard_id: standardId,
-            family_id: familyId,
-            alternate_id: alternateId,
-          },
-          type: "Family" as const,
-          name: family.family_name || "Unnamed Family",
-          details: `Campus: ${campusName}`,
-          hasWonOpportunities: activeOpportunityIndices.length > 0,
-          wonOpportunityDetails:
-            activeOpportunityIndices.length > 0
-              ? {
-                  schoolYears: activeSchoolYears,
-                  campuses: activeCampuses,
-                }
-              : undefined,
-        };
-      });
-  }, [
-    familySearchResults,
-    campusMap,
-    selectedCampus,
-    selectedSchoolYear,
-    selectedOpportunityStatus,
-  ]);
-
-  // Mock search results for demonstration using useMemo to avoid re-creation on each render
-  const mockResults = useMemo<MockResultsData>(
-    () => ({
-      all: [
-        {
-          id: 1,
-          type: "Family",
-          name: "Smith Family",
-          details: "Parents: John & Jane Smith",
-        },
-        {
-          id: 2,
-          type: "Student",
-          name: "Emily Johnson",
-          details: "Grade: 10, Campus: Main",
-        },
-        {
-          id: 3,
-          type: "Campus",
-          name: "Downtown Campus",
-          details: "120 Students Enrolled",
-        },
-      ],
-      families: [
-        {
-          id: 1,
-          type: "Family",
-          name: "Smith Family",
-          details: "Parents: John & Jane Smith",
-        },
-        {
-          id: 4,
-          type: "Family",
-          name: "Williams Family",
-          details: "Parents: Robert & Sarah Williams",
-        },
-      ],
-      students: [
-        {
-          id: 2,
-          type: "Student",
-          name: "Emily Johnson",
-          details: "Grade: 10, Campus: Main",
-        },
-        {
-          id: 5,
-          type: "Student",
-          name: "Michael Brown",
-          details: "Grade: 8, Campus: North",
-        },
-      ],
-      campuses: [
-        {
-          id: 3,
-          type: "Campus",
-          name: "Downtown Campus",
-          details: "120 Students Enrolled",
-        },
-        {
-          id: 6,
-          type: "Campus",
-          name: "Westside Campus",
-          details: "85 Students Enrolled",
-        },
-      ],
-    }),
-    []
-  );
-
-  // Call the search API when the search query changes
   useEffect(() => {
-    // Only search if there's a query
-    if (searchQuery) {
-      searchFamilies(searchQuery);
-    }
-  }, [searchQuery, searchFamilies]);
-
-  // Fetch campus data to populate the campus mapping object
-  useEffect(() => {
-    const fetchCampusData = async () => {
+    const fetchCampuses = async () => {
+      setIsLoadingCampuses(true);
       try {
-        if (campuses && campuses.length > 0) {
-          const campusMapping: Record<string, string> = {};
-
-          campuses.forEach((campus) => {
-            if (campus.campus_id && campus.campus_name) {
-              campusMapping[campus.campus_id] = campus.campus_name;
-            }
+        const { data, error } = await supabase.regular.rpc("execute_sql_query", {
+          query_text: `
+            SELECT id, name as campus_name
+            FROM fivetran_views.campus_c
+            ORDER BY name
+          `
+        });
+        
+        if (error) {
+          console.error("Error fetching campuses:", error);
+        } else if (data && Array.isArray(data)) {
+          setCampuses(data);
+          
+          // Create a map of campus IDs to names for easy lookup
+          const campusMapData: Record<string, string> = {};
+          data.forEach(campus => {
+            campusMapData[campus.id] = campus.campus_name;
           });
-          setCampusMap(campusMapping);
-          console.log("Campus mapping loaded:", Object.keys(campusMapping).length, "campuses");
+          setCampusMap(campusMapData);
         }
-      } catch (error) {
-        console.error("Failed to fetch campus data:", error);
+      } catch (err) {
+        console.error("Failed to fetch campuses:", err);
+      } finally {
+        setIsLoadingCampuses(false);
       }
     };
+    
+    fetchCampuses();
+  }, []);
 
-    fetchCampusData();
-  }, [campuses]);
-
-  // We don't need a keyboard shortcut handler here
-  // The global 'k' handler in App.tsx will trigger the hover search
-
-  const handleResultClick = (result: SearchResultItem) => {
-    // With the new buttons, card click should default to the standard view
-    // But let's keep the code clean with proper type handling
-
-    // Log detailed information to help diagnose any ID format issues
-    console.log("Result card clicked:", {
-      id: result.id,
-      allIds: result.familyIds,
-      name: result.name,
-      details: result.details,
-    });
-
-    if (!result.id) {
-      console.error("Cannot navigate - missing family ID", result);
-      alert("Error: Could not find a valid ID for this family");
-      return;
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    if (query.length >= 3) {
+      searchFamilies(query);
+    } else {
+      setFamilySearchResults([]);
     }
+  };
 
-    // Extract the most reliable ID to use for navigation
-    const bestId =
-      result.familyIds?.standard_id ||
-      result.familyIds?.family_id ||
-      result.familyIds?.alternate_id ||
-      result.id;
-
-    console.log(`Search: Navigating to family detail with best ID: ${bestId}`);
-
-    // Navigate based on result type
+  const handleSearchResultSelect = (result: SearchResult) => {
+    console.log("Selected search result:", result);
+    
+    // Determine the best ID to use for navigation
+    const bestId = result.family_id || result.id;
+    
+    // Navigate based on the result type
     switch (result.type) {
       case "Family":
         // Navigate to the family detail page with the best available ID
@@ -415,25 +174,37 @@ const Search = () => {
     }
   };
 
-  // Define our available campus options for filtering
   const campusOptions = useMemo(() => {
     return campuses?.map(campus => campus.campus_name) || [];
   }, [campuses]);
   
-  // Define stage options for filtering
-  const stageOptions = ["Application", "Interviewed", "Offered", "Enrolled", "Declined"];
+  const resetFilters = () => {
+    setCampusFilter(null);
+    setStageFilter(null);
+    setSchoolYearFilter(null);
+  };
 
-  // State for opportunities table data
-  const [tableData, setTableData] = useState<DataType[]>([]);
-  const [loadingOpportunities, setLoadingOpportunities] = useState(true);
-
-  // Fetch opportunities directly from fivetran_views.opportunity
   useEffect(() => {
     const fetchOpportunities = async () => {
       setLoadingOpportunities(true);
       
       try {
-        // Direct SQL query to get the first 10 opportunities with required fields
+        // Build WHERE clause with filters
+        let whereClause = "o.is_deleted = false";
+        
+        if (campusFilter) {
+          whereClause += ` AND cc.name = '${campusFilter}'`;
+        }
+        
+        if (stageFilter) {
+          whereClause += ` AND o.stage_name = '${stageFilter}'`;
+        }
+        
+        if (schoolYearFilter) {
+          whereClause += ` AND o.school_year_c = '${schoolYearFilter}'`;
+        }
+        
+        // Direct SQL query to get the opportunities with required fields and filters
         const query = `
           SELECT 
             o.id, 
@@ -452,10 +223,10 @@ const Search = () => {
           LEFT JOIN
             fivetran_views.account a ON o.account_id = a.id
           WHERE 
-            o.is_deleted = false
+            ${whereClause}
           ORDER BY 
             o.created_date DESC
-          LIMIT 10
+          LIMIT 100
         `;
         
         console.log("Executing opportunity query:", query);
@@ -522,9 +293,68 @@ const Search = () => {
     
     // Load opportunities on component mount
     fetchOpportunities();
+  }, [campusFilter, stageFilter, schoolYearFilter]);
+
+  useEffect(() => {
+    const fetchFilterOptions = async () => {
+      try {
+        // Query to get distinct school years
+        const schoolYearsQuery = `
+          SELECT DISTINCT school_year_c
+          FROM fivetran_views.opportunity
+          WHERE school_year_c IS NOT NULL
+          ORDER BY school_year_c DESC
+        `;
+        
+        // Query to get distinct campuses
+        const campusesQuery = `
+          SELECT DISTINCT cc.name
+          FROM fivetran_views.opportunity o
+          JOIN fivetran_views.campus_c cc ON o.campus_c = cc.id
+          WHERE cc.name IS NOT NULL
+          ORDER BY cc.name
+        `;
+        
+        // Query to get distinct stages
+        const stagesQuery = `
+          SELECT DISTINCT stage_name
+          FROM fivetran_views.opportunity
+          WHERE stage_name IS NOT NULL
+          ORDER BY stage_name
+        `;
+        
+        // Execute all queries
+        const [schoolYearsResult, campusesResult, stagesResult] = await Promise.all([
+          supabase.regular.rpc("execute_sql_query", { query_text: schoolYearsQuery }),
+          supabase.regular.rpc("execute_sql_query", { query_text: campusesQuery }),
+          supabase.regular.rpc("execute_sql_query", { query_text: stagesQuery })
+        ]);
+        
+        // Process school years
+        if (schoolYearsResult.data && Array.isArray(schoolYearsResult.data)) {
+          const years = schoolYearsResult.data.map(row => row.school_year_c).filter(Boolean);
+          setAvailableSchoolYears(years);
+        }
+        
+        // Process campuses
+        if (campusesResult.data && Array.isArray(campusesResult.data)) {
+          const campuses = campusesResult.data.map(row => row.name).filter(Boolean);
+          setAvailableCampuses(campuses);
+        }
+        
+        // Process stages
+        if (stagesResult.data && Array.isArray(stagesResult.data)) {
+          const stages = stagesResult.data.map(row => row.stage_name).filter(Boolean);
+          setAvailableStages(stages);
+        }
+      } catch (err) {
+        console.error("Failed to fetch filter options:", err);
+      }
+    };
+    
+    fetchFilterOptions();
   }, []);
 
-  // Handle row click to navigate to family detail
   const handleRowClick = (record: DataType) => {
     if (!record.id) {
       console.error("Cannot navigate - missing family ID", record);
@@ -538,7 +368,6 @@ const Search = () => {
     navigate(`/family-detail/${record.id}`);
   };
 
-  // Table column definitions with the required fields
   const tableColumns: TableColumnsType<DataType> = [
     {
       title: 'Opportunity Name',
@@ -573,8 +402,6 @@ const Search = () => {
     }
   ];
 
-  // Table is now fixed with the required columns
-
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex flex-col gap-6">
@@ -593,11 +420,60 @@ const Search = () => {
         <div className="bg-white rounded-lg shadow-sm p-6 space-y-4"></div>
 
         {/* Opportunity Table Component */}
-        <div className="bg-white rounded-lg shadow-sm p-6 space-y-4 mb-6">
+        <div className="bg-white rounded-lg shadow-sm p-6 space-y-4 mb-6" data-component-name="Search">
           <div className="flex items-center gap-2 mb-4">
             <Building className="h-5 w-5 text-slate-gray" />
             <span className="text-xl font-semibold text-outer-space">Opportunities</span>
           </div>
+          
+          {/* Filters */}
+          <div className="flex flex-wrap gap-4 mb-4 pb-4 border-b">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Campus</label>
+              <Select
+                placeholder="Select campus"
+                style={{ width: 200 }}
+                allowClear
+                value={campusFilter}
+                onChange={(value) => setCampusFilter(value)}
+                options={availableCampuses.map(campus => ({ label: campus, value: campus }))}
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Stage</label>
+              <Select
+                placeholder="Select stage"
+                style={{ width: 200 }}
+                allowClear
+                value={stageFilter}
+                onChange={(value) => setStageFilter(value)}
+                options={availableStages.map(stage => ({ label: stage, value: stage }))}
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">School Year</label>
+              <Select
+                placeholder="Select school year"
+                style={{ width: 200 }}
+                allowClear
+                value={schoolYearFilter}
+                onChange={(value) => setSchoolYearFilter(value)}
+                options={availableSchoolYears.map(year => ({ label: year, value: year }))}
+              />
+            </div>
+            
+            <div className="flex items-end">
+              <Button 
+                onClick={resetFilters}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-700"
+              >
+                Reset Filters
+              </Button>
+            </div>
+          </div>
+          
           {loadingOpportunities ? (
             <div className="text-center py-8 border rounded-lg bg-gray-50">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
