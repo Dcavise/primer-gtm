@@ -19,6 +19,9 @@ This reference documents the complete database schema for the fivetran_views sch
 - lead
 - opportunity
 
+### [Part 4: Fellowship Program](./supabase_schema_reference_part4.md)
+- fellows
+
 ## Important Notes
 - All tables are in the fivetran_views schema, not the public schema
 - Most tables include Fivetran-specific fields (_fivetran_deleted, _fivetran_synced) for tracking synchronization

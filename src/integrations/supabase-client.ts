@@ -639,11 +639,11 @@ export class SupabaseUnifiedClient {
       // According to docs, this is the correct schema, not public schema
       // We'll try to match by any identifier (family_id or pdc_family_id_c or standard_id)
       // and handle potential format issues with more lenient matching
-      
+
       // Clean and sanitize the ID input to prevent SQL injection
       const sanitizedId = familyId.replace(/'/g, "''");
       logger.debug(`Using sanitized ID for family record query: ${sanitizedId}`);
-      
+
       const query = `
         WITH family_data AS (
           SELECT 
@@ -782,27 +782,30 @@ export class SupabaseUnifiedClient {
         }
 
         if (!data || (Array.isArray(data) && data.length === 0)) {
-          logger.warn(`No family found with ID: ${familyId} in fivetran_views.comprehensive_family_records`);
-          
+          logger.warn(
+            `No family found with ID: ${familyId} in fivetran_views.comprehensive_family_records`
+          );
+
           // Provide more detailed debugging information
-          logger.debug('Query that produced no results:', query);
-          
+          logger.debug("Query that produced no results:", query);
+
           // Try to check if the table even exists and has data
           try {
             const tableCheckQuery = `SELECT count(*) FROM fivetran_views.comprehensive_family_records LIMIT 1`;
-            logger.debug('Checking if table has data with query:', tableCheckQuery);
-            this.regular.rpc("execute_sql_query", { query_text: tableCheckQuery })
-              .then(({data: checkData, error: checkError}) => {
+            logger.debug("Checking if table has data with query:", tableCheckQuery);
+            this.regular
+              .rpc("execute_sql_query", { query_text: tableCheckQuery })
+              .then(({ data: checkData, error: checkError }) => {
                 if (checkError) {
-                  logger.error('Error checking table existence:', checkError);
+                  logger.error("Error checking table existence:", checkError);
                 } else {
-                  logger.debug('Table check result:', checkData);
+                  logger.debug("Table check result:", checkData);
                 }
               });
           } catch (checkError) {
-            logger.error('Error during table existence check:', checkError);
+            logger.error("Error during table existence check:", checkError);
           }
-          
+
           return {
             success: false,
             data: null,
@@ -1028,104 +1031,106 @@ export async function getEnhancedFamilyRecord(
 
     // Clean and sanitize the ID input
     const sanitizedId = familyId.replace(/'/g, "''");
-    
+
     // Try the RPC approach specifically via the Supabase function interface
     // This might work better than the general RPC method for schema-qualified functions
     try {
       // First try the function call through the more direct REST API approach
-      const functionName = 'get_enhanced_family_record';
+      const functionName = "get_enhanced_family_record";
       const functionUrl = `${SUPABASE_URL}/rest/v1/rpc/${functionName}`;
-      
+
       logger.debug(`Attempting direct function call via REST API: ${functionUrl}`);
-      
+
       const response = await fetch(functionUrl, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          "Content-Type": "application/json",
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
         },
-        body: JSON.stringify({ 
-          'family_id_param': sanitizedId 
-        })
+        body: JSON.stringify({
+          family_id_param: sanitizedId,
+        }),
       });
-      
+
       // If the function call works, process the result
       if (response.ok) {
         const data = await response.json();
         logger.debug("Successfully retrieved data using direct function call");
         return { success: true, data, error: null };
       }
-      
+
       // Log the error for diagnostic purposes
       logger.warn(`Direct function call failed with status ${response.status}`);
-      
+
       // Try the schema-qualified function name - some Supabase instances require this
-      const schemaQualifiedName = 'fivetran_views.get_enhanced_family_record';
+      const schemaQualifiedName = "fivetran_views.get_enhanced_family_record";
       const schemaFunctionUrl = `${SUPABASE_URL}/rest/v1/rpc/${schemaQualifiedName}`;
-      
+
       logger.debug(`Attempting schema-qualified function call: ${schemaFunctionUrl}`);
-      
+
       try {
         const schemaResponse = await fetch(schemaFunctionUrl, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+            "Content-Type": "application/json",
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
           },
-          body: JSON.stringify({ 
-            'family_id_param': sanitizedId 
-          })
+          body: JSON.stringify({
+            family_id_param: sanitizedId,
+          }),
         });
-        
+
         if (schemaResponse.ok) {
           const data = await schemaResponse.json();
           logger.debug("Successfully retrieved data using schema-qualified function call");
           return { success: true, data, error: null };
         }
-        
-        logger.warn(`Schema-qualified function call also failed with status ${schemaResponse.status}`);
+
+        logger.warn(
+          `Schema-qualified function call also failed with status ${schemaResponse.status}`
+        );
       } catch (schemaErr) {
         logger.warn("Schema-qualified function call failed with exception:", schemaErr);
       }
-      
+
       // Fallback to direct SQL approach
       // Construct the SQL query directly to call the function in the correct schema
       const query = `
         SELECT fivetran_views.get_enhanced_family_record('${sanitizedId}') as family_record
       `;
-      
+
       logger.debug(`Executing direct SQL query: ${query}`);
 
       // Execute SQL via executeRPC helper method which has better error handling
       const { success, data, error } = await supabase.executeRPC("execute_sql_query", {
-        query_text: query
+        query_text: query,
       });
-      
+
       if (!success || error) {
         logger.error(`Execute SQL query failed: ${error}`);
-        
+
         // Try a more direct approach as a last resort
         throw new Error("Execute SQL query via RPC failed, attempting direct fetch");
       }
-      
+
       // Parse the result data
       if (!data) {
         return {
           success: false,
           data: null,
-          error: `Family with ID ${familyId} not found in the database.`
+          error: `Family with ID ${familyId} not found in the database.`,
         };
       }
-      
+
       // Handle different result formats
       let result;
-      
+
       if (Array.isArray(data) && data.length > 0) {
         result = data[0];
-      } else if (data && typeof data === 'object') {
-        if ('rows' in data) {
+      } else if (data && typeof data === "object") {
+        if ("rows" in data) {
           // Standard rows format from execute_sql_query
           const rows = data.rows as any[];
           if (rows.length > 0) {
@@ -1134,10 +1139,10 @@ export async function getEnhancedFamilyRecord(
             return {
               success: false,
               data: null,
-              error: `Family with ID ${familyId} not found in the database.`
+              error: `Family with ID ${familyId} not found in the database.`,
             };
           }
-        } else if ('family_record' in data) {
+        } else if ("family_record" in data) {
           // Result from direct query with an aliased function result
           result = data.family_record;
         } else {
@@ -1147,9 +1152,9 @@ export async function getEnhancedFamilyRecord(
       } else {
         result = data;
       }
-      
+
       // Ensure the result is properly structured
-      if (result && typeof result === 'string') {
+      if (result && typeof result === "string") {
         try {
           // Sometimes Postgres returns JSON as a string
           result = JSON.parse(result);
@@ -1157,12 +1162,12 @@ export async function getEnhancedFamilyRecord(
           logger.warn("Failed to parse result string as JSON", e);
         }
       }
-      
+
       logger.debug("Successfully parsed family record data");
       return { success: true, data: result, error: null };
     } catch (sqlErr) {
       logger.warn("Primary SQL approach failed, trying direct fetch:", sqlErr);
-      
+
       // Final fallback: Use a direct fetch as last resort
       try {
         // Construct a simpler direct query that should work even with minimal permissions
@@ -1181,9 +1186,9 @@ export async function getEnhancedFamilyRecord(
             a.id = '${sanitizedId}'
           LIMIT 1
         `;
-        
+
         logger.debug("Using fallback direct fetch with simplified query");
-        
+
         const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/execute_sql_query`, {
           method: "POST",
           headers: {
@@ -1195,46 +1200,46 @@ export async function getEnhancedFamilyRecord(
             query_text: fallbackQuery,
           }),
         });
-        
+
         if (!response.ok) {
           throw new Error(`Direct fetch failed: ${response.status}`);
         }
-        
+
         const data = await response.json();
-        
+
         // Extract the result from the response
         let result;
         if (Array.isArray(data)) {
           result = data.length > 0 ? data[0] : null;
-        } else if (data && typeof data === 'object' && 'rows' in data) {
+        } else if (data && typeof data === "object" && "rows" in data) {
           const rows = data.rows as any[];
           result = rows.length > 0 ? rows[0] : null;
         } else {
           result = data;
         }
-        
+
         if (!result) {
           return {
             success: false,
             data: null,
-            error: `Family with ID ${familyId} not found in the database.`
+            error: `Family with ID ${familyId} not found in the database.`,
           };
         }
-        
+
         // This is a minimal record - mark it as such
         result.is_minimal_record = true;
         result.students = [];
         result.contacts = [];
-        
+
         logger.info("Retrieved minimal family record using fallback method");
         return { success: true, data: result, error: null };
       } catch (directErr) {
         const errorMessage = directErr instanceof Error ? directErr.message : "Unknown error";
         logger.error("All family record fetch approaches failed:", directErr);
-        return { 
-          success: false, 
-          data: null, 
-          error: `Failed to fetch family record: ${errorMessage}` 
+        return {
+          success: false,
+          data: null,
+          error: `Failed to fetch family record: ${errorMessage}`,
         };
       }
     }

@@ -1,42 +1,42 @@
-import React from 'react';
+import React from "react";
 import {
   SearchOutlined,
   BarChartOutlined,
   HomeOutlined,
   TeamOutlined,
   BankOutlined,
-} from '@ant-design/icons';
-import { Menu } from 'antd';
-import type { GetProp, MenuProps } from 'antd';
-import { Link } from 'react-router-dom';
+} from "@ant-design/icons";
+import { Menu } from "antd";
+import type { GetProp, MenuProps } from "antd";
+import { Link } from "react-router-dom";
 
-type MenuTheme = GetProp<MenuProps, 'theme'>;
-type MenuItem = GetProp<MenuProps, 'items'>[number];
+type MenuTheme = GetProp<MenuProps, "theme">;
+type MenuItem = GetProp<MenuProps, "items">[number];
 
 // Simplified sidebar items based on user request
 const items: MenuItem[] = [
   {
-    key: 'home',
+    key: "home",
     icon: <HomeOutlined />,
     label: <Link to="/">Home</Link>,
   },
   {
-    key: 'search',
+    key: "search",
     icon: <SearchOutlined />,
     label: <Link to="/search">Search</Link>,
   },
   {
-    key: 'analytics',
+    key: "analytics",
     icon: <BarChartOutlined />,
     label: <Link to="/dashboard">Analytics</Link>,
   },
   {
-    key: 'campus-staff',
+    key: "campus-staff",
     icon: <TeamOutlined />,
     label: <Link to="/campus-staff">Campus Staff</Link>,
   },
   {
-    key: 'real-estate',
+    key: "real-estate",
     icon: <BankOutlined />,
     label: <Link to="/real-estate-pipeline">Real Estate</Link>,
   },
@@ -46,7 +46,7 @@ interface AntSidebarProps {
   defaultSelectedKey?: string;
 }
 
-const AntSidebar: React.FC<AntSidebarProps> = ({ defaultSelectedKey = 'home' }) => {
+const AntSidebar: React.FC<AntSidebarProps> = ({ defaultSelectedKey = "home" }) => {
   return (
     <div className="ant-sidebar-container">
       <Menu

@@ -17,14 +17,14 @@ const StageProgressBar: React.FC<StageProgressBarProps> = ({ stages }) => {
       <div className="relative flex items-center justify-between min-w-max">
         {/* Connector line */}
         <div className="absolute left-0 right-0 h-1 bg-slate-200 top-1/2 transform -translate-y-1/2 z-0"></div>
-        
+
         {/* Green connector lines between completed stages */}
         {stages.map((stage, index) => {
           if (index < stages.length - 1 && stage.isCompleted && stages[index + 1].isCompleted) {
             const width = `calc((100% / ${stages.length - 1}) * 1)`;
             const left = `calc((100% / ${stages.length - 1}) * ${index})`;
             return (
-              <div 
+              <div
                 key={`connector-${index}`}
                 className="absolute h-2 bg-green-500 top-1/2 transform -translate-y-1/2 z-0"
                 style={{ left, width }}

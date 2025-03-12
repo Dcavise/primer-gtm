@@ -62,11 +62,121 @@ interface UseEnhancedFamilyDataReturn {
   fetchFamilyRecord: (familyId: string) => Promise<void>;
 }
 
+/**
+ * Transform raw family data from API into the expected structured format
+ */
+const transformRawFamilyData = (rawData: any): EnhancedFamilyRecord => {
+  console.log("Transforming raw family data:", {
+    hasOpportunityNames: Boolean(rawData.opportunity_names),
+    opportunityNamesLength: Array.isArray(rawData.opportunity_names) ? rawData.opportunity_names.length : 0,
+    hasOpportunityIds: Boolean(rawData.opportunity_ids),
+  });
+
+  // Extract student information from opportunity data
+  const studentsMap = new Map<string, Student>();
+  
+  // Only process if we have arrays to work with
+  if (Array.isArray(rawData.opportunity_names) && 
+      Array.isArray(rawData.opportunity_ids) &&
+      rawData.opportunity_names.length > 0) {
+    
+    // Loop through opportunities to build student records
+    for (let i = 0; i < rawData.opportunity_names.length; i++) {
+      const oppName = rawData.opportunity_names[i];
+      if (!oppName) continue;
+      
+      // Extract student name from opportunity name (e.g., "Ivana Buritica - G1 - Y24/25")
+      const studentNamePart = oppName.split(' - ')[0];
+      const nameParts = studentNamePart.split(' ');
+      
+      if (nameParts.length < 2) continue;
+      
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ');
+      const fullName = `${firstName} ${lastName}`;
+      const studentKey = `${firstName.toLowerCase()}-${lastName.toLowerCase()}`;
+      
+      console.log(`Extracted student: ${firstName} ${lastName} from opportunity: ${oppName}`);
+      
+      // Create or update student record
+      if (!studentsMap.has(studentKey)) {
+        studentsMap.set(studentKey, {
+          id: `student-${i}`, // Generate an ID
+          first_name: firstName,
+          last_name: lastName,
+          full_name: fullName,
+          opportunities: []
+        });
+      }
+      
+      // Add opportunity to this student
+      const student = studentsMap.get(studentKey);
+      
+      // Create opportunity object
+      const opportunity: StudentOpportunity = {
+        id: rawData.opportunity_ids[i] || `opp-${i}`,
+        name: oppName,
+        stage: Array.isArray(rawData.opportunity_stages) ? (rawData.opportunity_stages[i] || '') : '',
+        school_year: Array.isArray(rawData.opportunity_school_years) ? (rawData.opportunity_school_years[i] || '') : '',
+        is_won: Array.isArray(rawData.opportunity_is_won) ? (rawData.opportunity_is_won[i] || false) : false,
+        created_date: Array.isArray(rawData.opportunity_created_dates) ? (rawData.opportunity_created_dates[i] || new Date().toISOString()) : new Date().toISOString(),
+        record_type_id: Array.isArray(rawData.opportunity_record_types) ? (rawData.opportunity_record_types[i] || '') : '',
+        campus: Array.isArray(rawData.opportunity_campuses) ? (rawData.opportunity_campuses[i] || '') : '',
+        campus_name: Array.isArray(rawData.opportunity_campus_names) ? (rawData.opportunity_campus_names[i] || '') : '',
+        grade: Array.isArray(rawData.opportunity_grades) ? (rawData.opportunity_grades[i] || '') : '',
+        lead_notes: Array.isArray(rawData.opportunity_lead_notes) ? (rawData.opportunity_lead_notes[i] || '') : '',
+        family_interview_notes: Array.isArray(rawData.opportunity_family_interview_notes) ? (rawData.opportunity_family_interview_notes[i] || '') : ''
+      };
+      
+      student.opportunities.push(opportunity);
+    }
+  }
+  
+  // Create contacts array
+  const contacts: Contact[] = [];
+  if (Array.isArray(rawData.contact_ids)) {
+    for (let i = 0; i < rawData.contact_ids.length; i++) {
+      contacts.push({
+        id: rawData.contact_ids[i] || `contact-${i}`,
+        first_name: Array.isArray(rawData.contact_first_names) ? (rawData.contact_first_names[i] || '') : '',
+        last_name: Array.isArray(rawData.contact_last_names) ? (rawData.contact_last_names[i] || '') : '',
+        email: Array.isArray(rawData.contact_emails) ? (rawData.contact_emails[i] || '') : '',
+        phone: Array.isArray(rawData.contact_phones) ? (rawData.contact_phones[i] || '') : '',
+        last_activity_date: Array.isArray(rawData.contact_last_activity_dates) ? (rawData.contact_last_activity_dates[i] || '') : ''
+      });
+    }
+  }
+  
+  const students = Array.from(studentsMap.values());
+  console.log(`Transformed ${students.length} students with opportunities from raw data`);
+  
+  // Return transformed record
+  return {
+    family_id: rawData.family_id || '',
+    family_name: rawData.family_name || '',
+    pdc_family_id_c: rawData.pdc_family_id_c || '',
+    current_campus_c: rawData.current_campus_c || '',
+    current_campus_name: rawData.current_campus_name || '',
+    contacts: contacts,
+    students: students,
+    contact_count: rawData.contact_count || contacts.length || 0,
+    opportunity_count: rawData.opportunity_count || 0,
+    student_count: studentsMap.size || 0,
+    lifetime_value: rawData.lifetime_value || 0,
+    // Legacy fields
+    opportunity_ids: rawData.opportunity_ids || [],
+    opportunity_names: rawData.opportunity_names || [],
+    opportunity_stages: rawData.opportunity_stages || [],
+    opportunity_school_years: rawData.opportunity_school_years || [],
+    opportunity_is_won: rawData.opportunity_is_won || []
+  };
+};
+
 export const useEnhancedFamilyData = (): UseEnhancedFamilyDataReturn => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [familyRecord, setFamilyRecord] = useState<EnhancedFamilyRecord | null>(null);
-  
+
   const fetchFamilyRecord = useCallback(async (familyId: string) => {
     if (!familyId) {
       setError("No family ID provided");
@@ -78,9 +188,9 @@ export const useEnhancedFamilyData = (): UseEnhancedFamilyDataReturn => {
 
     try {
       console.log(`useEnhancedFamilyData: Fetching family record for ID: ${familyId}`);
-      
+
       const normalizedId = familyId.trim();
-      
+
       const { success, data, error } = await getEnhancedFamilyRecord(normalizedId);
 
       if (!success || error) {
@@ -93,9 +203,10 @@ export const useEnhancedFamilyData = (): UseEnhancedFamilyDataReturn => {
         setError(`Family with ID ${normalizedId} not found in the database. Please verify the ID.`);
         setFamilyRecord(null);
       } else {
-        // Cast to EnhancedFamilyRecord type
-        setFamilyRecord(data as unknown as EnhancedFamilyRecord);
-        console.log("useEnhancedFamilyData: Successfully fetched family record");
+        // Transform the raw data into the expected structure
+        const transformedData = transformRawFamilyData(data);
+        setFamilyRecord(transformedData);
+        console.log("useEnhancedFamilyData: Successfully fetched and transformed family record");
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
@@ -110,7 +221,7 @@ export const useEnhancedFamilyData = (): UseEnhancedFamilyDataReturn => {
     loading,
     error,
     familyRecord,
-    fetchFamilyRecord
+    fetchFamilyRecord,
   };
 };
 

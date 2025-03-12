@@ -1,13 +1,7 @@
 import React from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useLayout } from "../../../contexts/LayoutContext";
-import { 
-  LayoutDashboard,
-  Search,
-  Building,
-  Users,
-  LogOut
-} from "lucide-react";
+import { LayoutDashboard, Search, Building, Users, LogOut } from "lucide-react";
 import { cn } from "@/utils/cn";
 import AntSidebar from "@/components/AntSidebar";
 
@@ -19,15 +13,15 @@ const MainLayout: React.FC = () => {
   // Use the layout context for compatibility
   const { showUserProfile } = useLayout();
   const location = useLocation();
-  
+
   // Get current path for AntSidebar default selection
   const getCurrentPathKey = () => {
     const path = location.pathname;
-    if (path === '/') return 'home';
-    if (path.startsWith('/search')) return 'search';
-    if (path.startsWith('/real-estate')) return 'real-estate';
-    if (path.startsWith('/campus-staff')) return 'campus-staff';
-    return 'home'; // default
+    if (path === "/") return "home";
+    if (path.startsWith("/search")) return "search";
+    if (path.startsWith("/real-estate")) return "real-estate";
+    if (path.startsWith("/campus-staff")) return "campus-staff";
+    return "home"; // default
   };
 
   return (
@@ -54,15 +48,8 @@ const MainLayout: React.FC = () => {
 // Logo component
 const LogoBlock = () => {
   return (
-    <Link
-      to="/"
-      className="flex items-center"
-    >
-      <img 
-        src="/logos/001_1 Primer Logo - Small.png" 
-        alt="Primer Logo" 
-        className="h-10"
-      />
+    <Link to="/" className="flex items-center">
+      <img src="/logos/001_1 Primer Logo - Small.png" alt="Primer Logo" className="h-10" />
     </Link>
   );
 };

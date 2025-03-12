@@ -14,7 +14,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useFamilyData } from "@/hooks/useFamilyData";
-import { metricCard, metricValue, metricLabel, metricDescription } from "@/components/ui/metric-card-variants";
+import {
+  metricCard,
+  metricValue,
+  metricLabel,
+  metricDescription,
+} from "@/components/ui/metric-card-variants";
 import {
   PhoneIcon,
   MailIcon,
@@ -50,7 +55,7 @@ const extractStudentName = (opportunityName: string, opportunityId?: string): st
   if (opportunityId === "006UH00000IPT46YAH") {
     return "Ivana Buritica";
   }
-  
+
   if (!opportunityName) return "Unknown Student";
 
   // Student name is everything before the first ' - ' in the opportunity name
@@ -69,10 +74,7 @@ const extractStudentName = (opportunityName: string, opportunityId?: string): st
  * Extract school year from opportunity name or school_year_c field
  * and return in the standard format (YYYY-YYYY)
  */
-const extractSchoolYear = (
-  opportunityName: string,
-  schoolYearField?: string,
-): string => {
+const extractSchoolYear = (opportunityName: string, schoolYearField?: string): string => {
   // First try to use the school_year_c field if available
   if (schoolYearField) {
     return formatSchoolYear(schoolYearField);
@@ -100,26 +102,26 @@ const extractSchoolYear = (
  */
 const formatSchoolYearForDisplay = (schoolYear: string | undefined): string => {
   if (!schoolYear) return "";
-  
+
   // Already in short format like "24/25"
   if (/^\d{2}\/\d{2}$/.test(schoolYear)) {
     return schoolYear;
   }
-  
+
   // Format like "Y24/25"
   const yearPatternShort = /Y(\d{2})\/(\d{2})/;
   let match = schoolYear.match(yearPatternShort);
   if (match && match.length >= 3) {
     return `${match[1]}/${match[2]}`;
   }
-  
+
   // Format like "2024-2025"
   const yearPatternLong = /(\d{4})[^\d](\d{4})/;
   match = schoolYear.match(yearPatternLong);
   if (match && match.length >= 3) {
     return `${match[1].slice(-2)}/${match[2].slice(-2)}`;
   }
-  
+
   // If we can't parse it, return as is
   return schoolYear;
 };
@@ -129,26 +131,26 @@ const formatSchoolYearForDisplay = (schoolYear: string | undefined): string => {
  */
 const formatSchoolYear = (schoolYear: string | undefined): string => {
   if (!schoolYear) return "";
-  
+
   // Already in full format like "2024-2025"
   if (/^\d{4}[^\d]\d{4}$/.test(schoolYear)) {
     return schoolYear;
   }
-  
+
   // Format like "24/25"
   const shortYearPattern = /^(\d{2})\/(\d{2})$/;
   let match = schoolYear.match(shortYearPattern);
   if (match && match.length >= 3) {
     return `20${match[1]}-20${match[2]}`;
   }
-  
+
   // Format like "Y24/25"
   const yearPatternWithY = /Y(\d{2})\/(\d{2})/;
   match = schoolYear.match(yearPatternWithY);
   if (match && match.length >= 3) {
     return `20${match[1]}-20${match[2]}`;
   }
-  
+
   // If we can't parse it, return as is
   return schoolYear;
 };
@@ -168,10 +170,7 @@ interface TimelineProps {
   }[];
 }
 
-const StudentTimeline: React.FC<TimelineProps> = ({
-  studentName,
-  opportunities,
-}) => {
+const StudentTimeline: React.FC<TimelineProps> = ({ studentName, opportunities }) => {
   // Always show the timeline for all students, regardless of enrollment status
   // Get current year and generate years for timeline
   const getCurrentYear = () => {
@@ -191,25 +190,24 @@ const StudentTimeline: React.FC<TimelineProps> = ({
   };
 
   const years = generateYears();
-  
+
   // Helper function to check if an opportunity is enrolled for a specific year
   const isEnrolledForYear = (year: string): boolean => {
     // Convert the year format from "2024-2025" to shorthand "24/25" format
-    const startYear = year.split('-')[0];
-    const endYear = year.split('-')[1];
+    const startYear = year.split("-")[0];
+    const endYear = year.split("-")[1];
     const shortYearFormat = `${startYear.slice(-2)}/${endYear.slice(-2)}`;
-    
+
     // Check if any opportunity is won and matches this year
-    return opportunities.some(opp => 
-      opp.isWon && 
-      (
+    return opportunities.some(
+      (opp) =>
+        opp.isWon &&
         // Check for full year format match (in school_year_c field)
-        (opp.schoolYear === year) ||
-        // Check for short year format match (e.g., "24/25")
-        (opp.schoolYear === shortYearFormat) ||
-        // Check for Y format (e.g., "Y24/25" in opportunity name)
-        (opp.schoolYear.includes(`Y${shortYearFormat}`))
-      )
+        (opp.schoolYear === year ||
+          // Check for short year format match (e.g., "24/25")
+          opp.schoolYear === shortYearFormat ||
+          // Check for Y format (e.g., "Y24/25" in opportunity name)
+          opp.schoolYear.includes(`Y${shortYearFormat}`))
     );
   };
 
@@ -223,23 +221,23 @@ const StudentTimeline: React.FC<TimelineProps> = ({
           <div className="flex items-center justify-between mb-3 relative px-8">
             {/* Connector line spanning the width */}
             <div className="absolute h-1 top-4 left-12 right-12 bg-muted-foreground/20 rounded-full"></div>
-            
+
             {/* Green glow layer on top of base line */}
             <div className="absolute h-2 top-[14px] left-12 right-12 bg-green-500/10 blur-md rounded-full"></div>
-            
+
             {/* Active line segments between enrolled nodes */}
             {years.map((year, idx) => {
               if (idx < years.length - 1) {
                 const currentYearEnrolled = isEnrolledForYear(year);
                 const nextYearEnrolled = isEnrolledForYear(years[idx + 1]);
-                
+
                 // Only show active line if both connected nodes are enrolled
                 if (currentYearEnrolled && nextYearEnrolled) {
                   return (
-                    <div 
+                    <div
                       key={`connector-${idx}`}
                       className="absolute h-2 top-[14px] bg-gradient-to-r from-green-500 to-green-400 shadow-[0_0_15px_rgba(34,197,94,0.6)] z-0 rounded-full transition-all duration-500"
-                      style={{ 
+                      style={{
                         left: `calc(${(100 / (years.length - 1)) * idx}% + 3px)`,
                         width: `calc(${100 / (years.length - 1)}% - 6px)`,
                       }}
@@ -301,9 +299,11 @@ const StudentTimeline: React.FC<TimelineProps> = ({
                 (parseInt(displayYear) + 1).toString().substring(2);
 
               // Different styling based on enrollment status
-              let badgeClass = "text-xs rounded-md px-3 py-1 font-medium shadow-sm transition-all duration-300 ";
+              let badgeClass =
+                "text-xs rounded-md px-3 py-1 font-medium shadow-sm transition-all duration-300 ";
               if (isEnrolled) {
-                badgeClass += "bg-gradient-to-r from-green-50 to-green-100 text-green-700 border border-green-200";
+                badgeClass +=
+                  "bg-gradient-to-r from-green-50 to-green-100 text-green-700 border border-green-200";
               } else if (idx === 0) {
                 badgeClass += "bg-muted/50 text-muted-foreground/80";
               } else {
@@ -334,11 +334,11 @@ const FamilyDetail: React.FC = () => {
   useEffect(() => {
     if (familyId) {
       console.log(`FamilyDetail: Fetching family record for ID: ${familyId}`);
-      
+
       // Attempt to normalize the ID - it might be in different formats
       // Salesforce IDs are often 18 characters, PDC IDs may be different
       const normalizedId = familyId.trim();
-      
+
       console.log(`FamilyDetail: Using normalized ID: ${normalizedId}`);
       fetchFamilyRecord(normalizedId);
     } else {
@@ -348,7 +348,7 @@ const FamilyDetail: React.FC = () => {
 
   // Validate familyId format after all hooks are called
   const isValidId = familyId && /^[a-zA-Z0-9]{15,18}$/.test(familyId);
-  
+
   if (!isValidId) {
     return <Navigate to="/not-found" replace />;
   }
@@ -385,25 +385,30 @@ const FamilyDetail: React.FC = () => {
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
             <h2 className="text-xl font-bold text-red-800 mb-4">Error Loading Family Record</h2>
             <p className="text-red-700 mb-4">{error || "Family record not found"}</p>
-            
+
             <div className="bg-white p-4 rounded border border-red-100 mb-4">
               <h3 className="font-medium text-red-800 mb-2">Troubleshooting Information:</h3>
               <ul className="list-disc pl-5 space-y-2 text-red-700">
-                <li>Family ID from URL: <code className="bg-red-50 px-1 font-mono">{familyId}</code></li>
+                <li>
+                  Family ID from URL: <code className="bg-red-50 px-1 font-mono">{familyId}</code>
+                </li>
                 <li>Make sure this ID exists in the database</li>
-                <li>Check that you have access to the <code className="bg-red-50 px-1 font-mono">fivetran_views</code> schema</li>
+                <li>
+                  Check that you have access to the{" "}
+                  <code className="bg-red-50 px-1 font-mono">fivetran_views</code> schema
+                </li>
                 <li>Verify the database connection is working</li>
               </ul>
             </div>
-            
+
             <div className="flex space-x-4">
-              <button 
+              <button
                 className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
                 onClick={() => window.location.reload()}
               >
                 Retry
               </button>
-              <button 
+              <button
                 className="bg-gray-100 text-gray-700 px-4 py-2 rounded hover:bg-gray-200"
                 onClick={() => window.history.back()}
               >
@@ -421,36 +426,35 @@ const FamilyDetail: React.FC = () => {
     if (!familyRecord.opportunity_count || familyRecord.opportunity_count <= 0) {
       return (
         <div className="text-center py-8">
-          <p className="text-muted-foreground">
-            No opportunities found for this family.
-          </p>
+          <p className="text-muted-foreground">No opportunities found for this family.</p>
         </div>
       );
     }
 
-    const opportunitiesData = familyRecord.opportunity_ids.map(
-      (id, index) => ({
-        id,
-        index,
-        stage: familyRecord.opportunity_stages[index] || "New Application",
-        name: familyRecord.opportunity_names[index] || "",
-        recordType: familyRecord.opportunity_record_types?.[index],
-        grade: familyRecord.opportunity_grades?.[index],
-        campus: familyRecord.opportunity_campuses?.[index],
-        studentName: familyRecord.opportunity_names[index]
-          ? extractStudentName(familyRecord.opportunity_names[index], familyRecord.opportunity_ids[index])
-          : "Unknown Student",
-        schoolYear:
-          familyRecord.opportunity_school_years?.[index] ||
-          (familyRecord.opportunity_names[index]
-            ? extractSchoolYear(familyRecord.opportunity_names[index])
-            : ""),
-        isWon:
-          familyRecord.opportunity_is_won?.[index] ||
-          familyRecord.opportunity_stages?.[index]?.includes("Closed Won") ||
-          false,
-      }),
-    );
+    const opportunitiesData = familyRecord.opportunity_ids.map((id, index) => ({
+      id,
+      index,
+      stage: familyRecord.opportunity_stages[index] || "New Application",
+      name: familyRecord.opportunity_names[index] || "",
+      recordType: familyRecord.opportunity_record_types?.[index],
+      grade: familyRecord.opportunity_grades?.[index],
+      campus: familyRecord.opportunity_campuses?.[index],
+      studentName: familyRecord.opportunity_names[index]
+        ? extractStudentName(
+            familyRecord.opportunity_names[index],
+            familyRecord.opportunity_ids[index]
+          )
+        : "Unknown Student",
+      schoolYear:
+        familyRecord.opportunity_school_years?.[index] ||
+        (familyRecord.opportunity_names[index]
+          ? extractSchoolYear(familyRecord.opportunity_names[index])
+          : ""),
+      isWon:
+        familyRecord.opportunity_is_won?.[index] ||
+        familyRecord.opportunity_stages?.[index]?.includes("Closed Won") ||
+        false,
+    }));
 
     // Group opportunities by student name
     const opportunitiesByStudent = opportunitiesData.reduce(
@@ -461,7 +465,7 @@ const FamilyDetail: React.FC = () => {
         acc[opp.studentName].push(opp);
         return acc;
       },
-      {} as Record<string, typeof opportunitiesData>,
+      {} as Record<string, typeof opportunitiesData>
     );
 
     // Fuzzy match threshold (0-1 where 1 is exact match)
@@ -496,7 +500,7 @@ const FamilyDetail: React.FC = () => {
       }
 
       const distance = matrix[len1][len2];
-      const similarity = 1 - (distance / maxLen);
+      const similarity = 1 - distance / maxLen;
 
       return similarity >= FUZZY_MATCH_THRESHOLD;
     }
@@ -505,10 +509,10 @@ const FamilyDetail: React.FC = () => {
     function combineSimilarStudents(students: StudentRecord[]): StudentRecord[] {
       const combined: StudentRecord[] = [];
 
-      students.forEach(student => {
-        const existing = combined.find(s => 
-          fuzzyMatch(s.lastName, student.lastName) && 
-          fuzzyMatch(s.firstName, student.firstName)
+      students.forEach((student) => {
+        const existing = combined.find(
+          (s) =>
+            fuzzyMatch(s.lastName, student.lastName) && fuzzyMatch(s.firstName, student.firstName)
         );
 
         if (existing) {
@@ -516,7 +520,7 @@ const FamilyDetail: React.FC = () => {
           existing.opportunities = [...existing.opportunities, ...student.opportunities];
           existing.contacts = [...existing.contacts, ...student.contacts];
         } else {
-          combined.push({...student});
+          combined.push({ ...student });
         }
       });
 
@@ -524,15 +528,15 @@ const FamilyDetail: React.FC = () => {
     }
 
     // Convert to array of student groups
-    const studentGroups = Object.entries(
-      opportunitiesByStudent,
-    ).map(([studentName, opportunities]) => ({
-      studentName,
-      firstName: studentName.split(' ')[0],
-      lastName: studentName.split(' ').slice(1).join(' '),
-      opportunities,
-      contacts: [] // Initialize empty contacts array
-    }));
+    const studentGroups = Object.entries(opportunitiesByStudent).map(
+      ([studentName, opportunities]) => ({
+        studentName,
+        firstName: studentName.split(" ")[0],
+        lastName: studentName.split(" ").slice(1).join(" "),
+        opportunities,
+        contacts: [], // Initialize empty contacts array
+      })
+    );
 
     // Combine similar student records
     const combinedStudentGroups = combineSimilarStudents(studentGroups);
@@ -540,7 +544,12 @@ const FamilyDetail: React.FC = () => {
     if (combinedStudentGroups.length > 1) {
       return (
         <Tabs defaultValue={combinedStudentGroups[0].studentName} className="w-full">
-          <TabsList className="grid" style={{ gridTemplateColumns: `repeat(${Math.min(combinedStudentGroups.length, 4)}, 1fr)` }}>
+          <TabsList
+            className="grid"
+            style={{
+              gridTemplateColumns: `repeat(${Math.min(combinedStudentGroups.length, 4)}, 1fr)`,
+            }}
+          >
             {combinedStudentGroups.map(({ studentName }) => (
               <TabsTrigger key={`tab-${studentName}`} value={studentName}>
                 {studentName}
@@ -553,254 +562,307 @@ const FamilyDetail: React.FC = () => {
                 <CardHeader className="pb-0">
                   <CardTitle className="text-xl font-semibold">
                     {studentName}
-                    {opportunities.some(opp => opp.isWon) && (
-                      <Badge variant="success" className="ml-2">Closed Won</Badge>
+                    {opportunities.some((opp) => opp.isWon) && (
+                      <Badge variant="success" className="ml-2">
+                        Closed Won
+                      </Badge>
                     )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {/* Timeline directly under student name */}
-                  <StudentTimeline
-                    studentName={studentName}
-                    opportunities={opportunities}
-                  />
-                  
+                  <StudentTimeline studentName={studentName} opportunities={opportunities} />
+
                   {/* Individual opportunity cards */}
                   <div className="space-y-4 mt-4">
-                    {opportunities.map(({
-                      id,
-                      index,
-                      stage,
-                      name,
-                      recordType,
-                      grade,
-                      campus,
-                      isWon,
-                      schoolYear
-                    }) => {
-                      // Get the corresponding campus name if available
-                      const campusName = familyRecord.opportunity_campus_names && 
-                                        familyRecord.opportunity_campus_names[index] ? 
-                                        familyRecord.opportunity_campus_names[index] : 
-                                        null;
-                      // Map record type IDs to display names
-                      const getRecordTypeDisplayName = (
-                        recordTypeId: string | undefined,
-                        stageName?: string,
-                        opportunityName?: string
-                      ) => {
-                        // Try to use record type ID if available
-                        if (recordTypeId) {
-                          switch (recordTypeId) {
-                            case "012Dn000000ZzP9IAK":
-                              return "New Enrollment";
-                            case "012Dn000000a9ncIAA":
-                              return "Re-enrollment";
-                            // Add other record type IDs if known
-                            default:
-                              // Fall through to inference methods
-                              break;
+                    {opportunities.map(
+                      ({
+                        id,
+                        index,
+                        stage,
+                        name,
+                        recordType,
+                        grade,
+                        campus,
+                        isWon,
+                        schoolYear,
+                      }) => {
+                        // Get the corresponding campus name if available
+                        const campusName =
+                          familyRecord.opportunity_campus_names &&
+                          familyRecord.opportunity_campus_names[index]
+                            ? familyRecord.opportunity_campus_names[index]
+                            : null;
+                        // Map record type IDs to display names
+                        const getRecordTypeDisplayName = (
+                          recordTypeId: string | undefined,
+                          stageName?: string,
+                          opportunityName?: string
+                        ) => {
+                          // Try to use record type ID if available
+                          if (recordTypeId) {
+                            switch (recordTypeId) {
+                              case "012Dn000000ZzP9IAK":
+                                return "New Enrollment";
+                              case "012Dn000000a9ncIAA":
+                                return "Re-enrollment";
+                              // Add other record type IDs if known
+                              default:
+                                // Fall through to inference methods
+                                break;
+                            }
                           }
-                        }
-                        
-                        // Try to infer from opportunity name if it contains enrollment type info
-                        if (opportunityName) {
-                          if (opportunityName.includes(" - R ") || opportunityName.toLowerCase().includes("re-enroll")) {
+
+                          // Try to infer from opportunity name if it contains enrollment type info
+                          if (opportunityName) {
+                            if (
+                              opportunityName.includes(" - R ") ||
+                              opportunityName.toLowerCase().includes("re-enroll")
+                            ) {
+                              return "Re-enrollment";
+                            }
+                            if (
+                              opportunityName.includes(" - N ") ||
+                              opportunityName.toLowerCase().includes("new enroll")
+                            ) {
+                              return "New Enrollment";
+                            }
+                          }
+
+                          // If other methods fail, infer from stage
+                          if (stageName && stageName.toLowerCase().includes("re-enroll")) {
                             return "Re-enrollment";
                           }
-                          if (opportunityName.includes(" - N ") || opportunityName.toLowerCase().includes("new enroll")) {
-                            return "New Enrollment";
-                          }
-                        }
-                        
-                        // If other methods fail, infer from stage
-                        if (stageName && stageName.toLowerCase().includes("re-enroll")) {
-                          return "Re-enrollment";
-                        }
-                        
-                        // Default to Enrollment
-                        return "Enrollment";
-                      };
 
-                      // Use the recordType passed from our filtered data with fallbacks
-                      const recordTypeDisplay =
-                        getRecordTypeDisplayName(recordType, stage, name);
+                          // Default to Enrollment
+                          return "Enrollment";
+                        };
 
-                      // Normalize stage value to handle case sensitivity and whitespace
-                      const normalizedStage = stage
-                        ? stage.trim()
-                        : "New Application";
+                        // Use the recordType passed from our filtered data with fallbacks
+                        const recordTypeDisplay = getRecordTypeDisplayName(recordType, stage, name);
 
-                      return (
-                        <Card
-                          key={id}
-                          className={
-                            isWon ? "border-l-4 border-l-green-500" : ""
-                          }
-                        >
-                          <CardHeader>
-                            <CardTitle>
-                              {/* Display school year in the header */}
-                              {(familyRecord.opportunity_school_years?.[index] || 
-                               (name ? extractSchoolYear(name) : "")) ? (
-                                <>
-                                  {formatSchoolYearForDisplay(familyRecord.opportunity_school_years?.[index] || 
-                                   (name ? extractSchoolYear(name) : ""))} School Year
-                                </>
-                              ) : (
-                                `Opportunity ${index + 1}`
-                              )}
-                            </CardTitle>
-                            <CardDescription>
-                              <Badge
-                                variant={
-                                  normalizedStage === "Closed Won"
-                                    ? "success"
-                                    : normalizedStage === "Closed Lost"
-                                    ? "destructive"
-                                    : normalizedStage === "Family Interview"
-                                    ? "secondary"
-                                    : normalizedStage === "Awaiting Documents"
-                                    ? "default"
-                                    : normalizedStage === "Education Review"
-                                    ? "secondary"
-                                    : normalizedStage === "Admission Offered"
-                                    ? "default"
-                                    : "outline"
-                                }
-                              >
-                                {normalizedStage || "New Application"}
-                              </Badge>
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              {/* Left column - Student Info */}
-                              <div className="space-y-4">
-                                <div>
-                                  <h3 className="font-medium text-base mb-2 pb-1 border-b border-gray-200">Student Information</h3>
-                                  
-                                  <div className="space-y-3">
-                                    <div>
-                                      <h5 className="text-sm font-medium text-muted-foreground">Name</h5>
-                                      <p className="text-sm font-medium">
-                                        {name ? extractStudentName(name, id) : "Unknown"}
-                                      </p>
-                                    </div>
-                                    
-                                    {grade && (
+                        // Normalize stage value to handle case sensitivity and whitespace
+                        const normalizedStage = stage ? stage.trim() : "New Application";
+
+                        return (
+                          <Card key={id} className={isWon ? "border-l-4 border-l-green-500" : ""}>
+                            <CardHeader>
+                              <CardTitle>
+                                {/* Display school year in the header */}
+                                {familyRecord.opportunity_school_years?.[index] ||
+                                (name ? extractSchoolYear(name) : "") ? (
+                                  <>
+                                    {formatSchoolYearForDisplay(
+                                      familyRecord.opportunity_school_years?.[index] ||
+                                        (name ? extractSchoolYear(name) : "")
+                                    )}{" "}
+                                    School Year
+                                  </>
+                                ) : (
+                                  `Opportunity ${index + 1}`
+                                )}
+                              </CardTitle>
+                              <CardDescription>
+                                <Badge
+                                  variant={
+                                    normalizedStage === "Closed Won"
+                                      ? "success"
+                                      : normalizedStage === "Closed Lost"
+                                        ? "destructive"
+                                        : normalizedStage === "Family Interview"
+                                          ? "secondary"
+                                          : normalizedStage === "Awaiting Documents"
+                                            ? "default"
+                                            : normalizedStage === "Education Review"
+                                              ? "secondary"
+                                              : normalizedStage === "Admission Offered"
+                                                ? "default"
+                                                : "outline"
+                                  }
+                                >
+                                  {normalizedStage || "New Application"}
+                                </Badge>
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Left column - Student Info */}
+                                <div className="space-y-4">
+                                  <div>
+                                    <h3 className="font-medium text-base mb-2 pb-1 border-b border-gray-200">
+                                      Student Information
+                                    </h3>
+
+                                    <div className="space-y-3">
                                       <div>
-                                        <h5 className="text-sm font-medium text-muted-foreground">Grade</h5>
-                                        <p className="text-sm font-medium">{grade}</p>
-                                      </div>
-                                    )}
-                                    
-                                    {(campus || campusName) && (
-                                      <div>
-                                        <h5 className="text-sm font-medium text-muted-foreground">Campus</h5>
-                                        <p className="text-sm font-medium">{campusName || campus}</p>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                              
-                              {/* Right column - Opportunity Details */}
-                              <div className="space-y-4">
-                                <div>
-                                  <h3 className="font-medium text-base mb-2 pb-1 border-b border-gray-200">Opportunity Details</h3>
-                                  
-                                  <div className="space-y-3">
-                                    <div>
-                                      <h5 className="text-sm font-medium text-muted-foreground">School Year</h5>
-                                      <p className="text-sm font-medium">
-                                        {familyRecord.opportunity_school_years?.[index] ||
-                                          (name ? extractSchoolYear(name) : "Unknown")}
-                                      </p>
-                                    </div>
-                                    
-                                    {recordType && (
-                                      <div>
-                                        <h5 className="text-sm font-medium text-muted-foreground">Opportunity Type</h5>
-                                        <p className="text-sm font-medium">{recordTypeDisplay}</p>
-                                      </div>
-                                    )}
-                                    
-                                    {familyRecord.opportunity_created_dates[index] && (
-                                      <div>
-                                        <h5 className="text-sm font-medium text-muted-foreground">Created Date</h5>
+                                        <h5 className="text-sm font-medium text-muted-foreground">
+                                          Name
+                                        </h5>
                                         <p className="text-sm font-medium">
-                                          {new Date(familyRecord.opportunity_created_dates[index]).toLocaleDateString()}
+                                          {name ? extractStudentName(name, id) : "Unknown"}
                                         </p>
                                       </div>
-                                    )}
-                                    
-                                    {/* Placeholder for financial info - This would need actual data from the family object */}
-                                    {familyRecord.tuition_offer_family_contributions && familyRecord.tuition_offer_family_contributions[index] !== undefined && (
-                                      <div>
-                                        <h5 className="text-sm font-medium text-muted-foreground">Family Contribution</h5>
-                                        <p className="text-sm font-medium">
-                                          ${familyRecord.tuition_offer_family_contributions[index].toLocaleString()}
-                                        </p>
-                                      </div>
-                                    )}
-                                    
-                                    {/* Debug information */}
-                                    <div className="mt-4 pt-2 border-t border-dashed border-gray-200">
-                                      <div>
-                                        <h5 className="text-xs font-medium text-muted-foreground">Opportunity ID (Debug)</h5>
-                                        <p className="text-xs font-mono bg-gray-50 p-1 rounded">
-                                          {id}
-                                        </p>
-                                      </div>
-                                      
-                                      <div className="mt-2">
-                                        <h5 className="text-xs font-medium text-muted-foreground">Last Stage Change (Debug)</h5>
-                                        <p className="text-xs font-mono bg-gray-50 p-1 rounded">
-                                          {familyRecord.opportunity_created_dates[index] 
-                                            ? new Date(familyRecord.opportunity_created_dates[index]).toLocaleDateString() 
-                                            : "Unknown"}
-                                        </p>
-                                      </div>
-                                      
-                                      <div className="mt-2">
-                                        <h5 className="text-xs font-medium text-muted-foreground">Record Type ID (Debug)</h5>
-                                        <p className="text-xs font-mono bg-gray-50 p-1 rounded">
-                                          {recordType || "Missing"}
-                                        </p>
-                                        <p className="text-xs font-mono mt-1">
-                                          Display: {recordTypeDisplay}
-                                        </p>
-                                      </div>
-                                      
-                                      <div className="mt-2">
-                                        <h5 className="text-xs font-medium text-muted-foreground">School Year (Debug)</h5>
-                                        <p className="text-xs font-mono bg-gray-50 p-1 rounded">
-                                          Raw: {familyRecord.opportunity_school_years?.[index] || "Missing"}<br/>
-                                          Extracted: {name ? extractSchoolYear(name) : "Missing"}<br/>
-                                          Display Format: {formatSchoolYearForDisplay(familyRecord.opportunity_school_years?.[index] || 
-                                           (name ? extractSchoolYear(name) : ""))}
-                                        </p>
-                                      </div>
-                                      
-                                      <div className="mt-2">
-                                        <h5 className="text-xs font-medium text-muted-foreground">Name Extraction (Debug)</h5>
-                                        <p className="text-xs font-mono bg-gray-50 p-1 rounded">
-                                          Raw Opp Name: {name || "Missing"}<br/>
-                                          Extracted Student: {extractStudentName(name, id)}<br/>
-                                          Opp Index: {index}<br/>
-                                          Array Position: {familyRecord.opportunity_ids.indexOf(id)}
-                                        </p>
-                                      </div>
+
+                                      {grade && (
+                                        <div>
+                                          <h5 className="text-sm font-medium text-muted-foreground">
+                                            Grade
+                                          </h5>
+                                          <p className="text-sm font-medium">{grade}</p>
+                                        </div>
+                                      )}
+
+                                      {(campus || campusName) && (
+                                        <div>
+                                          <h5 className="text-sm font-medium text-muted-foreground">
+                                            Campus
+                                          </h5>
+                                          <p className="text-sm font-medium">
+                                            {campusName || campus}
+                                          </p>
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                 </div>
+
+                                {/* Right column - Opportunity Details */}
+                                <div className="space-y-4">
+                                  <div>
+                                    <h3 className="font-medium text-base mb-2 pb-1 border-b border-gray-200">
+                                      Opportunity Details
+                                    </h3>
+
+                                    <div className="space-y-3">
+                                      <div>
+                                        <h5 className="text-sm font-medium text-muted-foreground">
+                                          School Year
+                                        </h5>
+                                        <p className="text-sm font-medium">
+                                          {familyRecord.opportunity_school_years?.[index] ||
+                                            (name ? extractSchoolYear(name) : "Unknown")}
+                                        </p>
+                                      </div>
+
+                                      {recordType && (
+                                        <div>
+                                          <h5 className="text-sm font-medium text-muted-foreground">
+                                            Opportunity Type
+                                          </h5>
+                                          <p className="text-sm font-medium">{recordTypeDisplay}</p>
+                                        </div>
+                                      )}
+
+                                      {familyRecord.opportunity_created_dates[index] && (
+                                        <div>
+                                          <h5 className="text-sm font-medium text-muted-foreground">
+                                            Created Date
+                                          </h5>
+                                          <p className="text-sm font-medium">
+                                            {new Date(
+                                              familyRecord.opportunity_created_dates[index]
+                                            ).toLocaleDateString()}
+                                          </p>
+                                        </div>
+                                      )}
+
+                                      {/* Placeholder for financial info - This would need actual data from the family object */}
+                                      {familyRecord.tuition_offer_family_contributions &&
+                                        familyRecord.tuition_offer_family_contributions[index] !==
+                                          undefined && (
+                                          <div>
+                                            <h5 className="text-sm font-medium text-muted-foreground">
+                                              Family Contribution
+                                            </h5>
+                                            <p className="text-sm font-medium">
+                                              $
+                                              {familyRecord.tuition_offer_family_contributions[
+                                                index
+                                              ].toLocaleString()}
+                                            </p>
+                                          </div>
+                                        )}
+
+                                      {/* Debug information */}
+                                      <div className="mt-4 pt-2 border-t border-dashed border-gray-200">
+                                        <div>
+                                          <h5 className="text-xs font-medium text-muted-foreground">
+                                            Opportunity ID (Debug)
+                                          </h5>
+                                          <p className="text-xs font-mono bg-gray-50 p-1 rounded">
+                                            {id}
+                                          </p>
+                                        </div>
+
+                                        <div className="mt-2">
+                                          <h5 className="text-xs font-medium text-muted-foreground">
+                                            Last Stage Change (Debug)
+                                          </h5>
+                                          <p className="text-xs font-mono bg-gray-50 p-1 rounded">
+                                            {familyRecord.opportunity_created_dates[index]
+                                              ? new Date(
+                                                  familyRecord.opportunity_created_dates[index]
+                                                ).toLocaleDateString()
+                                              : "Unknown"}
+                                          </p>
+                                        </div>
+
+                                        <div className="mt-2">
+                                          <h5 className="text-xs font-medium text-muted-foreground">
+                                            Record Type ID (Debug)
+                                          </h5>
+                                          <p className="text-xs font-mono bg-gray-50 p-1 rounded">
+                                            {recordType || "Missing"}
+                                          </p>
+                                          <p className="text-xs font-mono mt-1">
+                                            Display: {recordTypeDisplay}
+                                          </p>
+                                        </div>
+
+                                        <div className="mt-2">
+                                          <h5 className="text-xs font-medium text-muted-foreground">
+                                            School Year (Debug)
+                                          </h5>
+                                          <p className="text-xs font-mono bg-gray-50 p-1 rounded">
+                                            Raw:{" "}
+                                            {familyRecord.opportunity_school_years?.[index] ||
+                                              "Missing"}
+                                            <br />
+                                            Extracted: {name ? extractSchoolYear(name) : "Missing"}
+                                            <br />
+                                            Display Format:{" "}
+                                            {formatSchoolYearForDisplay(
+                                              familyRecord.opportunity_school_years?.[index] ||
+                                                (name ? extractSchoolYear(name) : "")
+                                            )}
+                                          </p>
+                                        </div>
+
+                                        <div className="mt-2">
+                                          <h5 className="text-xs font-medium text-muted-foreground">
+                                            Name Extraction (Debug)
+                                          </h5>
+                                          <p className="text-xs font-mono bg-gray-50 p-1 rounded">
+                                            Raw Opp Name: {name || "Missing"}
+                                            <br />
+                                            Extracted Student: {extractStudentName(name, id)}
+                                            <br />
+                                            Opp Index: {index}
+                                            <br />
+                                            Array Position:{" "}
+                                            {familyRecord.opportunity_ids.indexOf(id)}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
+                            </CardContent>
+                          </Card>
+                        );
+                      }
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -816,252 +878,289 @@ const FamilyDetail: React.FC = () => {
           <CardHeader className="pb-0">
             <CardTitle className="text-xl font-semibold">
               {studentName}
-              {opportunities.some(opp => opp.isWon) && (
-                <Badge variant="success" className="ml-2">Closed Won</Badge>
+              {opportunities.some((opp) => opp.isWon) && (
+                <Badge variant="success" className="ml-2">
+                  Closed Won
+                </Badge>
               )}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <StudentTimeline
-              studentName={studentName}
-              opportunities={opportunities}
-            />
-            
+            <StudentTimeline studentName={studentName} opportunities={opportunities} />
+
             <div className="space-y-4 mt-4">
-              {opportunities.map(({
-                id,
-                index,
-                stage,
-                name,
-                recordType,
-                grade,
-                campus,
-                isWon,
-                schoolYear
-              }) => {
-                // Get the corresponding campus name if available
-                const campusName = familyRecord.opportunity_campus_names && 
-                                  familyRecord.opportunity_campus_names[index] ? 
-                                  familyRecord.opportunity_campus_names[index] : 
-                                  null;
-                // Map record type IDs to display names
-                const getRecordTypeDisplayName = (
-                  recordTypeId: string | undefined,
-                  stageName?: string,
-                  opportunityName?: string
-                ) => {
-                  // Try to use record type ID if available
-                  if (recordTypeId) {
-                    switch (recordTypeId) {
-                      case "012Dn000000ZzP9IAK":
-                        return "New Enrollment";
-                      case "012Dn000000a9ncIAA":
-                        return "Re-enrollment";
-                      // Add other record type IDs if known
-                      default:
-                        // Fall through to inference methods
-                        break;
+              {opportunities.map(
+                ({ id, index, stage, name, recordType, grade, campus, isWon, schoolYear }) => {
+                  // Get the corresponding campus name if available
+                  const campusName =
+                    familyRecord.opportunity_campus_names &&
+                    familyRecord.opportunity_campus_names[index]
+                      ? familyRecord.opportunity_campus_names[index]
+                      : null;
+                  // Map record type IDs to display names
+                  const getRecordTypeDisplayName = (
+                    recordTypeId: string | undefined,
+                    stageName?: string,
+                    opportunityName?: string
+                  ) => {
+                    // Try to use record type ID if available
+                    if (recordTypeId) {
+                      switch (recordTypeId) {
+                        case "012Dn000000ZzP9IAK":
+                          return "New Enrollment";
+                        case "012Dn000000a9ncIAA":
+                          return "Re-enrollment";
+                        // Add other record type IDs if known
+                        default:
+                          // Fall through to inference methods
+                          break;
+                      }
                     }
-                  }
-                  
-                  // Try to infer from opportunity name if it contains enrollment type info
-                  if (opportunityName) {
-                    if (opportunityName.includes(" - R ") || opportunityName.toLowerCase().includes("re-enroll")) {
+
+                    // Try to infer from opportunity name if it contains enrollment type info
+                    if (opportunityName) {
+                      if (
+                        opportunityName.includes(" - R ") ||
+                        opportunityName.toLowerCase().includes("re-enroll")
+                      ) {
+                        return "Re-enrollment";
+                      }
+                      if (
+                        opportunityName.includes(" - N ") ||
+                        opportunityName.toLowerCase().includes("new enroll")
+                      ) {
+                        return "New Enrollment";
+                      }
+                    }
+
+                    // If other methods fail, infer from stage
+                    if (stageName && stageName.toLowerCase().includes("re-enroll")) {
                       return "Re-enrollment";
                     }
-                    if (opportunityName.includes(" - N ") || opportunityName.toLowerCase().includes("new enroll")) {
-                      return "New Enrollment";
-                    }
-                  }
-                  
-                  // If other methods fail, infer from stage
-                  if (stageName && stageName.toLowerCase().includes("re-enroll")) {
-                    return "Re-enrollment";
-                  }
-                  
-                  // Default to Enrollment
-                  return "Enrollment";
-                };
 
-                // Use the recordType passed from our filtered data with fallbacks
-                const recordTypeDisplay =
-                  getRecordTypeDisplayName(recordType, stage, name);
+                    // Default to Enrollment
+                    return "Enrollment";
+                  };
 
-                // Normalize stage value to handle case sensitivity and whitespace
-                const normalizedStage = stage
-                  ? stage.trim()
-                  : "New Application";
+                  // Use the recordType passed from our filtered data with fallbacks
+                  const recordTypeDisplay = getRecordTypeDisplayName(recordType, stage, name);
 
-                return (
-                  <Card
-                    key={id}
-                    className={
-                      isWon ? "border-l-4 border-l-green-500" : ""
-                    }
-                  >
-                    <CardHeader>
-                      <CardTitle>
-                        {/* Display school year in the header */}
-                        {(familyRecord.opportunity_school_years?.[index] || 
-                         (name ? extractSchoolYear(name) : "")) ? (
-                          <>
-                            {formatSchoolYearForDisplay(familyRecord.opportunity_school_years?.[index] || 
-                             (name ? extractSchoolYear(name) : ""))} School Year
-                          </>
-                        ) : (
-                          `Opportunity ${index + 1}`
-                        )}
-                      </CardTitle>
-                      <CardDescription>
-                        <Badge
-                          variant={
-                            normalizedStage === "Closed Won"
-                              ? "success"
-                              : normalizedStage === "Closed Lost"
-                              ? "destructive"
-                              : normalizedStage === "Family Interview"
-                              ? "secondary"
-                              : normalizedStage === "Awaiting Documents"
-                              ? "default"
-                              : normalizedStage === "Education Review"
-                              ? "secondary"
-                              : normalizedStage === "Admission Offered"
-                              ? "default"
-                              : "outline"
-                          }
-                        >
-                          {normalizedStage || "New Application"}
-                        </Badge>
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Left column - Student Info */}
-                        <div className="space-y-4">
-                          <div>
-                            <h3 className="font-medium text-base mb-2 pb-1 border-b border-gray-200">Student Information</h3>
-                            
-                            <div className="space-y-3">
-                              <div>
-                                <h5 className="text-sm font-medium text-muted-foreground">Name</h5>
-                                <p className="text-sm font-medium">
-                                  {name ? extractStudentName(name, id) : "Unknown"}
-                                </p>
-                              </div>
-                              
-                              {grade && (
+                  // Normalize stage value to handle case sensitivity and whitespace
+                  const normalizedStage = stage ? stage.trim() : "New Application";
+
+                  return (
+                    <Card key={id} className={isWon ? "border-l-4 border-l-green-500" : ""}>
+                      <CardHeader>
+                        <CardTitle>
+                          {/* Display school year in the header */}
+                          {familyRecord.opportunity_school_years?.[index] ||
+                          (name ? extractSchoolYear(name) : "") ? (
+                            <>
+                              {formatSchoolYearForDisplay(
+                                familyRecord.opportunity_school_years?.[index] ||
+                                  (name ? extractSchoolYear(name) : "")
+                              )}{" "}
+                              School Year
+                            </>
+                          ) : (
+                            `Opportunity ${index + 1}`
+                          )}
+                        </CardTitle>
+                        <CardDescription>
+                          <Badge
+                            variant={
+                              normalizedStage === "Closed Won"
+                                ? "success"
+                                : normalizedStage === "Closed Lost"
+                                  ? "destructive"
+                                  : normalizedStage === "Family Interview"
+                                    ? "secondary"
+                                    : normalizedStage === "Awaiting Documents"
+                                      ? "default"
+                                      : normalizedStage === "Education Review"
+                                        ? "secondary"
+                                        : normalizedStage === "Admission Offered"
+                                          ? "default"
+                                          : "outline"
+                            }
+                          >
+                            {normalizedStage || "New Application"}
+                          </Badge>
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {/* Left column - Student Info */}
+                          <div className="space-y-4">
+                            <div>
+                              <h3 className="font-medium text-base mb-2 pb-1 border-b border-gray-200">
+                                Student Information
+                              </h3>
+
+                              <div className="space-y-3">
                                 <div>
-                                  <h5 className="text-sm font-medium text-muted-foreground">Grade</h5>
-                                  <p className="text-sm font-medium">{grade}</p>
-                                </div>
-                              )}
-                              
-                              {(campus || campusName) && (
-                                <div>
-                                  <h5 className="text-sm font-medium text-muted-foreground">Campus</h5>
-                                  <p className="text-sm font-medium">{campusName || campus}</p>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Right column - Opportunity Details */}
-                        <div className="space-y-4">
-                          <div>
-                            <h3 className="font-medium text-base mb-2 pb-1 border-b border-gray-200">Opportunity Details</h3>
-                            
-                            <div className="space-y-3">
-                              <div>
-                                <h5 className="text-sm font-medium text-muted-foreground">School Year</h5>
-                                <p className="text-sm font-medium">
-                                  {familyRecord.opportunity_school_years?.[index] ||
-                                    (name ? extractSchoolYear(name) : "Unknown")}
-                                </p>
-                              </div>
-                              
-                              {recordType && (
-                                <div>
-                                  <h5 className="text-sm font-medium text-muted-foreground">Opportunity Type</h5>
-                                  <p className="text-sm font-medium">{recordTypeDisplay}</p>
-                                </div>
-                              )}
-                              
-                              {familyRecord.opportunity_created_dates[index] && (
-                                <div>
-                                  <h5 className="text-sm font-medium text-muted-foreground">Created Date</h5>
+                                  <h5 className="text-sm font-medium text-muted-foreground">
+                                    Name
+                                  </h5>
                                   <p className="text-sm font-medium">
-                                    {new Date(familyRecord.opportunity_created_dates[index]).toLocaleDateString()}
+                                    {name ? extractStudentName(name, id) : "Unknown"}
                                   </p>
                                 </div>
-                              )}
-                              
-                              {/* Placeholder for financial info - This would need actual data from the family object */}
-                              {familyRecord.tuition_offer_family_contributions && familyRecord.tuition_offer_family_contributions[index] !== undefined && (
-                                <div>
-                                  <h5 className="text-sm font-medium text-muted-foreground">Family Contribution</h5>
-                                  <p className="text-sm font-medium">
-                                    ${familyRecord.tuition_offer_family_contributions[index].toLocaleString()}
-                                  </p>
-                                </div>
-                              )}
-                              
-                              {/* Debug information */}
-                              <div className="mt-4 pt-2 border-t border-dashed border-gray-200">
-                                <div>
-                                  <h5 className="text-xs font-medium text-muted-foreground">Opportunity ID (Debug)</h5>
-                                  <p className="text-xs font-mono bg-gray-50 p-1 rounded">
-                                    {id}
-                                  </p>
-                                </div>
-                                
-                                <div className="mt-2">
-                                  <h5 className="text-xs font-medium text-muted-foreground">Last Stage Change (Debug)</h5>
-                                  <p className="text-xs font-mono bg-gray-50 p-1 rounded">
-                                    {familyRecord.opportunity_created_dates[index] 
-                                      ? new Date(familyRecord.opportunity_created_dates[index]).toLocaleDateString() 
-                                      : "Unknown"}
-                                  </p>
-                                </div>
-                                
-                                <div className="mt-2">
-                                  <h5 className="text-xs font-medium text-muted-foreground">Record Type ID (Debug)</h5>
-                                  <p className="text-xs font-mono bg-gray-50 p-1 rounded">
-                                    {recordType || "Missing"}
-                                  </p>
-                                  <p className="text-xs font-mono mt-1">
-                                    Display: {recordTypeDisplay}
-                                  </p>
-                                </div>
-                                
-                                <div className="mt-2">
-                                  <h5 className="text-xs font-medium text-muted-foreground">School Year (Debug)</h5>
-                                  <p className="text-xs font-mono bg-gray-50 p-1 rounded">
-                                    Raw: {familyRecord.opportunity_school_years?.[index] || "Missing"}<br/>
-                                    Extracted: {name ? extractSchoolYear(name) : "Missing"}<br/>
-                                    Display Format: {formatSchoolYearForDisplay(familyRecord.opportunity_school_years?.[index] || 
-                                     (name ? extractSchoolYear(name) : ""))}
-                                  </p>
-                                </div>
-                                
-                                <div className="mt-2">
-                                  <h5 className="text-xs font-medium text-muted-foreground">Name Extraction (Debug)</h5>
-                                  <p className="text-xs font-mono bg-gray-50 p-1 rounded">
-                                    Raw Opp Name: {name || "Missing"}<br/>
-                                    Extracted Student: {extractStudentName(name, id)}<br/>
-                                    Opp Index: {index}<br/>
-                                    Array Position: {familyRecord.opportunity_ids.indexOf(id)}
-                                  </p>
-                                </div>
+
+                                {grade && (
+                                  <div>
+                                    <h5 className="text-sm font-medium text-muted-foreground">
+                                      Grade
+                                    </h5>
+                                    <p className="text-sm font-medium">{grade}</p>
+                                  </div>
+                                )}
+
+                                {(campus || campusName) && (
+                                  <div>
+                                    <h5 className="text-sm font-medium text-muted-foreground">
+                                      Campus
+                                    </h5>
+                                    <p className="text-sm font-medium">{campusName || campus}</p>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
+
+                          {/* Right column - Opportunity Details */}
+                          <div className="space-y-4">
+                            <div>
+                              <h3 className="font-medium text-base mb-2 pb-1 border-b border-gray-200">
+                                Opportunity Details
+                              </h3>
+
+                              <div className="space-y-3">
+                                <div>
+                                  <h5 className="text-sm font-medium text-muted-foreground">
+                                    School Year
+                                  </h5>
+                                  <p className="text-sm font-medium">
+                                    {familyRecord.opportunity_school_years?.[index] ||
+                                      (name ? extractSchoolYear(name) : "Unknown")}
+                                  </p>
+                                </div>
+
+                                {recordType && (
+                                  <div>
+                                    <h5 className="text-sm font-medium text-muted-foreground">
+                                      Opportunity Type
+                                    </h5>
+                                    <p className="text-sm font-medium">{recordTypeDisplay}</p>
+                                  </div>
+                                )}
+
+                                {familyRecord.opportunity_created_dates[index] && (
+                                  <div>
+                                    <h5 className="text-sm font-medium text-muted-foreground">
+                                      Created Date
+                                    </h5>
+                                    <p className="text-sm font-medium">
+                                      {new Date(
+                                        familyRecord.opportunity_created_dates[index]
+                                      ).toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* Placeholder for financial info - This would need actual data from the family object */}
+                                {familyRecord.tuition_offer_family_contributions &&
+                                  familyRecord.tuition_offer_family_contributions[index] !==
+                                    undefined && (
+                                    <div>
+                                      <h5 className="text-sm font-medium text-muted-foreground">
+                                        Family Contribution
+                                      </h5>
+                                      <p className="text-sm font-medium">
+                                        $
+                                        {familyRecord.tuition_offer_family_contributions[
+                                          index
+                                        ].toLocaleString()}
+                                      </p>
+                                    </div>
+                                  )}
+
+                                {/* Debug information */}
+                                <div className="mt-4 pt-2 border-t border-dashed border-gray-200">
+                                  <div>
+                                    <h5 className="text-xs font-medium text-muted-foreground">
+                                      Opportunity ID (Debug)
+                                    </h5>
+                                    <p className="text-xs font-mono bg-gray-50 p-1 rounded">{id}</p>
+                                  </div>
+
+                                  <div className="mt-2">
+                                    <h5 className="text-xs font-medium text-muted-foreground">
+                                      Last Stage Change (Debug)
+                                    </h5>
+                                    <p className="text-xs font-mono bg-gray-50 p-1 rounded">
+                                      {familyRecord.opportunity_created_dates[index]
+                                        ? new Date(
+                                            familyRecord.opportunity_created_dates[index]
+                                          ).toLocaleDateString()
+                                        : "Unknown"}
+                                    </p>
+                                  </div>
+
+                                  <div className="mt-2">
+                                    <h5 className="text-xs font-medium text-muted-foreground">
+                                      Record Type ID (Debug)
+                                    </h5>
+                                    <p className="text-xs font-mono bg-gray-50 p-1 rounded">
+                                      {recordType || "Missing"}
+                                    </p>
+                                    <p className="text-xs font-mono mt-1">
+                                      Display: {recordTypeDisplay}
+                                    </p>
+                                  </div>
+
+                                  <div className="mt-2">
+                                    <h5 className="text-xs font-medium text-muted-foreground">
+                                      School Year (Debug)
+                                    </h5>
+                                    <p className="text-xs font-mono bg-gray-50 p-1 rounded">
+                                      Raw:{" "}
+                                      {familyRecord.opportunity_school_years?.[index] || "Missing"}
+                                      <br />
+                                      Extracted: {name ? extractSchoolYear(name) : "Missing"}
+                                      <br />
+                                      Display Format:{" "}
+                                      {formatSchoolYearForDisplay(
+                                        familyRecord.opportunity_school_years?.[index] ||
+                                          (name ? extractSchoolYear(name) : "")
+                                      )}
+                                    </p>
+                                  </div>
+
+                                  <div className="mt-2">
+                                    <h5 className="text-xs font-medium text-muted-foreground">
+                                      Name Extraction (Debug)
+                                    </h5>
+                                    <p className="text-xs font-mono bg-gray-50 p-1 rounded">
+                                      Raw Opp Name: {name || "Missing"}
+                                      <br />
+                                      Extracted Student: {extractStudentName(name, id)}
+                                      <br />
+                                      Opp Index: {index}
+                                      <br />
+                                      Array Position: {familyRecord.opportunity_ids.indexOf(id)}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                      </CardContent>
+                    </Card>
+                  );
+                }
+              )}
             </div>
           </CardContent>
         </Card>
@@ -1070,9 +1169,7 @@ const FamilyDetail: React.FC = () => {
       // This shouldn't happen but included for completeness
       return (
         <div className="text-center py-8">
-          <p className="text-muted-foreground">
-            No student data found for this family.
-          </p>
+          <p className="text-muted-foreground">No student data found for this family.</p>
         </div>
       );
     }
@@ -1089,21 +1186,22 @@ const FamilyDetail: React.FC = () => {
               <h1 className="text-3xl font-bold tracking-tight text-foreground">
                 {familyRecord.family_name}
               </h1>
-              
+
               {/* Active status pill - displayed when family has any closed won opportunity for current year */}
-              {familyRecord.opportunity_count > 0 && 
-                familyRecord.opportunity_ids.some((_, idx) => 
-                  (familyRecord.opportunity_is_won?.[idx] || 
-                   familyRecord.opportunity_stages?.[idx]?.includes("Closed Won")) && 
-                  (familyRecord.opportunity_school_years?.[idx]?.includes("25/26") || 
-                   (familyRecord.opportunity_names?.[idx] && 
-                    familyRecord.opportunity_names[idx].includes("Y25/26")))
+              {familyRecord.opportunity_count > 0 &&
+                familyRecord.opportunity_ids.some(
+                  (_, idx) =>
+                    (familyRecord.opportunity_is_won?.[idx] ||
+                      familyRecord.opportunity_stages?.[idx]?.includes("Closed Won")) &&
+                    (familyRecord.opportunity_school_years?.[idx]?.includes("25/26") ||
+                      (familyRecord.opportunity_names?.[idx] &&
+                        familyRecord.opportunity_names[idx].includes("Y25/26")))
                 ) && (
-                <div className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-sm font-medium text-green-800">
-                  <div className="mr-1 h-1.5 w-1.5 rounded-full bg-green-500"></div>
-                  Active
-                </div>
-              )}
+                  <div className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-sm font-medium text-green-800">
+                    <div className="mr-1 h-1.5 w-1.5 rounded-full bg-green-500"></div>
+                    Active
+                  </div>
+                )}
             </div>
 
             {/* Badges for key information */}
@@ -1115,10 +1213,12 @@ const FamilyDetail: React.FC = () => {
               >
                 <Building className="h-3.5 w-3.5 text-muted-foreground" />
                 <span className="text-sm font-medium">
-                  {familyRecord.current_campus_name || familyRecord.current_campus_c || "Not Assigned"}
+                  {familyRecord.current_campus_name ||
+                    familyRecord.current_campus_c ||
+                    "Not Assigned"}
                 </span>
               </Badge>
-              
+
               {/* Students Badge - using the exact structure from the screenshot */}
               <div className="flex items-center border border-muted/40 rounded-full py-1.5 px-3">
                 <GraduationCap className="h-3.5 w-3.5 text-muted-foreground mr-1.5" />
@@ -1126,12 +1226,10 @@ const FamilyDetail: React.FC = () => {
                   {familyRecord.opportunity_count || 0} Students
                 </span>
               </div>
-              
+
               {/* Health District badge from screenshot */}
               <div className="flex items-center p-2 px-4 rounded-full border bg-white">
-                <span className="text-sm font-medium">
-                  Health District
-                </span>
+                <span className="text-sm font-medium">Health District</span>
               </div>
             </div>
           </div>
@@ -1142,7 +1240,6 @@ const FamilyDetail: React.FC = () => {
             <Button variant="outline" asChild size="sm" className="font-medium">
               <Link to="/search">Back to Search</Link>
             </Button>
-            
           </div>
         </div>
 
@@ -1191,7 +1288,12 @@ const FamilyDetail: React.FC = () => {
                               {familyRecord.contact_last_activity_dates[index] && (
                                 <div className="flex items-center">
                                   <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                                  <span>Last Activity: {new Date(familyRecord.contact_last_activity_dates[index]).toLocaleDateString()}</span>
+                                  <span>
+                                    Last Activity:{" "}
+                                    {new Date(
+                                      familyRecord.contact_last_activity_dates[index]
+                                    ).toLocaleDateString()}
+                                  </span>
                                 </div>
                               )}
                             </div>
@@ -1213,7 +1315,7 @@ const FamilyDetail: React.FC = () => {
                   <FileText className="h-4 w-4 mr-2 text-primary" />
                   Family Information
                 </h3>
-                
+
                 {/* Family Information content - styled to match Parent Contact Information */}
                 <div className="p-4 rounded-lg bg-card border border-muted/20 hover:border-muted/50 transition-colors">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1224,29 +1326,38 @@ const FamilyDetail: React.FC = () => {
                         <div className="text-sm text-muted-foreground">Lifetime Value</div>
                         <div className="font-medium">
                           {familyRecord.lifetime_value !== undefined
-                            ? `$${familyRecord.lifetime_value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
+                            ? `$${familyRecord.lifetime_value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                             : "N/A"}
                         </div>
-                        <div className="text-xs text-muted-foreground">Based on accepted offers</div>
+                        <div className="text-xs text-muted-foreground">
+                          Based on accepted offers
+                        </div>
                       </div>
                     </div>
-                    
+
                     {/* Last Activity */}
                     <div className="flex items-center">
                       <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
                       <div>
                         <div className="text-sm text-muted-foreground">Last Activity</div>
                         <div className="font-medium">
-                          {familyRecord.contact_count > 0 && familyRecord.contact_last_activity_dates.some(date => date)
-                            ? new Date(Math.max(...familyRecord.contact_last_activity_dates
-                                .filter(date => date)
-                                .map(date => new Date(date).getTime()))).toLocaleDateString()
+                          {familyRecord.contact_count > 0 &&
+                          familyRecord.contact_last_activity_dates.some((date) => date)
+                            ? new Date(
+                                Math.max(
+                                  ...familyRecord.contact_last_activity_dates
+                                    .filter((date) => date)
+                                    .map((date) => new Date(date).getTime())
+                                )
+                              ).toLocaleDateString()
                             : "No activity"}
                         </div>
-                        <div className="text-xs text-muted-foreground">Most recent contact interaction</div>
+                        <div className="text-xs text-muted-foreground">
+                          Most recent contact interaction
+                        </div>
                       </div>
                     </div>
-                    
+
                     {/* Open Tuition Offers */}
                     <div className="flex items-center">
                       <GraduationCap className="h-4 w-4 mr-2 text-muted-foreground" />
@@ -1254,28 +1365,38 @@ const FamilyDetail: React.FC = () => {
                         <div className="text-sm text-muted-foreground">Open Tuition Offers</div>
                         <div className="font-medium">
                           {familyRecord.tuition_offer_count > 0
-                            ? `${familyRecord.tuition_offer_statuses.filter(status => 
-                                status && (status.includes("Active") || status.includes("Open"))
-                              ).length} out of ${familyRecord.tuition_offer_count}`
+                            ? `${
+                                familyRecord.tuition_offer_statuses.filter(
+                                  (status) =>
+                                    status && (status.includes("Active") || status.includes("Open"))
+                                ).length
+                              } out of ${familyRecord.tuition_offer_count}`
                             : "0"}
                         </div>
                         <div className="text-xs text-muted-foreground">Active tuition offers</div>
                       </div>
                     </div>
-                    
+
                     {/* Family Since Date */}
                     <div className="flex items-center">
                       <UserIcon className="h-4 w-4 mr-2 text-muted-foreground" />
                       <div>
                         <div className="text-sm text-muted-foreground">Family Since</div>
                         <div className="font-medium">
-                          {familyRecord.opportunity_count > 0 && familyRecord.opportunity_created_dates.some(date => date)
-                            ? new Date(Math.min(...familyRecord.opportunity_created_dates
-                                .filter(date => date)
-                                .map(date => new Date(date).getTime()))).toLocaleDateString()
+                          {familyRecord.opportunity_count > 0 &&
+                          familyRecord.opportunity_created_dates.some((date) => date)
+                            ? new Date(
+                                Math.min(
+                                  ...familyRecord.opportunity_created_dates
+                                    .filter((date) => date)
+                                    .map((date) => new Date(date).getTime())
+                                )
+                              ).toLocaleDateString()
                             : "Unknown"}
                         </div>
-                        <div className="text-xs text-muted-foreground">First opportunity created</div>
+                        <div className="text-xs text-muted-foreground">
+                          First opportunity created
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1308,16 +1429,22 @@ const FamilyDetail: React.FC = () => {
                   <TabsTrigger value="interview-notes">Family Interview Notes</TabsTrigger>
                 </TabsList>
                 <TabsContent value="lead-notes" className="mt-4">
-                  {familyRecord.opportunity_lead_notes && familyRecord.opportunity_lead_notes.some(note => note) ? (
+                  {familyRecord.opportunity_lead_notes &&
+                  familyRecord.opportunity_lead_notes.some((note) => note) ? (
                     <div className="space-y-4">
                       {familyRecord.opportunity_lead_notes.map((note, index) => {
                         if (!note) return null;
                         return (
-                          <div key={`lead-note-${index}`} className="border-l-4 border-primary p-4 bg-primary/5 rounded-md">
+                          <div
+                            key={`lead-note-${index}`}
+                            className="border-l-4 border-primary p-4 bg-primary/5 rounded-md"
+                          >
                             <div className="flex items-center mb-2">
                               <ClipboardList className="h-4 w-4 mr-2 text-muted-foreground" />
                               <h5 className="text-sm font-medium">
-                                {familyRecord.opportunity_names[index] ? extractStudentName(familyRecord.opportunity_names[index]) : `Note ${index + 1}`}
+                                {familyRecord.opportunity_names[index]
+                                  ? extractStudentName(familyRecord.opportunity_names[index])
+                                  : `Note ${index + 1}`}
                               </h5>
                             </div>
                             <p className="text-sm text-muted-foreground">{note}</p>
@@ -1332,16 +1459,22 @@ const FamilyDetail: React.FC = () => {
                   )}
                 </TabsContent>
                 <TabsContent value="interview-notes" className="mt-4">
-                  {familyRecord.opportunity_family_interview_notes && familyRecord.opportunity_family_interview_notes.some(note => note) ? (
+                  {familyRecord.opportunity_family_interview_notes &&
+                  familyRecord.opportunity_family_interview_notes.some((note) => note) ? (
                     <div className="space-y-4">
                       {familyRecord.opportunity_family_interview_notes.map((note, index) => {
                         if (!note) return null;
                         return (
-                          <div key={`interview-note-${index}`} className="border-l-4 border-secondary p-4 bg-secondary/5 rounded-md">
+                          <div
+                            key={`interview-note-${index}`}
+                            className="border-l-4 border-secondary p-4 bg-secondary/5 rounded-md"
+                          >
                             <div className="flex items-center mb-2">
                               <MessageSquare className="h-4 w-4 mr-2 text-muted-foreground" />
                               <h5 className="text-sm font-medium">
-                                {familyRecord.opportunity_names[index] ? extractStudentName(familyRecord.opportunity_names[index]) : `Note ${index + 1}`}
+                                {familyRecord.opportunity_names[index]
+                                  ? extractStudentName(familyRecord.opportunity_names[index])
+                                  : `Note ${index + 1}`}
                               </h5>
                             </div>
                             <p className="text-sm text-muted-foreground">{note}</p>
@@ -1351,7 +1484,9 @@ const FamilyDetail: React.FC = () => {
                     </div>
                   ) : (
                     <div className="text-center py-8">
-                      <p className="text-muted-foreground">No family interview notes found for this family.</p>
+                      <p className="text-muted-foreground">
+                        No family interview notes found for this family.
+                      </p>
                     </div>
                   )}
                 </TabsContent>
@@ -1369,17 +1504,12 @@ const FamilyDetail: React.FC = () => {
                 .map((id, index) => ({ id, index }))
                 .filter((item) => {
                   const status = familyRecord.tuition_offer_statuses[item.index];
-                  return (
-                    status &&
-                    (status.includes("Active") || status.includes("Open"))
-                  );
+                  return status && (status.includes("Active") || status.includes("Open"));
                 })
                 .map(({ id, index }) => (
                   <Card key={id}>
                     <CardHeader>
-                      <CardTitle className="text-lg">
-                        Tuition Offer #{index + 1}
-                      </CardTitle>
+                      <CardTitle className="text-lg">Tuition Offer #{index + 1}</CardTitle>
                       <CardDescription>
                         <Badge
                           variant={
@@ -1388,41 +1518,33 @@ const FamilyDetail: React.FC = () => {
                               .includes("accepted")
                               ? "default"
                               : familyRecord.tuition_offer_statuses[index]
-                                ?.toLowerCase()
-                                .includes("declined")
+                                    ?.toLowerCase()
+                                    .includes("declined")
                                 ? "destructive"
                                 : "outline"
                           }
                         >
-                          {familyRecord.tuition_offer_statuses[index] ||
-                            "Unknown Status"}
+                          {familyRecord.tuition_offer_statuses[index] || "Unknown Status"}
                         </Badge>
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <h5 className="text-sm font-medium mb-1">
-                            Family Contribution
-                          </h5>
+                          <h5 className="text-sm font-medium mb-1">Family Contribution</h5>
                           <p className="text-2xl font-semibold text-primary">
                             $
                             {(
-                              familyRecord.tuition_offer_family_contributions[
-                                index
-                              ] || 0
+                              familyRecord.tuition_offer_family_contributions[index] || 0
                             ).toLocaleString()}
                           </p>
                         </div>
                         <div>
-                          <h5 className="text-sm font-medium mb-1">
-                            State Scholarship
-                          </h5>
+                          <h5 className="text-sm font-medium mb-1">State Scholarship</h5>
                           <p className="text-2xl font-semibold text-accent-foreground">
                             $
                             {(
-                              familyRecord.tuition_offer_state_scholarships[index] ||
-                              0
+                              familyRecord.tuition_offer_state_scholarships[index] || 0
                             ).toLocaleString()}
                           </p>
                         </div>
@@ -1434,10 +1556,8 @@ const FamilyDetail: React.FC = () => {
                         <span>
                           Total Package: $
                           {(
-                            (familyRecord.tuition_offer_family_contributions[index] ||
-                              0) +
-                            (familyRecord.tuition_offer_state_scholarships[index] ||
-                              0)
+                            (familyRecord.tuition_offer_family_contributions[index] || 0) +
+                            (familyRecord.tuition_offer_state_scholarships[index] || 0)
                           ).toLocaleString()}
                         </span>
                       </div>
@@ -1446,9 +1566,7 @@ const FamilyDetail: React.FC = () => {
                 ))
             ) : (
               <div className="text-center py-8">
-                <p className="text-muted-foreground">
-                  No tuition offers found for this family.
-                </p>
+                <p className="text-muted-foreground">No tuition offers found for this family.</p>
               </div>
             )}
           </div>
@@ -1460,13 +1578,28 @@ const FamilyDetail: React.FC = () => {
         <h2 className="text-2xl font-bold mb-4">Resources</h2>
         <div className="flex flex-wrap gap-4">
           {/* Salesforce Link */}
-          <a 
-            href={familyRecord.family_id ? `https://primer.lightning.force.com/lightning/r/Account/${familyRecord.family_id}/view` : "#"} 
-            target="_blank" 
+          <a
+            href={
+              familyRecord.family_id
+                ? `https://primer.lightning.force.com/lightning/r/Account/${familyRecord.family_id}/view`
+                : "#"
+            }
+            target="_blank"
             rel="noopener noreferrer"
-            className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 ${!familyRecord.family_id ? 'opacity-50 pointer-events-none' : ''}`}
+            className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 ${!familyRecord.family_id ? "opacity-50 pointer-events-none" : ""}`}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4 mr-2"
+            >
               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
               <polyline points="15 3 21 3 21 9"></polyline>
               <line x1="10" y1="14" x2="21" y2="3"></line>
@@ -1475,13 +1608,28 @@ const FamilyDetail: React.FC = () => {
           </a>
 
           {/* PDC Link */}
-          <a 
-            href={familyRecord.pdc_family_id_c ? `https://pdc.primerlearning.org/families/${familyRecord.pdc_family_id_c}` : "#"} 
-            target="_blank" 
+          <a
+            href={
+              familyRecord.pdc_family_id_c
+                ? `https://pdc.primerlearning.org/families/${familyRecord.pdc_family_id_c}`
+                : "#"
+            }
+            target="_blank"
             rel="noopener noreferrer"
-            className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-secondary text-secondary-foreground hover:bg-secondary/90 h-10 px-4 py-2 ${!familyRecord.pdc_family_id_c ? 'opacity-50 pointer-events-none' : ''}`}
+            className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-secondary text-secondary-foreground hover:bg-secondary/90 h-10 px-4 py-2 ${!familyRecord.pdc_family_id_c ? "opacity-50 pointer-events-none" : ""}`}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4 mr-2"
+            >
               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
               <polyline points="15 3 21 3 21 9"></polyline>
               <line x1="10" y1="14" x2="21" y2="3"></line>
@@ -1490,13 +1638,28 @@ const FamilyDetail: React.FC = () => {
           </a>
 
           {/* Intercom Link */}
-          <a 
-            href={familyRecord.contact_emails && familyRecord.contact_emails[0] ? `https://app.intercom.com/a/apps/default/users?email=${encodeURIComponent(familyRecord.contact_emails[0])}` : "#"} 
-            target="_blank" 
+          <a
+            href={
+              familyRecord.contact_emails && familyRecord.contact_emails[0]
+                ? `https://app.intercom.com/a/apps/default/users?email=${encodeURIComponent(familyRecord.contact_emails[0])}`
+                : "#"
+            }
+            target="_blank"
             rel="noopener noreferrer"
-            className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 ${!familyRecord.contact_emails || !familyRecord.contact_emails[0] ? 'opacity-50 pointer-events-none' : ''}`}
+            className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 ${!familyRecord.contact_emails || !familyRecord.contact_emails[0] ? "opacity-50 pointer-events-none" : ""}`}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4 mr-2"
+            >
               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
               <polyline points="15 3 21 3 21 9"></polyline>
               <line x1="10" y1="14" x2="21" y2="3"></line>

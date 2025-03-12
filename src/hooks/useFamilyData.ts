@@ -92,12 +92,14 @@ export const useFamilyData = (): UseFamilyDataReturn => {
 
       // Try to normalize the ID to improve search success
       const normalizedId = familyId.trim();
-      
+
       // Check if this might be a truncated ID (common in URLs)
       if (normalizedId.length < 18 && normalizedId.length > 10) {
-        console.log(`useFamilyData: ID appears to be truncated (length ${normalizedId.length}), will use partial matching`);
+        console.log(
+          `useFamilyData: ID appears to be truncated (length ${normalizedId.length}), will use partial matching`
+        );
       }
-      
+
       console.log(`useFamilyData: Using normalized ID: ${normalizedId}`);
 
       // Use our improved getFamilyRecord method that queries the comprehensive_family_records table
@@ -118,14 +120,16 @@ export const useFamilyData = (): UseFamilyDataReturn => {
       } else {
         // Cast to FamilyRecord type
         setFamilyRecord(data as unknown as FamilyRecord);
-        console.log("useFamilyData: Successfully fetched family record with fields:", 
-          Object.keys(data).join(', '));
+        console.log(
+          "useFamilyData: Successfully fetched family record with fields:",
+          Object.keys(data).join(", ")
+        );
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
       setError(`Error fetching family data: ${errorMessage}`);
       console.error("useFamilyData: Error fetching family data:", err);
-      
+
       // Add more detailed logging for troubleshooting
       if (err instanceof Error && err.stack) {
         console.error("Stack trace:", err.stack);

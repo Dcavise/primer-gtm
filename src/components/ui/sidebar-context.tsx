@@ -18,7 +18,7 @@ const SidebarContext = createContext<SidebarContextProps | undefined>(undefined)
  * Hook to access sidebar state
  * Must be used within a SidebarProvider
  */
- 
+
 export const useSidebar = () => {
   const context = useContext(SidebarContext);
   if (!context) {
