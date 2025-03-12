@@ -102,7 +102,6 @@ interface DataType {
  */
 const Search = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [isSearchBoxOpen, setIsSearchBoxOpen] = useState(false);
   const navigate = useNavigate();
   const [campusMap, setCampusMap] = useState<Record<string, string>>({});
 
@@ -144,20 +143,9 @@ const Search = () => {
     setSelectedOpportunityStatus("");
   };
 
-  // Handle search box open
-  const handleOpenSearchBox = () => {
-    setIsSearchBoxOpen(true);
-  };
-
-  // Handle search box close
-  const handleCloseSearchBox = () => {
-    setIsSearchBoxOpen(false);
-  };
-
   // Handle search query submission
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    setIsSearchBoxOpen(false);
     searchFamilies(query);
   };
 
@@ -375,27 +363,8 @@ const Search = () => {
     fetchCampusData();
   }, [campuses]);
 
-  // Keyboard shortcut to open search
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Check for Control+K or Command+K (macOS)
-      if ((event.ctrlKey || event.metaKey) && event.key === "k") {
-        event.preventDefault();
-        setIsSearchBoxOpen(true);
-      }
-      
-      // Check for Escape key to close search
-      if (event.key === "Escape" && isSearchBoxOpen) {
-        event.preventDefault();
-        setIsSearchBoxOpen(false);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isSearchBoxOpen]);
+  // We don't need a keyboard shortcut handler here
+  // The global 'k' handler in App.tsx will trigger the hover search
 
   const handleResultClick = (result: SearchResultItem) => {
     // With the new buttons, card click should default to the standard view
@@ -542,257 +511,17 @@ const Search = () => {
       <div className="flex flex-col gap-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-outer-space">Search</h1>
-          <Button 
-            onClick={handleOpenSearchBox} 
-            variant="outline" 
-            className="flex items-center gap-2 border border-slate-200 rounded-lg shadow-sm"
-          >
+          <div className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg shadow-sm text-slate-600">
             <SearchIcon className="h-4 w-4 text-slate-400" />
-            <span className="text-slate-600">Search families...</span>
-            <span className="ml-2 text-xs text-slate-400 border border-slate-200 rounded px-1">
-              ⌘K
-            </span>
-          </Button>
+            <span>Press</span>
+            <kbd className="px-2 py-0.5 bg-gray-50 border border-slate-200 rounded text-xs font-mono">k</kbd>
+            <span>to search families</span>
+          </div>
         </div>
 
-        {/* Hovering SearchBox Component */}
-        <SearchBox
-          isOpen={isSearchBoxOpen}
-          onClose={handleCloseSearchBox}
-          onSearch={handleSearch}
-          initialQuery={searchQuery}
-          inline={false}
-          hideResults={false}
-        />
+        {/* Only the hover state SearchBox Component is used from App.tsx */}
         
-        <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-slate-gray" />
-              <span className="text-xl font-semibold text-outer-space">Families</span>
-              {searchQuery && (
-                <span className="text-sm text-slate-500 ml-2">
-                  Results for "{searchQuery}"
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={toggleFilters}
-                className="flex items-center gap-1"
-              >
-                <Filter className="h-4 w-4" />
-                {filtersVisible ? "Hide Filters" : "Show Filters"}
-              </Button>
-            </div>
-          </div>
-
-          {/* Filters section */}
-          {filtersVisible && (
-            <div className="p-4 border rounded-md bg-gray-50 space-y-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-medium text-outer-space">Filters</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={resetFilters}
-                  className="text-sm text-slate-gray hover:text-red-600"
-                >
-                  Reset
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Campus filter */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-gray">Campus</label>
-                  <Select value={selectedCampus} onValueChange={setSelectedCampus}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="All Campuses" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">All Campuses</SelectItem>
-                      {campuses?.map((campus) => (
-                        <SelectItem key={campus.campus_id} value={campus.campus_name}>
-                          {campus.campus_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* School Year filter */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-gray">School Year</label>
-                  <Select value={selectedSchoolYear} onValueChange={setSelectedSchoolYear}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="All School Years" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">All School Years</SelectItem>
-                      {schoolYearOptions.map((year) => (
-                        <SelectItem key={year} value={year}>
-                          {year}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Opportunity Status filter */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-gray">Opportunity Status</label>
-                  <Select
-                    value={selectedOpportunityStatus}
-                    onValueChange={setSelectedOpportunityStatus}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="All Statuses" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">All Statuses</SelectItem>
-                      {opportunityStatusOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Active filters display */}
-              <div className="flex flex-wrap gap-2 mt-2">
-                {selectedCampus && (
-                  <Badge
-                    variant="outline"
-                    className="bg-blue-50 text-blue-700 flex items-center gap-1"
-                  >
-                    <MapPin className="h-3 w-3" /> Campus: {selectedCampus}
-                    <button className="ml-1" onClick={() => setSelectedCampus("")}>
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                )}
-                {selectedSchoolYear && (
-                  <Badge
-                    variant="outline"
-                    className={`flex items-center gap-1 ${getSchoolYearClasses(selectedSchoolYear)}`}
-                  >
-                    <Calendar className="h-3 w-3" /> School Year: {selectedSchoolYear}
-                    <button
-                      className="ml-1"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setSelectedSchoolYear("");
-                      }}
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                )}
-                {selectedOpportunityStatus && (
-                  <Badge
-                    variant="outline"
-                    className="bg-emerald-50 text-emerald-700 flex items-center gap-1"
-                  >
-                    {selectedOpportunityStatus === "active" ? (
-                      <>
-                        <Award className="h-3 w-3" /> Active Families Only
-                      </>
-                    ) : (
-                      <>
-                        <Users className="h-3 w-3" /> All Families
-                      </>
-                    )}
-                    <button
-                      className="ml-1"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setSelectedOpportunityStatus("");
-                      }}
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Search results */}
-          <div className="grid grid-cols-1 gap-4 mt-4">
-            {isSearching ? (
-              // Loading state
-              <div className="flex flex-col items-center justify-center py-8 text-slate-gray">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-2"></div>
-                <p>Searching families...</p>
-              </div>
-            ) : searchResults.length > 0 ? (
-              // Results found
-              searchResults.map((result) => (
-                <Card
-                  key={result.id.toString()}
-                  className="p-4 hover:bg-slate-50 transition-colors duration-200 border-slate-200 relative group overflow-hidden"
-                >
-                  <div className="absolute inset-0 border-l-4 border-primary opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-start space-x-4">
-                      <div className="bg-blue-100 text-blue-800 rounded-full h-10 w-10 flex items-center justify-center shrink-0">
-                        {result.type === "Family" ? (
-                          <Users className="h-5 w-5" />
-                        ) : result.type === "Student" ? (
-                          <User className="h-5 w-5" />
-                        ) : (
-                          <Building className="h-5 w-5" />
-                        )}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-outer-space">{result.name}</h3>
-                          {result.hasWonOpportunities && (
-                            <Badge className="bg-green-100 text-green-800 font-medium">Active</Badge>
-                          )}
-                          {/* If we want to add the "Open" badge here, we'd need additional logic */}
-                        </div>
-                        <p className="text-sm text-slate-gray mt-1">{result.details}</p>
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="shrink-0"
-                      onClick={() => handleResultClick(result)}
-                    >
-                      View Family
-                    </Button>
-                  </div>
-                </Card>
-              ))
-            ) : searchQuery ? (
-              // No results found
-              <div className="text-center py-8 border rounded-lg bg-gray-50">
-                <p className="text-slate-gray">No families found matching "{searchQuery}"</p>
-                <p className="text-slate-400 text-sm mt-1">
-                  Try a different search term or reset filters
-                </p>
-              </div>
-            ) : (
-              // No search performed yet
-              <div className="text-center py-8 border rounded-lg bg-gray-50">
-                <p className="text-slate-gray">
-                  Use the search bar at the top to find families
-                </p>
-                <p className="text-slate-400 text-sm mt-1">
-                  or press <kbd className="px-1 py-0.5 rounded border shadow-sm text-xs">⌘K</kbd> to search
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
+        <div className="bg-white rounded-lg shadow-sm p-6 space-y-4"></div>
 
         {/* Ant Design Table Component */}
         <div className="bg-white rounded-lg shadow-sm p-6 space-y-4 mb-6">
@@ -825,7 +554,7 @@ const Search = () => {
             <div className="text-center py-8 border rounded-lg bg-gray-50">
               <p className="text-slate-gray">No family records available</p>
               <p className="text-slate-400 text-sm mt-1">
-                Use the search bar above to find families
+                Press <kbd className="px-1 py-0.5 rounded border shadow-sm text-xs">k</kbd> to search for families
               </p>
             </div>
           )}
