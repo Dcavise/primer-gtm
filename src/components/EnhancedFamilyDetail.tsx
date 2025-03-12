@@ -1,17 +1,10 @@
 import React from "react";
 import { useParams, Link, Navigate } from "react-router-dom";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from "@/components/ui/card";
-import { Avatar } from "@/components/ui/avatar";
-import { Tag } from "antd";
+import { Tabs as ShadcnTabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Avatar } from "@/components/ui/avatar";
+import { Tag, Tabs, Collapse, Badge, Divider, Space } from "antd";
 import { useEnhancedFamilyData, Student, StudentOpportunity } from "@/hooks/useEnhancedFamilyData";
 import {
   PhoneIcon,
@@ -29,7 +22,38 @@ import {
 } from "lucide-react";
 import { LoadingState } from "@/components/LoadingState";
 import ErrorState from "@/components/ErrorState";
-import { Collapse, Splitter } from "antd";
+import { Splitter, SplitterPanel } from 'primereact/splitter';
+
+// Custom styles for Ant Design components
+const tabStyles = `
+  .custom-tabs .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+    color: #773FF0 !important; /* Purple color for selected tab text */
+    font-weight: 500;
+  }
+  
+  .custom-tabs .ant-tabs-tab:hover {
+    color: rgba(119, 63, 240, 0.85) !important; /* Lighter purple on hover */
+  }
+  
+  .custom-tabs .ant-tabs-ink-bar {
+    background-color: #773FF0 !important; /* Matching bottom bar color */
+  }
+  
+  /* Apply the same styling to student headers */
+  .student-header-purple {
+    color: #773FF0 !important;
+  }
+  
+  /* Card shadow styling */
+  .card-shadow {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    transition: box-shadow 0.2s ease-in-out;
+  }
+  
+  .card-shadow:hover {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 2px 3px rgba(0, 0, 0, 0.08);
+  }
+`;
 
 // Format school year for display (e.g., "2024-2025" -> "24/25")
 const formatSchoolYearForDisplay = (schoolYear: string | undefined): string => {
@@ -68,18 +92,16 @@ const OpportunityCard: React.FC<OpportunityCardProps> = ({ opportunity, studentN
   const normalizedStage = opportunity.stage ? opportunity.stage.trim() : "New Application";
   
   return (
-    <Card className={opportunity.is_won ? "border-l-4 border-l-green-500" : ""}>
+    <Card>
       <CardHeader>
         <CardTitle>
           {formatSchoolYearForDisplay(opportunity.school_year)} School Year
         </CardTitle>
         <CardDescription>
-          <Tag 
+          <Badge 
             color={opportunity.is_won ? "green" : getOpportunityStageColor(normalizedStage)} 
-            bordered={false}
-          >
-            {normalizedStage || "New Application"}
-          </Tag>
+            text={opportunity.is_won ? "Won" : normalizedStage}
+          />
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -87,7 +109,7 @@ const OpportunityCard: React.FC<OpportunityCardProps> = ({ opportunity, studentN
           {/* Left column - Student Info */}
           <div className="space-y-4">
             <div>
-              <h3 className="font-medium text-base mb-2 pb-1 border-b border-gray-200">Student Information</h3>
+              <h3 className="font-medium text-base mb-2">Student Information</h3>
               
               <div className="space-y-3">
                 {opportunity.grade && (
@@ -110,7 +132,7 @@ const OpportunityCard: React.FC<OpportunityCardProps> = ({ opportunity, studentN
           {/* Right column - Opportunity Details */}
           <div className="space-y-4">
             <div>
-              <h3 className="font-medium text-base mb-2 pb-1 border-b border-gray-200">Opportunity Details</h3>
+              <h3 className="font-medium text-base mb-2">Opportunity Details</h3>
               
               <div className="space-y-3">
                 <div>
@@ -230,59 +252,11 @@ const EnhancedFamilyDetail: React.FC = () => {
             </Button>
           </div>
           
-          <Card className="mt-6 border-muted/40 shadow-sm overflow-hidden">
-            <CardHeader>
-              <CardTitle>Basic Family Information</CardTitle>
-              <CardDescription>
-                Limited data is available due to a database connection issue.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">Family Name</h3>
-                    <p className="text-base font-medium">{familyRecord.family_name}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">Family ID</h3>
-                    <p className="text-base font-mono text-xs bg-muted p-1 rounded">{familyRecord.family_id}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">PDC Family ID</h3>
-                    <p className="text-base font-medium">{familyRecord.pdc_family_id_c || "Not available"}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">Current Campus</h3>
-                    <p className="text-base font-medium">{familyRecord.current_campus_name || "Not assigned"}</p>
-                  </div>
-                </div>
-              </div>
+          <Card className="mt-6" style={{ border: 'none' }}>
+            <CardContent className="p-6" data-component-name="_c8" style={{ border: 'none' }}>
+              <h3 className="text-xl font-medium mb-2">No Student Records Found</h3>
+              <p className="text-muted-foreground">There are no student records associated with this family.</p>
             </CardContent>
-            <CardFooter className="bg-orange-50 p-4 border-t border-orange-100">
-              <div className="flex items-start">
-                <div className="mr-3 mt-1 flex-shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-orange-100">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" className="w-4 h-4 text-orange-600">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-orange-800">Limited Data Mode</h3>
-                  <p className="mt-1 text-sm text-orange-700">
-                    Unable to retrieve complete family data. Only basic information is displayed.
-                    Try refreshing the page or check database connectivity.
-                  </p>
-                  <div className="mt-3">
-                    <button 
-                      className="inline-flex items-center rounded-md bg-orange-100 px-2 py-1 text-sm font-medium text-orange-700 hover:bg-orange-200"
-                      onClick={() => window.location.reload()}
-                    >
-                      Retry Loading Complete Data
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </CardFooter>
           </Card>
           
           {/* Links / Resources Section */}
@@ -411,156 +385,158 @@ const EnhancedFamilyDetail: React.FC = () => {
 
   // Render students section with the new data structure
   const renderStudentsSection = () => {
-    if (!familyRecord.students || familyRecord.students.length === 0) {
+    if (!mergedStudents || mergedStudents.length === 0) {
       return (
-        <div className="text-center py-8">
-          <p className="text-muted-foreground">
-            No students found for this family.
-          </p>
-        </div>
+        <Card className="mt-6" style={{ border: 'none' }}>
+          <CardContent className="p-8" data-component-name="_c8" style={{ border: 'none' }}>
+            <h3 className="text-xl font-medium mb-2">No Student Records Found</h3>
+            <p className="text-muted-foreground">There are no student records associated with this family.</p>
+          </CardContent>
+        </Card>
       );
     }
-    
-    // mergedStudents is defined globally for all functions
 
     if (mergedStudents.length > 1) {
+      // Using Ant Design Tabs for multiple students
       return (
-        <Tabs defaultValue={mergedStudents[0].id} className="w-full">
-          <TabsList className="grid" style={{ gridTemplateColumns: `repeat(${Math.min(mergedStudents.length, 4)}, 1fr)` }}>
-            {mergedStudents.map((student) => (
-              <TabsTrigger key={`tab-${student.id}`} value={student.id}>
-                {getFixedStudentName(student)}
-                {student.opportunities.some(opp => opp.is_won) && (
-                  <Tag color="green" bordered={false} className="ml-2">Enrolled</Tag>
-                )}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          {mergedStudents.map((student) => (
-            <TabsContent key={`content-${student.id}`} value={student.id} className="mt-4">
-              <Card>
-                <CardHeader className="pb-0">
-                  <CardTitle className="text-xl font-semibold">
+        <div className="mt-6">
+          <Tabs
+            type="card"
+            defaultActiveKey={mergedStudents[0].id}
+            className="custom-tabs"
+            tabBarStyle={{ color: 'inherit' }}
+            items={mergedStudents.map((student) => {
+              return {
+                label: (
+                  <span>
                     {getFixedStudentName(student)}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  
-                  {/* Use Splitter for student information and opportunities */}
-                  <Splitter style={{ marginTop: 20 }}>
-                    {/* Left Panel - Student Information */}
-                    <Splitter.Panel size="40%">
-                      <div className="bg-card border border-muted/20 rounded-md p-4">
-                        <div className="space-y-4">
-                          <div>
-                            <div className="text-sm text-muted-foreground mb-1">Status</div>
-                            <div className="font-medium flex items-center">
-                              {student.opportunities.some(opp => opp.is_won && 
-                                formatSchoolYearForDisplay(opp.school_year).includes("25/26")) ? (
-                                <>
-                                  <Tag color="green" bordered={false}>Enrolled for 25/26</Tag>
-                                </>
-                              ) : student.opportunities.some(opp => opp.is_won && 
-                                formatSchoolYearForDisplay(opp.school_year).includes("24/25")) ? (
-                                <>
-                                  <Tag color="green" bordered={false}>Currently Enrolled (24/25)</Tag>
-                                </>
-                              ) : (
-                                <>
-                                  <Tag color="blue" bordered={false}>Prospective Student</Tag>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div>
-                            <div className="text-sm text-muted-foreground mb-1">Latest Grade</div>
-                            <div className="font-medium">
-                              {student.opportunities.length > 0 
-                                ? student.opportunities
-                                    .filter(opp => opp.grade)
-                                    .sort((a, b) => new Date(b.created_date).getTime() - new Date(a.created_date).getTime())[0]?.grade || "Not specified"
-                                : "Not specified"}
-                            </div>
-                          </div>
-                          
-                          <div>
-                            <div className="text-sm text-muted-foreground mb-1">Campus</div>
-                            <div className="font-medium">
-                              {student.opportunities.length > 0 
-                                ? student.opportunities
-                                    .filter(opp => opp.campus_name)
-                                    .sort((a, b) => new Date(b.created_date).getTime() - new Date(a.created_date).getTime())[0]?.campus_name || "Not assigned"
-                                : "Not assigned"}
-                            </div>
-                          </div>
-                          
-                          <div>
-                            <div className="text-sm text-muted-foreground mb-1">School Years</div>
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {Array.from(new Set(
-                                student.opportunities
-                                  .filter(opp => opp.school_year)
-                                  .map(opp => formatSchoolYearForDisplay(opp.school_year))
-                              )).map(year => (
-                                <Tag key={year} bordered={false} color={year === "24/25" ? "green" : "blue"}>
-                                  {year}
-                                </Tag>
-                              ))}
-                            </div>
-                          </div>
+                    {student.opportunities.some(opp => opp.is_won) && (
+                      <Badge color="green" text="Enrolled" className="ml-2" />
+                    )}
+                  </span>
+                ),
+                key: student.id,
+                children: (
+                  <Card className="mt-6" style={{ border: 'none' }}>
+                    <CardHeader className="pb-0">
+                      <div className="flex justify-between items-center">
+                        <div className="flex flex-col space-y-2">
+                          <CardTitle className="text-xl font-semibold student-header-purple">
+                            {getFixedStudentName(student)}
+                          </CardTitle>
+                          <h3 className="tracking-tight text-eerie-black text-xl font-semibold">Opportunities ({student.opportunities.length})</h3>
                         </div>
                       </div>
-                    </Splitter.Panel>
-                    
-                    {/* Right Panel - Opportunities */}
-                    <Splitter.Panel size="60%">
-                      <div className="bg-card border border-muted/20 rounded-md p-4">
-                        <h3 className="font-medium text-base mb-4 pb-2 border-b border-gray-200">Opportunities ({student.opportunities.length})</h3>
-                        
-                        {student.opportunities.length > 0 ? (
-                          <Collapse 
-                            accordion 
-                            items={student.opportunities.map((opportunity, index) => ({
-                              key: opportunity.id,
-                              label: (
-                                <div className="flex justify-between items-center">
-                                  <span>{opportunity.name}</span>
-                                  <Tag 
-                                    color={opportunity.is_won ? "green" : getOpportunityStageColor(opportunity.stage)} 
-                                    bordered={false}
-                                  >
-                                    {opportunity.is_won ? "Won" : opportunity.stage}
-                                  </Tag>
+                    </CardHeader>
+                    <CardContent>
+                      {/* Use Splitter for student information and opportunities */}
+                      <Splitter style={{ marginTop: 20 }}>
+                        {/* Left Panel - Student Information */}
+                        <SplitterPanel size={50}>
+                          <div className="bg-card rounded-md p-4">
+                            <div className="space-y-4">
+                              <div>
+                                <div className="text-sm text-muted-foreground mb-1">Status</div>
+                                <div className="font-medium flex items-center">
+                                  {student.opportunities.some(opp => opp.is_won && 
+                                    formatSchoolYearForDisplay(opp.school_year).includes("25/26")) ? (
+                                    <>
+                                      <Badge color="green" text="Enrolled for 25/26" />
+                                    </>
+                                  ) : student.opportunities.some(opp => opp.is_won && 
+                                      formatSchoolYearForDisplay(opp.school_year).includes("24/25")) ? (
+                                    <>
+                                      <Badge color="green" text="Enrolled for 24/25" />
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Badge color="blue" text="In Process" />
+                                    </>
+                                  )}
                                 </div>
-                              ),
-                              children: <OpportunityCard opportunity={opportunity} studentName={getFixedStudentName(student)} />
-                            }))}
-                          />
-                        ) : (
-                          <div className="text-muted-foreground italic">
-                            No opportunities found for this student.
+                              </div>
+                              <div>
+                                <div className="text-sm text-muted-foreground mb-1">Latest Grade</div>
+                                <div className="font-medium">
+                                  {student.opportunities.length > 0 
+                                    ? student.opportunities
+                                        .filter(opp => opp.grade)
+                                        .sort((a, b) => new Date(b.created_date).getTime() - new Date(a.created_date).getTime())[0]?.grade || "Not specified"
+                                    : "Not specified"}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-sm text-muted-foreground mb-1">Campus</div>
+                                <div className="font-medium">
+                                  {student.opportunities.length > 0 
+                                    ? student.opportunities
+                                        .filter(opp => opp.campus_name)
+                                        .sort((a, b) => new Date(b.created_date).getTime() - new Date(a.created_date).getTime())[0]?.campus_name || "Not assigned"
+                                    : "Not assigned"}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-sm text-muted-foreground mb-1">School Years</div>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {Array.from(new Set(
+                                    student.opportunities
+                                      .filter(opp => opp.school_year)
+                                      .map(opp => formatSchoolYearForDisplay(opp.school_year))
+                                  )).map(year => (
+                                    <Badge key={year} color={year === "24/25" ? "green" : "blue"} text={year} />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    </Splitter.Panel>
-                  </Splitter>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          ))}
-        </Tabs>
+                        </SplitterPanel>
+                        
+                        {/* Right Panel - Opportunities */}
+                        <SplitterPanel size={50}>
+                          <div className="bg-card rounded-md p-4">
+                            {student.opportunities.length > 0 ? (
+                              <Collapse 
+                                accordion 
+                                items={student.opportunities.map((opportunity, index) => ({
+                                  key: opportunity.id,
+                                  label: (
+                                    <div className="flex justify-between items-center">
+                                      <span>{opportunity.name}</span>
+                                      <Badge 
+                                        color={opportunity.is_won ? "green" : getOpportunityStageColor(opportunity.stage)} 
+                                        text={opportunity.is_won ? "Won" : opportunity.stage}
+                                      />
+                                    </div>
+                                  ),
+                                  children: <OpportunityCard opportunity={opportunity} studentName={getFixedStudentName(student)} />
+                                }))}
+                              />
+                            ) : (
+                              <div className="text-muted-foreground italic">
+                                No opportunities found for this student.
+                              </div>
+                            )}
+                          </div>
+                        </SplitterPanel>
+                      </Splitter>
+                    </CardContent>
+                  </Card>
+                ),
+              };
+            })}
+          />
+        </div>
       );
     } else if (mergedStudents.length === 1) {
       // If there's only one student, just show the cards without tabs
       const student = mergedStudents[0];
       return (
-        <Card>
+        <Card className="mt-6" style={{ border: 'none' }}>
           <CardHeader className="pb-0">
-            <CardTitle className="text-xl font-semibold flex items-center">
+            <CardTitle className="text-xl font-semibold student-header-purple">
               {getFixedStudentName(student)}
               {student.opportunities && student.opportunities.some(opp => opp.is_won) && (
-                <Tag color="green" bordered={false} className="ml-2">Enrolled</Tag>
+                <Badge color="green" text="Enrolled" className="ml-2" />
               )}
             </CardTitle>
           </CardHeader>
@@ -569,8 +545,8 @@ const EnhancedFamilyDetail: React.FC = () => {
             {/* Use Splitter for student information and opportunities */}
             <Splitter style={{ marginTop: 20 }}>
               {/* Left Panel - Student Information */}
-              <Splitter.Panel size="40%">
-                <div className="bg-card border border-muted/20 rounded-md p-4">
+              <SplitterPanel size={50}>
+                <div className="bg-card rounded-md p-4">
                   <div className="space-y-4">
                     <div>
                       <div className="text-sm text-muted-foreground mb-1">Status</div>
@@ -578,16 +554,16 @@ const EnhancedFamilyDetail: React.FC = () => {
                         {student.opportunities.some(opp => opp.is_won && 
                           formatSchoolYearForDisplay(opp.school_year).includes("25/26")) ? (
                           <>
-                            <Tag color="green" bordered={false}>Enrolled for 25/26</Tag>
+                            <Badge color="green" text="Enrolled for 25/26" />
                           </>
                         ) : student.opportunities.some(opp => opp.is_won && 
                           formatSchoolYearForDisplay(opp.school_year).includes("24/25")) ? (
                           <>
-                            <Tag color="green" bordered={false}>Currently Enrolled (24/25)</Tag>
+                            <Badge color="green" text="Enrolled for 24/25" />
                           </>
                         ) : (
                           <>
-                            <Tag color="blue" bordered={false}>Prospective Student</Tag>
+                            <Badge color="blue" text="In Process" />
                           </>
                         )}
                       </div>
@@ -623,21 +599,17 @@ const EnhancedFamilyDetail: React.FC = () => {
                             .filter(opp => opp.school_year)
                             .map(opp => formatSchoolYearForDisplay(opp.school_year))
                         )).map(year => (
-                          <Tag key={year} bordered={false} color={year === "24/25" ? "green" : "blue"}>
-                            {year}
-                          </Tag>
+                          <Badge key={year} color={year === "24/25" ? "green" : "blue"} text={year} />
                         ))}
                       </div>
                     </div>
                   </div>
                 </div>
-              </Splitter.Panel>
+              </SplitterPanel>
               
               {/* Right Panel - Opportunities */}
-              <Splitter.Panel size="60%">
-                <div className="bg-card border border-muted/20 rounded-md p-4">
-                  <h3 className="font-medium text-base mb-4 pb-2 border-b border-gray-200">Opportunities ({student.opportunities.length})</h3>
-                  
+              <SplitterPanel size={50}>
+                <div className="bg-card rounded-md p-4">
                   {student.opportunities.length > 0 ? (
                     <Collapse 
                       accordion 
@@ -646,12 +618,10 @@ const EnhancedFamilyDetail: React.FC = () => {
                         label: (
                           <div className="flex justify-between items-center">
                             <span>{opportunity.name}</span>
-                            <Tag 
+                            <Badge 
                               color={opportunity.is_won ? "green" : getOpportunityStageColor(opportunity.stage)} 
-                              bordered={false}
-                            >
-                              {opportunity.is_won ? "Won" : opportunity.stage}
-                            </Tag>
+                              text={opportunity.is_won ? "Won" : opportunity.stage}
+                            />
                           </div>
                         ),
                         children: <OpportunityCard opportunity={opportunity} studentName={getFixedStudentName(student)} />
@@ -663,7 +633,7 @@ const EnhancedFamilyDetail: React.FC = () => {
                     </div>
                   )}
                 </div>
-              </Splitter.Panel>
+              </SplitterPanel>
             </Splitter>
           </CardContent>
         </Card>
@@ -675,8 +645,74 @@ const EnhancedFamilyDetail: React.FC = () => {
   const mergedStudents = familyRecord.students ? mergeStudents(familyRecord.students) : [];
   console.log(`Merged ${familyRecord.students?.length || 0} students into ${mergedStudents.length} unique students`);
 
+  // Added function to implement the Ant Design Tabs
+  const AntTabsExample: React.FC = () => {
+    const onChange = (key: string) => {
+      console.log(key);
+    };
+
+    return (
+      <div className="mt-6">
+        <h3 className="font-medium text-lg mb-4">Ant Design Tabs Example</h3>
+        <Tabs
+          onChange={onChange}
+          type="card"
+          items={Array.from({ length: 3 }).map((_, i) => {
+            const id = String(i + 1);
+            return {
+              label: `Tab ${id}`,
+              key: id,
+              children: `Content of Tab Pane ${id}`,
+            };
+          })}
+        />
+      </div>
+    );
+  };
+
+  // Added Badge component example
+  const BadgeExample = () => {
+    const colors = [
+      'pink',
+      'red',
+      'yellow',
+      'orange',
+      'cyan',
+      'green',
+      'blue',
+      'purple',
+      'geekblue',
+      'magenta',
+      'volcano',
+      'gold',
+      'lime',
+    ];
+    
+    return (
+      <div className="mt-6">
+        <h3 className="font-medium text-lg mb-4">Status Badge Examples</h3>
+        <Divider orientation="left">Presets</Divider>
+        <Space direction="vertical">
+          {colors.map((color) => (
+            <Badge key={color} color={color} text={color} />
+          ))}
+        </Space>
+        <Divider orientation="left">Custom</Divider>
+        <Space direction="vertical">
+          <Badge color="#f50" text="#f50" />
+          <Badge color="rgb(45, 183, 245)" text="rgb(45, 183, 245)" />
+          <Badge color="hsl(102, 53%, 61%)" text="hsl(102, 53%, 61%)" />
+          <Badge color="hwb(205 6% 9%)" text="hwb(205 6% 9%)" />
+        </Space>
+      </div>
+    );
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-4">
+      {/* Add custom styles */}
+      <style>{tabStyles}</style>
+      
       {/* Header / Summary Section */}
       <div className="mb-8">
         <div className="flex justify-between items-start">
@@ -694,7 +730,7 @@ const EnhancedFamilyDetail: React.FC = () => {
                   formatSchoolYearForDisplay(opp.school_year).includes("25/26")
                 )
               ) && (
-                <Tag color="green" bordered={true} className="border-[3px] border-black">Active</Tag>
+                <Badge color="green" text="Active" className="font-medium" />
               )}
             </div>
 
@@ -731,8 +767,9 @@ const EnhancedFamilyDetail: React.FC = () => {
         </div>
 
         {/* Quick Parent Contact Information */}
-        <Card className="mt-6 border-muted/40 shadow-sm overflow-hidden">
-          <CardContent className="p-6">
+        <Card className="mt-6" style={{ border: 'none' }}>
+          <CardContent className="p-6" data-component-name="_c8" style={{ border: 'none' }}>
+            <Divider orientation="left">Family Information</Divider>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Parents Information - Left Column */}
               <div>
@@ -751,7 +788,7 @@ const EnhancedFamilyDetail: React.FC = () => {
                       {familyRecord.contacts.map((contact) => (
                         <TabsContent key={`content-${contact.id}`} value={contact.id} className="mt-4">
                           <div
-                            className="p-4 rounded-lg bg-card border border-muted/20 hover:border-muted/50 transition-colors"
+                            className="p-4 rounded-lg bg-card"
                             data-component-name="EnhancedFamilyDetail"
                           >
                             <div className="flex items-start" data-component-name="EnhancedFamilyDetail">
@@ -778,12 +815,13 @@ const EnhancedFamilyDetail: React.FC = () => {
                                       <span>{contact.email}</span>
                                     </div>
                                   )}
-                                  {contact.last_activity_date && (
+                                  {/* Remove Last Activity display */}
+                                  {/* {contact.last_activity_date && (
                                     <div className="flex items-center">
                                       <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
                                       <span>Last Activity: {new Date(contact.last_activity_date).toLocaleDateString()}</span>
                                     </div>
-                                  )}
+                                  )} */}
                                 </div>
                               </div>
                             </div>
@@ -797,7 +835,7 @@ const EnhancedFamilyDetail: React.FC = () => {
                       {familyRecord.contacts.map((contact) => (
                         <div
                           key={contact.id}
-                          className="p-4 rounded-lg bg-card border border-muted/20 hover:border-muted/50 transition-colors"
+                          className="p-4 rounded-lg bg-card"
                           data-component-name="EnhancedFamilyDetail"
                         >
                           <div className="flex items-start" data-component-name="EnhancedFamilyDetail">
@@ -824,12 +862,13 @@ const EnhancedFamilyDetail: React.FC = () => {
                                     <span>{contact.email}</span>
                                   </div>
                                 )}
-                                {contact.last_activity_date && (
+                                {/* Remove Last Activity display */}
+                                {/* {contact.last_activity_date && (
                                   <div className="flex items-center">
                                     <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
                                     <span>Last Activity: {new Date(contact.last_activity_date).toLocaleDateString()}</span>
                                   </div>
-                                )}
+                                )} */}
                               </div>
                             </div>
                           </div>
@@ -846,7 +885,7 @@ const EnhancedFamilyDetail: React.FC = () => {
 
               {/* Family Information - Right Column */}
               <div>
-                <div className="p-4 rounded-lg bg-card border border-muted/20 hover:border-muted/50 transition-colors">
+                <div className="p-4 rounded-lg bg-card">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Family Since Date */}
                     <div className="flex items-center">
@@ -903,9 +942,19 @@ const EnhancedFamilyDetail: React.FC = () => {
       <div className="space-y-8">
         {/* Students Section */}
         <div>
-          <h2 className="text-2xl font-bold mb-4">Students</h2>
-          {renderStudentsSection()}
+          {mergedStudents && mergedStudents.length > 0 && (
+            <>
+              <Divider orientation="left">Student Information</Divider>
+              {renderStudentsSection()}
+            </>
+          )}
         </div>
+
+        {/* Ant Design Tabs Example */}
+        <AntTabsExample />
+
+        {/* Badge Example */}
+        <BadgeExample />
 
         {/* Links / Resources Section */}
         <div className="bg-muted/20 rounded-lg p-6 mt-8">
@@ -940,7 +989,7 @@ const EnhancedFamilyDetail: React.FC = () => {
               </svg>
               PDC Link
             </a>
-
+            
             {/* Intercom Link */}
             <a 
               href={familyRecord.contacts && familyRecord.contacts.length > 0 && familyRecord.contacts[0].email ? 
@@ -982,7 +1031,7 @@ const EnhancedFamilyDetail: React.FC = () => {
               className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-[#0F9D58] text-white hover:bg-[#0F9D58]/90 h-10 px-4 py-2 ${!familyRecord.family_id ? 'opacity-50 pointer-events-none' : ''}`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-6"></path>
                 <polyline points="14 2 14 8 20 8" />
                 <line x1="16" y1="13" x2="8" y2="13" />
                 <line x1="16" y1="17" x2="8" y2="17" />
