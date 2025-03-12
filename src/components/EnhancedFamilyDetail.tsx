@@ -647,69 +647,6 @@ const EnhancedFamilyDetail: React.FC = () => {
   const mergedStudents = familyRecord.students ? mergeStudents(familyRecord.students) : [];
   console.log(`Merged ${familyRecord.students?.length || 0} students into ${mergedStudents.length} unique students`);
 
-  // Added function to implement the Ant Design Tabs
-  const AntTabsExample: React.FC = () => {
-    const onChange = (key: string) => {
-      console.log(key);
-    };
-
-    return (
-      <div className="mt-6">
-        <h3 className="font-medium text-lg mb-4">Ant Design Tabs Example</h3>
-        <Tabs
-          onChange={onChange}
-          type="card"
-          items={Array.from({ length: 3 }).map((_, i) => {
-            const id = String(i + 1);
-            return {
-              label: `Tab ${id}`,
-              key: id,
-              children: `Content of Tab Pane ${id}`,
-            };
-          })}
-        />
-      </div>
-    );
-  };
-
-  // Added Badge component example
-  const BadgeExample = () => {
-    const colors = [
-      'pink',
-      'red',
-      'yellow',
-      'orange',
-      'cyan',
-      'green',
-      'blue',
-      'purple',
-      'geekblue',
-      'magenta',
-      'volcano',
-      'gold',
-      'lime',
-    ];
-    
-    return (
-      <div className="mt-6">
-        <h3 className="font-medium text-lg mb-4">Status Badge Examples</h3>
-        <Divider orientation="left">Presets</Divider>
-        <Space direction="vertical">
-          {colors.map((color) => (
-            <Badge key={color} color={color} text={color} />
-          ))}
-        </Space>
-        <Divider orientation="left">Custom</Divider>
-        <Space direction="vertical">
-          <Badge color="#f50" text="#f50" />
-          <Badge color="rgb(45, 183, 245)" text="rgb(45, 183, 245)" />
-          <Badge color="hsl(102, 53%, 61%)" text="hsl(102, 53%, 61%)" />
-          <Badge color="hwb(205 6% 9%)" text="hwb(205 6% 9%)" />
-        </Space>
-      </div>
-    );
-  };
-
   return (
     <div className="max-w-6xl mx-auto p-4">
       {/* Add custom styles */}
@@ -951,12 +888,6 @@ const EnhancedFamilyDetail: React.FC = () => {
             </>
           )}
         </div>
-
-        {/* Ant Design Tabs Example */}
-        <AntTabsExample />
-
-        {/* Badge Example */}
-        <BadgeExample />
 
         {/* Links / Resources Section */}
         <div className="bg-muted/20 rounded-lg p-6 mt-8">
