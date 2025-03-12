@@ -483,7 +483,7 @@ const Search = () => {
             <Table 
               columns={tableColumns} 
               dataSource={tableData} 
-              pagination={{ pageSize: 5 }}
+              pagination={{ pageSize: 10 }}
               bordered
               onRow={(record) => ({
                 onClick: () => handleRowClick(record),
