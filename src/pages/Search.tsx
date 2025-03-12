@@ -440,6 +440,15 @@ const Search = () => {
             </div>
           </div>
           
+          {/* Results count */}
+          <div className="mb-4">
+            <span className="text-sm text-gray-600">
+              {loadingOpportunities ? 'Loading...' : `Showing ${tableData.length} opportunities for 25/26 school year`}
+              {campusFilter && ` at ${campusFilter}`}
+              {stageFilter && ` in ${stageFilter} stage`}
+            </span>
+          </div>
+          
           {loadingOpportunities ? (
             <div className="text-center py-8 border rounded-lg bg-gray-50">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
