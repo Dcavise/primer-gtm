@@ -640,9 +640,79 @@ const EnhancedFamilyDetail: React.FC = () => {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-6">
+                  {/* Student Information Container */}
+                  <div className="border rounded-lg p-4 bg-white dark:bg-gray-800">
+                    <h3 className="text-lg font-semibold mb-4">Student Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Left Column */}
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="font-medium text-base mb-2">Personal Details</h4>
+                          <div className="space-y-3">
+                            <div>
+                              <h5 className="text-sm font-medium text-muted-foreground">Full Name</h5>
+                              <p className="text-sm font-medium">{student.full_name}</p>
+                            </div>
+                            {student.opportunities && student.opportunities.length > 0 && (
+                              <>
+                                {student.opportunities[0].grade && (
+                                  <div>
+                                    <h5 className="text-sm font-medium text-muted-foreground">Current Grade</h5>
+                                    <p className="text-sm font-medium">{student.opportunities[0].grade}</p>
+                                  </div>
+                                )}
+                                {student.opportunities[0].campus_name && (
+                                  <div>
+                                    <h5 className="text-sm font-medium text-muted-foreground">Campus</h5>
+                                    <p className="text-sm font-medium">{student.opportunities[0].campus_name}</p>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Right Column */}
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="font-medium text-base mb-2">Enrollment Status</h4>
+                          <div className="space-y-3">
+                            {student.opportunities && student.opportunities.some(opp => opp.is_won) ? (
+                              <div className="flex items-center space-x-2">
+                                <div className="h-4 w-4 rounded-full bg-green-500"></div>
+                                <span className="text-sm font-medium">Enrolled</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center space-x-2">
+                                <div className="h-4 w-4 rounded-full bg-gray-400"></div>
+                                <span className="text-sm font-medium">Not Enrolled</span>
+                              </div>
+                            )}
+                            {student.opportunities && student.opportunities.length > 0 && (
+                              <div>
+                                <h5 className="text-sm font-medium text-muted-foreground">Current School Year</h5>
+                                <p className="text-sm font-medium">
+                                  {student.opportunities[0].school_year || "Unknown"}
+                                </p>
+                              </div>
+                            )}
+                            <div>
+                              <h5 className="text-sm font-medium text-muted-foreground">Total Opportunities</h5>
+                              <p className="text-sm font-medium">
+                                {student.opportunities ? student.opportunities.length : 0}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
                   {/* Student opportunities */}
                   <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Current Opportunities</h3>
                     {student.opportunities && student.opportunities.length > 0 ? (
                       student.opportunities.map((opportunity) => (
                         <OpportunityCard
@@ -655,6 +725,7 @@ const EnhancedFamilyDetail: React.FC = () => {
                       <div className="text-muted-foreground">No opportunities found</div>
                     )}
                   </div>
+                  
                   {/* Student Timeline */}
                   <StudentTimeline opportunities={student.opportunities} />
                 </CardContent>
