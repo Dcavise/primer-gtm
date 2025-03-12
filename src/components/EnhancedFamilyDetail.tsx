@@ -736,10 +736,6 @@ const EnhancedFamilyDetail: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Parents Information - Left Column */}
               <div>
-                <h3 className="text-lg font-medium mb-4 flex items-center">
-                  <UserIcon className="h-4 w-4 mr-2 text-primary" />
-                  Parent Contact Information
-                </h3>
                 {familyRecord.contacts && familyRecord.contacts.length > 0 ? (
                   familyRecord.contacts.length > 1 ? (
                     // Use tabs when there are multiple parent contacts
@@ -850,11 +846,6 @@ const EnhancedFamilyDetail: React.FC = () => {
 
               {/* Family Information - Right Column */}
               <div>
-                <h3 className="text-lg font-medium mb-4 flex items-center">
-                  <FileText className="h-4 w-4 mr-2 text-primary" />
-                  Family Information
-                </h3>
-                
                 <div className="p-4 rounded-lg bg-card border border-muted/20 hover:border-muted/50 transition-colors">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Family Since Date */}
