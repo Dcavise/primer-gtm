@@ -494,6 +494,7 @@ const EnhancedFamilyDetail: React.FC = () => {
                         {/* Right Panel - Opportunities */}
                         <SplitterPanel size={50}>
                           <div className="bg-card rounded-md p-4">
+                            <h3 className="text-lg font-medium mb-4">Opportunities</h3>
                             {student.opportunities.length > 0 ? (
                               <Collapse 
                                 accordion 
@@ -610,6 +611,7 @@ const EnhancedFamilyDetail: React.FC = () => {
               {/* Right Panel - Opportunities */}
               <SplitterPanel size={50}>
                 <div className="bg-card rounded-md p-4">
+                  <h3 className="text-lg font-medium mb-4">Opportunities</h3>
                   {student.opportunities.length > 0 ? (
                     <Collapse 
                       accordion 
