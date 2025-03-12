@@ -770,7 +770,7 @@ const EnhancedFamilyDetail: React.FC = () => {
         <Card className="mt-6" style={{ border: 'none' }}>
           <CardContent className="p-6" data-component-name="_c8" style={{ border: 'none' }}>
             <Divider orientation="left">Family Information</Divider>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8" style={{ backgroundColor: '#f5f5f5', padding: '16px', borderRadius: '8px' }}>
               {/* Parents Information - Left Column */}
               <div>
                 {familyRecord.contacts && familyRecord.contacts.length > 0 ? (
