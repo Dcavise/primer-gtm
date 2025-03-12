@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { Badge } from "../components/ui/badge";
-import { ChevronDown, Plus, UserRound, Search } from "lucide-react";
+import { ChevronDown, Plus, UserRound, Search, InfoIcon } from "lucide-react";
 import { supabase } from "../integrations/supabase-client";
 import { logger } from "@/utils/logger";
 import { format } from "date-fns";
@@ -105,6 +105,7 @@ const CampusStaffTracker: React.FC = () => {
         logger.info("Starting to fetch fellows data");
         
         // Direct SQL query to get fellow data with the required fields
+        // Remove the WHERE clause for now to see if we get any data at all
         const query = `
           SELECT 
             id,
@@ -117,7 +118,6 @@ const CampusStaffTracker: React.FC = () => {
             status
           FROM 
             fivetran_views.fellows
-          ${selectedStage ? `WHERE hiring_stage = '${selectedStage}'` : ''}
           ORDER BY 
             fellow_name ASC
         `;
@@ -143,6 +143,9 @@ const CampusStaffTracker: React.FC = () => {
             logger.debug("Sample fellow record:", fellowsData[0]);
           }
           
+          // Add this for extra debugging
+          console.log("Fellows data:", fellowsData);
+          
           setFellows(fellowsData);
         }
       } catch (err) {
@@ -157,14 +160,21 @@ const CampusStaffTracker: React.FC = () => {
     };
     
     fetchFellows();
-  }, [selectedStage]); // Re-fetch when selected stage changes
+  }, []); // Remove selectedStage dependency for now
   
-  // Filter fellows based on search query
-  const filteredFellows = fellows.filter(fellow => 
-    searchQuery === "" || 
-    fellow.fellow_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (fellow.grade_band && fellow.grade_band.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  // Filter fellows based on search query and selected stage
+  const filteredFellows = fellows.filter(fellow => {
+    // First check if it matches the search query
+    const matchesSearch = 
+      searchQuery === "" || 
+      fellow.fellow_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (fellow.grade_band && fellow.grade_band.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    // Then check if it matches the selected stage
+    const matchesStage = !selectedStage || fellow.hiring_stage === selectedStage;
+    
+    return matchesSearch && matchesStage;
+  });
 
   return (
     <div className="container mx-auto p-4">
@@ -254,6 +264,23 @@ const CampusStaffTracker: React.FC = () => {
       {fetchingFellows && (
         <div className="flex justify-center items-center p-8">
           <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
+        </div>
+      )}
+      
+      {/* Information for debugging */}
+      {!fetchingFellows && fellows.length === 0 && (
+        <div className="mb-6 p-4 bg-blue-50 text-blue-800 rounded-md flex items-start">
+          <InfoIcon className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+          <div>
+            <h3 className="font-medium">Debugging Information</h3>
+            <p className="text-sm mt-1">No fellow records were returned from the database query. Please check:</p>
+            <ul className="list-disc ml-5 text-sm mt-1">
+              <li>Database connection is working properly</li>
+              <li>Table 'fivetran_views.fellows' exists and has records</li>
+              <li>User has permissions to query this table</li>
+              <li>Check browser console for detailed logs</li>
+            </ul>
+          </div>
         </div>
       )}
 
