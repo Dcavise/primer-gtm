@@ -405,6 +405,7 @@ const EnhancedFamilyDetail: React.FC = () => {
             defaultActiveKey={mergedStudents[0].id}
             className="custom-tabs"
             tabBarStyle={{ color: 'inherit' }}
+            style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
             items={mergedStudents.map((student) => {
               return {
                 label: (
@@ -424,7 +425,6 @@ const EnhancedFamilyDetail: React.FC = () => {
                           <CardTitle className="text-xl font-semibold student-header-purple">
                             {getFixedStudentName(student)}
                           </CardTitle>
-                          <h3 className="tracking-tight text-eerie-black text-xl font-semibold">Opportunities ({student.opportunities.length})</h3>
                         </div>
                       </div>
                     </CardHeader>
