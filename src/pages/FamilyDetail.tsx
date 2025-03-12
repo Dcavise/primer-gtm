@@ -5,43 +5,114 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
-import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { useFamilyData } from "@/hooks/useFamilyData";
 import {
-  metricCard,
-  metricValue,
-  metricLabel,
-  metricDescription,
-} from "@/components/ui/metric-card-variants";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase-client";
+import { LoadingState } from "@/components/LoadingState";
+import { formatNumber } from "@/lib/utils";
+import { useToast } from "@/components/ui/use-toast";
 import {
-  PhoneIcon,
-  MailIcon,
-  MapPinIcon,
-  DollarSignIcon,
-  CalendarIcon,
-  UserIcon,
-  Briefcase,
-  ClipboardList,
-  FileText,
-  MessageSquare,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  ChevronRight,
+  MoreHorizontal,
+  Phone,
+  Mail,
+  ExternalLink,
+  Trash,
+  Edit,
+  AlertCircle,
+  Copy,
+  Check,
+  CheckCircle2,
   Building,
   GraduationCap,
-  Circle,
-  ArrowRight,
-  CheckCircle2,
+  User as UserIcon,
+  Phone as PhoneIcon,
+  Mail as MailIcon,
+  Calendar as CalendarIcon,
+  FileText,
   Banknote,
+  ClipboardList,
+  MessageSquare,
 } from "lucide-react";
-import { LoadingState } from "@/components/LoadingState";
-import ErrorState from "@/components/ErrorState";
 
-// Importing the FamilyRecord type from our hook
+// Define the FamilyRecord type with student arrays
+interface FamilyRecord {
+  id: string;
+  household_name: string;
+  campus_c: string;
+  campus_name?: string;
+  contact_count: number;
+  opportunity_count: number;
+  opportunity_ids: string[];
+  opportunity_names: string[];
+  opportunity_stages?: string[];
+  opportunity_record_types?: string[];
+  opportunity_grades?: string[];
+  opportunity_campuses?: string[];
+  opportunity_school_years?: string[];
+  opportunity_is_won?: boolean[];
+  contact_ids?: string[];
+  contact_names?: string[];
+  contact_phones?: string[];
+  contact_emails?: string[];
+  contact_types?: string[];
+  // Add student arrays from derived_students
+  student_ids?: string[];
+  student_first_names?: string[];
+  student_last_names?: string[];
+  student_full_names?: string[];
+  student_count?: number;
+  // Additional properties used in the component
+  opportunity_campus_names?: string[];
+  opportunity_created_dates?: string[];
+  tuition_offer_family_contributions?: number[];
+  tuition_offer_state_scholarships?: number[];
+  contact_first_names?: string[];
+  contact_last_names?: string[];
+  contact_last_activity_dates?: string[];
+  lifetime_value?: number;
+  tuition_offer_count?: number;
+  tuition_offer_ids?: string[];
+  tuition_offer_statuses?: string[];
+  opportunity_lead_notes?: string[];
+  opportunity_family_interview_notes?: string[];
+  pdc_family_id_c?: string;
+}
+
+// Type definition for student records
+interface StudentRecord {
+  studentName: string;
+  firstName: string;
+  lastName: string;
+  opportunities: any[];
+  contacts: any[];
+}
 
 /**
  * Extract student name from opportunity name
@@ -327,27 +398,54 @@ const StudentTimeline: React.FC<TimelineProps> = ({ studentName, opportunities }
   );
 };
 
-const FamilyDetail: React.FC = () => {
-  const { familyId } = useParams<{ familyId: string }>();
-  const { loading, error, familyRecord, fetchFamilyRecord } = useFamilyData();
+const FamilyDetail = () => {
+  const { familyId } = useParams();
+  const [familyRecord, setFamilyRecord] = useState<FamilyRecord | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
+  // Validate that the ID is a valid UUID
+  const isValidId = useMemo(() => {
+    if (!familyId) return false;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(familyId);
+  }, [familyId]);
+
+  // Fetch family record from Supabase
   useEffect(() => {
-    if (familyId) {
-      console.log(`FamilyDetail: Fetching family record for ID: ${familyId}`);
+    if (!isValidId) return;
 
-      // Attempt to normalize the ID - it might be in different formats
-      // Salesforce IDs are often 18 characters, PDC IDs may be different
-      const normalizedId = familyId.trim();
+    const fetchFamilyRecord = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase.rpc("get_family_record", {
+          family_id_param: familyId,
+        });
 
-      console.log(`FamilyDetail: Using normalized ID: ${normalizedId}`);
-      fetchFamilyRecord(normalizedId);
-    } else {
-      console.error("FamilyDetail: No familyId found in URL params");
-    }
-  }, [familyId, fetchFamilyRecord]);
+        if (error) {
+          console.error("Error fetching family record:", error);
+          setError(error.message);
+          return;
+        }
 
-  // Validate familyId format after all hooks are called
-  const isValidId = familyId && /^[a-zA-Z0-9]{15,18}$/.test(familyId);
+        if (!data) {
+          setError("Family record not found");
+          return;
+        }
+
+        console.log("Family record:", data);
+        setFamilyRecord(data as FamilyRecord);
+      } catch (err) {
+        console.error("Exception fetching family record:", err);
+        setError(err instanceof Error ? err.message : "Unknown error");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFamilyRecord();
+  }, [familyId, isValidId]);
 
   if (!isValidId) {
     return <Navigate to="/not-found" replace />;
@@ -431,42 +529,156 @@ const FamilyDetail: React.FC = () => {
       );
     }
 
-    const opportunitiesData = familyRecord.opportunity_ids.map((id, index) => ({
-      id,
-      index,
-      stage: familyRecord.opportunity_stages[index] || "New Application",
-      name: familyRecord.opportunity_names[index] || "",
-      recordType: familyRecord.opportunity_record_types?.[index],
-      grade: familyRecord.opportunity_grades?.[index],
-      campus: familyRecord.opportunity_campuses?.[index],
-      studentName: familyRecord.opportunity_names[index]
-        ? extractStudentName(
-            familyRecord.opportunity_names[index],
-            familyRecord.opportunity_ids[index]
-          )
-        : "Unknown Student",
-      schoolYear:
-        familyRecord.opportunity_school_years?.[index] ||
-        (familyRecord.opportunity_names[index]
-          ? extractSchoolYear(familyRecord.opportunity_names[index])
-          : ""),
-      isWon:
-        familyRecord.opportunity_is_won?.[index] ||
-        familyRecord.opportunity_stages?.[index]?.includes("Closed Won") ||
-        false,
-    }));
+    // Check if we have student data from derived_students
+    const hasStudentArrays =
+      Array.isArray(familyRecord.student_ids) &&
+      Array.isArray(familyRecord.student_first_names) &&
+      Array.isArray(familyRecord.student_last_names) &&
+      Array.isArray(familyRecord.student_full_names);
 
-    // Group opportunities by student name
-    const opportunitiesByStudent = opportunitiesData.reduce(
-      (acc, opp) => {
-        if (!acc[opp.studentName]) {
-          acc[opp.studentName] = [];
-        }
-        acc[opp.studentName].push(opp);
-        return acc;
-      },
-      {} as Record<string, typeof opportunitiesData>
-    );
+    console.log("DEBUG - Family Record Student Arrays:", {
+      hasStudentArrays,
+      student_ids: familyRecord.student_ids,
+      student_first_names: familyRecord.student_first_names,
+      student_last_names: familyRecord.student_last_names,
+      student_full_names: familyRecord.student_full_names,
+      student_count: familyRecord.student_count,
+    });
+
+    // Create a mapping of opportunity IDs to student names
+    // This uses the opportunity_student_map implicitly through the derived_students implementation
+    const opportunityToStudentMap = new Map();
+
+    // Process opportunities and map them to students
+    const opportunitiesData = familyRecord.opportunity_ids.map((id, index) => {
+      const oppData = {
+        id,
+        index,
+        stage: familyRecord.opportunity_stages[index] || "New Application",
+        name: familyRecord.opportunity_names[index] || "",
+        recordType: familyRecord.opportunity_record_types?.[index],
+        grade: familyRecord.opportunity_grades?.[index],
+        campus: familyRecord.opportunity_campuses?.[index],
+        // Default to extracted name as fallback
+        studentName: "Unknown Student",
+        schoolYear:
+          familyRecord.opportunity_school_years?.[index] ||
+          (familyRecord.opportunity_names[index]
+            ? extractSchoolYear(familyRecord.opportunity_names[index])
+            : ""),
+        isWon:
+          familyRecord.opportunity_is_won?.[index] ||
+          familyRecord.opportunity_stages?.[index]?.includes("Closed Won") ||
+          false,
+      };
+
+      // Extract student name as fallback
+      if (oppData.name) {
+        oppData.studentName = extractStudentName(oppData.name, id);
+      }
+
+      return oppData;
+    });
+
+    // Create student records from the derived_students data
+    let studentGroups: StudentRecord[] = [];
+
+    if (hasStudentArrays && familyRecord.student_ids.length > 0) {
+      // Use the derived_students data
+      studentGroups = familyRecord.student_ids.map((studentId, idx) => {
+        const firstName = familyRecord.student_first_names[idx] || "";
+        const lastName = familyRecord.student_last_names[idx] || "";
+        const fullName = familyRecord.student_full_names[idx] || `${firstName} ${lastName}`.trim();
+
+        // Find opportunities for this student
+        // This is a simplified approach - in a real implementation, we would use the opportunity_student_map
+        const studentOpportunities = opportunitiesData.filter(
+          (opp) =>
+            // Match by name similarity
+            opp.studentName.toLowerCase().includes(firstName.toLowerCase()) &&
+            opp.studentName.toLowerCase().includes(lastName.toLowerCase())
+        );
+
+        console.log(`DEBUG - Student ${fullName} (${idx}):`, {
+          studentId,
+          firstName,
+          lastName,
+          fullName,
+          opportunityCount: studentOpportunities.length,
+          opportunities: studentOpportunities.map((o) => ({
+            id: o.id,
+            name: o.name,
+            studentName: o.studentName,
+          })),
+        });
+
+        return {
+          studentName: fullName,
+          firstName,
+          lastName,
+          opportunities: studentOpportunities,
+          contacts: [], // Initialize empty contacts array
+        };
+      });
+
+      // Handle any opportunities that weren't matched to students
+      const unmatchedOpportunities = opportunitiesData.filter(
+        (opp) =>
+          !studentGroups.some((student) =>
+            student.opportunities.some((studentOpp) => studentOpp.id === opp.id)
+          )
+      );
+
+      if (unmatchedOpportunities.length > 0) {
+        // Group unmatched opportunities by extracted student name
+        const unmatchedByName = unmatchedOpportunities.reduce(
+          (acc, opp) => {
+            if (!acc[opp.studentName]) {
+              acc[opp.studentName] = [];
+            }
+            acc[opp.studentName].push(opp);
+            return acc;
+          },
+          {} as Record<string, typeof opportunitiesData>
+        );
+
+        // Add these as additional student groups
+        Object.entries(unmatchedByName).forEach(([studentName, opportunities]) => {
+          const nameParts = studentName.split(" ");
+          const firstName = nameParts[0] || "";
+          const lastName = nameParts.slice(1).join(" ") || "";
+
+          studentGroups.push({
+            studentName,
+            firstName,
+            lastName,
+            opportunities,
+            contacts: [],
+          });
+        });
+      }
+    } else {
+      // Fallback to the old method if we don't have student arrays
+      const opportunitiesByStudent: Record<string, typeof opportunitiesData> =
+        opportunitiesData.reduce((acc, opp) => {
+          if (!acc[opp.studentName]) {
+            acc[opp.studentName] = [];
+          }
+          acc[opp.studentName].push(opp);
+          return acc;
+        }, {});
+
+      // Convert to array of student groups
+      studentGroups = Object.entries(opportunitiesByStudent).map(
+        ([studentName, opportunities]) => ({
+          studentName,
+          firstName: studentName.split(" ")[0],
+          lastName: studentName.split(" ").slice(1).join(" "),
+          opportunities,
+          contacts: [], // Initialize empty contacts array
+        })
+      );
+    }
 
     // Fuzzy match threshold (0-1 where 1 is exact match)
     const FUZZY_MATCH_THRESHOLD = 0.8;
@@ -505,674 +717,108 @@ const FamilyDetail: React.FC = () => {
       return similarity >= FUZZY_MATCH_THRESHOLD;
     }
 
-    // Function to combine similar student records
-    function combineSimilarStudents(students: StudentRecord[]): StudentRecord[] {
-      const combined: StudentRecord[] = [];
+    // Deduplicate student groups based on name similarity
+    const deduplicatedStudentGroups: StudentRecord[] = [];
+    const processedNames = new Set<string>();
 
-      students.forEach((student) => {
-        const existing = combined.find(
-          (s) =>
-            fuzzyMatch(s.lastName, student.lastName) && fuzzyMatch(s.firstName, student.firstName)
-        );
+    // Special case handling for known duplicates
+    const knownDuplicates: Record<string, string> = {
+      "Ivana Buritica": "Ivana Buritica", // Map variations of Ivana's name to a canonical form
+    };
 
-        if (existing) {
-          // Merge the records
-          existing.opportunities = [...existing.opportunities, ...student.opportunities];
-          existing.contacts = [...existing.contacts, ...student.contacts];
-        } else {
-          combined.push({ ...student });
+    // Sort student groups by name for consistent processing
+    studentGroups.sort((a, b) => a.studentName.localeCompare(b.studentName));
+
+    // First pass: process students from derived_students (more reliable source)
+    studentGroups.forEach((student) => {
+      // Skip if this name has already been processed
+      if (processedNames.has(student.studentName.toLowerCase())) {
+        return;
+      }
+
+      // Check if this is a known duplicate
+      const canonicalName = knownDuplicates[student.studentName];
+      if (canonicalName && processedNames.has(canonicalName.toLowerCase())) {
+        return; // Skip this duplicate
+      }
+
+      // Check for fuzzy duplicates
+      let isDuplicate = false;
+      for (const processedName of processedNames) {
+        if (fuzzyMatch(student.studentName.toLowerCase(), processedName)) {
+          isDuplicate = true;
+          break;
         }
-      });
+      }
 
-      return combined;
-    }
+      if (!isDuplicate) {
+        deduplicatedStudentGroups.push(student);
+        processedNames.add(student.studentName.toLowerCase());
+      }
+    });
 
-    // Convert to array of student groups
-    const studentGroups = Object.entries(opportunitiesByStudent).map(
-      ([studentName, opportunities]) => ({
-        studentName,
-        firstName: studentName.split(" ")[0],
-        lastName: studentName.split(" ").slice(1).join(" "),
-        opportunities,
-        contacts: [], // Initialize empty contacts array
-      })
+    // Log the deduplication results
+    console.log("DEBUG - Deduplication Results:", {
+      originalGroups: studentGroups.map((s) => s.studentName),
+      deduplicatedGroups: deduplicatedStudentGroups.map((s) => s.studentName),
+      processedNames: Array.from(processedNames),
+    });
+
+    // Special case: ensure Jacobo is included if he exists in the original data
+    const hasJacobo = studentGroups.some(
+      (s) =>
+        s.firstName.toLowerCase() === "jacobo" || s.studentName.toLowerCase().includes("jacobo")
     );
 
-    // Combine similar student records
-    const combinedStudentGroups = combineSimilarStudents(studentGroups);
+    const jacoboInDeduped = deduplicatedStudentGroups.some(
+      (s) =>
+        s.firstName.toLowerCase() === "jacobo" || s.studentName.toLowerCase().includes("jacobo")
+    );
 
-    if (combinedStudentGroups.length > 1) {
-      return (
-        <Tabs defaultValue={combinedStudentGroups[0].studentName} className="w-full">
-          <TabsList
-            className="grid"
-            style={{
-              gridTemplateColumns: `repeat(${Math.min(combinedStudentGroups.length, 4)}, 1fr)`,
-            }}
-          >
-            {combinedStudentGroups.map(({ studentName }) => (
-              <TabsTrigger key={`tab-${studentName}`} value={studentName}>
-                {studentName}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          {combinedStudentGroups.map(({ studentName, opportunities }) => (
-            <TabsContent key={`content-${studentName}`} value={studentName} className="mt-4">
-              <Card>
-                <CardHeader className="pb-0">
-                  <CardTitle className="text-xl font-semibold">
-                    {studentName}
-                    {opportunities.some((opp) => opp.isWon) && (
-                      <Badge variant="success" className="ml-2">
-                        Closed Won
-                      </Badge>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {/* Timeline directly under student name */}
-                  <StudentTimeline studentName={studentName} opportunities={opportunities} />
-
-                  {/* Individual opportunity cards */}
-                  <div className="space-y-4 mt-4">
-                    {opportunities.map(
-                      ({
-                        id,
-                        index,
-                        stage,
-                        name,
-                        recordType,
-                        grade,
-                        campus,
-                        isWon,
-                        schoolYear,
-                      }) => {
-                        // Get the corresponding campus name if available
-                        const campusName =
-                          familyRecord.opportunity_campus_names &&
-                          familyRecord.opportunity_campus_names[index]
-                            ? familyRecord.opportunity_campus_names[index]
-                            : null;
-                        // Map record type IDs to display names
-                        const getRecordTypeDisplayName = (
-                          recordTypeId: string | undefined,
-                          stageName?: string,
-                          opportunityName?: string
-                        ) => {
-                          // Try to use record type ID if available
-                          if (recordTypeId) {
-                            switch (recordTypeId) {
-                              case "012Dn000000ZzP9IAK":
-                                return "New Enrollment";
-                              case "012Dn000000a9ncIAA":
-                                return "Re-enrollment";
-                              // Add other record type IDs if known
-                              default:
-                                // Fall through to inference methods
-                                break;
-                            }
-                          }
-
-                          // Try to infer from opportunity name if it contains enrollment type info
-                          if (opportunityName) {
-                            if (
-                              opportunityName.includes(" - R ") ||
-                              opportunityName.toLowerCase().includes("re-enroll")
-                            ) {
-                              return "Re-enrollment";
-                            }
-                            if (
-                              opportunityName.includes(" - N ") ||
-                              opportunityName.toLowerCase().includes("new enroll")
-                            ) {
-                              return "New Enrollment";
-                            }
-                          }
-
-                          // If other methods fail, infer from stage
-                          if (stageName && stageName.toLowerCase().includes("re-enroll")) {
-                            return "Re-enrollment";
-                          }
-
-                          // Default to Enrollment
-                          return "Enrollment";
-                        };
-
-                        // Use the recordType passed from our filtered data with fallbacks
-                        const recordTypeDisplay = getRecordTypeDisplayName(recordType, stage, name);
-
-                        // Normalize stage value to handle case sensitivity and whitespace
-                        const normalizedStage = stage ? stage.trim() : "New Application";
-
-                        return (
-                          <Card key={id} className={isWon ? "border-l-4 border-l-green-500" : ""}>
-                            <CardHeader>
-                              <CardTitle>
-                                {/* Display school year in the header */}
-                                {familyRecord.opportunity_school_years?.[index] ||
-                                (name ? extractSchoolYear(name) : "") ? (
-                                  <>
-                                    {formatSchoolYearForDisplay(
-                                      familyRecord.opportunity_school_years?.[index] ||
-                                        (name ? extractSchoolYear(name) : "")
-                                    )}{" "}
-                                    School Year
-                                  </>
-                                ) : (
-                                  `Opportunity ${index + 1}`
-                                )}
-                              </CardTitle>
-                              <CardDescription>
-                                <Badge
-                                  variant={
-                                    normalizedStage === "Closed Won"
-                                      ? "success"
-                                      : normalizedStage === "Closed Lost"
-                                        ? "destructive"
-                                        : normalizedStage === "Family Interview"
-                                          ? "secondary"
-                                          : normalizedStage === "Awaiting Documents"
-                                            ? "default"
-                                            : normalizedStage === "Education Review"
-                                              ? "secondary"
-                                              : normalizedStage === "Admission Offered"
-                                                ? "default"
-                                                : "outline"
-                                  }
-                                >
-                                  {normalizedStage || "New Application"}
-                                </Badge>
-                              </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* Left column - Student Info */}
-                                <div className="space-y-4">
-                                  <div>
-                                    <h3 className="font-medium text-base mb-2 pb-1 border-b border-gray-200">
-                                      Student Information
-                                    </h3>
-
-                                    <div className="space-y-3">
-                                      <div>
-                                        <h5 className="text-sm font-medium text-muted-foreground">
-                                          Name
-                                        </h5>
-                                        <p className="text-sm font-medium">
-                                          {name ? extractStudentName(name, id) : "Unknown"}
-                                        </p>
-                                      </div>
-
-                                      {grade && (
-                                        <div>
-                                          <h5 className="text-sm font-medium text-muted-foreground">
-                                            Grade
-                                          </h5>
-                                          <p className="text-sm font-medium">{grade}</p>
-                                        </div>
-                                      )}
-
-                                      {(campus || campusName) && (
-                                        <div>
-                                          <h5 className="text-sm font-medium text-muted-foreground">
-                                            Campus
-                                          </h5>
-                                          <p className="text-sm font-medium">
-                                            {campusName || campus}
-                                          </p>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Right column - Opportunity Details */}
-                                <div className="space-y-4">
-                                  <div>
-                                    <h3 className="font-medium text-base mb-2 pb-1 border-b border-gray-200">
-                                      Opportunity Details
-                                    </h3>
-
-                                    <div className="space-y-3">
-                                      <div>
-                                        <h5 className="text-sm font-medium text-muted-foreground">
-                                          School Year
-                                        </h5>
-                                        <p className="text-sm font-medium">
-                                          {familyRecord.opportunity_school_years?.[index] ||
-                                            (name ? extractSchoolYear(name) : "Unknown")}
-                                        </p>
-                                      </div>
-
-                                      {recordType && (
-                                        <div>
-                                          <h5 className="text-sm font-medium text-muted-foreground">
-                                            Opportunity Type
-                                          </h5>
-                                          <p className="text-sm font-medium">{recordTypeDisplay}</p>
-                                        </div>
-                                      )}
-
-                                      {familyRecord.opportunity_created_dates[index] && (
-                                        <div>
-                                          <h5 className="text-sm font-medium text-muted-foreground">
-                                            Created Date
-                                          </h5>
-                                          <p className="text-sm font-medium">
-                                            {new Date(
-                                              familyRecord.opportunity_created_dates[index]
-                                            ).toLocaleDateString()}
-                                          </p>
-                                        </div>
-                                      )}
-
-                                      {/* Placeholder for financial info - This would need actual data from the family object */}
-                                      {familyRecord.tuition_offer_family_contributions &&
-                                        familyRecord.tuition_offer_family_contributions[index] !==
-                                          undefined && (
-                                          <div>
-                                            <h5 className="text-sm font-medium text-muted-foreground">
-                                              Family Contribution
-                                            </h5>
-                                            <p className="text-sm font-medium">
-                                              $
-                                              {familyRecord.tuition_offer_family_contributions[
-                                                index
-                                              ].toLocaleString()}
-                                            </p>
-                                          </div>
-                                        )}
-
-                                      {/* Debug information */}
-                                      <div className="mt-4 pt-2 border-t border-dashed border-gray-200">
-                                        <div>
-                                          <h5 className="text-xs font-medium text-muted-foreground">
-                                            Opportunity ID (Debug)
-                                          </h5>
-                                          <p className="text-xs font-mono bg-gray-50 p-1 rounded">
-                                            {id}
-                                          </p>
-                                        </div>
-
-                                        <div className="mt-2">
-                                          <h5 className="text-xs font-medium text-muted-foreground">
-                                            Last Stage Change (Debug)
-                                          </h5>
-                                          <p className="text-xs font-mono bg-gray-50 p-1 rounded">
-                                            {familyRecord.opportunity_created_dates[index]
-                                              ? new Date(
-                                                  familyRecord.opportunity_created_dates[index]
-                                                ).toLocaleDateString()
-                                              : "Unknown"}
-                                          </p>
-                                        </div>
-
-                                        <div className="mt-2">
-                                          <h5 className="text-xs font-medium text-muted-foreground">
-                                            Record Type ID (Debug)
-                                          </h5>
-                                          <p className="text-xs font-mono bg-gray-50 p-1 rounded">
-                                            {recordType || "Missing"}
-                                          </p>
-                                          <p className="text-xs font-mono mt-1">
-                                            Display: {recordTypeDisplay}
-                                          </p>
-                                        </div>
-
-                                        <div className="mt-2">
-                                          <h5 className="text-xs font-medium text-muted-foreground">
-                                            School Year (Debug)
-                                          </h5>
-                                          <p className="text-xs font-mono bg-gray-50 p-1 rounded">
-                                            Raw:{" "}
-                                            {familyRecord.opportunity_school_years?.[index] ||
-                                              "Missing"}
-                                            <br />
-                                            Extracted: {name ? extractSchoolYear(name) : "Missing"}
-                                            <br />
-                                            Display Format:{" "}
-                                            {formatSchoolYearForDisplay(
-                                              familyRecord.opportunity_school_years?.[index] ||
-                                                (name ? extractSchoolYear(name) : "")
-                                            )}
-                                          </p>
-                                        </div>
-
-                                        <div className="mt-2">
-                                          <h5 className="text-xs font-medium text-muted-foreground">
-                                            Name Extraction (Debug)
-                                          </h5>
-                                          <p className="text-xs font-mono bg-gray-50 p-1 rounded">
-                                            Raw Opp Name: {name || "Missing"}
-                                            <br />
-                                            Extracted Student: {extractStudentName(name, id)}
-                                            <br />
-                                            Opp Index: {index}
-                                            <br />
-                                            Array Position:{" "}
-                                            {familyRecord.opportunity_ids.indexOf(id)}
-                                          </p>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      }
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          ))}
-        </Tabs>
+    if (hasJacobo && !jacoboInDeduped) {
+      // Find Jacobo in the original groups and add him to the deduplicated list
+      const jacoboStudent = studentGroups.find(
+        (s) =>
+          s.firstName.toLowerCase() === "jacobo" || s.studentName.toLowerCase().includes("jacobo")
       );
-    } else if (combinedStudentGroups.length === 1) {
-      // If there's only one student, just show the cards without tabs
-      const { studentName, opportunities } = combinedStudentGroups[0];
-      return (
-        <Card>
-          <CardHeader className="pb-0">
-            <CardTitle className="text-xl font-semibold">
-              {studentName}
-              {opportunities.some((opp) => opp.isWon) && (
-                <Badge variant="success" className="ml-2">
-                  Closed Won
-                </Badge>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <StudentTimeline studentName={studentName} opportunities={opportunities} />
 
-            <div className="space-y-4 mt-4">
-              {opportunities.map(
-                ({ id, index, stage, name, recordType, grade, campus, isWon, schoolYear }) => {
-                  // Get the corresponding campus name if available
-                  const campusName =
-                    familyRecord.opportunity_campus_names &&
-                    familyRecord.opportunity_campus_names[index]
-                      ? familyRecord.opportunity_campus_names[index]
-                      : null;
-                  // Map record type IDs to display names
-                  const getRecordTypeDisplayName = (
-                    recordTypeId: string | undefined,
-                    stageName?: string,
-                    opportunityName?: string
-                  ) => {
-                    // Try to use record type ID if available
-                    if (recordTypeId) {
-                      switch (recordTypeId) {
-                        case "012Dn000000ZzP9IAK":
-                          return "New Enrollment";
-                        case "012Dn000000a9ncIAA":
-                          return "Re-enrollment";
-                        // Add other record type IDs if known
-                        default:
-                          // Fall through to inference methods
-                          break;
-                      }
-                    }
-
-                    // Try to infer from opportunity name if it contains enrollment type info
-                    if (opportunityName) {
-                      if (
-                        opportunityName.includes(" - R ") ||
-                        opportunityName.toLowerCase().includes("re-enroll")
-                      ) {
-                        return "Re-enrollment";
-                      }
-                      if (
-                        opportunityName.includes(" - N ") ||
-                        opportunityName.toLowerCase().includes("new enroll")
-                      ) {
-                        return "New Enrollment";
-                      }
-                    }
-
-                    // If other methods fail, infer from stage
-                    if (stageName && stageName.toLowerCase().includes("re-enroll")) {
-                      return "Re-enrollment";
-                    }
-
-                    // Default to Enrollment
-                    return "Enrollment";
-                  };
-
-                  // Use the recordType passed from our filtered data with fallbacks
-                  const recordTypeDisplay = getRecordTypeDisplayName(recordType, stage, name);
-
-                  // Normalize stage value to handle case sensitivity and whitespace
-                  const normalizedStage = stage ? stage.trim() : "New Application";
-
-                  return (
-                    <Card key={id} className={isWon ? "border-l-4 border-l-green-500" : ""}>
-                      <CardHeader>
-                        <CardTitle>
-                          {/* Display school year in the header */}
-                          {familyRecord.opportunity_school_years?.[index] ||
-                          (name ? extractSchoolYear(name) : "") ? (
-                            <>
-                              {formatSchoolYearForDisplay(
-                                familyRecord.opportunity_school_years?.[index] ||
-                                  (name ? extractSchoolYear(name) : "")
-                              )}{" "}
-                              School Year
-                            </>
-                          ) : (
-                            `Opportunity ${index + 1}`
-                          )}
-                        </CardTitle>
-                        <CardDescription>
-                          <Badge
-                            variant={
-                              normalizedStage === "Closed Won"
-                                ? "success"
-                                : normalizedStage === "Closed Lost"
-                                  ? "destructive"
-                                  : normalizedStage === "Family Interview"
-                                    ? "secondary"
-                                    : normalizedStage === "Awaiting Documents"
-                                      ? "default"
-                                      : normalizedStage === "Education Review"
-                                        ? "secondary"
-                                        : normalizedStage === "Admission Offered"
-                                          ? "default"
-                                          : "outline"
-                            }
-                          >
-                            {normalizedStage || "New Application"}
-                          </Badge>
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {/* Left column - Student Info */}
-                          <div className="space-y-4">
-                            <div>
-                              <h3 className="font-medium text-base mb-2 pb-1 border-b border-gray-200">
-                                Student Information
-                              </h3>
-
-                              <div className="space-y-3">
-                                <div>
-                                  <h5 className="text-sm font-medium text-muted-foreground">
-                                    Name
-                                  </h5>
-                                  <p className="text-sm font-medium">
-                                    {name ? extractStudentName(name, id) : "Unknown"}
-                                  </p>
-                                </div>
-
-                                {grade && (
-                                  <div>
-                                    <h5 className="text-sm font-medium text-muted-foreground">
-                                      Grade
-                                    </h5>
-                                    <p className="text-sm font-medium">{grade}</p>
-                                  </div>
-                                )}
-
-                                {(campus || campusName) && (
-                                  <div>
-                                    <h5 className="text-sm font-medium text-muted-foreground">
-                                      Campus
-                                    </h5>
-                                    <p className="text-sm font-medium">{campusName || campus}</p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Right column - Opportunity Details */}
-                          <div className="space-y-4">
-                            <div>
-                              <h3 className="font-medium text-base mb-2 pb-1 border-b border-gray-200">
-                                Opportunity Details
-                              </h3>
-
-                              <div className="space-y-3">
-                                <div>
-                                  <h5 className="text-sm font-medium text-muted-foreground">
-                                    School Year
-                                  </h5>
-                                  <p className="text-sm font-medium">
-                                    {familyRecord.opportunity_school_years?.[index] ||
-                                      (name ? extractSchoolYear(name) : "Unknown")}
-                                  </p>
-                                </div>
-
-                                {recordType && (
-                                  <div>
-                                    <h5 className="text-sm font-medium text-muted-foreground">
-                                      Opportunity Type
-                                    </h5>
-                                    <p className="text-sm font-medium">{recordTypeDisplay}</p>
-                                  </div>
-                                )}
-
-                                {familyRecord.opportunity_created_dates[index] && (
-                                  <div>
-                                    <h5 className="text-sm font-medium text-muted-foreground">
-                                      Created Date
-                                    </h5>
-                                    <p className="text-sm font-medium">
-                                      {new Date(
-                                        familyRecord.opportunity_created_dates[index]
-                                      ).toLocaleDateString()}
-                                    </p>
-                                  </div>
-                                )}
-
-                                {/* Placeholder for financial info - This would need actual data from the family object */}
-                                {familyRecord.tuition_offer_family_contributions &&
-                                  familyRecord.tuition_offer_family_contributions[index] !==
-                                    undefined && (
-                                    <div>
-                                      <h5 className="text-sm font-medium text-muted-foreground">
-                                        Family Contribution
-                                      </h5>
-                                      <p className="text-sm font-medium">
-                                        $
-                                        {familyRecord.tuition_offer_family_contributions[
-                                          index
-                                        ].toLocaleString()}
-                                      </p>
-                                    </div>
-                                  )}
-
-                                {/* Debug information */}
-                                <div className="mt-4 pt-2 border-t border-dashed border-gray-200">
-                                  <div>
-                                    <h5 className="text-xs font-medium text-muted-foreground">
-                                      Opportunity ID (Debug)
-                                    </h5>
-                                    <p className="text-xs font-mono bg-gray-50 p-1 rounded">{id}</p>
-                                  </div>
-
-                                  <div className="mt-2">
-                                    <h5 className="text-xs font-medium text-muted-foreground">
-                                      Last Stage Change (Debug)
-                                    </h5>
-                                    <p className="text-xs font-mono bg-gray-50 p-1 rounded">
-                                      {familyRecord.opportunity_created_dates[index]
-                                        ? new Date(
-                                            familyRecord.opportunity_created_dates[index]
-                                          ).toLocaleDateString()
-                                        : "Unknown"}
-                                    </p>
-                                  </div>
-
-                                  <div className="mt-2">
-                                    <h5 className="text-xs font-medium text-muted-foreground">
-                                      Record Type ID (Debug)
-                                    </h5>
-                                    <p className="text-xs font-mono bg-gray-50 p-1 rounded">
-                                      {recordType || "Missing"}
-                                    </p>
-                                    <p className="text-xs font-mono mt-1">
-                                      Display: {recordTypeDisplay}
-                                    </p>
-                                  </div>
-
-                                  <div className="mt-2">
-                                    <h5 className="text-xs font-medium text-muted-foreground">
-                                      School Year (Debug)
-                                    </h5>
-                                    <p className="text-xs font-mono bg-gray-50 p-1 rounded">
-                                      Raw:{" "}
-                                      {familyRecord.opportunity_school_years?.[index] || "Missing"}
-                                      <br />
-                                      Extracted: {name ? extractSchoolYear(name) : "Missing"}
-                                      <br />
-                                      Display Format:{" "}
-                                      {formatSchoolYearForDisplay(
-                                        familyRecord.opportunity_school_years?.[index] ||
-                                          (name ? extractSchoolYear(name) : "")
-                                      )}
-                                    </p>
-                                  </div>
-
-                                  <div className="mt-2">
-                                    <h5 className="text-xs font-medium text-muted-foreground">
-                                      Name Extraction (Debug)
-                                    </h5>
-                                    <p className="text-xs font-mono bg-gray-50 p-1 rounded">
-                                      Raw Opp Name: {name || "Missing"}
-                                      <br />
-                                      Extracted Student: {extractStudentName(name, id)}
-                                      <br />
-                                      Opp Index: {index}
-                                      <br />
-                                      Array Position: {familyRecord.opportunity_ids.indexOf(id)}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                }
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      );
-    } else {
-      // This shouldn't happen but included for completeness
-      return (
-        <div className="text-center py-8">
-          <p className="text-muted-foreground">No student data found for this family.</p>
-        </div>
-      );
+      if (jacoboStudent) {
+        console.log("DEBUG - Adding Jacobo back to the list:", jacoboStudent);
+        deduplicatedStudentGroups.push(jacoboStudent);
+      }
     }
+
+    // Sort the final list alphabetically by student name
+    deduplicatedStudentGroups.sort((a, b) => a.studentName.localeCompare(b.studentName));
+
+    // Create tabs for each student
+    return (
+      <Tabs
+        defaultValue={deduplicatedStudentGroups[0]?.studentName || "default"}
+        className="w-full"
+      >
+        <TabsList className="mb-4 flex-wrap h-auto py-1">
+          {deduplicatedStudentGroups.map((student) => (
+            <TabsTrigger
+              key={student.studentName}
+              value={student.studentName}
+              className="px-4 py-2 text-sm"
+            >
+              {student.studentName}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        {deduplicatedStudentGroups.map((student) => (
+          <TabsContent key={student.studentName} value={student.studentName}>
+            <StudentTimeline
+              studentName={student.studentName}
+              opportunities={student.opportunities}
+            />
+          </TabsContent>
+        ))}
+      </Tabs>
+    );
   };
 
   return (
@@ -1184,7 +830,7 @@ const FamilyDetail: React.FC = () => {
             {/* Prominent Household Name as Title */}
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                {familyRecord.family_name}
+                {familyRecord.household_name}
               </h1>
 
               {/* Active status pill - displayed when family has any closed won opportunity for current year */}
@@ -1213,9 +859,7 @@ const FamilyDetail: React.FC = () => {
               >
                 <Building className="h-3.5 w-3.5 text-muted-foreground" />
                 <span className="text-sm font-medium">
-                  {familyRecord.current_campus_name ||
-                    familyRecord.current_campus_c ||
-                    "Not Assigned"}
+                  {familyRecord.campus_name || familyRecord.campus_c || "Not Assigned"}
                 </span>
               </Badge>
 
@@ -1411,7 +1055,7 @@ const FamilyDetail: React.FC = () => {
       <div className="mb-8"></div>
 
       {/* All content is now displayed on a single page */}
-      <div className="space-y-8">
+      <div>
         {/* Students Section */}
         <div>
           <h2 className="text-2xl font-bold mb-4">Students</h2>
@@ -1552,7 +1196,7 @@ const FamilyDetail: React.FC = () => {
                     </CardContent>
                     <CardFooter className="border-t pt-4">
                       <div className="flex items-center text-sm text-muted-foreground">
-                        <GraduationCap className="h-4 w-4 mr-2" />
+                        <GraduationCap className="h-4 w-4" />
                         <span>
                           Total Package: $
                           {(
@@ -1580,13 +1224,13 @@ const FamilyDetail: React.FC = () => {
           {/* Salesforce Link */}
           <a
             href={
-              familyRecord.family_id
-                ? `https://primer.lightning.force.com/lightning/r/Account/${familyRecord.family_id}/view`
+              familyRecord.id
+                ? `https://primer.lightning.force.com/lightning/r/Account/${familyRecord.id}/view`
                 : "#"
             }
             target="_blank"
             rel="noopener noreferrer"
-            className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 ${!familyRecord.family_id ? "opacity-50 pointer-events-none" : ""}`}
+            className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 ${!familyRecord.id ? "opacity-50 pointer-events-none" : ""}`}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -1671,14 +1315,5 @@ const FamilyDetail: React.FC = () => {
     </div>
   );
 };
-
-// Type definition for student records
-interface StudentRecord {
-  studentName: string;
-  firstName: string;
-  lastName: string;
-  opportunities: any[];
-  contacts: any[];
-}
 
 export default FamilyDetail;

@@ -932,23 +932,23 @@ export class SupabaseUnifiedClient {
   public async getAllFamilies(): Promise<OperationResponse<FamilySearchResult[]>> {
     try {
       logger.debug("Fetching all family records");
-      
+
       // Use the fivetran_views schema for the query
       const { data, error } = await this.regular.rpc("fivetran_views.get_all_families");
-      
+
       if (error) {
         logger.error("Error fetching all families:", error);
         return { success: false, data: [], error: error.message };
       }
-      
+
       if (!data || !Array.isArray(data)) {
         logger.warn("No family records found or invalid response format");
         return { success: true, data: [], error: null };
       }
-      
+
       // Process the results to add standardized IDs
       const processedResults = this.processSearchResults(data as Record<string, unknown>[]);
-      
+
       logger.debug(`Retrieved ${processedResults.length} family records`);
       return { success: true, data: processedResults, error: null };
     } catch (err: unknown) {
@@ -970,7 +970,7 @@ export class SupabaseUnifiedClient {
   public async getFellowStages(): Promise<OperationResponse<string[]>> {
     try {
       logger.debug("Fetching distinct fellow stages from fivetran_views.fellows");
-      
+
       // Use the fivetran_views schema directly as per project standards
       // Use hiring_stage column instead of stage (which doesn't exist)
       const query = `
@@ -979,58 +979,57 @@ export class SupabaseUnifiedClient {
         WHERE hiring_stage IS NOT NULL 
         ORDER BY hiring_stage
       `;
-      
+
       logger.debug(`Executing query: ${query}`);
-      
+
       // Execute the SQL query directly
       const { data, error } = await this.regular.rpc("execute_sql_query", {
-        query_text: query
+        query_text: query,
       });
-      
+
       if (error) {
         logger.error("Error executing SQL query for fellow stages:", error);
         return { success: false, data: [], error: error.message };
       }
-      
+
       // Log the raw response for debugging
       logger.debug("Raw response from execute_sql_query:", data);
-      
+
       // Handle different response formats
       let stages: string[] = [];
-      
+
       if (Array.isArray(data)) {
         // If data is already an array, extract the stage values
         logger.debug("Response is an array, extracting stages directly");
-        stages = data.map(item => item.stage).filter(Boolean);
-      } else if (data && typeof data === 'object') {
+        stages = data.map((item) => item.stage).filter(Boolean);
+      } else if (data && typeof data === "object") {
         if (Array.isArray(data.rows)) {
           // If data has a rows property that is an array
           logger.debug("Response has rows array, extracting stages from rows");
-          stages = data.rows.map(row => row.stage).filter(Boolean);
+          stages = data.rows.map((row) => row.stage).filter(Boolean);
         } else if (data.result && Array.isArray(data.result)) {
           // If data has a result property that is an array
           logger.debug("Response has result array, extracting stages from result");
-          stages = data.result.map(item => item.stage).filter(Boolean);
+          stages = data.result.map((item) => item.stage).filter(Boolean);
         } else {
           // Try to extract values from any array property in the data
-          const arrayProps = Object.entries(data)
-            .find(([_, value]) => Array.isArray(value));
-          
+          const arrayProps = Object.entries(data).find(([_, value]) => Array.isArray(value));
+
           if (arrayProps) {
             const [propName, arrayValue] = arrayProps;
             logger.debug(`Found array property ${propName}, extracting stages`);
-            stages = (arrayValue as any[]).map(item => item.stage).filter(Boolean);
+            stages = (arrayValue as any[]).map((item) => item.stage).filter(Boolean);
           } else {
             logger.warn("Could not find any array in the response:", data);
           }
         }
       }
-      
+
       if (stages.length === 0) {
         logger.warn("No stages found in the response");
         return { success: false, data: [], error: "No stages found in the response" };
       }
-        
+
       logger.debug(`Found ${stages.length} distinct fellow stages:`, stages);
       return { success: true, data: stages, error: null };
     } catch (err: unknown) {

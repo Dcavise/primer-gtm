@@ -3,12 +3,7 @@ import { useNavigate } from "react-router-dom";
 import SearchBox from "../components/SearchBox";
 import { Table, Select, Button } from "antd";
 import type { TableColumnsType } from "antd";
-import {
-  Search as SearchIcon,
-  Building,
-  Filter,
-  X
-} from "lucide-react";
+import { Search as SearchIcon, Building, Filter, X } from "lucide-react";
 import { supabase } from "../integrations/supabase-client";
 
 // Define interface for campus data returned from RPC
@@ -118,17 +113,17 @@ const Search = () => {
             SELECT id, name as campus_name
             FROM fivetran_views.campus_c
             ORDER BY name
-          `
+          `,
         });
-        
+
         if (error) {
           console.error("Error fetching campuses:", error);
         } else if (data && Array.isArray(data)) {
           setCampuses(data);
-          
+
           // Create a map of campus IDs to names for easy lookup
           const campusMapData: Record<string, string> = {};
-          data.forEach(campus => {
+          data.forEach((campus) => {
             campusMapData[campus.id] = campus.campus_name;
           });
           setCampusMap(campusMapData);
@@ -139,7 +134,7 @@ const Search = () => {
         setIsLoadingCampuses(false);
       }
     };
-    
+
     fetchCampuses();
   }, []);
 
@@ -154,10 +149,10 @@ const Search = () => {
 
   const handleSearchResultSelect = (result: SearchResult) => {
     console.log("Selected search result:", result);
-    
+
     // Determine the best ID to use for navigation
     const bestId = result.family_id || result.id;
-    
+
     // Navigate based on the result type
     switch (result.type) {
       case "Family":
@@ -178,9 +173,9 @@ const Search = () => {
   };
 
   const campusOptions = useMemo(() => {
-    return campuses?.map(campus => campus.campus_name) || [];
+    return campuses?.map((campus) => campus.campus_name) || [];
   }, [campuses]);
-  
+
   const resetFilters = () => {
     setCampusFilter(null);
     setStageFilter(null);
@@ -190,23 +185,23 @@ const Search = () => {
   useEffect(() => {
     const fetchOpportunities = async () => {
       setLoadingOpportunities(true);
-      
+
       try {
         // Build WHERE clause with filters
         let whereClause = "o.is_deleted = false AND o.school_year_c = '25/26'";
-        
+
         if (campusFilter) {
           whereClause += ` AND cc.name = '${campusFilter}'`;
         }
-        
+
         if (stageFilter) {
           whereClause += ` AND o.stage_name = '${stageFilter}'`;
         }
-        
+
         if (gradeFilter) {
           whereClause += ` AND o.grade_c = '${gradeFilter}'`;
         }
-        
+
         // Direct SQL query to get the opportunities with required fields and filters
         const query = `
           SELECT 
@@ -232,27 +227,27 @@ const Search = () => {
             o.created_date DESC
           LIMIT 100
         `;
-        
+
         console.log("Executing opportunity query:", query);
-        
+
         // Execute the query using the regular client
         const { data, error } = await supabase.regular.rpc("execute_sql_query", {
-          query_text: query
+          query_text: query,
         });
-        
+
         if (error) {
           console.error("Error fetching opportunities:", error);
           setTableData([]);
           return;
         }
-        
+
         console.log("Opportunity data result:", data);
-        
+
         // Process the data based on its structure
         let opportunityData = [];
         if (Array.isArray(data)) {
           opportunityData = data;
-        } else if (data && typeof data === 'object') {
+        } else if (data && typeof data === "object") {
           if (Array.isArray(data.rows)) {
             opportunityData = data.rows;
           } else if (data.result && Array.isArray(data.result)) {
@@ -267,9 +262,9 @@ const Search = () => {
             }
           }
         }
-        
+
         console.log("Processed opportunity data:", opportunityData);
-        
+
         // Map to DataType format
         const mappedData = opportunityData.map((opp, index) => ({
           key: index.toString(),
@@ -280,25 +275,31 @@ const Search = () => {
           grade: opp.grade || "K-8",
           school_year: opp.school_year || "",
           campus: opp.campus_name || "Unknown Campus",
-          tuition: typeof opp.tuition === 'number' ? opp.tuition : 0,
+          tuition: typeof opp.tuition === "number" ? opp.tuition : 0,
           account_id: opp.account_id || "",
           account_name: opp.account_name || "",
           familyIds: {
             family_id: opp.account_id || "",
-          }
+          },
         }));
-        
+
         console.log("Mapped table data:", mappedData);
         setTableData(mappedData);
-        
+
         // Extract unique stages and campuses for filters
-        const uniqueCampuses = Array.from(new Set(opportunityData.map(item => item.campus_name).filter(Boolean)));
+        const uniqueCampuses = Array.from(
+          new Set(opportunityData.map((item) => item.campus_name).filter(Boolean))
+        );
         setAvailableCampuses(uniqueCampuses);
-        
-        const uniqueStages = Array.from(new Set(opportunityData.map(item => item.stage).filter(Boolean)));
+
+        const uniqueStages = Array.from(
+          new Set(opportunityData.map((item) => item.stage).filter(Boolean))
+        );
         setAvailableStages(uniqueStages);
-        
-        const uniqueGrades = Array.from(new Set(opportunityData.map(item => item.grade).filter(Boolean)));
+
+        const uniqueGrades = Array.from(
+          new Set(opportunityData.map((item) => item.grade).filter(Boolean))
+        );
         setAvailableGrades(uniqueGrades);
       } catch (err) {
         console.error("Failed to fetch opportunities:", err);
@@ -307,7 +308,7 @@ const Search = () => {
         setLoadingOpportunities(false);
       }
     };
-    
+
     // Load opportunities on component mount
     fetchOpportunities();
   }, [campusFilter, stageFilter, gradeFilter]);
@@ -323,7 +324,7 @@ const Search = () => {
           WHERE cc.name IS NOT NULL
           ORDER BY cc.name
         `;
-        
+
         // Query to get distinct stages
         const stagesQuery = `
           SELECT DISTINCT stage_name
@@ -331,7 +332,7 @@ const Search = () => {
           WHERE stage_name IS NOT NULL
           ORDER BY stage_name
         `;
-        
+
         // Query to get distinct grades
         const gradesQuery = `
           SELECT DISTINCT grade_c
@@ -339,36 +340,36 @@ const Search = () => {
           WHERE grade_c IS NOT NULL
           ORDER BY grade_c
         `;
-        
+
         // Execute all queries
         const [campusesResult, stagesResult, gradesResult] = await Promise.all([
           supabase.regular.rpc("execute_sql_query", { query_text: campusesQuery }),
           supabase.regular.rpc("execute_sql_query", { query_text: stagesQuery }),
-          supabase.regular.rpc("execute_sql_query", { query_text: gradesQuery })
+          supabase.regular.rpc("execute_sql_query", { query_text: gradesQuery }),
         ]);
-        
+
         // Process campuses
         if (campusesResult.data && Array.isArray(campusesResult.data)) {
-          const campuses = campusesResult.data.map(row => row.name).filter(Boolean);
+          const campuses = campusesResult.data.map((row) => row.name).filter(Boolean);
           setAvailableCampuses(campuses);
         }
-        
+
         // Process stages
         if (stagesResult.data && Array.isArray(stagesResult.data)) {
-          const stages = stagesResult.data.map(row => row.stage_name).filter(Boolean);
+          const stages = stagesResult.data.map((row) => row.stage_name).filter(Boolean);
           setAvailableStages(stages);
         }
-        
+
         // Process grades
         if (gradesResult.data && Array.isArray(gradesResult.data)) {
-          const grades = gradesResult.data.map(row => row.grade_c).filter(Boolean);
+          const grades = gradesResult.data.map((row) => row.grade_c).filter(Boolean);
           setAvailableGrades(grades);
         }
       } catch (err) {
         console.error("Failed to fetch filter options:", err);
       }
     };
-    
+
     fetchFilterOptions();
   }, []);
 
@@ -377,73 +378,83 @@ const Search = () => {
       console.error("Cannot navigate - missing family ID", record);
       return;
     }
-    
+
     // Log for debugging
     console.log(`Table: Navigating to family detail with ID: ${record.id}`);
-    
+
     // Navigate to the family detail page
     navigate(`/family-detail/${record.id}`);
   };
 
   const tableColumns: TableColumnsType<DataType> = [
     {
-      title: 'Opportunity',
-      dataIndex: 'name',
-      key: 'name',
+      title: "Opportunity",
+      dataIndex: "name",
+      key: "name",
     },
     {
-      title: 'Campus',
-      dataIndex: 'campus',
-      key: 'campus',
+      title: "Campus",
+      dataIndex: "campus",
+      key: "campus",
     },
     {
-      title: 'Student',
-      dataIndex: 'student_name',
-      key: 'student_name',
+      title: "Student",
+      dataIndex: "student_name",
+      key: "student_name",
     },
     {
-      title: 'Stage',
-      dataIndex: 'stage',
-      key: 'stage',
+      title: "Stage",
+      dataIndex: "stage",
+      key: "stage",
       render: (stage) => {
         // Define badge colors based on stage
-        let badgeColor = '';
-        
-        if (stage === 'Closed Won') {
-          badgeColor = 'bg-green-100 text-green-800 border-green-200';
-        } else if (['Awaiting Documents', 'Family Interview', 'Admission Offered', 'Education Review', 'Preparing Offer'].includes(stage)) {
-          badgeColor = 'bg-orange-100 text-orange-800 border-orange-200';
-        } else if (stage === 'Closed Lost') {
-          badgeColor = 'bg-red-100 text-red-800 border-red-200';
+        let badgeColor = "";
+
+        if (stage === "Closed Won") {
+          badgeColor = "bg-green-100 text-green-800 border-green-200";
+        } else if (
+          [
+            "Awaiting Documents",
+            "Family Interview",
+            "Admission Offered",
+            "Education Review",
+            "Preparing Offer",
+          ].includes(stage)
+        ) {
+          badgeColor = "bg-orange-100 text-orange-800 border-orange-200";
+        } else if (stage === "Closed Lost") {
+          badgeColor = "bg-red-100 text-red-800 border-red-200";
         } else {
-          badgeColor = 'bg-gray-100 text-gray-800 border-gray-200';
+          badgeColor = "bg-gray-100 text-gray-800 border-gray-200";
         }
-        
+
         return (
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${badgeColor}`}>
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${badgeColor}`}
+          >
             {stage}
           </span>
         );
-      }
+      },
     },
     {
-      title: 'Grade',
-      dataIndex: 'grade',
-      key: 'grade',
+      title: "Grade",
+      dataIndex: "grade",
+      key: "grade",
     },
     {
-      title: 'Tuition',
-      dataIndex: 'tuition',
-      key: 'tuition',
+      title: "Tuition",
+      dataIndex: "tuition",
+      key: "tuition",
       render: (value) => {
         // Ensure value is a number before formatting
-        const numValue = typeof value === 'number' ? value : 0;
+        const numValue = typeof value === "number" ? value : 0;
         return `$${numValue.toLocaleString()}`;
       },
     },
     {
-      title: 'Family Profile',
-      key: 'family_profile',
+      title: "Family Profile",
+      key: "family_profile",
       render: (_, record) => (
         <Button
           type="primary"
@@ -457,7 +468,7 @@ const Search = () => {
           View Family
         </Button>
       ),
-    }
+    },
   ];
 
   return (
@@ -468,19 +479,21 @@ const Search = () => {
           <div className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg shadow-sm text-slate-600">
             <SearchIcon className="h-4 w-4 text-slate-400" />
             <span>Press</span>
-            <kbd className="px-2 py-0.5 bg-gray-50 border border-slate-200 rounded text-xs font-mono">k</kbd>
+            <kbd className="px-2 py-0.5 bg-gray-50 border border-slate-200 rounded text-xs font-mono">
+              k
+            </kbd>
             <span>to search families</span>
           </div>
         </div>
 
         {/* Only the hover state SearchBox Component is used from App.tsx */}
-        
+
         <div className="bg-white rounded-lg shadow-sm p-6 space-y-4"></div>
 
         {/* Opportunity Table Component */}
         <div className="bg-white rounded-lg shadow-sm p-6 space-y-4 mb-6">
           <h2 className="text-2xl font-semibold text-outer-space mb-4">25/26 Opportunities</h2>
-          
+
           {/* Filters */}
           <div className="flex flex-wrap gap-4 mb-4 pb-4 border-b">
             <div>
@@ -491,10 +504,10 @@ const Search = () => {
                 allowClear
                 value={campusFilter}
                 onChange={(value) => setCampusFilter(value)}
-                options={availableCampuses.map(campus => ({ label: campus, value: campus }))}
+                options={availableCampuses.map((campus) => ({ label: campus, value: campus }))}
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Stage</label>
               <Select
@@ -503,10 +516,10 @@ const Search = () => {
                 allowClear
                 value={stageFilter}
                 onChange={(value) => setStageFilter(value)}
-                options={availableStages.map(stage => ({ label: stage, value: stage }))}
+                options={availableStages.map((stage) => ({ label: stage, value: stage }))}
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Grade</label>
               <Select
@@ -515,12 +528,12 @@ const Search = () => {
                 allowClear
                 value={gradeFilter}
                 onChange={(value) => setGradeFilter(value)}
-                options={availableGrades.map(grade => ({ label: grade, value: grade }))}
+                options={availableGrades.map((grade) => ({ label: grade, value: grade }))}
               />
             </div>
-            
+
             <div className="flex items-end">
-              <Button 
+              <Button
                 onClick={resetFilters}
                 className="bg-gray-100 hover:bg-gray-200 text-gray-700"
               >
@@ -528,38 +541,41 @@ const Search = () => {
               </Button>
             </div>
           </div>
-          
+
           {/* Results count */}
           <div className="mb-4">
             <span className="text-sm text-gray-600">
-              {loadingOpportunities ? 'Loading...' : `Showing ${tableData.length} opportunities for 25/26 school year`}
+              {loadingOpportunities
+                ? "Loading..."
+                : `Showing ${tableData.length} opportunities for 25/26 school year`}
               {campusFilter && ` at ${campusFilter}`}
               {stageFilter && ` in ${stageFilter} stage`}
               {gradeFilter && ` for grade ${gradeFilter}`}
             </span>
           </div>
-          
+
           {loadingOpportunities ? (
             <div className="text-center py-8 border rounded-lg bg-gray-50">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
               <p className="text-slate-gray">Loading opportunities...</p>
             </div>
           ) : tableData.length > 0 ? (
-            <Table 
-              columns={tableColumns} 
-              dataSource={tableData} 
+            <Table
+              columns={tableColumns}
+              dataSource={tableData}
               pagination={{ pageSize: 10 }}
               bordered
               onRow={(record) => ({
                 onClick: () => handleRowClick(record),
-                style: { cursor: 'pointer' }
+                style: { cursor: "pointer" },
               })}
             />
           ) : (
             <div className="text-center py-8 border rounded-lg bg-gray-50">
               <p className="text-slate-gray">No opportunity records available</p>
               <p className="text-slate-400 text-sm mt-1">
-                Press <kbd className="px-1 py-0.5 rounded border shadow-sm text-xs">k</kbd> to search for a family
+                Press <kbd className="px-1 py-0.5 rounded border shadow-sm text-xs">k</kbd> to
+                search for a family
               </p>
             </div>
           )}

@@ -11,10 +11,10 @@ import debounce from "lodash.debounce";
  */
 const formatCampusId = (campusId: string | undefined): string => {
   if (!campusId) return "Not Assigned";
-  
+
   // If it's already a readable name, return it
   if (!campusId.startsWith("a0NUH")) return campusId;
-  
+
   // Remove the prefix and any numbers
   return campusId.replace(/^a0NUH/, "").replace(/[0-9]/g, "") || campusId;
 };

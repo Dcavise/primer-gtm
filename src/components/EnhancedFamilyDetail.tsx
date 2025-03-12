@@ -350,10 +350,10 @@ const EnhancedFamilyDetail: React.FC = () => {
       (student.last_name.toLowerCase().includes("buriti") ||
         student.last_name.toLowerCase().includes("butit"))
     ) {
-      // Return corrected name format based on opportunity IDs or other identifiers
-      const isIvana = student.opportunities.some(
-        (opp) => opp.id === "006UH00000IPT46YAH" || student.first_name.toLowerCase().includes("iva")
-      );
+      // Return corrected name format based on first name and opportunity IDs
+      const isIvana =
+        student.first_name.toLowerCase().includes("iva") ||
+        student.opportunities.some((opp) => opp.id === "006UH00000IPT46YAH");
 
       const isJacobo = student.first_name.toLowerCase().includes("jac");
 
@@ -361,6 +361,7 @@ const EnhancedFamilyDetail: React.FC = () => {
       if (isJacobo) return "Jacobo Buritica";
     }
 
+    // If no special case applies, use the original full name
     return student.full_name;
   };
 
@@ -368,381 +369,182 @@ const EnhancedFamilyDetail: React.FC = () => {
   const mergeStudents = (students: Student[]): Student[] => {
     if (!students || students.length <= 1) return students;
 
-    // Group students by normalized name
-    const studentsByName: Record<string, Student[]> = {};
+    console.log(
+      "Original students before merging:",
+      students.map((s) => ({
+        id: s.id,
+        firstName: s.first_name,
+        lastName: s.last_name,
+        fullName: s.full_name,
+      }))
+    );
 
-    // First pass: group by normalized names
+    // Create a map to track processed students by their normalized name
+    const processedStudents = new Map<string, boolean>();
+
+    // Deduplicated array of students
+    const uniqueStudents: Student[] = [];
+
+    // First pass: handle Ivana Buritica explicitly to ensure she only appears once
+    let ivanaAdded = false;
+    let jacoboAdded = false;
+
     students.forEach((student) => {
-      // Generate a normalized key for the student based on case-insensitive first name
-      // and a simplified last name (to handle Buritica family special case)
-      const firstName = student.first_name.toLowerCase();
-      let lastName = student.last_name.toLowerCase();
+      // Check if this is Ivana Buritica
+      if (
+        student.first_name.toLowerCase().includes("iva") &&
+        (student.last_name.toLowerCase().includes("buriti") ||
+          student.last_name.toLowerCase().includes("butit"))
+      ) {
+        // Only add Ivana once
+        if (!ivanaAdded) {
+          // Create a clean version of Ivana with a consistent ID
+          const ivana = {
+            ...student,
+            id: "student-ivana-buritica",
+            first_name: "Ivana",
+            last_name: "Buritica",
+            full_name: "Ivana Buritica",
+          };
 
-      // Handle Buritica family special case
-      if (lastName.includes("buriti") || lastName.includes("butit")) {
-        lastName = "buritica";
+          uniqueStudents.push(ivana);
+          ivanaAdded = true;
+          processedStudents.set("ivana-buritica", true);
+        }
+        // Skip adding duplicate Ivana records
+        return;
       }
 
-      const key = `${firstName}-${lastName}`;
+      // Check if this is Jacobo (any spelling variation)
+      if (
+        student.first_name.toLowerCase().includes("jac") &&
+        (student.last_name.toLowerCase().includes("buriti") ||
+          student.last_name.toLowerCase().includes("butit"))
+      ) {
+        // Only add Jacobo once
+        if (!jacoboAdded) {
+          // Create a clean version of Jacobo with a consistent ID
+          const jacobo = {
+            ...student,
+            id: "student-jacobo-buritica",
+            first_name: "Jacobo",
+            last_name: "Buritica",
+            full_name: "Jacobo Buritica",
+          };
 
-      if (!studentsByName[key]) {
-        studentsByName[key] = [];
+          uniqueStudents.push(jacobo);
+          jacoboAdded = true;
+          processedStudents.set("jacobo-buritica", true);
+        }
+        return;
       }
-      studentsByName[key].push(student);
+
+      // For all other students, normalize the name and check if we've seen it before
+      const normalizedName = `${student.first_name.toLowerCase()}-${student.last_name.toLowerCase()}`;
+
+      if (!processedStudents.has(normalizedName)) {
+        uniqueStudents.push(student);
+        processedStudents.set(normalizedName, true);
+      }
     });
 
-    // Second pass: merge students with the same normalized name
-    const mergedStudents: Student[] = [];
+    console.log(
+      "Deduplicated students after merging:",
+      uniqueStudents.map((s) => ({
+        id: s.id,
+        firstName: s.first_name,
+        lastName: s.last_name,
+        fullName: s.full_name,
+      }))
+    );
 
-    Object.values(studentsByName).forEach((group) => {
-      if (group.length === 1) {
-        // No need to merge
-        mergedStudents.push(group[0]);
-      } else {
-        // Merge this group of students
-        const mergedStudent: Student = {
-          ...group[0],
-          opportunities: [],
-        };
-
-        // Combine all opportunities from the group
-        group.forEach((student) => {
-          mergedStudent.opportunities = [...mergedStudent.opportunities, ...student.opportunities];
-        });
-
-        // Use the fixed name for this student
-        mergedStudent.full_name = getFixedStudentName(mergedStudent);
-
-        mergedStudents.push(mergedStudent);
-      }
-    });
-
-    return mergedStudents;
+    return uniqueStudents;
   };
 
   // Render students section with the new data structure
   const renderStudentsSection = () => {
-    if (!mergedStudents || mergedStudents.length === 0) {
-      return (
-        <Card className="mt-6" style={{ border: "none" }}>
-          <CardContent className="p-8" data-component-name="_c8" style={{ border: "none" }}>
-            <h3 className="text-xl font-medium mb-2">No Student Records Found</h3>
-            <p className="text-muted-foreground">
-              There are no student records associated with this family.
-            </p>
-          </CardContent>
-        </Card>
-      );
+    if (!familyRecord || !familyRecord.students || familyRecord.students.length === 0) {
+      return <div className="mt-6">No student data available</div>;
     }
 
-    if (mergedStudents.length > 1) {
-      // Using Ant Design Tabs for multiple students
-      return (
-        <div className="mt-6">
-          <Tabs
-            type="card"
-            defaultActiveKey={mergedStudents[0].id}
-            className="custom-tabs"
-            tabBarStyle={{ color: "inherit" }}
-            style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}
-            items={mergedStudents.map((student) => {
-              return {
-                label: (
-                  <span>
-                    {getFixedStudentName(student)}
-                    {student.opportunities.some((opp) => opp.is_won) && (
-                      <Badge color="green" text="Enrolled" className="ml-2" />
-                    )}
-                  </span>
-                ),
-                key: student.id,
-                children: (
-                  <Card className="mt-6" style={{ border: "none" }}>
-                    <CardHeader className="pb-0">
-                      <div className="flex justify-between items-center">
-                        <div className="flex flex-col space-y-2">
-                          <CardTitle className="text-xl font-semibold">
-                            {getFixedStudentName(student)}
-                          </CardTitle>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {/* Use Splitter for student information and opportunities */}
-                      <Splitter style={{ marginTop: 20 }}>
-                        {/* Left Panel - Student Information */}
-                        <SplitterPanel size={50}>
-                          <div className="bg-card rounded-md p-4">
-                            <div className="space-y-4">
-                              <div>
-                                <div className="text-sm text-muted-foreground mb-1">Status</div>
-                                <div className="font-medium flex items-center">
-                                  {student.opportunities.some(
-                                    (opp) =>
-                                      opp.is_won &&
-                                      formatSchoolYearForDisplay(opp.school_year).includes("25/26")
-                                  ) ? (
-                                    <>
-                                      <Badge color="green" text="Enrolled for 25/26" />
-                                    </>
-                                  ) : student.opportunities.some(
-                                      (opp) =>
-                                        opp.is_won &&
-                                        formatSchoolYearForDisplay(opp.school_year).includes(
-                                          "24/25"
-                                        )
-                                    ) ? (
-                                    <>
-                                      <Badge color="green" text="Enrolled for 24/25" />
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Badge color="blue" text="In Process" />
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-sm text-muted-foreground mb-1">
-                                  Latest Grade
-                                </div>
-                                <div className="font-medium">
-                                  {student.opportunities.length > 0
-                                    ? student.opportunities
-                                        .filter((opp) => opp.grade)
-                                        .sort(
-                                          (a, b) =>
-                                            new Date(b.created_date).getTime() -
-                                            new Date(a.created_date).getTime()
-                                        )[0]?.grade || "Not specified"
-                                    : "Not specified"}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-sm text-muted-foreground mb-1">Campus</div>
-                                <div className="font-medium">
-                                  {student.opportunities.length > 0
-                                    ? student.opportunities
-                                        .filter((opp) => opp.campus_name)
-                                        .sort(
-                                          (a, b) =>
-                                            new Date(b.created_date).getTime() -
-                                            new Date(a.created_date).getTime()
-                                        )[0]?.campus_name || "Not assigned"
-                                    : "Not assigned"}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-sm text-muted-foreground mb-1">
-                                  School Years
-                                </div>
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  {Array.from(
-                                    new Set(
-                                      student.opportunities
-                                        .filter((opp) => opp.school_year)
-                                        .map((opp) => formatSchoolYearForDisplay(opp.school_year))
-                                    )
-                                  ).map((year) => (
-                                    <Badge
-                                      key={year}
-                                      color={year === "24/25" ? "green" : "blue"}
-                                      text={year}
-                                    />
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </SplitterPanel>
+    // Merge students with similar names
+    const mergedStudents = mergeStudents(familyRecord.students);
 
-                        {/* Right Panel - Opportunities */}
-                        <SplitterPanel size={50}>
-                          <div className="bg-card rounded-md p-4">
-                            <h3 className="text-lg font-medium mb-4">Opportunities</h3>
-                            {student.opportunities.length > 0 ? (
-                              <Collapse
-                                accordion
-                                items={student.opportunities.map((opportunity, index) => ({
-                                  key: opportunity.id,
-                                  label: (
-                                    <div className="flex justify-between items-center">
-                                      <span>{opportunity.name}</span>
-                                      <Badge
-                                        color={
-                                          opportunity.is_won
-                                            ? "green"
-                                            : getOpportunityStageColor(opportunity.stage)
-                                        }
-                                        text={opportunity.is_won ? "Won" : opportunity.stage}
-                                      />
-                                    </div>
-                                  ),
-                                  children: (
-                                    <OpportunityCard
-                                      opportunity={opportunity}
-                                      studentName={getFixedStudentName(student)}
-                                    />
-                                  ),
-                                }))}
-                              />
-                            ) : (
-                              <div className="text-muted-foreground italic">
-                                No opportunities found for this student.
-                              </div>
-                            )}
-                          </div>
-                        </SplitterPanel>
-                      </Splitter>
-                    </CardContent>
-                  </Card>
-                ),
-              };
-            })}
-          />
-        </div>
-      );
-    } else if (mergedStudents.length === 1) {
-      // If there's only one student, just show the cards without tabs
-      const student = mergedStudents[0];
-      return (
-        <Card className="mt-6" style={{ border: "none" }}>
-          <CardHeader className="pb-0">
-            <CardTitle className="text-xl font-semibold">
-              {getFixedStudentName(student)}
-              {student.opportunities && student.opportunities.some((opp) => opp.is_won) && (
-                <Badge color="green" text="Enrolled" className="ml-2" />
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {/* Use Splitter for student information and opportunities */}
-            <Splitter style={{ marginTop: 20 }}>
-              {/* Left Panel - Student Information */}
-              <SplitterPanel size={50}>
-                <div className="bg-card rounded-md p-4">
-                  <div className="space-y-4">
-                    <div>
-                      <div className="text-sm text-muted-foreground mb-1">Status</div>
-                      <div className="font-medium flex items-center">
-                        {student.opportunities.some(
-                          (opp) =>
-                            opp.is_won &&
-                            formatSchoolYearForDisplay(opp.school_year).includes("25/26")
-                        ) ? (
-                          <>
-                            <Badge color="green" text="Enrolled for 25/26" />
-                          </>
-                        ) : student.opportunities.some(
-                            (opp) =>
-                              opp.is_won &&
-                              formatSchoolYearForDisplay(opp.school_year).includes("24/25")
-                          ) ? (
-                          <>
-                            <Badge color="green" text="Enrolled for 24/25" />
-                          </>
-                        ) : (
-                          <>
-                            <Badge color="blue" text="In Process" />
-                          </>
-                        )}
-                      </div>
-                    </div>
+    console.log(
+      `Merged ${familyRecord.students.length} students into ${mergedStudents.length} unique students`
+    );
 
-                    <div>
-                      <div className="text-sm text-muted-foreground mb-1">Latest Grade</div>
-                      <div className="font-medium">
-                        {student.opportunities.length > 0
-                          ? student.opportunities
-                              .filter((opp) => opp.grade)
-                              .sort(
-                                (a, b) =>
-                                  new Date(b.created_date).getTime() -
-                                  new Date(a.created_date).getTime()
-                              )[0]?.grade || "Not specified"
-                          : "Not specified"}
-                      </div>
-                    </div>
+    // Debug the structure of the students array
+    console.log("Students array structure:");
+    if (mergedStudents.length > 0) {
+      console.log("First student structure:", mergedStudents[0]);
 
-                    <div>
-                      <div className="text-sm text-muted-foreground mb-1">Campus</div>
-                      <div className="font-medium">
-                        {student.opportunities.length > 0
-                          ? student.opportunities
-                              .filter((opp) => opp.campus_name)
-                              .sort(
-                                (a, b) =>
-                                  new Date(b.created_date).getTime() -
-                                  new Date(a.created_date).getTime()
-                              )[0]?.campus_name || "Not assigned"
-                          : "Not assigned"}
-                      </div>
-                    </div>
+      // Check if the student has an opportunities array
+      if (mergedStudents[0].opportunities) {
+        console.log("Student contains opportunities array:", true);
+        console.log("Opportunities array length:", mergedStudents[0].opportunities.length);
 
-                    <div>
-                      <div className="text-sm text-muted-foreground mb-1">School Years</div>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {Array.from(
-                          new Set(
-                            student.opportunities
-                              .filter((opp) => opp.school_year)
-                              .map((opp) => formatSchoolYearForDisplay(opp.school_year))
-                          )
-                        ).map((year) => (
-                          <Badge
-                            key={year}
-                            color={year === "24/25" ? "green" : "blue"}
-                            text={year}
-                          />
-                        ))}
-                      </div>
+        if (mergedStudents[0].opportunities.length > 0) {
+          console.log(
+            "First opportunity structure:",
+            Object.entries(mergedStudents[0].opportunities[0])
+          );
+        }
+      }
+    }
+
+    // Using Ant Design Tabs for multiple students
+    return (
+      <div className="mt-6">
+        <Tabs
+          type="card"
+          defaultActiveKey={mergedStudents[0].id}
+          className="custom-tabs"
+          tabBarStyle={{ color: "inherit" }}
+          style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}
+        >
+          {mergedStudents.map((student) => (
+            <Tabs.TabPane
+              tab={
+                <span>
+                  {student.full_name}
+                  {student.opportunities.some((opp) => opp.is_won) && (
+                    <Badge color="green" text="Enrolled" className="ml-2" />
+                  )}
+                </span>
+              }
+              key={student.id}
+            >
+              <Card className="mt-6" style={{ border: "none" }}>
+                <CardHeader className="pb-0">
+                  <div className="flex justify-between items-center">
+                    <div className="flex flex-col space-y-2">
+                      <CardTitle className="text-xl font-semibold">{student.full_name}</CardTitle>
                     </div>
                   </div>
-                </div>
-              </SplitterPanel>
-
-              {/* Right Panel - Opportunities */}
-              <SplitterPanel size={50}>
-                <div className="bg-card rounded-md p-4">
-                  <h3 className="text-lg font-medium mb-4">Opportunities</h3>
-                  {student.opportunities.length > 0 ? (
-                    <Collapse
-                      accordion
-                      items={student.opportunities.map((opportunity, index) => ({
-                        key: opportunity.id,
-                        label: (
-                          <div className="flex justify-between items-center">
-                            <span>{opportunity.name}</span>
-                            <Badge
-                              color={
-                                opportunity.is_won
-                                  ? "green"
-                                  : getOpportunityStageColor(opportunity.stage)
-                              }
-                              text={opportunity.is_won ? "Won" : opportunity.stage}
-                            />
-                          </div>
-                        ),
-                        children: (
-                          <OpportunityCard
-                            opportunity={opportunity}
-                            studentName={getFixedStudentName(student)}
-                          />
-                        ),
-                      }))}
-                    />
-                  ) : (
-                    <div className="text-muted-foreground italic">
-                      No opportunities found for this student.
-                    </div>
-                  )}
-                </div>
-              </SplitterPanel>
-            </Splitter>
-          </CardContent>
-        </Card>
-      );
-    }
+                </CardHeader>
+                <CardContent>
+                  {/* Student opportunities */}
+                  <div className="space-y-4">
+                    {student.opportunities && student.opportunities.length > 0 ? (
+                      student.opportunities.map((opportunity) => (
+                        <OpportunityCard
+                          key={opportunity.id}
+                          opportunity={opportunity}
+                          studentName={student.full_name}
+                        />
+                      ))
+                    ) : (
+                      <div className="text-muted-foreground">No opportunities found</div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </Tabs.TabPane>
+          ))}
+        </Tabs>
+      </div>
+    );
   };
 
   // Apply the mergeStudents function to handle student name variations
@@ -826,13 +628,19 @@ const EnhancedFamilyDetail: React.FC = () => {
                         opp.is_won && formatSchoolYearForDisplay(opp.school_year).includes("25/26")
                     )
                 ) && <Badge color="green" text="Active" className="font-medium" />}
-              
+
               {/* Open badge - displayed when family has opportunity for 25/26 in specific stages */}
-              {mergedStudents && 
-                mergedStudents.some(student => 
-                  student.opportunities.some(opp => 
-                    opp.school_year === "25/26" && 
-                    ["Family Interview", "Awaiting Documents", "Admission Offered", "Education Review"].includes(opp.stage)
+              {mergedStudents &&
+                mergedStudents.some((student) =>
+                  student.opportunities.some(
+                    (opp) =>
+                      opp.school_year === "25/26" &&
+                      [
+                        "Family Interview",
+                        "Awaiting Documents",
+                        "Admission Offered",
+                        "Education Review",
+                      ].includes(opp.stage)
                   )
                 ) && <Badge color="orange" text="Open" className="font-medium ml-2" />}
             </div>
@@ -1069,10 +877,10 @@ const EnhancedFamilyDetail: React.FC = () => {
               {renderStudentsSection()}
             </>
           )}
-          
+
           {/* Debug Button */}
           <div className="mt-4 mb-4">
-            <Button 
+            <Button
               onClick={() => {
                 console.log("=== DEBUG DATA ===");
                 console.log("Raw family record:", familyRecord);
@@ -1080,14 +888,17 @@ const EnhancedFamilyDetail: React.FC = () => {
                 console.log("Students array:", familyRecord.students);
                 if (familyRecord.students && familyRecord.students.length > 0) {
                   console.log("First student:", familyRecord.students[0]);
-                  console.log("First student opportunities:", familyRecord.students[0].opportunities);
+                  console.log(
+                    "First student opportunities:",
+                    familyRecord.students[0].opportunities
+                  );
                 } else {
                   console.log("No students found in record");
                   console.log("Raw opportunity data:", {
                     names: familyRecord.opportunity_names,
                     ids: familyRecord.opportunity_ids,
                     stages: familyRecord.opportunity_stages,
-                    school_years: familyRecord.opportunity_school_years
+                    school_years: familyRecord.opportunity_school_years,
                   });
                 }
                 console.log("Contacts:", familyRecord.contacts);

@@ -64,7 +64,7 @@ const CampusStaffTracker: React.FC = () => {
       setFetchingCampuses(true);
       try {
         logger.info("Starting to fetch campus data");
-        
+
         // SQL query to get campus data
         const query = `
           SELECT 
@@ -75,13 +75,13 @@ const CampusStaffTracker: React.FC = () => {
           ORDER BY 
             name ASC
         `;
-        
+
         logger.debug(`Executing campus query: ${query}`);
-        
+
         const { data, error } = await supabase.regular.rpc("execute_sql_query", {
-          query_text: query
+          query_text: query,
         });
-        
+
         if (error) {
           logger.error("Error fetching campus data:", error);
           setError(`Failed to load campuses: ${error.message}`);
@@ -96,31 +96,30 @@ const CampusStaffTracker: React.FC = () => {
         } else {
           // Handle the response format
           let campusData: CampusData[] = [];
-          
+
           if (Array.isArray(data)) {
             campusData = data;
-          } else if (data && typeof data === 'object') {
+          } else if (data && typeof data === "object") {
             if (Array.isArray(data.rows)) {
               campusData = data.rows;
             } else if (data.result && Array.isArray(data.result)) {
               campusData = data.result;
             } else {
               // Try to find any array property in the response
-              const arrayProp = Object.entries(data)
-                .find(([_, value]) => Array.isArray(value));
-              
+              const arrayProp = Object.entries(data).find(([_, value]) => Array.isArray(value));
+
               if (arrayProp) {
                 const [propName, arrayValue] = arrayProp;
                 campusData = arrayValue as CampusData[];
               }
             }
           }
-          
+
           // Add "All Campuses" option
           campusData = [{ id: "all", name: "All Campuses" }, ...campusData];
-          
+
           setCampuses(campusData);
-          
+
           // Set the first campus as selected by default
           if (campusData.length > 0) {
             setSelectedCampus(campusData[0].id);
@@ -130,7 +129,7 @@ const CampusStaffTracker: React.FC = () => {
         const errorMessage = err instanceof Error ? err.message : String(err);
         logger.error("Exception fetching campuses:", err);
         setError(`Failed to load campuses: ${errorMessage}`);
-        
+
         // Set default campuses as fallback
         const defaultCampuses = [
           { id: "all", name: "All Campuses" },
@@ -143,7 +142,7 @@ const CampusStaffTracker: React.FC = () => {
         setFetchingCampuses(false);
       }
     };
-    
+
     fetchCampuses();
   }, []);
 
@@ -151,14 +150,14 @@ const CampusStaffTracker: React.FC = () => {
   const handleStageSelect = (stage: string) => {
     setSelectedStage(stage);
   };
-  
+
   // Fetch fellows data directly from the database
   useEffect(() => {
     const fetchFellows = async () => {
       setFetchingFellows(true);
       try {
         logger.info("Starting to fetch fellows data");
-        
+
         // Direct SQL query to get fellow data with the required fields
         // Include join with campus_c table to get campus names
         const query = `
@@ -176,20 +175,20 @@ const CampusStaffTracker: React.FC = () => {
             fivetran_views.fellows f
           LEFT JOIN 
             fivetran_views.campus_c c ON f.campus_id = c.id
-          ${selectedCampus && selectedCampus !== "all" ? `WHERE f.campus_id = '${selectedCampus}'` : ''}
+          ${selectedCampus && selectedCampus !== "all" ? `WHERE f.campus_id = '${selectedCampus}'` : ""}
           ORDER BY 
             f.fellow_name ASC
         `;
-        
+
         logger.debug(`Executing fellows query: ${query}`);
-        
+
         const { data, error } = await supabase.regular.rpc("execute_sql_query", {
-          query_text: query
+          query_text: query,
         });
-        
+
         // Log the raw response for debugging
         logger.debug("Raw response from fellows query:", data);
-        
+
         if (error) {
           logger.error("Error fetching fellows data:", error);
           setError(`Failed to load fellows: ${error.message}`);
@@ -197,12 +196,12 @@ const CampusStaffTracker: React.FC = () => {
         } else {
           // Handle the direct array response format
           let fellowsData: FellowData[] = [];
-          
+
           if (Array.isArray(data)) {
             // Direct array response (expected format based on the function implementation)
             logger.info(`Received ${data.length} fellow records as direct array`);
             fellowsData = data;
-          } else if (data && typeof data === 'object') {
+          } else if (data && typeof data === "object") {
             // Handle other possible formats for robustness
             if (Array.isArray(data.rows)) {
               logger.info(`Received ${data.rows.length} fellow records from rows property`);
@@ -212,34 +211,35 @@ const CampusStaffTracker: React.FC = () => {
               fellowsData = data.result;
             } else {
               // Try to find any array property in the response
-              const arrayProp = Object.entries(data)
-                .find(([_, value]) => Array.isArray(value));
-              
+              const arrayProp = Object.entries(data).find(([_, value]) => Array.isArray(value));
+
               if (arrayProp) {
                 const [propName, arrayValue] = arrayProp;
-                logger.info(`Found array property ${propName} with ${(arrayValue as any[]).length} records`);
+                logger.info(
+                  `Found array property ${propName} with ${(arrayValue as any[]).length} records`
+                );
                 fellowsData = arrayValue as FellowData[];
               } else {
                 logger.warn("No array found in response:", data);
               }
             }
           }
-          
+
           if (fellowsData.length === 0) {
             logger.warn("No fellow records were returned despite successful query");
             logger.debug("Full response object:", JSON.stringify(data));
           } else {
             logger.debug("Sample fellow record:", fellowsData[0]);
           }
-          
+
           // Add this for extra debugging
           console.log("Fellows data:", fellowsData);
-          
+
           // Map database hiring stages to our ordered stages
-          fellowsData = fellowsData.map(fellow => {
+          fellowsData = fellowsData.map((fellow) => {
             let mappedStage = fellow.hiring_stage;
-            const stageLC = fellow.hiring_stage ? fellow.hiring_stage.toLowerCase() : '';
-            
+            const stageLC = fellow.hiring_stage ? fellow.hiring_stage.toLowerCase() : "";
+
             // Map database stages to our ordered stages (case-insensitive)
             if (stageLC === "applied" || stageLC === "interviewing") {
               mappedStage = "New";
@@ -252,13 +252,13 @@ const CampusStaffTracker: React.FC = () => {
             } else if (stageLC === "declined" || stageLC === "rejected") {
               mappedStage = "Rejected/Declined";
             }
-            
+
             return {
               ...fellow,
-              hiring_stage: mappedStage
+              hiring_stage: mappedStage,
             };
           });
-          
+
           setFellows(fellowsData);
         }
       } catch (err) {
@@ -272,20 +272,20 @@ const CampusStaffTracker: React.FC = () => {
         logger.info("Finished fellows data fetch attempt");
       }
     };
-    
+
     if (selectedCampus) {
       fetchFellows();
     }
   }, [selectedCampus]);
-  
+
   // Filter fellows based on selected stage
-  const filteredFellows = fellows.filter(fellow => {
+  const filteredFellows = fellows.filter((fellow) => {
     // Check if it matches the selected stage
     return fellow.hiring_stage === selectedStage;
   });
-  
+
   // Unknown fellows (those with hiring_stage not in our ordered stages)
-  const unknownFellows = fellows.filter(fellow => {
+  const unknownFellows = fellows.filter((fellow) => {
     return !orderedStages.includes(fellow.hiring_stage);
   });
 
@@ -304,9 +304,7 @@ const CampusStaffTracker: React.FC = () => {
             <p className="text-gray-600 text-sm">
               {fellow.grade_band || "No grade band specified"}
             </p>
-            <p className="text-gray-600 text-sm">
-              {fellow.campus_name || "No campus assigned"}
-            </p>
+            <p className="text-gray-600 text-sm">{fellow.campus_name || "No campus assigned"}</p>
 
             <div className="flex flex-wrap gap-1 mt-2">
               {fellow.cohort && (
@@ -353,11 +351,14 @@ const CampusStaffTracker: React.FC = () => {
   // Generate unknown fellows content for collapse component
   const generateUnknownFellowsContent = () => {
     if (unknownFellows.length === 0) return null;
-    
+
     return (
       <div className="space-y-4 mt-2">
         {unknownFellows.map((fellow) => (
-          <Card key={fellow.id} className="border hover:shadow-md transition-shadow border-amber-200">
+          <Card
+            key={fellow.id}
+            className="border hover:shadow-md transition-shadow border-amber-200"
+          >
             <CardContent className="p-4">
               <div className="flex items-start gap-4">
                 <div className="flex-shrink-0 w-12 h-12 bg-amber-100 rounded-md flex items-center justify-center text-amber-700 text-lg font-medium">
@@ -419,8 +420,8 @@ const CampusStaffTracker: React.FC = () => {
                 <span>Loading campuses...</span>
               </div>
             ) : (
-              <Select 
-                value={selectedCampus} 
+              <Select
+                value={selectedCampus}
                 onValueChange={setSelectedCampus}
                 disabled={campuses.length === 0}
               >
@@ -478,11 +479,7 @@ const CampusStaffTracker: React.FC = () => {
       )}
 
       {/* Error state */}
-      {error && (
-        <div className="mb-6 p-4 bg-red-100 text-red-800 rounded-md">
-          {error}
-        </div>
-      )}
+      {error && <div className="mb-6 p-4 bg-red-100 text-red-800 rounded-md">{error}</div>}
 
       {/* Loading state */}
       {fetchingFellows && (
@@ -490,14 +487,16 @@ const CampusStaffTracker: React.FC = () => {
           <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
         </div>
       )}
-      
+
       {/* Information for debugging */}
       {!fetchingFellows && fellows.length === 0 && !error && (
         <div className="mb-6 p-4 bg-blue-50 text-blue-800 rounded-md flex items-start">
           <InfoIcon className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
           <div>
             <h3 className="font-medium">Debugging Information</h3>
-            <p className="text-sm mt-1">No fellow records were returned from the database query. Please check:</p>
+            <p className="text-sm mt-1">
+              No fellow records were returned from the database query. Please check:
+            </p>
             <ul className="list-disc ml-5 text-sm mt-1">
               <li>Database connection is working properly</li>
               <li>Table 'fivetran_views.fellows' exists and has records</li>
@@ -515,25 +514,27 @@ const CampusStaffTracker: React.FC = () => {
             No fellows found in the "{selectedStage}" stage. Try selecting a different stage.
           </p>
         )}
-        
+
         {filteredFellows.map((fellow) => (
           <FellowCard key={fellow.id} fellow={fellow} />
         ))}
       </div>
-      
+
       {/* Unknown Fellows Section with Collapse */}
       {!fetchingFellows && unknownFellows.length > 0 && (
         <div className="mt-10">
           <Collapse
             collapsible="header"
-            defaultActiveKey={['1']}
+            defaultActiveKey={["1"]}
             items={[
               {
-                key: '1',
+                key: "1",
                 label: (
                   <div className="flex items-center">
                     <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
-                    <span className="text-lg font-semibold">Unknown Stage Fellows ({unknownFellows.length})</span>
+                    <span className="text-lg font-semibold">
+                      Unknown Stage Fellows ({unknownFellows.length})
+                    </span>
                   </div>
                 ),
                 children: generateUnknownFellowsContent(),

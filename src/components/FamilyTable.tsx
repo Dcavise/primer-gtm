@@ -69,14 +69,14 @@ const FamilyTable: React.FC = () => {
       try {
         // Try to fetch families using getAllFamilies first
         let result = await supabase.getAllFamilies();
-        
+
         // If that fails, fall back to using searchFamilies with an empty string
         // which should return all families or at least a subset
         if (!result.success || !result.data || result.data.length === 0) {
           console.log("getAllFamilies failed or returned no data, falling back to searchFamilies");
           result = await supabase.searchFamilies("");
         }
-        
+
         if (result.success && result.data) {
           // Process the data for the table
           const processedData = result.data.map((family, index) => {
@@ -85,18 +85,18 @@ const FamilyTable: React.FC = () => {
             const familyId = family.family_id || "";
             const alternateId = family.alternate_id || "";
             const bestId = standardId || familyId || alternateId;
-            
+
             // Get campus name from campus map, don't display raw IDs
             const campusId = family.current_campus_c || "";
             const campusName = campusId ? campusMap[campusId] || "Unknown Campus" : "None";
-            
+
             // Try to determine stage - this is an example, adjust based on your data structure
             let stage = "Unknown";
             if (family.opportunity_stages && family.opportunity_stages.length > 0) {
               // Use the most recent stage if multiple exist
               stage = family.opportunity_stages[0] || "Unknown";
             }
-            
+
             return {
               key: index.toString(),
               id: bestId,
@@ -107,10 +107,10 @@ const FamilyTable: React.FC = () => {
                 standard_id: standardId,
                 family_id: familyId,
                 alternate_id: alternateId,
-              }
+              },
             };
           });
-          
+
           setTableData(processedData);
         } else {
           setError(result.error || "Failed to fetch family data");
@@ -133,37 +133,37 @@ const FamilyTable: React.FC = () => {
       console.error("Cannot navigate - missing family ID", record);
       return;
     }
-    
+
     // Log for debugging
     console.log(`Table: Navigating to family detail with ID: ${record.id}`);
-    
+
     // Navigate to the family detail page
     navigate(`/family-detail/${record.id}`);
   };
 
   // Define our available campus options for filtering
   const campusOptions = useMemo(() => {
-    return campuses?.map(campus => campus.campus_name) || [];
+    return campuses?.map((campus) => campus.campus_name) || [];
   }, [campuses]);
 
   // Table column definitions with filters
   const tableColumns: TableColumnsType<FamilyTableData> = [
     {
-      title: 'Family Name',
-      dataIndex: 'name',
-      key: 'name',
+      title: "Family Name",
+      dataIndex: "name",
+      key: "name",
       sorter: (a, b) => a.name.localeCompare(b.name),
     },
     {
-      title: 'Campus',
-      dataIndex: 'campus',
-      key: 'campus',
+      title: "Campus",
+      dataIndex: "campus",
+      key: "campus",
     },
     {
-      title: 'Stage',
-      dataIndex: 'stage',
-      key: 'stage',
-    }
+      title: "Stage",
+      dataIndex: "stage",
+      key: "stage",
+    },
   ];
 
   return (
@@ -172,7 +172,7 @@ const FamilyTable: React.FC = () => {
         <Building className="h-5 w-5 text-slate-gray" />
         <span className="text-xl font-semibold text-outer-space">Family Records</span>
       </div>
-      
+
       {loading ? (
         <div className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
@@ -183,14 +183,14 @@ const FamilyTable: React.FC = () => {
           <p className="text-red-600">Error: {error}</p>
         </div>
       ) : tableData.length > 0 ? (
-        <Table 
-          columns={tableColumns} 
-          dataSource={tableData} 
+        <Table
+          columns={tableColumns}
+          dataSource={tableData}
           pagination={{ pageSize: 5 }}
           bordered
           onRow={(record) => ({
             onClick: () => handleRowClick(record),
-            style: { cursor: 'pointer' }
+            style: { cursor: "pointer" },
           })}
         />
       ) : (

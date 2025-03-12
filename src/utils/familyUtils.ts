@@ -36,15 +36,20 @@ export const formatSchoolYearForDisplay = (schoolYear: string | undefined): stri
 /**
  * Check if a family has an open opportunity for 25/26 school year
  * in the stages: "Family Interview", "Awaiting Documents", "Admission Offered", or "Education Review"
- * 
+ *
  * @param familyRecord The family record object to check
  * @returns Boolean indicating if the family has an open opportunity
  */
 export const hasFamilyOpenOpportunity = (familyRecord: any): boolean => {
   // Define the target stages and school year
-  const targetStages = ["Family Interview", "Awaiting Documents", "Admission Offered", "Education Review"];
+  const targetStages = [
+    "Family Interview",
+    "Awaiting Documents",
+    "Admission Offered",
+    "Education Review",
+  ];
   const targetSchoolYear = "25/26";
-  
+
   // First check the structured student opportunities if available
   if (familyRecord?.students?.length > 0) {
     for (const student of familyRecord.students) {
@@ -52,7 +57,7 @@ export const hasFamilyOpenOpportunity = (familyRecord: any): boolean => {
         for (const opportunity of student.opportunities) {
           const formattedSchoolYear = formatSchoolYearForDisplay(opportunity.school_year);
           const normalizedStage = opportunity.stage?.trim() || "";
-          
+
           if (formattedSchoolYear === targetSchoolYear && targetStages.includes(normalizedStage)) {
             return true;
           }
@@ -60,22 +65,22 @@ export const hasFamilyOpenOpportunity = (familyRecord: any): boolean => {
       }
     }
   }
-  
+
   // Also check legacy arrays for backward compatibility
   if (
-    Array.isArray(familyRecord?.opportunity_stages) && 
-    Array.isArray(familyRecord?.opportunity_school_years) && 
+    Array.isArray(familyRecord?.opportunity_stages) &&
+    Array.isArray(familyRecord?.opportunity_school_years) &&
     familyRecord.opportunity_stages.length === familyRecord.opportunity_school_years.length
   ) {
     for (let i = 0; i < familyRecord.opportunity_stages.length; i++) {
       const stage = familyRecord.opportunity_stages[i]?.trim() || "";
       const schoolYear = formatSchoolYearForDisplay(familyRecord.opportunity_school_years[i] || "");
-      
+
       if (targetStages.includes(stage) && schoolYear === targetSchoolYear) {
         return true;
       }
     }
   }
-  
+
   return false;
 };
