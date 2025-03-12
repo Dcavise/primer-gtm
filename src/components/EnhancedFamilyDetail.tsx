@@ -89,14 +89,64 @@ const formatSchoolYearForDisplay = (schoolYear: string | undefined): string => {
   return schoolYear;
 };
 
+// Function to extract student opportunities from the family record
+const extractStudentOpportunities = (student: Student): StudentOpportunity[] => {
+  if (!student) return [];
+  
+  // If student.opportunities is already an array of opportunities, return it
+  if (student.opportunities && Array.isArray(student.opportunities)) {
+    return student.opportunities;
+  }
+  
+  // If student.opportunities is a string (JSON), try to parse it
+  if (typeof student.opportunities === 'string') {
+    try {
+      return JSON.parse(student.opportunities);
+    } catch (e) {
+      console.error('Failed to parse student opportunities:', e);
+      return [];
+    }
+  }
+  
+  return [];
+};
+
 // Timeline component for student opportunities
-const StudentTimeline: React.FC<{ opportunities: StudentOpportunity[] }> = ({ opportunities }) => {
-  // Sort opportunities by school year (most recent first)
+const StudentTimeline: React.FC<{ opportunities: StudentOpportunity[], studentName?: string }> = ({ 
+  opportunities, 
+  studentName 
+}) => {
+  // Log for debugging
+  console.log(`Timeline for ${studentName || 'student'}: ${opportunities?.length || 0} opportunities`);
+  
+  // Make sure we have opportunities to display
+  if (!opportunities || opportunities.length === 0) {
+    return <div className="text-muted-foreground">No opportunity history available</div>;
+  }
+
+  // Log the opportunity details for debugging
+  console.log('Opportunity details:', opportunities.map(o => ({
+    id: o.id,
+    stage: o.stage,
+    school_year: o.school_year,
+    created_date: o.created_date
+  })));
+
+  // Sort opportunities by school year (most recent first) and then by created date (most recent first)
   const sortedOpportunities = [...opportunities].sort((a, b) => {
     // Extract the first year from the school year string (e.g., "24/25" -> 24)
     const yearA = a.school_year ? parseInt(a.school_year.split('/')[0]) : 0;
     const yearB = b.school_year ? parseInt(b.school_year.split('/')[0]) : 0;
-    return yearB - yearA; // Sort descending (most recent first)
+    
+    // If school years are different, sort by school year
+    if (yearB !== yearA) {
+      return yearB - yearA; // Sort descending (most recent first)
+    }
+    
+    // If school years are the same, sort by created date
+    const dateA = a.created_date ? new Date(a.created_date).getTime() : 0;
+    const dateB = b.created_date ? new Date(b.created_date).getTime() : 0;
+    return dateB - dateA; // Sort descending (most recent first)
   });
 
   // Group opportunities by school year
@@ -112,8 +162,8 @@ const StudentTimeline: React.FC<{ opportunities: StudentOpportunity[] }> = ({ op
     {}
   );
 
-  // If no opportunities, return a message
-  if (sortedOpportunities.length === 0) {
+  // If no opportunities after grouping (shouldn't happen but just in case)
+  if (Object.keys(opportunitiesByYear).length === 0) {
     return <div className="text-muted-foreground">No opportunity history available</div>;
   }
 
@@ -527,6 +577,18 @@ const EnhancedFamilyDetail: React.FC = () => {
       }
     }
 
+    // Check if the students array might actually be a string that needs parsing
+    if (mergedStudents.length > 0 && typeof mergedStudents[0] === "string") {
+      console.log("WARNING: Students appear to be stored as strings, not objects");
+      try {
+        // Attempt to parse the first student if it's a JSON string
+        const parsedStudent = JSON.parse(mergedStudents[0]);
+        console.log("Parsed student structure:", Object.keys(parsedStudent));
+      } catch (e) {
+        console.log("Failed to parse student as JSON:", e.message);
+      }
+    }
+
     // Using Ant Design Tabs for multiple students
     return (
       <div className="mt-6">
@@ -628,7 +690,7 @@ const EnhancedFamilyDetail: React.FC = () => {
                   </div>
                   
                   {/* Student Timeline */}
-                  <StudentTimeline opportunities={student.opportunities} />
+                  <StudentTimeline opportunities={extractStudentOpportunities(student)} studentName={student.full_name} />
                 </CardContent>
               </Card>
             </Tabs.TabPane>
