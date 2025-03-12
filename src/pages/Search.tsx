@@ -438,8 +438,8 @@ const Search = () => {
           SELECT 
             o.id, 
             o.name, 
-            o.stagename as stage, 
-            coalesce(o.student_grade_c, 'K-8') as grade,
+            o.stage_name as stage, 
+            coalesce(o.grade_c, 'K-8') as grade,
             o.student_first_name_c || ' ' || o.student_last_name_c as student_name,
             o.school_year_c as school_year,
             cc.name as campus_name,
@@ -452,9 +452,9 @@ const Search = () => {
           LEFT JOIN
             fivetran_views.account a ON o.account_id = a.id
           WHERE 
-            o.isdeleted = false
+            o.is_deleted = false
           ORDER BY 
-            o.createddate DESC
+            o.created_date DESC
           LIMIT 10
         `;
         
