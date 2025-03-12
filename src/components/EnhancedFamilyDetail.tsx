@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { LoadingState } from "@/components/LoadingState";
 import ErrorState from "@/components/ErrorState";
+import { Collapse } from "antd";
 
 // Format school year for display (e.g., "2024-2025" -> "24/25")
 const formatSchoolYearForDisplay = (schoolYear: string | undefined): string => {
@@ -102,13 +103,6 @@ const OpportunityCard: React.FC<OpportunityCardProps> = ({ opportunity, studentN
               <h3 className="font-medium text-base mb-2 pb-1 border-b border-gray-200">Student Information</h3>
               
               <div className="space-y-3">
-                <div>
-                  <h5 className="text-sm font-medium text-muted-foreground">Name</h5>
-                  <p className="text-sm font-medium">
-                    {studentName}
-                  </p>
-                </div>
-                
                 {opportunity.grade && (
                   <div>
                     <h5 className="text-sm font-medium text-muted-foreground">Grade</h5>
@@ -449,6 +443,9 @@ const EnhancedFamilyDetail: React.FC = () => {
             {mergedStudents.map((student) => (
               <TabsTrigger key={`tab-${student.id}`} value={student.id}>
                 {getFixedStudentName(student)}
+                {student.opportunities.some(opp => opp.is_won) && (
+                  <Badge variant="success" className="ml-2">Enrolled</Badge>
+                )}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -458,76 +455,63 @@ const EnhancedFamilyDetail: React.FC = () => {
                 <CardHeader className="pb-0">
                   <CardTitle className="text-xl font-semibold">
                     {getFixedStudentName(student)}
-                    {student.opportunities.some(opp => opp.is_won) && (
-                      <Badge variant="success" className="ml-2">Enrolled</Badge>
-                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <StudentTimeline student={student} />
                   
                   {/* Two-column layout for student information and opportunities */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                     {/* Left Column - Student Information */}
                     <div className="space-y-6">
                       <div className="bg-card border border-muted/20 rounded-md p-4">
-                        <h3 className="font-medium text-base mb-4 pb-2 border-b border-gray-200">Student Information</h3>
-                        
                         <div className="space-y-4">
                           <div>
-                            <h5 className="text-sm font-medium text-muted-foreground">Name</h5>
-                            <p className="text-sm font-medium">
-                              {getFixedStudentName(student)}
-                            </p>
-                          </div>
-                          
-                          <div>
-                            <h5 className="text-sm font-medium text-muted-foreground">Status</h5>
-                            <p className="text-sm font-medium flex items-center">
+                            <div className="text-sm text-muted-foreground mb-1">Status</div>
+                            <div className="font-medium flex items-center">
                               {student.opportunities.some(opp => opp.is_won && 
                                 formatSchoolYearForDisplay(opp.school_year).includes("25/26")) ? (
                                 <>
-                                  <span className="inline-flex h-2 w-2 rounded-full bg-green-500 mr-2"></span>
-                                  <span>Active Student</span>
+                                  <CheckCircle2 className="h-4 w-4 text-green-500 mr-1" />
+                                  <span>Enrolled for 25/26</span>
                                 </>
-                              ) : student.opportunities.some(opp => opp.is_won) ? (
+                              ) : student.opportunities.some(opp => opp.is_won && 
+                                formatSchoolYearForDisplay(opp.school_year).includes("24/25")) ? (
                                 <>
-                                  <span className="inline-flex h-2 w-2 rounded-full bg-orange-500 mr-2"></span>
-                                  <span>Previous Student</span>
+                                  <CheckCircle2 className="h-4 w-4 text-green-500 mr-1" />
+                                  <span>Currently Enrolled (24/25)</span>
                                 </>
                               ) : (
                                 <>
-                                  <span className="inline-flex h-2 w-2 rounded-full bg-gray-500 mr-2"></span>
                                   <span>Prospective Student</span>
                                 </>
                               )}
-                            </p>
+                            </div>
                           </div>
                           
                           <div>
-                            <h5 className="text-sm font-medium text-muted-foreground">Latest Grade</h5>
-                            <p className="text-sm font-medium">
+                            <div className="text-sm text-muted-foreground mb-1">Latest Grade</div>
+                            <div className="font-medium">
                               {student.opportunities.length > 0 
                                 ? student.opportunities
                                     .filter(opp => opp.grade)
                                     .sort((a, b) => new Date(b.created_date).getTime() - new Date(a.created_date).getTime())[0]?.grade || "Not specified"
                                 : "Not specified"}
-                            </p>
+                            </div>
                           </div>
                           
                           <div>
-                            <h5 className="text-sm font-medium text-muted-foreground">Campus</h5>
-                            <p className="text-sm font-medium">
+                            <div className="text-sm text-muted-foreground mb-1">Campus</div>
+                            <div className="font-medium">
                               {student.opportunities.length > 0 
                                 ? student.opportunities
                                     .filter(opp => opp.campus_name)
                                     .sort((a, b) => new Date(b.created_date).getTime() - new Date(a.created_date).getTime())[0]?.campus_name || "Not assigned"
                                 : "Not assigned"}
-                            </p>
+                            </div>
                           </div>
                           
                           <div>
-                            <h5 className="text-sm font-medium text-muted-foreground">School Years</h5>
+                            <div className="text-sm text-muted-foreground mb-1">School Years</div>
                             <div className="flex flex-wrap gap-1 mt-1">
                               {Array.from(new Set(
                                 student.opportunities
@@ -555,53 +539,21 @@ const EnhancedFamilyDetail: React.FC = () => {
                         <h3 className="font-medium text-base mb-4 pb-2 border-b border-gray-200">Opportunities ({student.opportunities.length})</h3>
                         
                         {student.opportunities.length > 0 ? (
-                          student.opportunities
-                            .sort((a, b) => new Date(b.created_date).getTime() - new Date(a.created_date).getTime())
-                            .map((opportunity, index) => (
-                              <div 
-                                key={opportunity.id} 
-                                className={`border-b border-muted/20 pb-3 mb-3 ${index === student.opportunities.length - 1 ? 'border-b-0 pb-0 mb-0' : ''}`}
-                              >
-                                <div className="flex items-center justify-between mb-2">
-                                  <div className="flex items-center space-x-2">
-                                    <Badge variant={opportunity.is_won ? "success" : "outline"}>
-                                      {formatSchoolYearForDisplay(opportunity.school_year)}
-                                    </Badge>
-                                    <Badge variant={
-                                      opportunity.stage === "Closed Won" ? "success" :
-                                      opportunity.stage === "Closed Lost" ? "destructive" :
-                                      "outline"
-                                    }>
-                                      {opportunity.stage || "New Application"}
-                                    </Badge>
-                                  </div>
-                                  <div className="text-xs text-muted-foreground">
-                                    {opportunity.created_date ? new Date(opportunity.created_date).toLocaleDateString() : ""}
-                                  </div>
+                          <Collapse 
+                            accordion 
+                            items={student.opportunities.map((opportunity, index) => ({
+                              key: opportunity.id,
+                              label: (
+                                <div className="flex justify-between items-center">
+                                  <span>{opportunity.name}</span>
+                                  <Badge variant={opportunity.is_won ? "success" : "secondary"} className="ml-2">
+                                    {opportunity.is_won ? "Won" : opportunity.stage}
+                                  </Badge>
                                 </div>
-                                
-                                <div className="text-sm">
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                                    {opportunity.grade && (
-                                      <div>
-                                        <span className="text-muted-foreground">Grade:</span>{" "}
-                                        {opportunity.grade}
-                                      </div>
-                                    )}
-                                    {opportunity.campus_name && (
-                                      <div>
-                                        <span className="text-muted-foreground">Campus:</span>{" "}
-                                        {opportunity.campus_name}
-                                      </div>
-                                    )}
-                                  </div>
-                                  
-                                  <div className="text-xs font-mono text-muted-foreground mt-2 bg-muted/20 p-1 rounded">
-                                    ID: {opportunity.id}
-                                  </div>
-                                </div>
-                              </div>
-                            ))
+                              ),
+                              children: <OpportunityCard opportunity={opportunity} studentName={getFixedStudentName(student)} />
+                            }))}
+                          />
                         ) : (
                           <div className="text-muted-foreground italic">
                             No opportunities found for this student.
@@ -622,78 +574,68 @@ const EnhancedFamilyDetail: React.FC = () => {
       return (
         <Card>
           <CardHeader className="pb-0">
-            <CardTitle className="text-xl font-semibold">
+            <CardTitle className="text-xl font-semibold flex items-center">
               {getFixedStudentName(student)}
-              {student.opportunities.some(opp => opp.is_won) && (
+              {student.opportunities && student.opportunities.some(opp => opp.is_won) && (
                 <Badge variant="success" className="ml-2">Enrolled</Badge>
               )}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <StudentTimeline student={student} />
             
             {/* Two-column layout for student information and opportunities */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
               {/* Left Column - Student Information */}
               <div className="space-y-6">
                 <div className="bg-card border border-muted/20 rounded-md p-4">
-                  <h3 className="font-medium text-base mb-4 pb-2 border-b border-gray-200">Student Information</h3>
-                  
                   <div className="space-y-4">
                     <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">Name</h5>
-                      <p className="text-sm font-medium">
-                        {getFixedStudentName(student)}
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">Status</h5>
-                      <p className="text-sm font-medium flex items-center">
+                      <div className="text-sm text-muted-foreground mb-1">Status</div>
+                      <div className="font-medium flex items-center">
                         {student.opportunities.some(opp => opp.is_won && 
                           formatSchoolYearForDisplay(opp.school_year).includes("25/26")) ? (
                           <>
-                            <span className="inline-flex h-2 w-2 rounded-full bg-green-500 mr-2"></span>
-                            <span>Active Student</span>
+                            <CheckCircle2 className="h-4 w-4 text-green-500 mr-1" />
+                            <span>Enrolled for 25/26</span>
                           </>
-                        ) : student.opportunities.some(opp => opp.is_won) ? (
+                        ) : student.opportunities.some(opp => opp.is_won && 
+                          formatSchoolYearForDisplay(opp.school_year).includes("24/25")) ? (
                           <>
-                            <span className="inline-flex h-2 w-2 rounded-full bg-orange-500 mr-2"></span>
-                            <span>Previous Student</span>
+                            <CheckCircle2 className="h-4 w-4 text-green-500 mr-1" />
+                            <span>Currently Enrolled (24/25)</span>
                           </>
                         ) : (
                           <>
-                            <span className="inline-flex h-2 w-2 rounded-full bg-gray-500 mr-2"></span>
                             <span>Prospective Student</span>
                           </>
                         )}
-                      </p>
+                      </div>
                     </div>
                     
                     <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">Latest Grade</h5>
-                      <p className="text-sm font-medium">
+                      <div className="text-sm text-muted-foreground mb-1">Latest Grade</div>
+                      <div className="font-medium">
                         {student.opportunities.length > 0 
                           ? student.opportunities
                               .filter(opp => opp.grade)
                               .sort((a, b) => new Date(b.created_date).getTime() - new Date(a.created_date).getTime())[0]?.grade || "Not specified"
                           : "Not specified"}
-                      </p>
+                      </div>
                     </div>
                     
                     <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">Campus</h5>
-                      <p className="text-sm font-medium">
+                      <div className="text-sm text-muted-foreground mb-1">Campus</div>
+                      <div className="font-medium">
                         {student.opportunities.length > 0 
                           ? student.opportunities
                               .filter(opp => opp.campus_name)
                               .sort((a, b) => new Date(b.created_date).getTime() - new Date(a.created_date).getTime())[0]?.campus_name || "Not assigned"
                           : "Not assigned"}
-                      </p>
+                      </div>
                     </div>
                     
                     <div>
-                      <h5 className="text-sm font-medium text-muted-foreground">School Years</h5>
+                      <div className="text-sm text-muted-foreground mb-1">School Years</div>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {Array.from(new Set(
                           student.opportunities
@@ -721,53 +663,21 @@ const EnhancedFamilyDetail: React.FC = () => {
                   <h3 className="font-medium text-base mb-4 pb-2 border-b border-gray-200">Opportunities ({student.opportunities.length})</h3>
                   
                   {student.opportunities.length > 0 ? (
-                    student.opportunities
-                      .sort((a, b) => new Date(b.created_date).getTime() - new Date(a.created_date).getTime())
-                      .map((opportunity, index) => (
-                        <div 
-                          key={opportunity.id} 
-                          className={`border-b border-muted/20 pb-3 mb-3 ${index === student.opportunities.length - 1 ? 'border-b-0 pb-0 mb-0' : ''}`}
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center space-x-2">
-                              <Badge variant={opportunity.is_won ? "success" : "outline"}>
-                                {formatSchoolYearForDisplay(opportunity.school_year)}
-                              </Badge>
-                              <Badge variant={
-                                opportunity.stage === "Closed Won" ? "success" :
-                                opportunity.stage === "Closed Lost" ? "destructive" :
-                                "outline"
-                              }>
-                                {opportunity.stage || "New Application"}
-                              </Badge>
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {opportunity.created_date ? new Date(opportunity.created_date).toLocaleDateString() : ""}
-                            </div>
+                    <Collapse 
+                      accordion 
+                      items={student.opportunities.map((opportunity, index) => ({
+                        key: opportunity.id,
+                        label: (
+                          <div className="flex justify-between items-center">
+                            <span>{opportunity.name}</span>
+                            <Badge variant={opportunity.is_won ? "success" : "secondary"} className="ml-2">
+                              {opportunity.is_won ? "Won" : opportunity.stage}
+                            </Badge>
                           </div>
-                          
-                          <div className="text-sm">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                              {opportunity.grade && (
-                                <div>
-                                  <span className="text-muted-foreground">Grade:</span>{" "}
-                                  {opportunity.grade}
-                                </div>
-                              )}
-                              {opportunity.campus_name && (
-                                <div>
-                                  <span className="text-muted-foreground">Campus:</span>{" "}
-                                  {opportunity.campus_name}
-                                </div>
-                              )}
-                            </div>
-                            
-                            <div className="text-xs font-mono text-muted-foreground mt-2 bg-muted/20 p-1 rounded">
-                              ID: {opportunity.id}
-                            </div>
-                          </div>
-                        </div>
-                      ))
+                        ),
+                        children: <OpportunityCard opportunity={opportunity} studentName={getFixedStudentName(student)} />
+                      }))}
+                    />
                   ) : (
                     <div className="text-muted-foreground italic">
                       No opportunities found for this student.
@@ -1019,13 +929,13 @@ const EnhancedFamilyDetail: React.FC = () => {
                         <div className="text-sm text-muted-foreground">Current Status</div>
                         <div className="font-medium">
                           {mergedStudents?.some(s => 
-                            s.opportunities.some(o => 
+                            s.opportunities && s.opportunities.some(o => 
                               o.is_won && 
                               formatSchoolYearForDisplay(o.school_year).includes("25/26")
                             )
                           ) ? 
                             "Active Enrollment" : 
-                            mergedStudents?.some(s => s.opportunities.some(o => o.is_won)) ?
+                            mergedStudents?.some(s => s.opportunities && s.opportunities.some(o => o.is_won)) ?
                               "Previous Enrollment" :
                               "Lead / Prospect"
                           }

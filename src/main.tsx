@@ -3,6 +3,8 @@ import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import App from "./App";
 import "./index.css";
+// Import Ant Design styles
+import 'antd/dist/reset.css';
 import NotFound from "./pages/NotFound";
 import { logger } from "./utils/logger";
 import { toast } from "sonner";

@@ -1,6 +1,5 @@
 # Supabase Function Reference - fivetran_views Schema
 
-
 ## Core User Functions
 
 - **create_user_profile**: Creates a new user profile
@@ -13,7 +12,6 @@
   - Return type: trigger
   - Security: Definer
 
-
 ## Data Query Functions
 
 - **execute_sql_query**: Executes a custom SQL query
@@ -21,35 +19,34 @@
   - Return type: json
   - Security: Definer
 
-
 ## Campus Functions
 
-### get_campus_names
+### get_campus_names Function
 
-#### Description
+#### get_campus_names Description
 
 Returns campus names for given campus IDs
 
-#### Arguments
+#### get_campus_names Arguments
 
 - `campus_ids` (text[]): Array of campus IDs
 
-#### Returns
+#### get_campus_names Returns
 
 - `campus_id` (text): Campus ID
 - `campus_name` (text): Campus name
 
-### get_campus_name
+### get_campus_name Function
 
-#### Description
+#### get_campus_name Description
 
 Returns campus name for a single campus ID
 
-#### Arguments
+#### get_campus_name Arguments
 
 - `campus_id` (text): Campus ID
 
-#### Returns
+#### get_campus_name Returns
 
 - `campus_name` (text): Campus name or 'Unknown Campus' if not found
 
@@ -62,7 +59,6 @@ Returns campus name for a single campus ID
   - Arguments: campus_filter text DEFAULT NULL
   - Return type: TABLE(total_arr_amount numeric)
   - Security: Invoker
-
 
 ## Family Record Functions
 
@@ -91,7 +87,6 @@ Returns campus name for a single campus ID
   - Return type: SETOF json
   - Security: Definer
 
-
 ## Metrics Functions
 
 - **get_lead_metrics**: Retrieves lead metrics for specified time period
@@ -113,7 +108,6 @@ Returns campus name for a single campus ID
   - Arguments: -
   - Return type: TABLE(period_start date, distinct_lead_count bigint)
   - Security: Invoker
-
 
 ## Important Notes
 
