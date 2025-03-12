@@ -29,13 +29,21 @@ interface FellowData {
   status: string;
 }
 
+// Define a type for campus data
+interface CampusData {
+  id: string;
+  name: string;
+}
+
 const CampusStaffTracker: React.FC = () => {
-  const [selectedCampus, setSelectedCampus] = useState<string>("riverdale");
+  const [selectedCampus, setSelectedCampus] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [fellows, setFellows] = useState<FellowData[]>([]);
   const [fetchingFellows, setFetchingFellows] = useState<boolean>(true);
   const [selectedStage, setSelectedStage] = useState<string>("New");
+  const [campuses, setCampuses] = useState<CampusData[]>([]);
+  const [fetchingCampuses, setFetchingCampuses] = useState<boolean>(true);
 
   // Define the ordered stages
   const orderedStages = ["New", "Fellow", "Offer", "Hired", "Rejected/Declined"];
@@ -50,14 +58,94 @@ const CampusStaffTracker: React.FC = () => {
     }
   };
 
-  // Campus data
-  const campuses = [
-    { id: "riverdale", name: "Riverdale Campus" },
-    { id: "brooklyn", name: "Brooklyn Campus" },
-    { id: "queens", name: "Queens Campus" },
-    { id: "bronx", name: "Bronx Campus" },
-    { id: "manhattan", name: "Manhattan Campus" },
-  ];
+  // Fetch campuses from the database
+  useEffect(() => {
+    const fetchCampuses = async () => {
+      setFetchingCampuses(true);
+      try {
+        logger.info("Starting to fetch campus data");
+        
+        // SQL query to get campus data
+        const query = `
+          SELECT 
+            id,
+            name
+          FROM 
+            fivetran_views.campus_c
+          ORDER BY 
+            name ASC
+        `;
+        
+        logger.debug(`Executing campus query: ${query}`);
+        
+        const { data, error } = await supabase.regular.rpc("execute_sql_query", {
+          query_text: query
+        });
+        
+        if (error) {
+          logger.error("Error fetching campus data:", error);
+          setError(`Failed to load campuses: ${error.message}`);
+          // Set default campuses as fallback
+          const defaultCampuses = [
+            { id: "all", name: "All Campuses" },
+            { id: "riverdale", name: "Riverdale Campus" },
+            { id: "brooklyn", name: "Brooklyn Campus" },
+          ];
+          setCampuses(defaultCampuses);
+          setSelectedCampus(defaultCampuses[0].id);
+        } else {
+          // Handle the response format
+          let campusData: CampusData[] = [];
+          
+          if (Array.isArray(data)) {
+            campusData = data;
+          } else if (data && typeof data === 'object') {
+            if (Array.isArray(data.rows)) {
+              campusData = data.rows;
+            } else if (data.result && Array.isArray(data.result)) {
+              campusData = data.result;
+            } else {
+              // Try to find any array property in the response
+              const arrayProp = Object.entries(data)
+                .find(([_, value]) => Array.isArray(value));
+              
+              if (arrayProp) {
+                const [propName, arrayValue] = arrayProp;
+                campusData = arrayValue as CampusData[];
+              }
+            }
+          }
+          
+          // Add "All Campuses" option
+          campusData = [{ id: "all", name: "All Campuses" }, ...campusData];
+          
+          setCampuses(campusData);
+          
+          // Set the first campus as selected by default
+          if (campusData.length > 0) {
+            setSelectedCampus(campusData[0].id);
+          }
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        logger.error("Exception fetching campuses:", err);
+        setError(`Failed to load campuses: ${errorMessage}`);
+        
+        // Set default campuses as fallback
+        const defaultCampuses = [
+          { id: "all", name: "All Campuses" },
+          { id: "riverdale", name: "Riverdale Campus" },
+          { id: "brooklyn", name: "Brooklyn Campus" },
+        ];
+        setCampuses(defaultCampuses);
+        setSelectedCampus(defaultCampuses[0].id);
+      } finally {
+        setFetchingCampuses(false);
+      }
+    };
+    
+    fetchCampuses();
+  }, []);
 
   // Handle stage selection
   const handleStageSelect = (stage: string) => {
@@ -72,20 +160,25 @@ const CampusStaffTracker: React.FC = () => {
         logger.info("Starting to fetch fellows data");
         
         // Direct SQL query to get fellow data with the required fields
+        // Include join with campus_c table to get campus names
         const query = `
           SELECT 
-            id,
-            fellow_name,
-            grade_band,
-            applied_date,
-            hiring_stage,
-            cohort,
-            campus_id,
-            status
+            f.id,
+            f.fellow_name,
+            f.grade_band,
+            f.applied_date,
+            f.hiring_stage,
+            f.cohort,
+            f.campus_id,
+            f.status,
+            c.name as campus_name
           FROM 
-            fivetran_views.fellows
+            fivetran_views.fellows f
+          LEFT JOIN 
+            fivetran_views.campus_c c ON f.campus_id = c.id
+          ${selectedCampus && selectedCampus !== "all" ? `WHERE f.campus_id = '${selectedCampus}'` : ''}
           ORDER BY 
-            fellow_name ASC
+            f.fellow_name ASC
         `;
         
         logger.debug(`Executing fellows query: ${query}`);
@@ -180,7 +273,9 @@ const CampusStaffTracker: React.FC = () => {
       }
     };
     
-    fetchFellows();
+    if (selectedCampus) {
+      fetchFellows();
+    }
   }, [selectedCampus]);
   
   // Filter fellows based on selected stage
@@ -208,6 +303,9 @@ const CampusStaffTracker: React.FC = () => {
             </div>
             <p className="text-gray-600 text-sm">
               {fellow.grade_band || "No grade band specified"}
+            </p>
+            <p className="text-gray-600 text-sm">
+              {fellow.campus_name || "No campus assigned"}
             </p>
 
             <div className="flex flex-wrap gap-1 mt-2">
@@ -272,6 +370,9 @@ const CampusStaffTracker: React.FC = () => {
                   <p className="text-gray-600 text-sm">
                     {fellow.grade_band || "No grade band specified"}
                   </p>
+                  <p className="text-gray-600 text-sm">
+                    {fellow.campus_name || "No campus assigned"}
+                  </p>
 
                   <div className="flex flex-wrap gap-1 mt-2">
                     {fellow.cohort && (
@@ -312,21 +413,32 @@ const CampusStaffTracker: React.FC = () => {
         {/* Campus Selector Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <Select value={selectedCampus} onValueChange={setSelectedCampus}>
-              <SelectTrigger className="min-w-[220px] bg-white border-gray-300">
-                <div className="flex items-center gap-2">
-                  <UserRound className="h-4 w-4" />
-                  <SelectValue placeholder="Select campus" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                {campuses.map((campus) => (
-                  <SelectItem key={campus.id} value={campus.id}>
-                    {campus.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {fetchingCampuses ? (
+              <div className="min-w-[220px] p-2 flex items-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black mr-2"></div>
+                <span>Loading campuses...</span>
+              </div>
+            ) : (
+              <Select 
+                value={selectedCampus} 
+                onValueChange={setSelectedCampus}
+                disabled={campuses.length === 0}
+              >
+                <SelectTrigger className="min-w-[220px] bg-white border-gray-300">
+                  <div className="flex items-center gap-2">
+                    <UserRound className="h-4 w-4" />
+                    <SelectValue placeholder="Select campus" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  {campuses.map((campus) => (
+                    <SelectItem key={campus.id} value={campus.id}>
+                      {campus.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </div>
       </div>
@@ -380,7 +492,7 @@ const CampusStaffTracker: React.FC = () => {
       )}
       
       {/* Information for debugging */}
-      {!fetchingFellows && fellows.length === 0 && (
+      {!fetchingFellows && fellows.length === 0 && !error && (
         <div className="mb-6 p-4 bg-blue-50 text-blue-800 rounded-md flex items-start">
           <InfoIcon className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
           <div>
@@ -398,7 +510,7 @@ const CampusStaffTracker: React.FC = () => {
 
       {/* Fellows List */}
       <div className="space-y-4">
-        {!fetchingFellows && filteredFellows.length === 0 && (
+        {!fetchingFellows && filteredFellows.length === 0 && fellows.length > 0 && (
           <p className="text-center text-gray-500 py-8">
             No fellows found in the "{selectedStage}" stage. Try selecting a different stage.
           </p>
