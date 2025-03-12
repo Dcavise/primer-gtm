@@ -10,8 +10,23 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { Badge } from "../components/ui/badge";
-import { ChevronDown, Plus, UserRound } from "lucide-react";
+import { ChevronDown, Plus, UserRound, Search } from "lucide-react";
 import { supabase } from "../integrations/supabase-client";
+import { logger } from "@/utils/logger";
+import { format } from "date-fns";
+
+// Define a type for the fellow data we'll be fetching
+interface FellowData {
+  id: string;
+  fellow_name: string;
+  grade_band: string | null;
+  applied_date: string | null;
+  hiring_stage: string;
+  cohort: string | null;
+  campus_id: string | null;
+  campus_name?: string | null;
+  status: string;
+}
 
 const CampusStaffTracker: React.FC = () => {
   const [selectedCampus, setSelectedCampus] = useState<string>("riverdale");
@@ -19,6 +34,19 @@ const CampusStaffTracker: React.FC = () => {
   const [selectedStage, setSelectedStage] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [fellows, setFellows] = useState<FellowData[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [fetchingFellows, setFetchingFellows] = useState<boolean>(true);
+
+  // Format date helper function
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "N/A";
+    try {
+      return format(new Date(dateString), "MMM d, yyyy");
+    } catch {
+      return dateString;
+    }
+  };
 
   // Campus data
   const campuses = [
@@ -68,6 +96,75 @@ const CampusStaffTracker: React.FC = () => {
   const handleStageSelect = (stage: string) => {
     setSelectedStage(stage);
   };
+  
+  // Fetch fellows data directly from the database
+  useEffect(() => {
+    const fetchFellows = async () => {
+      setFetchingFellows(true);
+      try {
+        logger.info("Starting to fetch fellows data");
+        
+        // Direct SQL query to get fellow data with the required fields
+        const query = `
+          SELECT 
+            id,
+            fellow_name,
+            grade_band,
+            applied_date,
+            hiring_stage,
+            cohort,
+            campus_id,
+            status
+          FROM 
+            fivetran_views.fellows
+          ${selectedStage ? `WHERE hiring_stage = '${selectedStage}'` : ''}
+          ORDER BY 
+            fellow_name ASC
+        `;
+        
+        logger.debug(`Executing fellows query: ${query}`);
+        
+        const { data, error } = await supabase.regular.rpc("execute_sql_query", {
+          query_text: query
+        });
+        
+        if (error) {
+          logger.error("Error fetching fellows data:", error);
+          setError(`Failed to load fellows: ${error.message}`);
+          setFellows([]);
+        } else {
+          // Extract fellows data from the response
+          const fellowsData = Array.isArray(data?.rows) ? data.rows : [];
+          logger.info(`Received ${fellowsData.length} fellow records`);
+          
+          if (fellowsData.length === 0) {
+            logger.warn("No fellow records were returned despite successful query");
+          } else {
+            logger.debug("Sample fellow record:", fellowsData[0]);
+          }
+          
+          setFellows(fellowsData);
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        logger.error("Exception fetching fellows:", err);
+        setError(`Failed to load fellows: ${errorMessage}`);
+        setFellows([]);
+      } finally {
+        setFetchingFellows(false);
+        logger.info("Finished fellows data fetch attempt");
+      }
+    };
+    
+    fetchFellows();
+  }, [selectedStage]); // Re-fetch when selected stage changes
+  
+  // Filter fellows based on search query
+  const filteredFellows = fellows.filter(fellow => 
+    searchQuery === "" || 
+    fellow.fellow_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (fellow.grade_band && fellow.grade_band.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   return (
     <div className="container mx-auto p-4">
@@ -132,125 +229,90 @@ const CampusStaffTracker: React.FC = () => {
         </div>
       )}
 
-      {/* Qualified/Disqualified Filter section removed */}
-
       {/* Search */}
-      <div className="mb-6">
+      <div className="mb-6 relative">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <Search className="h-5 w-5 text-gray-400" />
+        </div>
         <input
           type="text"
-          placeholder="Search name, headline or tag"
-          className="w-full p-3 border border-gray-300 rounded-md"
+          placeholder="Search by name or grade band"
+          className="w-full p-3 pl-10 border border-gray-300 rounded-md"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
 
-      {/* Candidates List */}
-      {/* First Tab: Current Applied View */}
+      {/* Error state */}
+      {error && (
+        <div className="mb-6 p-4 bg-red-100 text-red-800 rounded-md">
+          {error}
+        </div>
+      )}
+
+      {/* Loading state */}
+      {fetchingFellows && (
+        <div className="flex justify-center items-center p-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
+        </div>
+      )}
+
+      {/* Fellows List */}
       <div className="space-y-4">
-        {/* Candidate Card 1 */}
-        <Card className="border hover:shadow-md transition-shadow">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-4">
-              <input type="checkbox" className="mt-2" />
-              <div className="flex-shrink-0 w-12 h-12 bg-gray-200 rounded-md"></div>
-              <div className="flex-grow">
-                <div className="flex flex-col sm:flex-row sm:justify-between">
-                  <h3 className="font-medium">Max Lackner</h3>
-                  <button className="text-gray-400 hover:text-gray-600">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </button>
+        {!fetchingFellows && filteredFellows.length === 0 && (
+          <p className="text-center text-gray-500 py-8">
+            No fellows found matching your search. Try adjusting your search term or stage filter.
+          </p>
+        )}
+        
+        {filteredFellows.map((fellow) => (
+          <Card key={fellow.id} className="border hover:shadow-md transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-12 h-12 bg-gray-200 rounded-md flex items-center justify-center text-gray-500 text-lg font-medium">
+                  {fellow.fellow_name.charAt(0)}
                 </div>
-                <p className="text-gray-600 text-sm">Senior Visual Interaction Design</p>
+                <div className="flex-grow">
+                  <div className="flex flex-col sm:flex-row sm:justify-between">
+                    <h3 className="font-medium">{fellow.fellow_name}</h3>
+                  </div>
+                  <p className="text-gray-600 text-sm">
+                    {fellow.grade_band || "No grade band specified"}
+                  </p>
 
-                <div className="flex flex-wrap gap-1 mt-2">
-                  <Badge
-                    variant="outline"
-                    className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100"
-                  >
-                    media
-                  </Badge>
-                  <Badge
-                    variant="outline"
-                    className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100"
-                  >
-                    creative
-                  </Badge>
-                  <Badge
-                    variant="outline"
-                    className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100"
-                  >
-                    agency
-                  </Badge>
-                </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {fellow.cohort && (
+                      <Badge
+                        variant="outline"
+                        className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100"
+                      >
+                        Cohort {fellow.cohort}
+                      </Badge>
+                    )}
+                    <Badge
+                      variant="outline"
+                      className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100"
+                    >
+                      {fellow.hiring_stage || "Unknown stage"}
+                    </Badge>
+                    {fellow.status && (
+                      <Badge
+                        variant="outline"
+                        className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100"
+                      >
+                        {fellow.status}
+                      </Badge>
+                    )}
+                  </div>
 
-                <div className="flex items-center mt-3 text-xs text-gray-500">
-                  <span>via twitter.com</span>
-                  <span className="mx-2">•</span>
-                  <span>4 days ago</span>
-                </div>
+                  <div className="flex items-center mt-3 text-xs text-gray-500">
+                    <span>Applied: {formatDate(fellow.applied_date)}</span>
+                  </div>
               </div>
             </div>
           </CardContent>
         </Card>
-
-        {/* Candidate Card 2 */}
-        <Card className="border hover:shadow-md transition-shadow">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-4">
-              <input type="checkbox" className="mt-2" />
-              <div className="flex-shrink-0 w-12 h-12 bg-gray-200 rounded-md"></div>
-              <div className="flex-grow">
-                <div className="flex flex-col sm:flex-row sm:justify-between">
-                  <h3 className="font-medium">Jenny Wilson</h3>
-                  <button className="text-gray-400 hover:text-gray-600">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </button>
-                </div>
-                <p className="text-gray-600 text-sm">Senior Design Lead at IDEO</p>
-
-                <div className="flex flex-wrap gap-1 mt-2">
-                  <Badge
-                    variant="outline"
-                    className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100"
-                  >
-                    media
-                  </Badge>
-                  <Badge
-                    variant="outline"
-                    className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100"
-                  >
-                    creative
-                  </Badge>
-                  <Badge
-                    variant="outline"
-                    className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-100"
-                  >
-                    agency
-                  </Badge>
-                </div>
-
-                <div className="flex items-center mt-3 text-xs text-gray-500">
-                  <span>via worktable.com</span>
-                  <span className="mx-2">•</span>
-                  <span>4 days ago</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        ))}
       </div>
 
       {/* Tabs UI for different view modes */}
@@ -269,74 +331,36 @@ const CampusStaffTracker: React.FC = () => {
                 <thead>
                   <tr className="border-b">
                     <th className="text-left py-2">Name</th>
-                    <th className="text-left py-2">Role</th>
-                    <th className="text-left py-2">Location</th>
+                    <th className="text-left py-2">Grade Band</th>
+                    <th className="text-left py-2">Campus</th>
                     <th className="text-left py-2">Status</th>
                     <th className="text-left py-2">Applied Date</th>
                     <th className="text-left py-2">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="border-b">
-                    <td className="py-2">John Smith</td>
-                    <td className="py-2">Developer</td>
-                    <td className="py-2">Remote</td>
-                    <td className="py-2">Applied</td>
-                    <td className="py-2">2025-03-05</td>
-                    <td className="py-2">
-                      <Button variant="ghost" size="sm">
-                        View
-                      </Button>
-                    </td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-2">Sarah Johnson</td>
-                    <td className="py-2">Designer</td>
-                    <td className="py-2">New York</td>
-                    <td className="py-2">Applied</td>
-                    <td className="py-2">2025-03-04</td>
-                    <td className="py-2">
-                      <Button variant="ghost" size="sm">
-                        View
-                      </Button>
-                    </td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-2">Michael Brown</td>
-                    <td className="py-2">Developer</td>
-                    <td className="py-2">Chicago</td>
-                    <td className="py-2">Screening</td>
-                    <td className="py-2">2025-03-01</td>
-                    <td className="py-2">
-                      <Button variant="ghost" size="sm">
-                        View
-                      </Button>
-                    </td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-2">Emily Davis</td>
-                    <td className="py-2">Marketing</td>
-                    <td className="py-2">Remote</td>
-                    <td className="py-2">Screening</td>
-                    <td className="py-2">2025-03-02</td>
-                    <td className="py-2">
-                      <Button variant="ghost" size="sm">
-                        View
-                      </Button>
-                    </td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-2">David Wilson</td>
-                    <td className="py-2">Manager</td>
-                    <td className="py-2">San Francisco</td>
-                    <td className="py-2">Interview</td>
-                    <td className="py-2">2025-02-25</td>
-                    <td className="py-2">
-                      <Button variant="ghost" size="sm">
-                        View
-                      </Button>
-                    </td>
-                  </tr>
+                  {!fetchingFellows && filteredFellows.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="text-center py-8 text-gray-500">
+                        No fellows found matching your search. Try adjusting your search term or stage filter.
+                      </td>
+                    </tr>
+                  )}
+                  
+                  {filteredFellows.map((fellow) => (
+                    <tr key={fellow.id} className="border-b">
+                      <td className="py-2">{fellow.fellow_name}</td>
+                      <td className="py-2">{fellow.grade_band || "N/A"}</td>
+                      <td className="py-2">{fellow.campus_id || "N/A"}</td>
+                      <td className="py-2">{fellow.hiring_stage}</td>
+                      <td className="py-2">{formatDate(fellow.applied_date)}</td>
+                      <td className="py-2">
+                        <Button variant="ghost" size="sm">
+                          View
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </CardContent>
