@@ -4,6 +4,8 @@ import { Card } from "../components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 import SearchBox from "../components/SearchBox";
+import { Checkbox, Divider, Table } from "antd";
+import type { CheckboxOptionType, TableColumnsType } from "antd";
 import {
   Search as SearchIcon,
   Users,
@@ -78,6 +80,14 @@ const getSchoolYearClasses = (year: string): string => {
       return "bg-purple-100 text-purple-800";
   }
 };
+
+// Define ant design table types
+interface DataType {
+  key: React.Key;
+  name: string;
+  age: number;
+  address: string;
+}
 
 /**
  * Search page component
@@ -426,6 +436,46 @@ const Search = () => {
     }
   };
 
+  // Ant Design Table setup
+  const tableColumns: TableColumnsType<DataType> = [
+    { title: 'Column 1', dataIndex: 'address', key: '1' },
+    { title: 'Column 2', dataIndex: 'address', key: '2' },
+    { title: 'Column 3', dataIndex: 'address', key: '3' },
+    { title: 'Column 4', dataIndex: 'address', key: '4' },
+    { title: 'Column 5', dataIndex: 'address', key: '5' },
+    { title: 'Column 6', dataIndex: 'address', key: '6' },
+    { title: 'Column 7', dataIndex: 'address', key: '7' },
+    { title: 'Column 8', dataIndex: 'address', key: '8' },
+  ];
+
+  const tableData: DataType[] = [
+    {
+      key: '1',
+      name: 'John Brown',
+      age: 32,
+      address: 'New York Park',
+    },
+    {
+      key: '2',
+      name: 'Jim Green',
+      age: 40,
+      address: 'London Park',
+    },
+  ];
+
+  const defaultCheckedList = tableColumns.map((item) => item.key);
+  const [checkedList, setCheckedList] = useState(defaultCheckedList);
+
+  const options = tableColumns.map(({ key, title }) => ({
+    label: title,
+    value: key,
+  }));
+
+  const newColumns = tableColumns.map((item) => ({
+    ...item,
+    hidden: !checkedList.includes(item.key as string),
+  }));
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex flex-col gap-6">
@@ -453,6 +503,23 @@ const Search = () => {
           inline={false}
           hideResults={false}
         />
+        
+        {/* Ant Design Table Component */}
+        <div className="bg-white rounded-lg shadow-sm p-6 space-y-4 mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Building className="h-5 w-5 text-slate-gray" />
+            <span className="text-xl font-semibold text-outer-space">Table Example</span>
+          </div>
+          <Divider>Columns displayed</Divider>
+          <Checkbox.Group
+            value={checkedList}
+            options={options as CheckboxOptionType[]}
+            onChange={(value) => {
+              setCheckedList(value as string[]);
+            }}
+          />
+          <Table<DataType> columns={newColumns} dataSource={tableData} style={{ marginTop: 24 }} />
+        </div>
 
         <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
           <div className="flex items-center justify-between">
