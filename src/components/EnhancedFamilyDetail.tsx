@@ -360,7 +360,7 @@ const EnhancedFamilyDetail: React.FC = () => {
     // First pass: group by normalized names
     students.forEach(student => {
       // Generate a normalized key for the student based on case-insensitive first name
-      // and a simplified last name (to handle Buritica/Butitica variations)
+      // and a simplified last name (to handle Buritica family special case)
       const firstName = student.first_name.toLowerCase();
       let lastName = student.last_name.toLowerCase();
       
@@ -694,7 +694,7 @@ const EnhancedFamilyDetail: React.FC = () => {
                   formatSchoolYearForDisplay(opp.school_year).includes("25/26")
                 )
               ) && (
-                <Tag color="green" bordered={false}>Active</Tag>
+                <Tag color="green" bordered={true} className="border-[3px] border-black">Active</Tag>
               )}
             </div>
 
@@ -702,8 +702,8 @@ const EnhancedFamilyDetail: React.FC = () => {
             <div className="flex items-center mt-2 space-x-2">
               {/* Campus Badge with Icon */}
               <Tag
-                className="flex items-center gap-1 py-1.5 pl-2 pr-3 border-2 border-black"
-                bordered={true}
+                className="flex items-center gap-1 py-1.5 pl-2 pr-3 bg-gray-100 shadow-sm"
+                bordered={false}
               >
                 <Building className="h-3.5 w-3.5 text-muted-foreground" />
                 <span className="text-sm font-medium">
@@ -713,8 +713,8 @@ const EnhancedFamilyDetail: React.FC = () => {
               
               {/* Students Count Badge */}
               <Tag
-                className="flex items-center gap-1 py-1.5 pl-2 pr-3 border-2 border-black"
-                bordered={true}
+                className="flex items-center gap-1 py-1.5 pl-2 pr-3"
+                bordered={false}
               >
                 <GraduationCap className="h-3.5 w-3.5 text-muted-foreground" />
                 <span className="text-sm font-medium">
