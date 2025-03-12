@@ -369,11 +369,6 @@ const Search = () => {
       key: 'grade',
     },
     {
-      title: 'School Year',
-      dataIndex: 'school_year',
-      key: 'school_year',
-    },
-    {
       title: 'Campus',
       dataIndex: 'campus',
       key: 'campus',
