@@ -243,7 +243,7 @@ const CampusStaffTracker: React.FC = () => {
             // Map database stages to our ordered stages (case-insensitive)
             if (stageLC === "applied" || stageLC === "interviewing") {
               mappedStage = "New";
-            } else if (stageLC === "fellowship") {
+            } else if (stageLC === "fellowship" || stageLC === "fellow") {
               mappedStage = "Fellow";
             } else if (stageLC === "made offer") {
               mappedStage = "Offer";
