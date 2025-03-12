@@ -27,6 +27,7 @@ interface DataType {
   grade: string;
   school_year: string;
   campus: string;
+  tuition: number | null;
   familyIds: {
     family_id: string;
   };
@@ -208,7 +209,8 @@ const Search = () => {
             o.school_year_c as school_year,
             cc.name as campus_name,
             a.name as account_name,
-            a.id as account_id
+            a.id as account_id,
+            o.tuition_c as tuition
           FROM 
             fivetran_views.opportunity o
           LEFT JOIN 
@@ -269,6 +271,7 @@ const Search = () => {
           grade: opp.grade || "K-8",
           school_year: opp.school_year || "",
           campus: opp.campus_name || "Unknown Campus",
+          tuition: typeof opp.tuition === 'number' ? opp.tuition : 0,
           familyIds: {
             family_id: opp.account_id || "",
           }
@@ -372,6 +375,16 @@ const Search = () => {
       title: 'Campus',
       dataIndex: 'campus',
       key: 'campus',
+    },
+    {
+      title: 'Tuition',
+      dataIndex: 'tuition',
+      key: 'tuition',
+      render: (value) => {
+        // Ensure value is a number before formatting
+        const numValue = typeof value === 'number' ? value : 0;
+        return `$${numValue.toLocaleString()}`;
+      },
     }
   ];
 
