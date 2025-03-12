@@ -31,6 +31,7 @@ import {
   Circle,
   ArrowRight,
   CheckCircle2,
+  Banknote,
 } from "lucide-react";
 import { LoadingState } from "@/components/LoadingState";
 import ErrorState from "@/components/ErrorState";
@@ -1218,15 +1219,15 @@ const FamilyDetail: React.FC = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Lifetime Value */}
                     <div className="flex items-center">
-                      <DollarSignIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <Banknote className="h-4 w-4 mr-2 text-muted-foreground" />
                       <div>
                         <div className="text-sm text-muted-foreground">Lifetime Value</div>
                         <div className="font-medium">
-                          {familyRecord.tuition_offer_count > 0
-                            ? `$${((familyRecord.tuition_offer_family_contributions.reduce((sum, val) => sum + (val || 0), 0) || 0)).toLocaleString()}`
-                            : "$0"}
+                          {familyRecord.lifetime_value !== undefined
+                            ? `$${familyRecord.lifetime_value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
+                            : "N/A"}
                         </div>
-                        <div className="text-xs text-muted-foreground">Total family contribution</div>
+                        <div className="text-xs text-muted-foreground">Based on accepted offers</div>
                       </div>
                     </div>
                     

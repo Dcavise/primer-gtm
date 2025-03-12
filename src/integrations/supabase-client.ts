@@ -732,6 +732,28 @@ export class SupabaseUnifiedClient {
             FROM fivetran_views.opportunity o
             WHERE o.id = ids.opp_id
           ) s ON true
+        ),
+        -- Calculate the lifetime value by summing up relevant financial values from tuition offers
+        lifetime_value_calc AS (
+          SELECT
+            COALESCE(
+              SUM(
+                CASE 
+                  WHEN to_status LIKE '%Accept%' OR to_status LIKE '%Won%' THEN 
+                    COALESCE(to_family_contribution, 0) + 
+                    COALESCE(to_state_scholarship, 0)
+                  ELSE 0 
+                END
+              ), 
+              0
+            ) as lifetime_value
+          FROM (
+            SELECT
+              UNNEST(fd.tuition_offer_statuses) as to_status,
+              UNNEST(fd.tuition_offer_family_contributions) as to_family_contribution,
+              UNNEST(fd.tuition_offer_state_scholarships) as to_state_scholarship
+            FROM family_data fd
+          ) tuition_offers
         )
         SELECT 
           fd.*,
@@ -739,11 +761,13 @@ export class SupabaseUnifiedClient {
           COALESCE(od.opportunity_stages, ARRAY[]::text[]) as opportunity_stages,
           COALESCE(od.opportunity_school_years, ARRAY[]::text[]) as opportunity_school_years,
           COALESCE(od.opportunity_is_won, ARRAY[]::boolean[]) as opportunity_is_won,
-          COALESCE(ocn.opportunity_campus_names, ARRAY[]::text[]) as opportunity_campus_names
+          COALESCE(ocn.opportunity_campus_names, ARRAY[]::text[]) as opportunity_campus_names,
+          COALESCE(lvc.lifetime_value, 0) as lifetime_value
         FROM family_data fd
         LEFT JOIN campus_data cd ON true
         LEFT JOIN opportunity_data od ON true
         LEFT JOIN opportunity_campus_names ocn ON true
+        LEFT JOIN lifetime_value_calc lvc ON true
       `;
 
       try {

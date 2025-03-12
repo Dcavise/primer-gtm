@@ -33,6 +33,7 @@ export interface FamilyRecord {
   contact_count: number;
   opportunity_count: number;
   tuition_offer_count: number;
+  lifetime_value?: number; // Added lifetime value based on accepted tuition offers
 }
 
 // Define the type for family search results with standardized IDs

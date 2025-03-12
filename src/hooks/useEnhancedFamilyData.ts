@@ -45,6 +45,7 @@ export interface EnhancedFamilyRecord {
   contact_count: number;
   opportunity_count: number;
   student_count: number;
+  lifetime_value?: number; // Added lifetime value based on accepted tuition offers
   is_minimal_record?: boolean;
   // Legacy fields for backward compatibility
   opportunity_ids?: string[];

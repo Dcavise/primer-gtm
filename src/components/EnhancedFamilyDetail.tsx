@@ -856,14 +856,9 @@ const EnhancedFamilyDetail: React.FC = () => {
                             style: 'currency',
                             currency: 'USD',
                             maximumFractionDigits: 0
-                          }).format(
-                            // Mock LTV calculation based on number of opportunities and won status
-                            mergedStudents?.flatMap(s => s.opportunities)
-                              .filter(o => o.is_won)
-                              .length * 12500 || 0
-                          )}
+                          }).format(familyRecord?.lifetime_value || 0)}
                         </div>
-                        <div className="text-xs text-muted-foreground">Total tuition revenue</div>
+                        <div className="text-xs text-muted-foreground">Based on accepted offers</div>
                       </div>
                     </div>
                   </div>
