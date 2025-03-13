@@ -2,8 +2,11 @@
 // to avoid path resolution issues in Vercel
 
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "./supabase/types";
+import type { Database } from "./supabase/types"; // Keep original import for reference
 import { logger } from "@/utils/logger";
+
+// Temporary type definition until proper types are created
+type Database = any;
 
 // Ensure environment variables are properly loaded with fallbacks
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
@@ -28,7 +31,7 @@ logger.info(`Supabase Service Key configured: ${SUPABASE_SERVICE_KEY ? "Yes" : "
 export interface FamilySearchResult {
   standard_id: string;
   family_id: string;
-  alternate_id: string;
+  alternate_id: string | null; // Changed from string to string | null
   family_name: string;
   current_campus_c: string;
   current_campus_name: string;
@@ -242,12 +245,13 @@ export class SupabaseUnifiedClient {
   public async searchFamilies(
     searchTerm: string
   ): Promise<OperationResponse<FamilySearchResult[]>> {
-    try {
-      logger.info(`Searching for families with term: ${searchTerm}`);
+    logger.info(`Searching for families with term: ${searchTerm}`);
 
-      // Create a Map to store unique families by ID
-      const familyMap = new Map<string, FamilySearchResult>();
-      let foundResults = false;
+    // Create a Map to store unique families by ID
+    const familyMap = new Map<string, FamilySearchResult>();
+    let foundResults = false;
+    
+    try {
 
       // First try the dedicated search_families_consistent RPC function
       try {
@@ -314,7 +318,7 @@ export class SupabaseUnifiedClient {
       // Fallback: Try SQL query using execute_sql_query RPC if we haven't found results yet
       if (!foundResults) {
         try {
-          // Use the materialized view for better performance
+          // Use the materialized view for optimized search
           const sqlQuery = `
             SELECT 
               family_id,
@@ -325,68 +329,59 @@ export class SupabaseUnifiedClient {
               contact_count,
               opportunity_count,
               opportunity_is_won_flags,
-              ARRAY[''] as opportunity_school_years,
+              opportunity_school_years,
               opportunity_preferred_campuses as opportunity_campuses,
               opportunity_stages
             FROM 
-              fivetran_views.mv_comprehensive_family_records fs  -- Using materialized view instead
+              fivetran_views.mv_comprehensive_family_records fs  -- Using the existing materialized view
             LEFT JOIN
               fivetran_views.campus_c c ON fs.current_campus_c = c.id
             WHERE 
               family_name ILIKE '%${searchTerm}%' OR
               c.name ILIKE '%${searchTerm}%' OR
               EXISTS (
-                  SELECT 1 
-                  FROM generate_subscripts(opportunity_names, 1) AS i 
-                  WHERE 
-                      opportunity_names[i] ILIKE '%${searchTerm}%'
+                SELECT 1 
+                FROM unnest(fs.opportunity_names) opp_name
+                WHERE opp_name ILIKE '%${searchTerm}%'
               ) OR
               EXISTS (
-                  SELECT 1 
-                  FROM fivetran_views.opportunity o
-                  WHERE 
-                      o.account_id = fs.family_id AND
-                      (o.student_first_name_c ILIKE '%${searchTerm}%' OR
-                       o.student_last_name_c ILIKE '%${searchTerm}%')
+                SELECT 1 
+                FROM fivetran_views.derived_students s
+                WHERE s.family_id = fs.family_id::varchar AND
+                  (s.first_name ILIKE '%${searchTerm}%' OR
+                   s.last_name ILIKE '%${searchTerm}%' OR
+                   s.full_name ILIKE '%${searchTerm}%')
               ) OR
               EXISTS (
-                  SELECT 1 
-                  FROM fivetran_views.derived_students s
-                  WHERE 
-                      s.family_id = fs.family_id AND
-                      (s.first_name ILIKE '%${searchTerm}%' OR
-                       s.last_name ILIKE '%${searchTerm}%' OR
-                       s.full_name ILIKE '%${searchTerm}%')
-              ) OR
-              EXISTS (
-                  SELECT 1 
-                  FROM generate_subscripts(contact_last_names, 1) AS i 
-                  WHERE 
-                      contact_last_names[i] ILIKE '%${searchTerm}%' OR
-                      contact_emails[i] ILIKE '%${searchTerm}%' OR
-                      contact_phones[i] ILIKE '%${searchTerm}%'
-              ) OR
-              EXISTS (
-                  SELECT 1 
-                  FROM fivetran_views.contact c
-                  WHERE 
-                      c.account_id = fs.family_id AND
-                      (c.first_name ILIKE '%${searchTerm}%' OR
-                       c.last_name ILIKE '%${searchTerm}%' OR
-                       c.email ILIKE '%${searchTerm}%' OR
-                       c.phone ILIKE '%${searchTerm}%')
+                SELECT 1 
+                FROM unnest(fs.contact_last_names) last_name, 
+                     unnest(fs.contact_emails) email,
+                     unnest(fs.contact_phones) phone
+                WHERE last_name ILIKE '%${searchTerm}%' OR
+                      email ILIKE '%${searchTerm}%' OR
+                      phone ILIKE '%${searchTerm}%'
               )
             LIMIT 20
           `;
 
           logger.debug("Executing family search query using execute_sql_query RPC");
-          const { data, error } = await this.regular.rpc("execute_sql_query", {
-            query_text: sqlQuery,
-          });
+          
+          try {
+            const { data, error } = await this.regular.rpc("execute_sql_query", {
+              query_text: sqlQuery,
+            });
 
-          if (error) {
-            logger.warn(`Error executing SQL query: ${error.message}`, error);
-          } else {
+            if (error) {
+              // Check for specific error types for better error handling
+              if (error.message && (error.message.includes("syntax error") || error.message.includes("does not exist"))) {
+                logger.error(`SQL syntax or reference error: ${error.message}`, error);
+                throw new Error(`SQL error: ${error.message}`);
+              } else {
+                logger.warn(`Error executing SQL query: ${error.message}`, error);
+                throw new Error(`Query execution failed: ${error.message}`);
+              }
+            } 
+            
             // The execute_sql_query RPC returns results in a 'rows' property
             logger.debug(`Raw result data:`, data);
 
@@ -436,21 +431,25 @@ export class SupabaseUnifiedClient {
 
             foundResults = true;
             logger.debug(
-              `Found ${processedResults.length} families from comprehensive_family_records_with_students SQL query`
+              `Found ${processedResults.length} families from mv_comprehensive_family_records SQL query`
             );
+          } catch (err) {
+            // Log the error based on type
+            if (err instanceof Error) {
+              logger.warn("execute_sql_query RPC failed", err);
+            } else {
+              logger.error("Error in try block for SQL query execution", err);
+            }
+            // Continue to next approach
           }
-        } catch (sqlRpcError) {
-          logger.warn("execute_sql_query RPC failed", sqlRpcError);
-          // Continue to next approach
-        }
       }
 
-      // Last resort: direct POST request - only if no results found yet
+      // Try direct POST request as last resort
       if (!foundResults) {
         try {
           logger.debug("Attempting direct POST request to execute_sql_query");
 
-          // Use materialized view for better performance
+          // Use the materialized view for optimized search (last resort query)
           const sqlQuery = `
             SELECT 
               family_id,
@@ -460,77 +459,69 @@ export class SupabaseUnifiedClient {
               c.name as current_campus_name,
               contact_count,
               opportunity_count,
-              ARRAY[false]::boolean[] as opportunity_is_won_flags,
-              ARRAY['']::text[] as opportunity_school_years,
-              ARRAY['']::text[] as opportunity_campuses,
-              ARRAY['']::text[] as opportunity_stages
+              COALESCE(opportunity_is_won_flags, ARRAY[false]::boolean[]) as opportunity_is_won_flags,
+              COALESCE(opportunity_school_years, ARRAY['']::text[]) as opportunity_school_years,
+              COALESCE(opportunity_preferred_campuses, ARRAY['']::text[]) as opportunity_campuses,
+              COALESCE(opportunity_stages, ARRAY['']::text[]) as opportunity_stages
             FROM 
-              fivetran_views.mv_comprehensive_family_records fs  -- Use the materialized view
+              fivetran_views.mv_comprehensive_family_records fs  -- Using the existing materialized view
             LEFT JOIN
               fivetran_views.campus_c c ON fs.current_campus_c = c.id
             WHERE 
               family_name ILIKE '%${searchTerm}%' OR
               c.name ILIKE '%${searchTerm}%' OR
               EXISTS (
-                  SELECT 1 
-                  FROM generate_subscripts(opportunity_names, 1) AS i 
-                  WHERE 
-                      opportunity_names[i] ILIKE '%${searchTerm}%'
+                SELECT 1 
+                FROM unnest(fs.opportunity_names) opp_name
+                WHERE opp_name ILIKE '%${searchTerm}%'
               ) OR
               EXISTS (
-                  SELECT 1 
-                  FROM fivetran_views.opportunity o
-                  WHERE 
-                      o.account_id = fs.family_id AND
-                      (o.student_first_name_c ILIKE '%${searchTerm}%' OR
-                       o.student_last_name_c ILIKE '%${searchTerm}%')
+                SELECT 1 
+                FROM fivetran_views.derived_students s
+                WHERE s.family_id = fs.family_id::varchar AND
+                  (s.first_name ILIKE '%${searchTerm}%' OR
+                   s.last_name ILIKE '%${searchTerm}%' OR
+                   s.full_name ILIKE '%${searchTerm}%')
               ) OR
               EXISTS (
-                  SELECT 1 
-                  FROM fivetran_views.derived_students s
-                  WHERE 
-                      s.family_id = fs.family_id AND
-                      (s.first_name ILIKE '%${searchTerm}%' OR
-                       s.last_name ILIKE '%${searchTerm}%' OR
-                       s.full_name ILIKE '%${searchTerm}%')
+                SELECT 1 
+                FROM unnest(fs.contact_last_names) last_name, 
+                     unnest(fs.contact_emails) email,
+                     unnest(fs.contact_phones) phone
+                WHERE last_name ILIKE '%${searchTerm}%' OR
+                      email ILIKE '%${searchTerm}%' OR
+                      phone ILIKE '%${searchTerm}%'
               ) OR
               EXISTS (
-                  SELECT 1 
-                  FROM generate_subscripts(contact_last_names, 1) AS i 
-                  WHERE 
-                      contact_last_names[i] ILIKE '%${searchTerm}%' OR
-                      contact_emails[i] ILIKE '%${searchTerm}%' OR
-                      contact_phones[i] ILIKE '%${searchTerm}%'
-              ) OR
-              EXISTS (
-                  SELECT 1 
-                  FROM fivetran_views.contact c
-                  WHERE 
-                      c.account_id = fs.family_id AND
-                      (c.first_name ILIKE '%${searchTerm}%' OR
-                       c.last_name ILIKE '%${searchTerm}%' OR
-                       c.email ILIKE '%${searchTerm}%' OR
-                       c.phone ILIKE '%${searchTerm}%')
-              ) OR
-              EXISTS (
-                  SELECT 1 
-                  FROM generate_subscripts(student_first_names, 1) AS i 
-                  WHERE 
-                      student_first_names[i] ILIKE '%${searchTerm}%' OR
-                      student_last_names[i] ILIKE '%${searchTerm}%' OR
-                      student_full_names[i] ILIKE '%${searchTerm}%'
-              ) 
+                SELECT 1 
+                FROM unnest(fs.student_first_names) first_name,
+                     unnest(fs.student_last_names) last_name,
+                     unnest(fs.student_full_names) full_name
+                WHERE first_name ILIKE '%${searchTerm}%' OR
+                      last_name ILIKE '%${searchTerm}%' OR
+                      full_name ILIKE '%${searchTerm}%'
+              )
             LIMIT 20
           `;
 
-          logger.debug("Executing family search query using execute_sql_query RPC");
-          const { data, error } = await this.regular.rpc("execute_sql_query", {
-            query_text: sqlQuery,
-          });
+          logger.debug("Executing family search query using execute_sql_query RPC (last resort)");
+          
+          try {
+            const { data, error } = await this.regular.rpc("execute_sql_query", {
+              query_text: sqlQuery,
+            });
 
-          if (error) {
-            logger.warn(`Error executing SQL query: ${error.message}`, error);
-          } else {
+            if (error) {
+              // Check for specific error types for better error handling
+              if (error.message && (error.message.includes("syntax error") || error.message.includes("does not exist"))) {
+                logger.error(`SQL syntax or reference error in last resort query: ${error.message}`, error);
+                throw new Error(`SQL error in last resort query: ${error.message}`);
+              } else {
+                logger.warn(`Error executing last resort SQL query: ${error.message}`, error);
+                throw new Error(`Last resort query execution failed: ${error.message}`);
+              }
+            }
+            
             // The execute_sql_query RPC returns results in a 'rows' property
             logger.debug(`Raw result data:`, data);
 
@@ -582,9 +573,13 @@ export class SupabaseUnifiedClient {
             logger.debug(
               `Found ${processedResults.length} families from family_standard_ids SQL query`
             );
+        } catch (err) {
+          // Log the error with appropriate type checking
+          if (err instanceof Error) {
+            logger.warn("execute_sql_query RPC failed", err);
+          } else {
+            logger.error("Error in try block for last resort SQL query execution", err);
           }
-        } catch (sqlRpcError) {
-          logger.warn("execute_sql_query RPC failed", sqlRpcError);
           // Continue to next approach
         }
       }
@@ -729,6 +724,9 @@ export class SupabaseUnifiedClient {
     try {
       logger.debug(`Fetching family record for ID: ${familyId}`);
 
+      // Sanitize the input to prevent SQL injection
+      const sanitizedId = familyId.replace(/'/g, "''");
+      
       // Use the fivetran_views schema for the query
       const query = `
         SELECT 
@@ -746,22 +744,22 @@ export class SupabaseUnifiedClient {
           ARRAY(
               SELECT s.id::uuid
               FROM fivetran_views.derived_students s
-              WHERE s.family_id = family_id_param::varchar
+              WHERE s.family_id = '${sanitizedId}'::varchar
           ) AS student_ids,
           ARRAY(
               SELECT s.first_name
               FROM fivetran_views.derived_students s
-              WHERE s.family_id = family_id_param::varchar
+              WHERE s.family_id = '${sanitizedId}'::varchar
           ) AS student_first_names,
           ARRAY(
               SELECT s.last_name
               FROM fivetran_views.derived_students s
-              WHERE s.family_id = family_id_param::varchar
+              WHERE s.family_id = '${sanitizedId}'::varchar
           ) AS student_last_names,
           ARRAY(
               SELECT s.full_name
               FROM fivetran_views.derived_students s
-              WHERE s.family_id = family_id_param::varchar
+              WHERE s.family_id = '${sanitizedId}'::varchar
           ) AS student_full_names,
           -- Rest of existing fields
           (f.opportunity_ids)::uuid[],
@@ -791,25 +789,21 @@ export class SupabaseUnifiedClient {
           f.tuition_offer_last_viewed_dates,
           f.contact_count,
           f.opportunity_count,
-          (SELECT COUNT(*) FROM fivetran_views.derived_students s WHERE s.family_id = family_id_param::varchar) AS student_count,
+          (SELECT COUNT(*) FROM fivetran_views.derived_students s WHERE s.family_id = '${sanitizedId}'::varchar) AS student_count,
           f.tuition_offer_count,
           f.latest_opportunity_date,
           f.latest_contact_activity_date,
           f.latest_tuition_offer_date
         FROM 
-          fivetran_views.comprehensive_family_records_with_students f
+          fivetran_views.mv_comprehensive_family_records f
         WHERE 
-          f.family_id::varchar = family_id_param::varchar;
+          f.family_id::varchar = '${sanitizedId}'::varchar;
       `;
 
-      // Sanitize the input to prevent SQL injection
-      const sanitizedId = familyId.replace(/'/g, "''");
-
       try {
-        // First approach: Use the execute_sql_query RPC function
+        // First approach: Use the execute_sql_query RPC function with inline parameters
         const { data, error } = await this.regular.rpc("execute_sql_query", {
-          query_text: query,
-          query_params: [sanitizedId],
+          query_text: query
         });
 
         if (error) {
@@ -963,7 +957,22 @@ export class SupabaseUnifiedClient {
     try {
       logger.debug("Fetching distinct fellow stages from fivetran_views.fellows");
 
-      // Use the fivetran_views schema directly as per project standards
+      // First try using the get_distinct_fellow_stages function if it exists
+      const schemaResult = await this.schemaQualifiedRPC<string[]>(
+        "fivetran_views", 
+        "get_distinct_fellow_stages", 
+        {}
+      );
+      
+      // If the function call succeeds, return the result
+      if (schemaResult.success && schemaResult.data && schemaResult.data.length > 0) {
+        logger.debug(`Found ${schemaResult.data.length} distinct fellow stages using RPC function`);
+        return schemaResult;
+      }
+      
+      // If the function doesn't exist or fails, fall back to direct SQL query
+      logger.debug("Function call failed, falling back to direct SQL query");
+      
       // Use hiring_stage column instead of stage (which doesn't exist)
       const query = `
         SELECT DISTINCT hiring_stage as stage 
@@ -976,7 +985,7 @@ export class SupabaseUnifiedClient {
 
       // Execute the SQL query directly
       const { data, error } = await this.regular.rpc("execute_sql_query", {
-        query_text: query,
+        query_text: query
       });
 
       if (error) {
@@ -1022,7 +1031,7 @@ export class SupabaseUnifiedClient {
         return { success: false, data: [], error: "No stages found in the response" };
       }
 
-      logger.debug(`Found ${stages.length} distinct fellow stages:`, stages);
+      logger.debug(`Found ${stages.length} distinct fellow stages using SQL query`);
       return { success: true, data: stages, error: null };
     } catch (err: unknown) {
       const errorObj =
@@ -1065,6 +1074,44 @@ export class SupabaseUnifiedClient {
   }
 
   /**
+   * Execute an RPC function with schema qualification
+   * @param schema Schema name
+   * @param functionName RPC function name
+   * @param params Parameters to pass to the function
+   * @returns Result with success status
+   */
+  public async schemaQualifiedRPC<T = unknown>(
+    schema: string,
+    functionName: string,
+    params: Record<string, unknown> = {}
+  ): Promise<OperationResponse<T>> {
+    try {
+      // First try direct schema qualification
+      const fullFunctionName = `${schema}.${functionName}`;
+      logger.debug(`Calling schema-qualified function: ${fullFunctionName}`);
+      
+      try {
+        const { data, error } = await this.regular.rpc<T>(fullFunctionName, params);
+        
+        if (error) {
+          logger.warn(`Error calling ${fullFunctionName} directly: ${error.message}`);
+          throw new Error("Direct schema call failed");
+        }
+        
+        return { success: true, data, error: null };
+      } catch (directErr) {
+        // If direct call fails, try through executeRPC with schema parameter
+        logger.debug(`Direct schema call failed, trying executeRPC with schema parameter`);
+        return this.executeRPC<T>(functionName, params, schema);
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      logger.error(`schemaQualifiedRPC error for ${schema}.${functionName}: ${errorMessage}`);
+      return { success: false, data: null, error: errorMessage };
+    }
+  }
+  
+  /**
    * Refresh materialized views to ensure they have the latest data
    * @returns Result with success status
    */
@@ -1072,10 +1119,23 @@ export class SupabaseUnifiedClient {
     try {
       logger.debug("Refreshing materialized views");
       
-      // Call the refresh function we created in the database
-      const { data, error } = await this.regular.rpc("refresh_materialized_views");
+      // Call the refresh function in the public schema
+      // Note: This function returns void, not boolean
+      const { error } = await this.regular.rpc("public.refresh_materialized_views");
       
       if (error) {
+        if (error.message && (
+          error.message.includes("relation") && 
+          error.message.includes("does not exist")
+        )) {
+          logger.error("Cannot refresh materialized views: One or more views don't exist:", error);
+          return { 
+            success: false, 
+            data: false, 
+            error: "Required materialized views don't exist in the database. Please check database schema."
+          };
+        }
+        
         logger.error("Error refreshing materialized views:", error);
         return { success: false, data: false, error: error.message };
       }

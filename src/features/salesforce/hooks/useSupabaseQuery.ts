@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { supabase, OperationResponse } from "@/integrations/supabase-client"; // Import OperationResponse type
+import { supabase } from "@/integrations/supabase-client"; // Use correct import path
 import { logger } from "@/utils/logger";
 
 interface UseSupabaseQueryOptions<T> {

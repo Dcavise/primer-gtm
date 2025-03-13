@@ -1,4 +1,7 @@
-import { Database } from './types';
+// Define a basic Database type since the import path might be incorrect
+type Database = {
+  public: Record<string, any>;
+};
 
 export type FivetranViewsSchema = {
   Tables: {
