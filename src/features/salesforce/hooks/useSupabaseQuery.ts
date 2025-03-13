@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, OperationResponse } from "@/integrations/supabase-client"; // Import OperationResponse type
 import { logger } from "@/utils/logger";
 
 interface UseSupabaseQueryOptions<T> {
@@ -79,7 +79,27 @@ export function useSupabaseQuery<T>(options: UseSupabaseQueryOptions<T> = {}) {
    */
   const executeRpc = useCallback(
     async <R>(functionName: string, params: Record<string, any> = {}): Promise<R | null> => {
-      return executeQuery(() => supabase.executeRPC(functionName, params), `rpc.${functionName}`);
+      // First try executeRPC method, falling back if it doesn't exist
+      try {
+        return executeQuery(
+          async () => {
+            // Check if executeRPC exists on the supabase object
+            if (typeof supabase.executeRPC === 'function') {
+              const result = await supabase.executeRPC<R>(functionName, params);
+              return result;
+            } else {
+              // Fallback to using normal rpc method
+              logger.warn(`executeRPC method not found, falling back to direct RPC call for ${functionName}`);
+              const result = await supabase.rpc<R>(functionName, params);
+              return result;
+            }
+          }, 
+          `rpc.${functionName}`
+        );
+      } catch (err) {
+        logger.error(`Error executing RPC ${functionName}:`, err);
+        throw err;
+      }
     },
     [executeQuery]
   );

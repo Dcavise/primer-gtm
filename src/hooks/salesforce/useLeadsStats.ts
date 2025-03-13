@@ -41,7 +41,7 @@ export const fetchLeadsStats = async (
     try {
       logger.debug("Attempting to fetch data using get_weekly_lead_counts RPC");
       const { data: weeklyLeadData, error: weeklyLeadError } = await supabase.rpc(
-        "get_weekly_lead_counts",
+        "fivetran_views.get_weekly_lead_counts", // Use schema qualification with fivetran_views schema
         {
           start_date: fourWeeksAgo.toISOString().split("T")[0],
           end_date: today.toISOString().split("T")[0],

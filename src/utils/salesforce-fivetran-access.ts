@@ -114,7 +114,7 @@ export const getLeadSummaryByCampus = async () => {
         c.state as campus_state,
         COUNT(l.id) as lead_count
       FROM fivetran_views.lead l
-      JOIN fivetran_views.campuses c ON l.campus_c = c.id
+      JOIN fivetran_views.campus_c c ON l.campus_c = c.id
       GROUP BY c.name, c.state
       ORDER BY lead_count DESC
     `;
@@ -153,32 +153,52 @@ export const testFivetranConnection = async () => {
       query_text: `SELECT EXISTS(
         SELECT 1 FROM information_schema.schemata 
         WHERE schema_name = 'fivetran_views'
-      )`,
+      )`
     });
 
-    const schemaExists =
-      !schemaError && schemaData && schemaData.length > 0 && schemaData[0].exists;
-
-    if (!schemaExists) {
+    if (schemaError) {
+      logger.error("Error checking for fivetran_views schema:", schemaError);
       return {
         success: false,
         fivetranViewsExists: false,
-        error: schemaError || new Error("fivetran_views schema does not exist"),
+        error: schemaError,
       };
     }
 
-    // Check if lead table exists
+    const schemaExists = schemaData && schemaData.length > 0 && schemaData[0].exists;
+
+    if (!schemaExists) {
+      logger.warn("fivetran_views schema does not exist in the database");
+      return {
+        success: false,
+        fivetranViewsExists: false,
+        error: new Error("fivetran_views schema does not exist"),
+      };
+    }
+
+    // Check if lead table exists and is accessible
     const { data: tableData, error: tableError } = await supabase.rpc("execute_sql_query", {
-      query_text: `SELECT COUNT(*) FROM fivetran_views.lead LIMIT 1`,
+      query_text: `SELECT COUNT(*) FROM fivetran_views.lead LIMIT 1`
     });
 
-    const leadTableAccessible = !tableError && tableData;
+    if (tableError) {
+      logger.error("Error accessing fivetran_views.lead table:", tableError);
+      return {
+        success: true,
+        fivetranViewsExists: true,
+        leadTableAccessible: false,
+        error: tableError,
+      };
+    }
+
+    const leadTableAccessible = tableData && tableData.length > 0;
+    const rowCount = leadTableAccessible ? tableData[0].count : 0;
 
     return {
       success: true,
       fivetranViewsExists: true,
       leadTableAccessible,
-      rowCount: leadTableAccessible ? tableData[0].count : 0,
+      rowCount,
     };
   } catch (error) {
     logger.error("Exception testing fivetran connection:", error);

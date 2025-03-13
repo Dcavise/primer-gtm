@@ -6,13 +6,13 @@ export interface StudentOpportunity {
   id: string;
   name: string;
   stage: string;
-  stage_name?: string;
+  // stage_name is removed since it doesn't exist in the database
   school_year: string;
   is_won: boolean;
   created_date: string;
   record_type_id: string;
   campus: string;
-  campus_name?: string;
+  // campus_name is removed since it doesn't exist in the database
   grade?: string;
   lead_notes?: string;
   family_interview_notes?: string;
@@ -53,7 +53,7 @@ export interface EnhancedFamilyRecord {
   opportunity_names?: string[];
   opportunity_stages?: string[];
   opportunity_school_years?: string[];
-  opportunity_is_won?: boolean[];
+  opportunity_is_won?: boolean[]; // This should match opportunity_is_won_flags in the database
 }
 
 interface UseEnhancedFamilyDataReturn {
@@ -80,9 +80,8 @@ const transformRawFamilyData = (rawData: any): EnhancedFamilyRecord => {
 
   // Debug raw opportunity data
   console.log('Raw opportunity data:', {
-    opportunity_ids: rawData.opportunity_ids,
-    opportunity_stages: rawData.opportunity_stages,
-    opportunity_stage_names: rawData.opportunity_stage_names
+    opportunity_ids: rawData.opportunity_ids || [],
+    opportunity_stages: rawData.opportunity_stages || [],
   });
 
   // Only process if we have arrays to work with
@@ -124,47 +123,50 @@ const transformRawFamilyData = (rawData: any): EnhancedFamilyRecord => {
       const student = studentsMap.get(studentKey);
 
       // Get is_won value and add debug info
-      const rawIsWon = Array.isArray(rawData.opportunity_is_won) ? rawData.opportunity_is_won[i] : null;
+      const rawIsWon = Array.isArray(rawData.opportunity_is_won_flags) && i < rawData.opportunity_is_won_flags.length 
+        ? rawData.opportunity_is_won_flags[i] 
+        : null;
       const isWon = Boolean(rawIsWon);
       
       console.log(`Processing opportunity ${i} (${oppName}): raw is_won=${rawIsWon}, converted is_won=${isWon}`);
       
-      // Create opportunity object
+      // Create opportunity object with proper null checks
       const opportunity: StudentOpportunity = {
-        id: rawData.opportunity_ids[i] || `opp-${i}`,
+        id: Array.isArray(rawData.opportunity_ids) && i < rawData.opportunity_ids.length 
+          ? rawData.opportunity_ids[i] || `opp-${i}` 
+          : `opp-${i}`,
         name: oppName,
-        stage: Array.isArray(rawData.opportunity_stages) ? rawData.opportunity_stages[i] || "" : "",
-        stage_name: Array.isArray(rawData.opportunity_stage_names) ? rawData.opportunity_stage_names[i] || "" : "",
-        school_year: Array.isArray(rawData.opportunity_school_years)
+        stage: Array.isArray(rawData.opportunity_stages) && i < rawData.opportunity_stages.length 
+          ? rawData.opportunity_stages[i] || "" 
+          : "",
+        school_year: Array.isArray(rawData.opportunity_school_years) && i < rawData.opportunity_school_years.length
           ? rawData.opportunity_school_years[i] || ""
           : "",
         is_won: isWon,
-        created_date: Array.isArray(rawData.opportunity_created_dates)
+        created_date: Array.isArray(rawData.opportunity_created_dates) && i < rawData.opportunity_created_dates.length
           ? rawData.opportunity_created_dates[i] || new Date().toISOString()
           : new Date().toISOString(),
-        record_type_id: Array.isArray(rawData.opportunity_record_types)
+        record_type_id: Array.isArray(rawData.opportunity_record_types) && i < rawData.opportunity_record_types.length
           ? rawData.opportunity_record_types[i] || ""
           : "",
-        campus: Array.isArray(rawData.opportunity_campuses)
+        campus: Array.isArray(rawData.opportunity_campuses) && i < rawData.opportunity_campuses.length
           ? rawData.opportunity_campuses[i] || ""
           : "",
-        campus_name: Array.isArray(rawData.opportunity_campus_names)
-          ? rawData.opportunity_campus_names[i] || ""
+        grade: Array.isArray(rawData.opportunity_grades) && i < rawData.opportunity_grades.length 
+          ? rawData.opportunity_grades[i] || "" 
           : "",
-        grade: Array.isArray(rawData.opportunity_grades) ? rawData.opportunity_grades[i] || "" : "",
-        lead_notes: Array.isArray(rawData.opportunity_lead_notes)
+        lead_notes: Array.isArray(rawData.opportunity_lead_notes) && i < rawData.opportunity_lead_notes.length
           ? rawData.opportunity_lead_notes[i] || ""
           : "",
-        family_interview_notes: Array.isArray(rawData.opportunity_family_interview_notes)
+        family_interview_notes: Array.isArray(rawData.opportunity_family_interview_notes) && i < rawData.opportunity_family_interview_notes.length
           ? rawData.opportunity_family_interview_notes[i] || ""
           : "",
       };
 
       console.log('Processing opportunity stages:', {
         index: i,
-        opportunity_id: rawData.opportunity_ids[i],
+        opportunity_id: rawData.opportunity_ids?.[i],
         stage: rawData.opportunity_stages?.[i],
-        stage_name: rawData.opportunity_stage_names?.[i],
         hasStagesArray: Array.isArray(rawData.opportunity_stages),
         stagesLength: rawData.opportunity_stages?.length
       });
@@ -173,21 +175,25 @@ const transformRawFamilyData = (rawData: any): EnhancedFamilyRecord => {
     }
   }
 
-  // Create contacts array
+  // Create contacts array with better null checking
   const contacts: Contact[] = [];
   if (Array.isArray(rawData.contact_ids)) {
     for (let i = 0; i < rawData.contact_ids.length; i++) {
       contacts.push({
         id: rawData.contact_ids[i] || `contact-${i}`,
-        first_name: Array.isArray(rawData.contact_first_names)
+        first_name: Array.isArray(rawData.contact_first_names) && i < rawData.contact_first_names.length
           ? rawData.contact_first_names[i] || ""
           : "",
-        last_name: Array.isArray(rawData.contact_last_names)
+        last_name: Array.isArray(rawData.contact_last_names) && i < rawData.contact_last_names.length
           ? rawData.contact_last_names[i] || ""
           : "",
-        email: Array.isArray(rawData.contact_emails) ? rawData.contact_emails[i] || "" : "",
-        phone: Array.isArray(rawData.contact_phones) ? rawData.contact_phones[i] || "" : "",
-        last_activity_date: Array.isArray(rawData.contact_last_activity_dates)
+        email: Array.isArray(rawData.contact_emails) && i < rawData.contact_emails.length
+          ? rawData.contact_emails[i] || ""
+          : "",
+        phone: Array.isArray(rawData.contact_phones) && i < rawData.contact_phones.length
+          ? rawData.contact_phones[i] || ""
+          : "",
+        last_activity_date: Array.isArray(rawData.contact_last_activity_dates) && i < rawData.contact_last_activity_dates.length
           ? rawData.contact_last_activity_dates[i] || ""
           : "",
       });
@@ -197,7 +203,7 @@ const transformRawFamilyData = (rawData: any): EnhancedFamilyRecord => {
   const students = Array.from(studentsMap.values());
   console.log(`Transformed ${students.length} students with opportunities from raw data`);
 
-  // Return transformed record
+  // Return transformed record with better null checking
   return {
     family_id: rawData.family_id || "",
     family_name: rawData.family_name || "",
@@ -215,7 +221,7 @@ const transformRawFamilyData = (rawData: any): EnhancedFamilyRecord => {
     opportunity_names: rawData.opportunity_names || [],
     opportunity_stages: rawData.opportunity_stages || [],
     opportunity_school_years: rawData.opportunity_school_years || [],
-    opportunity_is_won: rawData.opportunity_is_won || [],
+    opportunity_is_won: rawData.opportunity_is_won_flags || [], // Use the correct field name
   };
 };
 
