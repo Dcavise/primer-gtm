@@ -9,6 +9,20 @@ import { supabase } from "@/integrations/supabase-client";
 import { logger } from "@/utils/logger";
 
 /**
+ * Type guard to safely check if data is an array with at least one element
+ */
+function isArrayWithLength(data: unknown): data is any[] {
+  return Array.isArray(data) && data.length > 0;
+}
+
+/**
+ * Type guard to check if data is a non-null object
+ */
+function isNonNullObject(data: unknown): data is Record<string, unknown> {
+  return typeof data === 'object' && data !== null;
+}
+
+/**
  * Query a Salesforce table via fivetran_views
  * @param tableName Name of the Salesforce table (e.g., 'lead', 'opportunity')
  * @param limit Maximum number of records to return
@@ -27,7 +41,7 @@ export const querySalesforceTable = async (tableName: string, limit = 100) => {
       return { success: false, data: null, error };
     }
 
-    logger.info(`Successfully queried ${tableName}, got ${data?.length || 0} records`);
+    logger.info(`Successfully queried ${tableName}, got ${isArrayWithLength(data) ? data.length : 0} records`);
     return { success: true, data, error: null };
   } catch (error) {
     logger.error(`Exception querying Salesforce table ${tableName}:`, error);
@@ -88,7 +102,7 @@ export const getWeeklyLeadCounts = async (
       return { success: false, data: null, error };
     }
 
-    logger.info(`Got ${data?.length || 0} weeks of lead count data`);
+    logger.info(`Got ${isArrayWithLength(data) ? data.length : 0} weeks of lead count data`);
     return { success: true, data, error: null };
   } catch (error) {
     logger.error("Exception getting weekly lead counts:", error);
@@ -128,7 +142,7 @@ export const getLeadSummaryByCampus = async () => {
       return { success: false, data: null, error };
     }
 
-    logger.info(`Got lead summary for ${data?.length || 0} campuses`);
+    logger.info(`Got lead summary for ${isArrayWithLength(data) ? data.length : 0} campuses`);
     return { success: true, data, error: null };
   } catch (error) {
     logger.error("Exception getting lead summary by campus:", error);
@@ -165,7 +179,7 @@ export const testFivetranConnection = async () => {
       };
     }
 
-    const schemaExists = schemaData && schemaData.length > 0 && schemaData[0].exists;
+    const schemaExists = isArrayWithLength(schemaData) && isNonNullObject(schemaData[0]) && schemaData[0].exists;
 
     if (!schemaExists) {
       logger.warn("fivetran_views schema does not exist in the database");
@@ -191,8 +205,8 @@ export const testFivetranConnection = async () => {
       };
     }
 
-    const leadTableAccessible = tableData && tableData.length > 0;
-    const rowCount = leadTableAccessible ? tableData[0].count : 0;
+    const leadTableAccessible = isArrayWithLength(tableData) && isNonNullObject(tableData[0]);
+    const rowCount = leadTableAccessible && 'count' in tableData[0] ? Number(tableData[0].count) : 0;
 
     return {
       success: true,
