@@ -6,6 +6,7 @@ export interface StudentOpportunity {
   id: string;
   name: string;
   stage: string;
+  stage_name?: string;
   school_year: string;
   is_won: boolean;
   created_date: string;
@@ -77,6 +78,13 @@ const transformRawFamilyData = (rawData: any): EnhancedFamilyRecord => {
   // Extract student information from opportunity data
   const studentsMap = new Map<string, Student>();
 
+  // Debug raw opportunity data
+  console.log('Raw opportunity data:', {
+    opportunity_ids: rawData.opportunity_ids,
+    opportunity_stages: rawData.opportunity_stages,
+    opportunity_stage_names: rawData.opportunity_stage_names
+  });
+
   // Only process if we have arrays to work with
   if (
     Array.isArray(rawData.opportunity_names) &&
@@ -115,17 +123,22 @@ const transformRawFamilyData = (rawData: any): EnhancedFamilyRecord => {
       // Add opportunity to this student
       const student = studentsMap.get(studentKey);
 
+      // Get is_won value and add debug info
+      const rawIsWon = Array.isArray(rawData.opportunity_is_won) ? rawData.opportunity_is_won[i] : null;
+      const isWon = Boolean(rawIsWon);
+      
+      console.log(`Processing opportunity ${i} (${oppName}): raw is_won=${rawIsWon}, converted is_won=${isWon}`);
+      
       // Create opportunity object
       const opportunity: StudentOpportunity = {
         id: rawData.opportunity_ids[i] || `opp-${i}`,
         name: oppName,
         stage: Array.isArray(rawData.opportunity_stages) ? rawData.opportunity_stages[i] || "" : "",
+        stage_name: Array.isArray(rawData.opportunity_stage_names) ? rawData.opportunity_stage_names[i] || "" : "",
         school_year: Array.isArray(rawData.opportunity_school_years)
           ? rawData.opportunity_school_years[i] || ""
           : "",
-        is_won: Array.isArray(rawData.opportunity_is_won)
-          ? rawData.opportunity_is_won[i] || false
-          : false,
+        is_won: isWon,
         created_date: Array.isArray(rawData.opportunity_created_dates)
           ? rawData.opportunity_created_dates[i] || new Date().toISOString()
           : new Date().toISOString(),
@@ -146,6 +159,15 @@ const transformRawFamilyData = (rawData: any): EnhancedFamilyRecord => {
           ? rawData.opportunity_family_interview_notes[i] || ""
           : "",
       };
+
+      console.log('Processing opportunity stages:', {
+        index: i,
+        opportunity_id: rawData.opportunity_ids[i],
+        stage: rawData.opportunity_stages?.[i],
+        stage_name: rawData.opportunity_stage_names?.[i],
+        hasStagesArray: Array.isArray(rawData.opportunity_stages),
+        stagesLength: rawData.opportunity_stages?.length
+      });
 
       student.opportunities.push(opportunity);
     }

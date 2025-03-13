@@ -2,6 +2,7 @@ import React from "react";
 import { useParams, Link, Navigate } from "react-router-dom";
 import { Tabs as ShadcnTabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { StudentOpportunity } from "../hooks/useEnhancedFamilyData";
 import {
   Card,
   CardContent,
@@ -12,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { Tag, Tabs, Collapse, Badge, Divider, Space } from "antd";
-import { useEnhancedFamilyData, Student, StudentOpportunity } from "@/hooks/useEnhancedFamilyData";
+import { useEnhancedFamilyData, Student } from "@/hooks/useEnhancedFamilyData";
 import {
   PhoneIcon,
   MailIcon,
@@ -111,6 +112,83 @@ const extractStudentOpportunities = (student: Student): StudentOpportunity[] => 
   return [];
 };
 
+// Function to format date
+const formatDate = (dateString: string): string => {
+  try {
+    const date = new Date(dateString);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return "Date unavailable";
+    }
+    
+    return date.toLocaleDateString();
+  } catch (e) {
+    return "Date unavailable";
+  }
+};
+
+// Function to determine color based on opportunity stage
+const getOpportunityStageColor = (stage: string): string => {
+  switch (stage) {
+    case "Closed Won":
+      return "green";
+    case "Closed Lost":
+      return "red";
+    case "Application":
+      return "blue";
+    case "Qualified Lead":
+      return "orange";
+    default:
+      return "default";
+  }
+};
+
+// Function to get opportunity stage
+const getOpportunityStage = (opportunity: StudentOpportunity): string => {
+  // Debug logging
+  console.log('getOpportunityStage called with:', {
+    id: opportunity.id,
+    name: opportunity.name,
+    is_won: opportunity.is_won,
+    stage: opportunity.stage,
+    stage_name: opportunity.stage_name
+  });
+
+  // For the specific problematic opportunity
+  if (opportunity.id === '006UH00000KdgjpYAB') {
+    console.log('SPECIFIC LOG - Opportunity data from Supabase for problematic ID:', opportunity);
+  }
+
+  // Always check if opportunity is won first
+  if (opportunity.is_won === true) {
+    console.log(`Opportunity ${opportunity.id} is marked as won, returning "Closed Won"`);
+    return 'Closed Won';
+  }
+
+  // Check stage_name first (from the database)
+  if (opportunity.stage_name) {
+    console.log(`Opportunity ${opportunity.id} using stage_name: ${opportunity.stage_name}`);
+    return opportunity.stage_name;
+  }
+
+  // Then check for stage (might be set in the frontend)
+  if (opportunity.stage) {
+    console.log(`Opportunity ${opportunity.id} using stage: ${opportunity.stage}`);
+    return opportunity.stage;
+  }
+
+  // Fallback: Try to determine status from opportunity name
+  if (opportunity.name && opportunity.name.includes(' - R')) {
+    console.log(`Opportunity ${opportunity.id} has name with '-R' suffix, returning "Reapplication"`);
+    return 'Reapplication';
+  }
+
+  // Default fallback
+  console.log(`Opportunity ${opportunity.id} has no stage info, defaulting to "Application"`);
+  return 'Application';
+};
+
 // Timeline component for student opportunities
 const StudentTimeline: React.FC<{ opportunities: StudentOpportunity[], studentName?: string }> = ({ 
   opportunities, 
@@ -124,10 +202,14 @@ const StudentTimeline: React.FC<{ opportunities: StudentOpportunity[], studentNa
     return <div className="text-muted-foreground">No opportunity history available</div>;
   }
 
-  // Log the opportunity details for debugging
+  // Enhanced debugging for opportunity details
   console.log('Opportunity details:', opportunities.map(o => ({
     id: o.id,
+    name: o.name,
     stage: o.stage,
+    stageName: o.stage_name,
+    is_won: o.is_won,
+    displayedStage: getOpportunityStage(o),
     school_year: o.school_year,
     created_date: o.created_date
   })));
@@ -152,6 +234,7 @@ const StudentTimeline: React.FC<{ opportunities: StudentOpportunity[], studentNa
   // Group opportunities by school year
   const opportunitiesByYear = sortedOpportunities.reduce<Record<string, StudentOpportunity[]>>(
     (acc, opportunity) => {
+      // Make sure we have a valid school year, defaulting to 'Unknown' if not present
       const schoolYear = opportunity.school_year || 'Unknown';
       if (!acc[schoolYear]) {
         acc[schoolYear] = [];
@@ -232,18 +315,27 @@ const StudentTimeline: React.FC<{ opportunities: StudentOpportunity[], studentNa
                         <line x1="10" x2="8" y1="9" y2="9"></line>
                       </svg>
                     )}
-                    {opportunity.stage || 'New Application'} {opportunity.is_won && '(Enrolled)'}
+                    {(() => {
+                      const stage = getOpportunityStage(opportunity);
+                      console.log(`Rendering stage for opportunity ${opportunity.id}: is_won=${opportunity.is_won}, stage=${stage}`);
+                      return stage;
+                    })()} {opportunity.is_won && '(Enrolled)'}
                   </h3>
                   <p className="mt-1 text-sm text-gray-600 dark:text-neutral-400">
-                    {opportunity.campus_name && `Campus: ${opportunity.campus_name}`}
-                    {opportunity.grade && opportunity.campus_name && ' | '}
+                    {opportunity.campus_name && `Campus: ${opportunity.campus_name}`} 
+                    {opportunity.campus_name && opportunity.grade && ' | '} 
                     {opportunity.grade && `Grade: ${opportunity.grade}`}
+                    {(opportunity.campus_name || opportunity.grade) && ' | '}
+                    {`School Year: ${opportunity.school_year || 'Unknown'}`}
                   </p>
-                  {opportunity.created_date && (
-                    <div className="mt-1 text-xs text-gray-500">
-                      Created: {new Date(opportunity.created_date).toLocaleDateString()}
-                    </div>
-                  )}
+                  <div className="mt-1 text-xs text-gray-500">
+                    {opportunity.created_date && (
+                      <>Created: {formatDate(opportunity.created_date)} | </>
+                    )}
+                    <span className="font-mono bg-gray-50 dark:bg-gray-700 px-1 py-0.5 rounded text-xs">
+                      ID: {opportunity.id}
+                    </span>
+                  </div>
                 </div>
                 {/* End Right Content */}
               </div>
@@ -1041,10 +1133,22 @@ const EnhancedFamilyDetail: React.FC = () => {
                 console.log("Students array:", familyRecord.students);
                 if (familyRecord.students && familyRecord.students.length > 0) {
                   console.log("First student:", familyRecord.students[0]);
-                  console.log(
-                    "First student opportunities:",
-                    familyRecord.students[0].opportunities
-                  );
+                  
+                  // Log each opportunity with more detail
+                  if (familyRecord.students[0].opportunities) {
+                    console.log("First student opportunities:");
+                    familyRecord.students[0].opportunities.forEach((opp, idx) => {
+                      console.log(`Opportunity ${idx}:`, {
+                        id: opp.id,
+                        name: opp.name, 
+                        is_won: opp.is_won,
+                        stage: opp.stage,
+                        stageName: opp.stage_name,
+                        school_year: opp.school_year,
+                        displayed_stage: getOpportunityStage(opp)
+                      });
+                    });
+                  }
                 } else {
                   console.log("No students found in record");
                   console.log("Raw opportunity data:", {
@@ -1255,22 +1359,6 @@ const EnhancedFamilyDetail: React.FC = () => {
       </div>
     </div>
   );
-};
-
-// Function to determine color based on opportunity stage
-const getOpportunityStageColor = (stage: string): string => {
-  switch (stage) {
-    case "Closed Won":
-      return "green";
-    case "Closed Lost":
-      return "red";
-    case "Application":
-      return "blue";
-    case "Qualified Lead":
-      return "orange";
-    default:
-      return "default";
-  }
 };
 
 export default EnhancedFamilyDetail;
