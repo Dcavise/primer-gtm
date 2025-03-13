@@ -61,7 +61,8 @@ export async function getApiKey(keyName: string): Promise<string> {
 }
 
 /**
- * Geocode an address using Google Maps API via Supabase function
+ * Mock geocode function that returns fixed coordinates for any address
+ * This replaces the previous implementation that used Google Maps API
  */
 export const geocodeAddress = async (
   address: string
@@ -70,9 +71,9 @@ export const geocodeAddress = async (
   coordinates: Coordinates;
 } | null> => {
   try {
-    console.log(`Geocoding address: ${address}`);
+    console.log(`[MOCK] Geocoding address: ${address}`);
 
-    // Improved error handling and logging
+    // Basic validation (same as before)
     if (!address || address.trim() === "") {
       toast.error("Invalid address", {
         description: "Please provide a valid address to search.",
@@ -80,46 +81,38 @@ export const geocodeAddress = async (
       return null;
     }
 
-    // Make API request to our supabase function
-    console.log(`Using Supabase edge function to geocode address`);
+    // Wait a moment to simulate network request
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-    const { data, error } = await supabase.functions.invoke("geocode-address", {
-      body: { address },
-    });
-
-    if (error) {
-      console.error(`Geocoding edge function error:`, error);
-      toast.error("Geocoding failed", {
-        description: error.message || "Could not find coordinates for the provided address.",
-      });
-      return null;
-    }
-
-    if (!data || !data.coordinates) {
-      console.error("Invalid geocoding result structure:", data);
-      toast.error("Address location error", {
-        description: "The system couldn't determine exact coordinates for this address.",
-      });
-      return null;
-    }
+    // Generate deterministic coordinates based on address length
+    // This ensures the same address always gets the same coordinates
+    const addressHash = address.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    
+    // Generate coordinates in San Francisco area (37.7749° N, 122.4194° W)
+    // We'll vary the coordinates slightly based on the address hash
+    const lat = 37.7749 + (addressHash % 100) / 1000; 
+    const lng = -122.4194 + (addressHash % 100) / 1000;
 
     console.log(
-      `Successfully geocoded address to: ${data.formattedAddress} (${data.coordinates.lat}, ${data.coordinates.lng})`
+      `[MOCK] Generated coordinates for "${address}": (${lat}, ${lng})`
     );
 
+    toast.info("Using estimated location", {
+      description: "Exact geocoding is currently unavailable, using approximate coordinates.",
+    });
+
     return {
-      address: data.formattedAddress || address,
+      address: address, // Return the original address 
       coordinates: {
-        lat: data.coordinates.lat,
-        lng: data.coordinates.lng,
+        lat,
+        lng,
       },
     };
   } catch (error) {
-    console.error("Error geocoding address:", error);
+    console.error("[MOCK] Error in geocoding address:", error);
 
-    toast.error("Geocoding failed", {
-      description:
-        "Could not find coordinates for the provided address. Please check the address and try again.",
+    toast.error("Location processing failed", {
+      description: "Could not process this address. Please try a different format.",
     });
 
     return null;

@@ -7,11 +7,15 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 };
 
+// Mock keys for APIs we've removed external dependencies for
 const API_KEYS = {
-  google_maps: Deno.env.get('GOOGLE_MAPS_API_KEY') || Deno.env.get('GOOGLE_API_KEY') || '',
-  zoneomics: Deno.env.get('ZONEOMICS_API_KEY') || '',
-  census: Deno.env.get('CENSUS_API_KEY') || '',
-  greatschools: Deno.env.get('GREATSCHOOLS_API_KEY') || '',
+  // Return empty strings for removed API dependencies to indicate they're unavailable
+  google_maps: '',
+  zoneomics: '',
+  census: '',
+  greatschools: '',
+  
+  // Still keep OpenAI key since it might be used for other purposes
   openai: Deno.env.get('OPENAI_API_KEY') || '',
 };
 

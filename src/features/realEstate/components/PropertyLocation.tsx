@@ -7,8 +7,11 @@ interface PropertyLocationProps {
 }
 
 const PropertyLocation: React.FC<PropertyLocationProps> = ({ address }) => {
-  // Create Google Maps URL for the address
+  // Create Google Maps URL for the address (users can still use Google Maps in browser)
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+  
+  // Get only city and state from address (assuming address format includes city and state)
+  const cityState = address.split(',').slice(-2).join(',').trim();
 
   return (
     <Card>
@@ -24,6 +27,14 @@ const PropertyLocation: React.FC<PropertyLocationProps> = ({ address }) => {
             <MapPin className="h-5 w-5 mr-2 text-slate-600" />
             <span className="text-slate-800">{address}</span>
           </div>
+          
+          {/* Location details */}
+          <div className="text-sm text-center mb-4 text-slate-600">
+            <p>Located in {cityState || "the city center"}.</p>
+            <p className="mt-1">
+              Visit the property for precise location information.
+            </p>
+          </div>
 
           <a
             href={googleMapsUrl}
@@ -32,7 +43,7 @@ const PropertyLocation: React.FC<PropertyLocationProps> = ({ address }) => {
             className="flex items-center text-primary hover:underline mt-2"
           >
             <ExternalLink className="h-4 w-4 mr-1" />
-            View on Google Maps
+            Look up on Google Maps
           </a>
         </div>
       </CardContent>
