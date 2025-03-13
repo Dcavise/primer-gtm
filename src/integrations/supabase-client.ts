@@ -245,13 +245,12 @@ export class SupabaseUnifiedClient {
   public async searchFamilies(
     searchTerm: string
   ): Promise<OperationResponse<FamilySearchResult[]>> {
-    logger.info(`Searching for families with term: ${searchTerm}`);
-
-    // Create a Map to store unique families by ID
-    const familyMap = new Map<string, FamilySearchResult>();
-    let foundResults = false;
-    
     try {
+      logger.info(`Searching for families with term: ${searchTerm}`);
+
+      // Create a Map to store unique families by ID
+      const familyMap = new Map<string, FamilySearchResult>();
+      let foundResults = false;
 
       // First try the dedicated search_families_consistent RPC function
       try {
@@ -442,6 +441,9 @@ export class SupabaseUnifiedClient {
             }
             // Continue to next approach
           }
+        } catch (outerErr) {
+          logger.warn("Outer SQL query block failed", outerErr);
+        }
       }
 
       // Try direct POST request as last resort
@@ -573,14 +575,16 @@ export class SupabaseUnifiedClient {
             logger.debug(
               `Found ${processedResults.length} families from family_standard_ids SQL query`
             );
-        } catch (err) {
-          // Log the error with appropriate type checking
-          if (err instanceof Error) {
-            logger.warn("execute_sql_query RPC failed", err);
-          } else {
-            logger.error("Error in try block for last resort SQL query execution", err);
+          } catch (innerErr) {
+            // Log the error with appropriate type checking
+            if (innerErr instanceof Error) {
+              logger.warn("execute_sql_query RPC failed", innerErr);
+            } else {
+              logger.error("Error in try block for last resort SQL query execution", innerErr);
+            }
           }
-          // Continue to next approach
+        } catch (outerErr) {
+          logger.warn("Outer last resort query block failed", outerErr);
         }
       }
 
