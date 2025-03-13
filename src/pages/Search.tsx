@@ -374,16 +374,16 @@ const Search = () => {
   }, []);
 
   const handleRowClick = (record: DataType) => {
-    if (!record.id) {
+    if (!record.account_id) {
       console.error("Cannot navigate - missing family ID", record);
       return;
     }
 
     // Log for debugging
-    console.log(`Table: Navigating to family detail with ID: ${record.id}`);
+    console.log(`Table: Navigating to family detail with ID: ${record.account_id}`);
 
-    // Navigate to the family detail page
-    navigate(`/family-detail/${record.id}`);
+    // Navigate to the family detail page using the account_id (family ID)
+    navigate(`/family-detail/${record.account_id}`);
   };
 
   const tableColumns: TableColumnsType<DataType> = [
