@@ -10,7 +10,9 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx}\"",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate-types": "supabase gen types typescript --schema=public,fivetran_views > src/integrations/supabase/types.ts",
+    "update-db": "npm run generate-types"
   },
   "dependencies": {
     "@ant-design/icons": "^5.6.1",

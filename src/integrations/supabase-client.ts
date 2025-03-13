@@ -314,7 +314,7 @@ export class SupabaseUnifiedClient {
       // Fallback: Try SQL query using execute_sql_query RPC if we haven't found results yet
       if (!foundResults) {
         try {
-          // Use the correct table name based on the schema information
+          // Use the materialized view for better performance
           const sqlQuery = `
             SELECT 
               family_id,
@@ -329,7 +329,7 @@ export class SupabaseUnifiedClient {
               opportunity_preferred_campuses as opportunity_campuses,
               opportunity_stages
             FROM 
-              fivetran_views.comprehensive_family_records_with_students fs
+              fivetran_views.mv_comprehensive_family_records fs  -- Using materialized view instead
             LEFT JOIN
               fivetran_views.campus_c c ON fs.current_campus_c = c.id
             WHERE 
@@ -375,15 +375,7 @@ export class SupabaseUnifiedClient {
                        c.last_name ILIKE '%${searchTerm}%' OR
                        c.email ILIKE '%${searchTerm}%' OR
                        c.phone ILIKE '%${searchTerm}%')
-              ) OR
-              EXISTS (
-                  SELECT 1 
-                  FROM generate_subscripts(student_first_names, 1) AS i 
-                  WHERE 
-                      student_first_names[i] ILIKE '%${searchTerm}%' OR
-                      student_last_names[i] ILIKE '%${searchTerm}%' OR
-                      student_full_names[i] ILIKE '%${searchTerm}%'
-              ) 
+              )
             LIMIT 20
           `;
 
@@ -458,7 +450,7 @@ export class SupabaseUnifiedClient {
         try {
           logger.debug("Attempting direct POST request to execute_sql_query");
 
-          // Use family_standard_ids table as a last resort
+          // Use materialized view for better performance
           const sqlQuery = `
             SELECT 
               family_id,
@@ -473,7 +465,7 @@ export class SupabaseUnifiedClient {
               ARRAY['']::text[] as opportunity_campuses,
               ARRAY['']::text[] as opportunity_stages
             FROM 
-              fivetran_views.family_standard_ids fs
+              fivetran_views.mv_comprehensive_family_records fs  -- Use the materialized view
             LEFT JOIN
               fivetran_views.campus_c c ON fs.current_campus_c = c.id
             WHERE 
@@ -1069,6 +1061,31 @@ export class SupabaseUnifiedClient {
         publicSchema: false,
         fivetranViewsSchema: false,
       };
+    }
+  }
+
+  /**
+   * Refresh materialized views to ensure they have the latest data
+   * @returns Result with success status
+   */
+  public async refreshMaterializedViews(): Promise<OperationResponse<boolean>> {
+    try {
+      logger.debug("Refreshing materialized views");
+      
+      // Call the refresh function we created in the database
+      const { data, error } = await this.regular.rpc("refresh_materialized_views");
+      
+      if (error) {
+        logger.error("Error refreshing materialized views:", error);
+        return { success: false, data: false, error: error.message };
+      }
+      
+      logger.info("Successfully refreshed materialized views");
+      return { success: true, data: true, error: null };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      logger.error("Failed to refresh materialized views:", err);
+      return { success: false, data: false, error: errorMessage };
     }
   }
 }
