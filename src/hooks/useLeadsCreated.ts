@@ -180,27 +180,34 @@ export function useLeadsCreated({
           console.log(`- Parameter type: ${typeof campusId}`);
           console.log(`- Null check: ${campusId === null ? "IS NULL" : "NOT NULL"}`);
 
-          // Different handling for specific campus vs. all campuses
-          if (campusId !== null) {
-            console.log(`- Length: ${campusId.length}`);
-            console.log(`- Whitespace check: "${campusId}" vs "${campusId.trim()}"`);
-            console.log(`- Has leading/trailing whitespace: ${campusId !== campusId.trim()}`);
+          // Debug information about campus filter
+          console.log("Leads SQL query - Campus filter information:");
+          console.log(`- Campus name parameter: "${campusId}"`);
+          console.log(`- Parameter type: ${typeof campusId}`);
+          console.log(`- Null check: ${campusId === null ? "IS NULL" : "NOT NULL"}`);
+          
+          // Add campus filter if provided
+          if (campusId !== null && campusId !== undefined) {
+            // Ensure campusId is treated as a string
+            const campusIdStr = String(campusId);
+            console.log(`- Length: ${campusIdStr.length}`);
+            console.log(`- Whitespace check: "${campusIdStr}" vs "${campusIdStr.trim()}"`);
+            console.log(`- Has leading/trailing whitespace: ${campusIdStr !== campusIdStr.trim()}`);
 
             // Ensure we're properly escaping single quotes for SQL
-            const escapedCampusId = campusId.replace(/'/g, "''");
-
-            // Add campus filtering with case-insensitive matching
-            query += `
-            AND l.preferred_campus_c ILIKE '${escapedCampusId}'`;
-
-            console.log(`- Final SQL parameter (escaped): '${escapedCampusId}'`);
-            console.log(
-              `- SQL will use: AND preferred_campus_c ILIKE '${escapedCampusId}' (case-insensitive)`
-            );
-            console.log(`- This applies to ALL campus selections for consistent behavior`);
+            const escapedCampusId = campusIdStr.replace(/'/g, "''");
+            
+            // Based on the SQL query example, we need to make the campus name match exactly
+            console.log(`- SQL filter will use: preferred_campus_c = '${escapedCampusId}'`);
+            
+            // Add the campus filter to the WHERE clause
+            if (query.includes("WHERE")) {
+              query += ` AND preferred_campus_c = '${escapedCampusId}'`;
+            } else {
+              query += ` WHERE preferred_campus_c = '${escapedCampusId}'`;
+            }
           } else {
-            // For 'all campuses', we don't add any WHERE clause for preferred_campus_c
-            console.log(`- No campus filter added - will show all campuses`);
+            console.log("- No campus filter will be applied");
           }
           // Add GROUP BY and ORDER BY clauses - using DATE_TRUNC with the selected period
           query += `
@@ -269,22 +276,23 @@ export function useLeadsCreated({
                 throw directError;
               }
 
-              if (!directData || directData.length === 0) {
+              if (!directData || !Array.isArray(directData) || directData.length === 0) {
                 console.warn("No data returned from direct SQL query");
                 return processLeadMetrics([], period);
               }
 
               console.log("Direct SQL query returned:", directData.length, "rows");
-              return processLeadMetrics(directData, period);
+              // Type assertion since we've confirmed it's an array above
+              return processLeadMetrics(directData as RawLeadMetric[], period);
             } catch (error) {
               console.error("All SQL query methods failed:", error);
               // Return empty data structure when all methods fail
               return processLeadMetrics([], period);
             }
           } else {
-            console.log("SQL RPC returned:", sqlData?.length || 0, "rows");
-            // Process the data ourselves
-            responseData = processLeadMetrics(sqlData, period);
+            console.log("SQL RPC returned:", Array.isArray(sqlData) ? sqlData.length : 0, "rows");
+            // Process the data ourselves - ensure it's the right type with a check and type assertion
+            responseData = processLeadMetrics(Array.isArray(sqlData) ? sqlData as RawLeadMetric[] : [], period);
           }
         }
 

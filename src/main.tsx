@@ -126,6 +126,11 @@ const router = createBrowserRouter([
             path: "family/:familyId/detail",
             element: <EnhancedFamilyDetail />,
           },
+          // New Family Detail Page with mock data
+          {
+            path: "family-mock/:familyId",
+            element: <FamilyDetail />,
+          },
           // Search Page
           {
             path: "search",

@@ -156,8 +156,8 @@ const Search = () => {
     // Navigate based on the result type
     switch (result.type) {
       case "Family":
-        // Navigate to the family detail page with the best available ID
-        navigate(`/family-detail/${bestId}`);
+        // Navigate to the mock family detail page with the best available ID
+        navigate(`/family-mock/${bestId}`);
         break;
       case "Student":
         // Replace with actual student profile route when available
@@ -380,10 +380,10 @@ const Search = () => {
     }
 
     // Log for debugging
-    console.log(`Table: Navigating to family detail with ID: ${record.account_id}`);
+    console.log(`Table: Navigating to mock family detail with ID: ${record.account_id}`);
 
-    // Navigate to the family detail page using the account_id (family ID)
-    navigate(`/family-detail/${record.account_id}`);
+    // Navigate to the mock family detail page using the account_id (family ID)
+    navigate(`/family-mock/${record.account_id}`);
   };
 
   const tableColumns: TableColumnsType<DataType> = [
@@ -461,7 +461,7 @@ const Search = () => {
           size="small"
           onClick={(e) => {
             e.stopPropagation(); // Prevent row click from triggering
-            navigate(`/family-detail/${record.account_id}`);
+            navigate(`/family-mock/${record.account_id}`);
           }}
           className="bg-blue-500 hover:bg-blue-600"
         >

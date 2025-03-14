@@ -1,50 +1,49 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase-client";
 import { Campus } from "@/types";
 import { toast } from "sonner";
 import { logger } from "@/utils/logger";
 import { handleError, tryCatch, ErrorType } from "@/utils/error-handler";
+import { getLeadSummaryByCampus } from "../utils/salesforce-data-access";
 
 // Query key for type safety and reuse
 export const CAMPUS_QUERY_KEY = ["campuses"] as const;
 
 /**
  * Fetch campuses function that can be used outside of React components
+ * Uses salesforce-data-access.ts module with a fallback to mock data
  */
 export async function fetchCampuses(): Promise<Campus[]> {
   try {
-    // Get unique campus names directly from the lead table's preferred_campus_c field
-    const { data: campusData, error: campusError } = await supabase.rpc("execute_sql_query", {
-      query_text: `SELECT DISTINCT preferred_campus_c as campus_name
-                  FROM fivetran_views.lead
-                  WHERE preferred_campus_c IS NOT NULL
-                  ORDER BY preferred_campus_c`,
-    });
-
-    if (campusError) {
-      console.error("Error fetching campus data from lead table:", campusError);
-      throw new Error("Failed to fetch campus data");
+    // Get campuses from the data access layer
+    const response = await getLeadSummaryByCampus();
+    
+    if (response.success && response.data && response.data.length > 0) {
+      // Map the data to the expected Campus interface
+      return response.data.map(item => ({
+        campus_id: item.campus_name,
+        campus_name: item.campus_name
+      }));
+    } else {
+      // Fallback to mock data if no data or error
+      logger.warn("Falling back to mock campus data");
+      return [
+        { campus_id: "Atlanta", campus_name: "Atlanta" },
+        { campus_id: "Miami", campus_name: "Miami" },
+        { campus_id: "New York", campus_name: "New York" },
+        { campus_id: "Birmingham", campus_name: "Birmingham" },
+        { campus_id: "Chicago", campus_name: "Chicago" },
+      ];
     }
-
-    // Check if campusData is an array before mapping
-    if (!campusData || !Array.isArray(campusData)) {
-      console.error("Invalid campus data format:", campusData);
-      return [];
-    }
-
-    // Map results to the expected Campus interface format
-    const campuses = campusData.map((item: { campus_name: string }) => ({
-      campus_id: item.campus_name, // Use the campus name as the ID for filtering
-      campus_name: item.campus_name,
-    }));
-
-    console.log("Fetched", campuses.length, "campuses from lead table");
-    return campuses;
-  } catch (err) {
-    console.error("Error in fetchCampuses:", err);
-    throw new Error(
-      "Failed to fetch campuses data: " + (err instanceof Error ? err.message : String(err))
-    );
+  } catch (error) {
+    // Log error and return mock data on exception
+    logger.error("Error fetching campuses:", error);
+    return [
+      { campus_id: "Atlanta", campus_name: "Atlanta" },
+      { campus_id: "Miami", campus_name: "Miami" },
+      { campus_id: "New York", campus_name: "New York" },
+      { campus_id: "Birmingham", campus_name: "Birmingham" },
+      { campus_id: "Chicago", campus_name: "Chicago" },
+    ];
   }
 }
 

@@ -1,20 +1,20 @@
 import { useState, useEffect } from "react";
+import { supabase } from "../integrations/supabase-client";
 import {
   FormattedLeadsResponse,
   UseFormattedLeadsOptions,
   FormattedLeadMetric,
 } from "./useFormattedLeadsMetrics";
-import { fetchClosedWonData } from "../utils/salesforce-data-access";
 
-// Interface for raw opportunity metrics data
+// Interface for raw opportunity metrics from Supabase views
 interface FormattedOpportunityMetric extends Omit<FormattedLeadMetric, "lead_count"> {
   opportunity_count: number;
 }
 
 /**
- * Hook to fetch closed won opportunity metrics data
- * TODO: Implement new data-fetching logic using salesforce-data-access.ts
- * instead of the current mock implementation
+ * Hook to fetch pre-formatted closed won opportunity metrics from Supabase views
+ * Uses the database views for consistent date formatting
+ * Specifically for opportunities where stage_name = 'Closed Won'
  */
 export function useFormattedClosedWonMetrics({
   period = "week",
@@ -24,7 +24,7 @@ export function useFormattedClosedWonMetrics({
   refetchKey = 0,
 }: UseFormattedLeadsOptions = {}) {
   const [data, setData] = useState<FormattedLeadsResponse | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
@@ -33,55 +33,105 @@ export function useFormattedClosedWonMetrics({
       return;
     }
 
-    setLoading(true);
-    
-    // Calculate date range based on period and lookback units
-    const endDate = new Date();
-    const startDate = new Date();
-    
-    if (period === "day") {
-      startDate.setDate(startDate.getDate() - lookbackUnits);
-    } else if (period === "week") {
-      startDate.setDate(startDate.getDate() - (lookbackUnits * 7));
-    } else {
-      startDate.setMonth(startDate.getMonth() - lookbackUnits);
-    }
-    
-    // Convert dates to ISO string format
-    const startDateString = startDate.toISOString().split('T')[0];
-    const endDateString = endDate.toISOString().split('T')[0];
-    
-    // Fetch data using the new data access function
-    fetchClosedWonData(startDateString, endDateString, campusId)
-      .then(response => {
-        if (response.success && response.data && response.data.length > 0) {
-          // Transform the data to match the expected format
-          const transformedData = response.data.map(item => ({
-            period_type: period,
-            period_date: item.period_date,
-            formatted_date: item.formatted_date,
-            campus_name: item.campus_name,
-            opportunity_count: item.closed_won_count
-          }));
-          
-          // Process the transformed data
-          const processedData = processFormattedMetrics(transformedData, period);
-          setData(processedData);
-        } else {
-          // Fallback to mock data if the API call fails
-          const mockData = generateMockData(period, lookbackUnits, campusId);
-          setData(mockData);
-          console.warn("Fallback to mock data due to API error:", response.error);
+    async function fetchData() {
+      try {
+        setLoading(true);
+
+        // Build the query using the period-specific closed won metrics view
+        const viewName =
+          period === "day"
+            ? "closed_won_daily"
+            : period === "week"
+              ? "closed_won_weekly"
+              : "closed_won_monthly";
+
+        let query = `
+          SELECT
+            period_type,
+            period_date,
+            formatted_date,
+            campus_name,
+            opportunity_count
+          FROM
+            fivetran_views.${viewName}
+          WHERE 1=1
+        `;
+
+        // Add campus filter if provided
+        if (campusId !== null) {
+          // Ensure we're properly escaping single quotes for SQL
+          const escapedCampusId = campusId.replace(/'/g, "''");
+          query += ` AND campus_name = '${escapedCampusId}'`;
         }
+
+        // Add date filter based on lookback units
+        // Note: The views already include date filters, but we'll add this for extra control
+        const intervalUnit = period === "day" ? "day" : period === "week" ? "week" : "month";
+        query += `
+          AND period_date >= DATE_TRUNC('${intervalUnit}', CURRENT_DATE) - INTERVAL '${lookbackUnits} ${intervalUnit}'
+          ORDER BY period_date DESC
+        `;
+
+        console.log("EXECUTING FORMATTED CLOSED WON METRICS QUERY:");
+        console.log(query);
+
+        // Execute the query
+        const { data: rawData, error: queryError } = await supabase.rpc("execute_sql_query", {
+          query_text: query,
+        });
+
+        console.log("Query response:", { rawData, queryError });
+
+        if (queryError) {
+          console.error("Query error details:", queryError);
+          throw new Error(`SQL query error: ${queryError.message || "Unknown error"}`);
+        }
+
+        // Check if we have valid data - Supabase might return raw data as undefined or null even if no error
+        if (!rawData || !Array.isArray(rawData)) {
+          console.warn("No data returned from formatted closed won metrics query:", typeof rawData);
+          console.log("Raw data value:", rawData);
+          setData(createEmptyResponse(period));
+          setError(null);
+          setLoading(false);
+          return;
+        }
+
+        // Normalize the data to ensure all required fields are present
+        const normalizedData = rawData.map((item) => ({
+          period_type: item.period_type || period,
+          period_date: item.period_date,
+          formatted_date: item.formatted_date,
+          // Default to "All Campuses" if campus_name is missing
+          campus_name: item.campus_name || "All Campuses",
+          opportunity_count: Number(item.opportunity_count),
+        }));
+
+        // If we still have no data after normalization, return empty response
+        if (normalizedData.length === 0) {
+          setData(createEmptyResponse(period));
+          setError(null);
+          setLoading(false);
+          return;
+        }
+
+        console.log(`Query returned ${rawData.length} rows`);
+        console.log("Sample data:", rawData.slice(0, 3));
+
+        // Process the normalized data into the expected format
+        const processedData = processFormattedMetrics(normalizedData, period);
+        setData(processedData);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching formatted closed won metrics:", err);
+        setError(err instanceof Error ? err : new Error("Unknown error"));
+        setData(null);
+      } finally {
         setLoading(false);
-      })
-      .catch(error => {
-        console.error("Error fetching closed won metrics:", error);
-        // Fallback to mock data on error
-        const mockData = generateMockData(period, lookbackUnits, campusId);
-        setData(mockData);
-        setLoading(false);
-      });
+      }
+    }
+
+    fetchData();
   }, [period, lookbackUnits, campusId, enabled, refetchKey]);
 
   return { data, loading, error };
@@ -104,54 +154,6 @@ function createEmptyResponse(period: string): FormattedLeadsResponse {
   };
 }
 
-// Generate mock data for UI development
-function generateMockData(period: string, lookbackUnits: number, campusId: string | null): FormattedLeadsResponse {
-  const mockCampuses = ["Atlanta", "Miami", "New York", "Birmingham", "Chicago"];
-  const filteredCampuses = campusId ? [campusId] : mockCampuses;
-  
-  // Generate dates for the past periods based on period type
-  const dates: string[] = [];
-  const now = new Date();
-  for (let i = 0; i < lookbackUnits; i++) {
-    const date = new Date(now);
-    if (period === "day") {
-      date.setDate(date.getDate() - i);
-    } else if (period === "week") {
-      date.setDate(date.getDate() - (i * 7));
-    } else {
-      date.setMonth(date.getMonth() - i);
-    }
-    dates.push(date.toISOString().split('T')[0]);
-  }
-  
-  // Generate mock metrics data
-  const mockMetrics: FormattedOpportunityMetric[] = [];
-  dates.forEach(date => {
-    filteredCampuses.forEach(campus => {
-      // Generate a random number between 1 and 10
-      const count = Math.floor(Math.random() * 10) + 1;
-      
-      // Format date for display
-      const dateObj = new Date(date);
-      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-      const day = String(dateObj.getDate()).padStart(2, '0');
-      const year = String(dateObj.getFullYear()).slice(2);
-      const formatted_date = `${month}/${day}/${year}`;
-      
-      mockMetrics.push({
-        period_type: period,
-        period_date: date,
-        formatted_date,
-        campus_name: campus,
-        opportunity_count: count
-      });
-    });
-  });
-  
-  // Process mock data
-  return processFormattedMetrics(mockMetrics, period);
-}
-
 // Process the raw data into the expected format for the UI
 function processFormattedMetrics(
   rawData: FormattedOpportunityMetric[],
@@ -162,8 +164,8 @@ function processFormattedMetrics(
     ...item,
     lead_count: item.opportunity_count,
   })) as unknown as FormattedLeadMetric[];
-  
   // Get unique periods, sorted by date (newest to oldest)
+  // This matches the DESC order from our SQL query
   const periods = [...new Set(mappedData.map((item) => item.period_date))].sort(
     (a, b) => new Date(b).getTime() - new Date(a).getTime()
   );

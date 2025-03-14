@@ -3,7 +3,6 @@ import { Table } from "antd";
 import type { TableColumnsType } from "antd";
 import { Building } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../integrations/supabase-client";
 import { useCampuses } from "@/hooks/useCampuses";
 
 // Define data type for table rows
@@ -20,6 +19,57 @@ export interface FamilyTableData {
   };
 }
 
+// Function to generate mock family data
+const generateMockFamilyData = (count: number): FamilyTableData[] => {
+  const stages = [
+    "Application",
+    "Family Interview",
+    "Admission Offered",
+    "Closed Won",
+    "Closed Lost",
+    "Education Review"
+  ];
+  
+  const campuses = [
+    "Atlanta",
+    "Miami",
+    "New York",
+    "Birmingham",
+    "Chicago"
+  ];
+  
+  const lastNames = [
+    "Smith", "Johnson", "Williams", "Brown", "Jones", 
+    "Garcia", "Miller", "Davis", "Rodriguez", "Martinez",
+    "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson",
+    "Thomas", "Taylor", "Moore", "Jackson", "Martin"
+  ];
+  
+  const mockData: FamilyTableData[] = [];
+  
+  for (let i = 0; i < count; i++) {
+    const familyId = `00A${Math.random().toString(36).substring(2, 8)}${Math.random().toString(36).substring(2, 8)}`;
+    const familyName = `${lastNames[i % lastNames.length]} Family`;
+    const campusName = campuses[i % campuses.length];
+    const stage = stages[i % stages.length];
+    
+    mockData.push({
+      key: i.toString(),
+      id: familyId,
+      name: familyName,
+      campus: campusName,
+      stage: stage,
+      familyIds: {
+        standard_id: familyId,
+        family_id: familyId,
+        alternate_id: null,
+      },
+    });
+  }
+  
+  return mockData;
+};
+
 /**
  * FamilyTable component
  * Standalone table component for displaying family records
@@ -29,36 +79,12 @@ const FamilyTable: React.FC = () => {
   const [tableData, setTableData] = useState<FamilyTableData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [campusMap, setCampusMap] = useState<Record<string, string>>({});
 
   // Get campus data
-  const { data: campuses = [], isLoading: isLoadingCampuses } = useCampuses();
+  const { campuses, isLoading: isLoadingCampuses } = useCampuses();
 
   // Define stage options for filtering
-  const stageOptions = ["Application", "Interviewed", "Offered", "Enrolled", "Declined"];
-
-  // Fetch campus data to populate the campus mapping object
-  useEffect(() => {
-    const fetchCampusData = async () => {
-      try {
-        if (campuses && campuses.length > 0) {
-          const campusMapping: Record<string, string> = {};
-
-          campuses.forEach((campus) => {
-            if (campus.campus_id && campus.campus_name) {
-              campusMapping[campus.campus_id] = campus.campus_name;
-            }
-          });
-          setCampusMap(campusMapping);
-          console.log("Campus mapping loaded:", Object.keys(campusMapping).length, "campuses");
-        }
-      } catch (error) {
-        console.error("Failed to fetch campus data:", error);
-      }
-    };
-
-    fetchCampusData();
-  }, [campuses]);
+  const stageOptions = ["Application", "Family Interview", "Admission Offered", "Closed Won", "Closed Lost", "Education Review"];
 
   // Fetch family data
   useEffect(() => {
@@ -67,55 +93,12 @@ const FamilyTable: React.FC = () => {
       setError(null);
 
       try {
-        // Try to fetch families using getAllFamilies first
-        let result = await supabase.getAllFamilies();
-
-        // If that fails, fall back to using searchFamilies with an empty string
-        // which should return all families or at least a subset
-        if (!result.success || !result.data || result.data.length === 0) {
-          console.log("getAllFamilies failed or returned no data, falling back to searchFamilies");
-          result = await supabase.searchFamilies("");
-        }
-
-        if (result.success && result.data) {
-          // Process the data for the table
-          const processedData = result.data.map((family, index) => {
-            // Extract IDs for consistent navigation
-            const standardId = family.standard_id || "";
-            const familyId = family.family_id || "";
-            const alternateId = family.alternate_id || "";
-            const bestId = standardId || familyId || alternateId;
-
-            // Get campus name from campus map, don't display raw IDs
-            const campusId = family.current_campus_c || "";
-            const campusName = campusId ? campusMap[campusId] || "Unknown Campus" : "None";
-
-            // Try to determine stage - this is an example, adjust based on your data structure
-            let stage = "Unknown";
-            if (family.opportunity_stages && family.opportunity_stages.length > 0) {
-              // Use the most recent stage if multiple exist
-              stage = family.opportunity_stages[0] || "Unknown";
-            }
-
-            return {
-              key: index.toString(),
-              id: bestId,
-              name: family.family_name || "Unnamed Family",
-              campus: campusName,
-              stage: stage,
-              familyIds: {
-                standard_id: standardId,
-                family_id: familyId,
-                alternate_id: alternateId,
-              },
-            };
-          });
-
-          setTableData(processedData);
-        } else {
-          setError(result.error || "Failed to fetch family data");
-          console.error("Error fetching family data:", result.error);
-        }
+        // Simulate a short network delay
+        await new Promise(resolve => setTimeout(resolve, 600));
+        
+        // Generate 20 mock family records
+        const mockData = generateMockFamilyData(20);
+        setTableData(mockData);
       } catch (err) {
         setError("An error occurred while fetching family data");
         console.error("Exception fetching family data:", err);
@@ -125,7 +108,7 @@ const FamilyTable: React.FC = () => {
     };
 
     fetchFamilyData();
-  }, [campusMap]);
+  }, []);
 
   // Handle row click to navigate to family detail
   const handleRowClick = (record: FamilyTableData) => {
@@ -137,8 +120,8 @@ const FamilyTable: React.FC = () => {
     // Log for debugging
     console.log(`Table: Navigating to family detail with ID: ${record.id}`);
 
-    // Navigate to the family detail page
-    navigate(`/family-detail/${record.id}`);
+    // Navigate to the mock family detail page
+    navigate(`/family-mock/${record.id}`);
   };
 
   // Define our available campus options for filtering
@@ -158,11 +141,15 @@ const FamilyTable: React.FC = () => {
       title: "Campus",
       dataIndex: "campus",
       key: "campus",
+      filters: campusOptions.map(campus => ({ text: campus, value: campus })),
+      onFilter: (value, record) => record.campus === value,
     },
     {
       title: "Stage",
       dataIndex: "stage",
       key: "stage",
+      filters: stageOptions.map(stage => ({ text: stage, value: stage })),
+      onFilter: (value, record) => record.stage === value,
     },
   ];
 

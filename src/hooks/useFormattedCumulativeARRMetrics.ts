@@ -1,25 +1,59 @@
 import { useState, useEffect } from "react";
 import {
-  FormattedLeadMetric,
-  FormattedLeadsResponse,
-  UseFormattedLeadsOptions,
-} from "./useFormattedLeadsMetrics";
-import { calculatePeriodChanges } from "../utils/dateUtils";
-import { fetchConvertedLeadsData } from "../utils/salesforce-data-access";
+  PeriodType,
+  PeriodChanges,
+  getIntervalUnit,
+  calculatePeriodChanges,
+  getSortedPeriods,
+  getUniqueCampuses,
+  FormattedMetricBase
+} from "../utils/dateUtils";
+import { fetchCumulativeARRData } from "../utils/salesforce-data-access";
+
+export interface FormattedCumulativeARRMetric extends FormattedMetricBase {
+  cumulative_arr: number;
+}
+
+export type FormattedCumulativeARRResponse = {
+  raw: FormattedCumulativeARRMetric[];
+  periods: string[];
+  campuses: string[];
+  totals: Record<string, number>;
+  campusTotals: Record<string, number>;
+  latestPeriod: string | null;
+  latestTotal: number;
+  changes: PeriodChanges;
+  timeSeriesData: Array<{
+    period: string;
+    formatted_date: string;
+    total: number;
+    campuses: Record<string, number>;
+  }>;
+  getARRValue: (periodDate: string, campusName: string) => number;
+  periodType: string;
+};
+
+export type UseFormattedCumulativeARROptions = {
+  period?: PeriodType;
+  lookbackUnits?: number;
+  campusId?: string | null;
+  enabled?: boolean;
+  refetchKey?: number;
+};
 
 /**
- * Hook to fetch converted lead metrics data
+ * Hook to fetch cumulative ARR metrics for 25/26 school year
  * TODO: Implement new data-fetching logic using salesforce-data-access.ts
  * instead of the current mock implementation
  */
-export function useFormattedConvertedLeadsMetrics({
+export function useFormattedCumulativeARRMetrics({
   period = "week",
   lookbackUnits = 12,
   campusId = null,
   enabled = true,
   refetchKey = 0,
-}: UseFormattedLeadsOptions = {}) {
-  const [data, setData] = useState<FormattedLeadsResponse | null>(null);
+}: UseFormattedCumulativeARROptions = {}) {
+  const [data, setData] = useState<FormattedCumulativeARRResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -48,7 +82,7 @@ export function useFormattedConvertedLeadsMetrics({
     const endDateString = endDate.toISOString().split('T')[0];
     
     // Fetch data using the new data access function
-    fetchConvertedLeadsData(startDateString, endDateString, campusId)
+    fetchCumulativeARRData(startDateString, endDateString, campusId)
       .then(response => {
         if (response.success && response.data && response.data.length > 0) {
           // Transform the data to match the expected format
@@ -57,7 +91,7 @@ export function useFormattedConvertedLeadsMetrics({
             period_date: item.period_date,
             formatted_date: item.formatted_date,
             campus_name: item.campus_name,
-            lead_count: item.converted_count
+            cumulative_arr: item.cumulative_arr
           }));
           
           // Process the transformed data
@@ -72,7 +106,7 @@ export function useFormattedConvertedLeadsMetrics({
         setLoading(false);
       })
       .catch(error => {
-        console.error("Error fetching converted leads metrics:", error);
+        console.error("Error fetching cumulative ARR metrics:", error);
         // Fallback to mock data on error
         const mockData = generateMockData(period, lookbackUnits, campusId);
         setData(mockData);
@@ -83,8 +117,12 @@ export function useFormattedConvertedLeadsMetrics({
   return { data, loading, error };
 }
 
-// Generate mock data for UI development
-function generateMockData(period: string, lookbackUnits: number, campusId: string | null): FormattedLeadsResponse {
+// Generate mock data for cumulative ARR metrics
+function generateMockData(
+  period: PeriodType, 
+  lookbackUnits: number, 
+  campusId: string | null
+): FormattedCumulativeARRResponse {
   const mockCampuses = ["Atlanta", "Miami", "New York", "Birmingham", "Chicago"];
   const filteredCampuses = campusId ? [campusId] : mockCampuses;
   
@@ -103,12 +141,31 @@ function generateMockData(period: string, lookbackUnits: number, campusId: strin
     dates.push(date.toISOString().split('T')[0]);
   }
   
-  // Generate mock metrics data
-  const mockMetrics: FormattedLeadMetric[] = [];
-  dates.forEach(date => {
+  // For cumulative data, we need to make sure the values increase over time
+  // Initialize a base value for each campus
+  const campusBaseValues: Record<string, number> = {};
+  filteredCampuses.forEach(campus => {
+    // Random start value between $50,000 and $200,000
+    campusBaseValues[campus] = Math.floor(Math.random() * 150000) + 50000;
+  });
+  
+  // Generate mock metrics data with growing values over time
+  const mockMetrics: FormattedCumulativeARRMetric[] = [];
+  
+  // Sort dates from oldest to newest for accumulation
+  const sortedDates = [...dates].sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+  
+  sortedDates.forEach((date, index) => {
     filteredCampuses.forEach(campus => {
-      // Generate a random number between 1 and 15 (converted leads are typically fewer than total leads)
-      const count = Math.floor(Math.random() * 15) + 1;
+      // For each period, add a random increment to the previous value (or base value for first period)
+      const increment = Math.floor(Math.random() * 10000) + 5000; // $5K to $15K increment
+      
+      // Get previous value or use base value for first period
+      if (index === 0) {
+        campusBaseValues[campus] = campusBaseValues[campus]; // Use initial value
+      } else {
+        campusBaseValues[campus] += increment; // Add increment to previous value
+      }
       
       // Format date for display
       const dateObj = new Date(date);
@@ -122,8 +179,28 @@ function generateMockData(period: string, lookbackUnits: number, campusId: strin
         period_date: date,
         formatted_date,
         campus_name: campus,
-        lead_count: count
+        cumulative_arr: campusBaseValues[campus]
       });
+    });
+    
+    // Also add an "All Campuses" entry for each period that sums up all campuses
+    const totalForPeriod = filteredCampuses.reduce(
+      (sum, campus) => sum + campusBaseValues[campus], 
+      0
+    );
+    
+    const dateObj = new Date(date);
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    const year = String(dateObj.getFullYear()).slice(2);
+    const formatted_date = `${month}/${day}/${year}`;
+    
+    mockMetrics.push({
+      period_type: period,
+      period_date: date,
+      formatted_date,
+      campus_name: "All Campuses",
+      cumulative_arr: totalForPeriod
     });
   });
   
@@ -132,7 +209,7 @@ function generateMockData(period: string, lookbackUnits: number, campusId: strin
 }
 
 // Helper function to create an empty response with the correct structure
-function createEmptyResponse(period: string): FormattedLeadsResponse {
+function createEmptyResponse(period: PeriodType): FormattedCumulativeARRResponse {
   return {
     periods: [],
     campuses: [],
@@ -143,32 +220,28 @@ function createEmptyResponse(period: string): FormattedLeadsResponse {
     latestTotal: 0,
     changes: { raw: {}, percentage: {} },
     timeSeriesData: [],
-    getLeadCount: () => 0,
+    getARRValue: () => 0,
     periodType: period,
   };
 }
 
 // Process the raw data into the expected format for the UI
 function processFormattedMetrics(
-  rawData: FormattedLeadMetric[],
-  period: string
-): FormattedLeadsResponse {
+  rawData: FormattedCumulativeARRMetric[],
+  period: PeriodType
+): FormattedCumulativeARRResponse {
   // Get unique periods, sorted by date (newest to oldest)
-  // This matches the DESC order from our SQL query
-  const periods = [...new Set(rawData.map((item) => item.period_date))].sort(
-    (a, b) => new Date(b).getTime() - new Date(a).getTime()
-  );
+  const periods = getSortedPeriods(rawData);
 
   // Get unique campuses
-  const campuses = [...new Set(rawData.map((item) => item.campus_name))].filter(
-    (name) => name !== "No Campus Match"
-  );
+  const campuses = getUniqueCampuses(rawData);
 
   // Calculate period totals
   const totals = periods.reduce(
     (acc, period) => {
       const periodData = rawData.filter((item) => item.period_date === period);
-      acc[period] = periodData.reduce((sum, item) => sum + Number(item.lead_count), 0);
+      const periodTotal = periodData.reduce((sum, item) => sum + Number(item.cumulative_arr), 0);
+      acc[period] = periodTotal;
       return acc;
     },
     {} as Record<string, number>
@@ -177,8 +250,17 @@ function processFormattedMetrics(
   // Calculate campus totals across all periods
   const campusTotals = campuses.reduce(
     (acc, campus) => {
+      // For ARR, we want the latest value for each campus, not the sum
       const campusData = rawData.filter((item) => item.campus_name === campus);
-      acc[campus] = campusData.reduce((sum, item) => sum + Number(item.lead_count), 0);
+      if (campusData.length > 0) {
+        // Sort by period_date in descending order and get the first (latest) value
+        const latestData = [...campusData].sort((a, b) => 
+          new Date(b.period_date).getTime() - new Date(a.period_date).getTime()
+        )[0];
+        acc[campus] = Number(latestData.cumulative_arr);
+      } else {
+        acc[campus] = 0;
+      }
       return acc;
     },
     {} as Record<string, number>
@@ -199,7 +281,7 @@ function processFormattedMetrics(
       campuses: campuses.reduce(
         (acc, campus) => {
           const match = periodItems.find((item) => item.campus_name === campus);
-          acc[campus] = match ? Number(match.lead_count) : 0;
+          acc[campus] = match ? Number(match.cumulative_arr) : 0;
           return acc;
         },
         {} as Record<string, number>
@@ -207,15 +289,22 @@ function processFormattedMetrics(
     };
   });
 
-  // Helper function to get lead count for a specific period and campus
-  const getLeadCount = (periodDate: string, campusName: string): number => {
+  // Helper function to get ARR value for a specific period and campus
+  const getARRValue = (periodDate: string, campusName: string): number => {
+    // For 'All Campuses' view, return the total for this period
+    if (campusName === 'All Campuses') {
+      return totals[periodDate] || 0;
+    }
+    
+    // For specific campus, find the direct match
     const match = rawData.find(
       (item) => item.period_date === periodDate && item.campus_name === campusName
     );
-    return match ? Number(match.lead_count) : 0;
+    return match ? Number(match.cumulative_arr) : 0;
   };
 
   // Get the latest period and its total
+  // If periods are sorted newest to oldest, the first item is the most recent
   const latestPeriod = periods.length > 0 ? periods[0] : null;
   const latestTotal = latestPeriod ? totals[latestPeriod] : 0;
 
@@ -223,13 +312,21 @@ function processFormattedMetrics(
     raw: rawData,
     periods,
     campuses,
-    totals,
     campusTotals,
-    latestPeriod,
-    latestTotal,
+    totals,
     changes,
     timeSeriesData,
-    getLeadCount,
+    getARRValue,
+    latestPeriod,
+    latestTotal,
     periodType: period,
+    
+    // Make sure these match the expected structure
+    periods: periods, // Make sure this is an array of date strings
+    totals: totals || {}, // Make sure this is a record of period -> value
+    changes: {
+      raw: changes?.raw || {},
+      percentage: changes?.percentage || {}
+    }
   };
 }

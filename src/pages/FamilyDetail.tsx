@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, Link, Navigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -12,43 +12,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/integrations/supabase-client";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LoadingState } from "@/components/LoadingState";
-import { formatNumber } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import {
-  ChevronRight,
-  MoreHorizontal,
   Phone,
   Mail,
-  ExternalLink,
-  Trash,
-  Edit,
-  AlertCircle,
-  Copy,
-  Check,
-  CheckCircle2,
   Building,
   GraduationCap,
   User as UserIcon,
@@ -59,60 +28,11 @@ import {
   Banknote,
   ClipboardList,
   MessageSquare,
+  CheckCircle2,
 } from "lucide-react";
 
-// Define the FamilyRecord type with student arrays
-interface FamilyRecord {
-  id: string;
-  household_name: string;
-  campus_c: string;
-  campus_name?: string;
-  contact_count: number;
-  opportunity_count: number;
-  opportunity_ids: string[];
-  opportunity_names: string[];
-  opportunity_stages?: string[];
-  opportunity_record_types?: string[];
-  opportunity_grades?: string[];
-  opportunity_campuses?: string[];
-  opportunity_school_years?: string[];
-  opportunity_is_won?: boolean[];
-  contact_ids?: string[];
-  contact_names?: string[];
-  contact_phones?: string[];
-  contact_emails?: string[];
-  contact_types?: string[];
-  // Add student arrays from derived_students
-  student_ids?: string[];
-  student_first_names?: string[];
-  student_last_names?: string[];
-  student_full_names?: string[];
-  student_count?: number;
-  // Additional properties used in the component
-  opportunity_campus_names?: string[];
-  opportunity_created_dates?: string[];
-  tuition_offer_family_contributions?: number[];
-  tuition_offer_state_scholarships?: number[];
-  contact_first_names?: string[];
-  contact_last_names?: string[];
-  contact_last_activity_dates?: string[];
-  lifetime_value?: number;
-  tuition_offer_count?: number;
-  tuition_offer_ids?: string[];
-  tuition_offer_statuses?: string[];
-  opportunity_lead_notes?: string[];
-  opportunity_family_interview_notes?: string[];
-  pdc_family_id_c?: string;
-}
-
-// Type definition for student records
-interface StudentRecord {
-  studentName: string;
-  firstName: string;
-  lastName: string;
-  opportunities: any[];
-  contacts: any[];
-}
+// Import the enhanced family data hook with mock data implementation
+import { useEnhancedFamilyData, EnhancedFamilyRecord } from "@/hooks/useEnhancedFamilyData";
 
 /**
  * Extract student name from opportunity name
@@ -134,13 +54,6 @@ const extractStudentName = (opportunityName: string, opportunityId?: string): st
   return parts[0] || "Unknown Student";
 };
 
-/**
- * Extract school year from opportunity name or school_year_c field
- *
- * Examples:
- * - "Y23/24" from "Cameron Abreu - G0 - Y23/24"
- * - "2023-2024" from school_year_c field
- */
 /**
  * Extract school year from opportunity name or school_year_c field
  * and return in the standard format (YYYY-YYYY)
@@ -400,77 +313,23 @@ const StudentTimeline: React.FC<TimelineProps> = ({ studentName, opportunities }
 
 const FamilyDetail = () => {
   const { familyId } = useParams();
-  const [familyRecord, setFamilyRecord] = useState<FamilyRecord | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { loading, error, familyRecord, fetchFamilyRecord } = useEnhancedFamilyData();
   const { toast } = useToast();
 
-  // Validate that the ID is a valid UUID
-  const isValidId = useMemo(() => {
-    if (!familyId) return false;
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(familyId);
-  }, [familyId]);
+  // Validate that the ID is valid
+  const isValidId = familyId && /^[a-zA-Z0-9-]{15,36}$/.test(familyId);
 
-  // Fetch family record from Supabase
+  // Fetch family record using the mock data implementation
   useEffect(() => {
     if (!isValidId) return;
 
-    const fetchFamilyRecord = async () => {
-      try {
-        setLoading(true);
-        const { data, error } = await supabase.rpc("get_family_record", {
-          family_id_param: familyId,
-        });
-
-        if (error) {
-          console.error("Error fetching family record:", error);
-          setError(error.message);
-          return;
-        }
-
-        if (!data) {
-          setError("Family record not found");
-          return;
-        }
-
-        console.log("Family record:", data);
-        setFamilyRecord(data as FamilyRecord);
-      } catch (err) {
-        console.error("Exception fetching family record:", err);
-        setError(err instanceof Error ? err.message : "Unknown error");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFamilyRecord();
-  }, [familyId, isValidId]);
+    console.log("FamilyDetail: Fetching family record for ID:", familyId);
+    fetchFamilyRecord(familyId);
+  }, [familyId, isValidId, fetchFamilyRecord]);
 
   if (!isValidId) {
     return <Navigate to="/not-found" replace />;
   }
-
-  // Mock data for design purposes
-  const mockFamilyData = {
-    householdName: "Adames Rincon Household",
-    campus: "a0NUH0000018zd2AA",
-    campusName: "New York",
-    parents: [
-      {
-        name: "Maria Adames",
-        phone: "(212) 555-7890",
-        email: "maria.adames@example.com",
-      },
-      {
-        name: "Carlos Rincon",
-        phone: "(212) 555-1234",
-        email: "carlos.rincon@example.com",
-      },
-    ],
-    contactCount: 2,
-    opportunityCount: 3,
-  };
 
   if (loading) {
     return <LoadingState message="Loading family record..." />;
@@ -491,11 +350,8 @@ const FamilyDetail = () => {
                   Family ID from URL: <code className="bg-red-50 px-1 font-mono">{familyId}</code>
                 </li>
                 <li>Make sure this ID exists in the database</li>
-                <li>
-                  Check that you have access to the{" "}
-                  <code className="bg-red-50 px-1 font-mono">fivetran_views</code> schema
-                </li>
-                <li>Verify the database connection is working</li>
+                <li>Check your network connection</li>
+                <li>Verify the API service is working</li>
               </ul>
             </div>
 
@@ -519,300 +375,66 @@ const FamilyDetail = () => {
     );
   }
 
-  // Process opportunity data and provide defaults for missing values
+  // Process student data from family record
+  const processStudentData = (familyRecord: EnhancedFamilyRecord) => {
+    if (!familyRecord.students || familyRecord.students.length === 0) {
+      return [];
+    }
+
+    return familyRecord.students.map(student => {
+      const opportunities = student.opportunities.map((opp, index) => ({
+        id: opp.id,
+        index,
+        name: opp.name,
+        schoolYear: opp.school_year,
+        stage: opp.stage,
+        isWon: opp.is_won
+      }));
+
+      return {
+        id: student.id,
+        name: student.full_name,
+        firstName: student.first_name,
+        lastName: student.last_name,
+        opportunities
+      };
+    });
+  };
+
+  const students = processStudentData(familyRecord);
+
+  // Render students section
   const renderStudentsSection = () => {
-    if (!familyRecord.opportunity_count || familyRecord.opportunity_count <= 0) {
+    if (!students || students.length === 0) {
       return (
         <div className="text-center py-8">
-          <p className="text-muted-foreground">No opportunities found for this family.</p>
+          <p className="text-muted-foreground">No students found for this family.</p>
         </div>
       );
     }
 
-    // Check if we have student data from derived_students
-    const hasStudentArrays =
-      Array.isArray(familyRecord.student_ids) &&
-      Array.isArray(familyRecord.student_first_names) &&
-      Array.isArray(familyRecord.student_last_names) &&
-      Array.isArray(familyRecord.student_full_names);
-
-    console.log("DEBUG - Family Record Student Arrays:", {
-      hasStudentArrays,
-      student_ids: familyRecord.student_ids,
-      student_first_names: familyRecord.student_first_names,
-      student_last_names: familyRecord.student_last_names,
-      student_full_names: familyRecord.student_full_names,
-      student_count: familyRecord.student_count,
-    });
-
-    // Create a mapping of opportunity IDs to student names
-    // This uses the opportunity_student_map implicitly through the derived_students implementation
-    const opportunityToStudentMap = new Map();
-
-    // Process opportunities and map them to students
-    const opportunitiesData = familyRecord.opportunity_ids.map((id, index) => {
-      const oppData = {
-        id,
-        index,
-        stage: familyRecord.opportunity_stages[index] || "New Application",
-        name: familyRecord.opportunity_names[index] || "",
-        recordType: familyRecord.opportunity_record_types?.[index],
-        grade: familyRecord.opportunity_grades?.[index],
-        campus: familyRecord.opportunity_campuses?.[index],
-        // Default to extracted name as fallback
-        studentName: "Unknown Student",
-        schoolYear:
-          familyRecord.opportunity_school_years?.[index] ||
-          (familyRecord.opportunity_names[index]
-            ? extractSchoolYear(familyRecord.opportunity_names[index])
-            : ""),
-        isWon:
-          familyRecord.opportunity_is_won?.[index] ||
-          familyRecord.opportunity_stages?.[index]?.includes("Closed Won") ||
-          false,
-      };
-
-      // Extract student name as fallback
-      if (oppData.name) {
-        oppData.studentName = extractStudentName(oppData.name, id);
-      }
-
-      return oppData;
-    });
-
-    // Create student records from the derived_students data
-    let studentGroups: StudentRecord[] = [];
-
-    if (hasStudentArrays && familyRecord.student_ids.length > 0) {
-      // Use the derived_students data
-      studentGroups = familyRecord.student_ids.map((studentId, idx) => {
-        const firstName = familyRecord.student_first_names[idx] || "";
-        const lastName = familyRecord.student_last_names[idx] || "";
-        const fullName = familyRecord.student_full_names[idx] || `${firstName} ${lastName}`.trim();
-
-        // Find opportunities for this student
-        // This is a simplified approach - in a real implementation, we would use the opportunity_student_map
-        const studentOpportunities = opportunitiesData.filter(
-          (opp) =>
-            // Match by name similarity
-            opp.studentName.toLowerCase().includes(firstName.toLowerCase()) &&
-            opp.studentName.toLowerCase().includes(lastName.toLowerCase())
-        );
-
-        console.log(`DEBUG - Student ${fullName} (${idx}):`, {
-          studentId,
-          firstName,
-          lastName,
-          fullName,
-          opportunityCount: studentOpportunities.length,
-          opportunities: studentOpportunities.map((o) => ({
-            id: o.id,
-            name: o.name,
-            studentName: o.studentName,
-          })),
-        });
-
-        return {
-          studentName: fullName,
-          firstName,
-          lastName,
-          opportunities: studentOpportunities,
-          contacts: [], // Initialize empty contacts array
-        };
-      });
-
-      // Handle any opportunities that weren't matched to students
-      const unmatchedOpportunities = opportunitiesData.filter(
-        (opp) =>
-          !studentGroups.some((student) =>
-            student.opportunities.some((studentOpp) => studentOpp.id === opp.id)
-          )
-      );
-
-      if (unmatchedOpportunities.length > 0) {
-        // Group unmatched opportunities by extracted student name
-        const unmatchedByName = unmatchedOpportunities.reduce(
-          (acc, opp) => {
-            if (!acc[opp.studentName]) {
-              acc[opp.studentName] = [];
-            }
-            acc[opp.studentName].push(opp);
-            return acc;
-          },
-          {} as Record<string, typeof opportunitiesData>
-        );
-
-        // Add these as additional student groups
-        Object.entries(unmatchedByName).forEach(([studentName, opportunities]) => {
-          const nameParts = studentName.split(" ");
-          const firstName = nameParts[0] || "";
-          const lastName = nameParts.slice(1).join(" ") || "";
-
-          studentGroups.push({
-            studentName,
-            firstName,
-            lastName,
-            opportunities,
-            contacts: [],
-          });
-        });
-      }
-    } else {
-      // Fallback to the old method if we don't have student arrays
-      const opportunitiesByStudent: Record<string, typeof opportunitiesData> =
-        opportunitiesData.reduce((acc, opp) => {
-          if (!acc[opp.studentName]) {
-            acc[opp.studentName] = [];
-          }
-          acc[opp.studentName].push(opp);
-          return acc;
-        }, {});
-
-      // Convert to array of student groups
-      studentGroups = Object.entries(opportunitiesByStudent).map(
-        ([studentName, opportunities]) => ({
-          studentName,
-          firstName: studentName.split(" ")[0],
-          lastName: studentName.split(" ").slice(1).join(" "),
-          opportunities,
-          contacts: [], // Initialize empty contacts array
-        })
-      );
-    }
-
-    // Fuzzy match threshold (0-1 where 1 is exact match)
-    const FUZZY_MATCH_THRESHOLD = 0.8;
-
-    // Helper function to compare two strings using Levenshtein distance
-    function fuzzyMatch(str1: string, str2: string): boolean {
-      if (str1 === str2) return true;
-
-      const len1 = str1.length;
-      const len2 = str2.length;
-      const maxLen = Math.max(len1, len2);
-
-      // Calculate Levenshtein distance
-      const matrix = [];
-      for (let i = 0; i <= len1; i++) {
-        matrix[i] = [i];
-      }
-      for (let j = 0; j <= len2; j++) {
-        matrix[0][j] = j;
-      }
-
-      for (let i = 1; i <= len1; i++) {
-        for (let j = 1; j <= len2; j++) {
-          const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
-          matrix[i][j] = Math.min(
-            matrix[i - 1][j] + 1, // deletion
-            matrix[i][j - 1] + 1, // insertion
-            matrix[i - 1][j - 1] + cost // substitution
-          );
-        }
-      }
-
-      const distance = matrix[len1][len2];
-      const similarity = 1 - distance / maxLen;
-
-      return similarity >= FUZZY_MATCH_THRESHOLD;
-    }
-
-    // Deduplicate student groups based on name similarity
-    const deduplicatedStudentGroups: StudentRecord[] = [];
-    const processedNames = new Set<string>();
-
-    // Special case handling for known duplicates
-    const knownDuplicates: Record<string, string> = {
-      "Ivana Buritica": "Ivana Buritica", // Map variations of Ivana's name to a canonical form
-    };
-
-    // Sort student groups by name for consistent processing
-    studentGroups.sort((a, b) => a.studentName.localeCompare(b.studentName));
-
-    // First pass: process students from derived_students (more reliable source)
-    studentGroups.forEach((student) => {
-      // Skip if this name has already been processed
-      if (processedNames.has(student.studentName.toLowerCase())) {
-        return;
-      }
-
-      // Check if this is a known duplicate
-      const canonicalName = knownDuplicates[student.studentName];
-      if (canonicalName && processedNames.has(canonicalName.toLowerCase())) {
-        return; // Skip this duplicate
-      }
-
-      // Check for fuzzy duplicates
-      let isDuplicate = false;
-      for (const processedName of processedNames) {
-        if (fuzzyMatch(student.studentName.toLowerCase(), processedName)) {
-          isDuplicate = true;
-          break;
-        }
-      }
-
-      if (!isDuplicate) {
-        deduplicatedStudentGroups.push(student);
-        processedNames.add(student.studentName.toLowerCase());
-      }
-    });
-
-    // Log the deduplication results
-    console.log("DEBUG - Deduplication Results:", {
-      originalGroups: studentGroups.map((s) => s.studentName),
-      deduplicatedGroups: deduplicatedStudentGroups.map((s) => s.studentName),
-      processedNames: Array.from(processedNames),
-    });
-
-    // Special case: ensure Jacobo is included if he exists in the original data
-    const hasJacobo = studentGroups.some(
-      (s) =>
-        s.firstName.toLowerCase() === "jacobo" || s.studentName.toLowerCase().includes("jacobo")
-    );
-
-    const jacoboInDeduped = deduplicatedStudentGroups.some(
-      (s) =>
-        s.firstName.toLowerCase() === "jacobo" || s.studentName.toLowerCase().includes("jacobo")
-    );
-
-    if (hasJacobo && !jacoboInDeduped) {
-      // Find Jacobo in the original groups and add him to the deduplicated list
-      const jacoboStudent = studentGroups.find(
-        (s) =>
-          s.firstName.toLowerCase() === "jacobo" || s.studentName.toLowerCase().includes("jacobo")
-      );
-
-      if (jacoboStudent) {
-        console.log("DEBUG - Adding Jacobo back to the list:", jacoboStudent);
-        deduplicatedStudentGroups.push(jacoboStudent);
-      }
-    }
-
-    // Sort the final list alphabetically by student name
-    deduplicatedStudentGroups.sort((a, b) => a.studentName.localeCompare(b.studentName));
-
     // Create tabs for each student
     return (
       <Tabs
-        defaultValue={deduplicatedStudentGroups[0]?.studentName || "default"}
+        defaultValue={students[0]?.id || "default"}
         className="w-full"
       >
         <TabsList className="mb-4 flex-wrap h-auto py-1">
-          {deduplicatedStudentGroups.map((student) => (
+          {students.map((student) => (
             <TabsTrigger
-              key={student.studentName}
-              value={student.studentName}
+              key={student.id}
+              value={student.id}
               className="px-4 py-2 text-sm"
             >
-              {student.studentName}
+              {student.name}
             </TabsTrigger>
           ))}
         </TabsList>
 
-        {deduplicatedStudentGroups.map((student) => (
-          <TabsContent key={student.studentName} value={student.studentName}>
+        {students.map((student) => (
+          <TabsContent key={student.id} value={student.id}>
             <StudentTimeline
-              studentName={student.studentName}
+              studentName={student.name}
               opportunities={student.opportunities}
             />
           </TabsContent>
@@ -820,6 +442,44 @@ const FamilyDetail = () => {
       </Tabs>
     );
   };
+
+  // Process the lead notes and family interview notes from student opportunities
+  const getAllLeadNotes = () => {
+    if (!familyRecord.students) return [];
+    
+    return familyRecord.students
+      .flatMap(student => 
+        student.opportunities
+          .filter(opp => opp.lead_notes)
+          .map(opp => ({
+            studentName: student.full_name,
+            opportunityId: opp.id,
+            opportunityName: opp.name,
+            note: opp.lead_notes
+          }))
+      )
+      .filter(item => item.note);
+  };
+
+  const getAllFamilyInterviewNotes = () => {
+    if (!familyRecord.students) return [];
+    
+    return familyRecord.students
+      .flatMap(student => 
+        student.opportunities
+          .filter(opp => opp.family_interview_notes)
+          .map(opp => ({
+            studentName: student.full_name,
+            opportunityId: opp.id,
+            opportunityName: opp.name, 
+            note: opp.family_interview_notes
+          }))
+      )
+      .filter(item => item.note);
+  };
+
+  const leadNotes = getAllLeadNotes();
+  const familyInterviewNotes = getAllFamilyInterviewNotes();
 
   return (
     <div className="max-w-6xl mx-auto p-4">
@@ -830,18 +490,15 @@ const FamilyDetail = () => {
             {/* Prominent Household Name as Title */}
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                {familyRecord.household_name}
+                {familyRecord.family_name}
               </h1>
 
               {/* Active status pill - displayed when family has any closed won opportunity for current year */}
-              {familyRecord.opportunity_count > 0 &&
-                familyRecord.opportunity_ids.some(
-                  (_, idx) =>
-                    (familyRecord.opportunity_is_won?.[idx] ||
-                      familyRecord.opportunity_stages?.[idx]?.includes("Closed Won")) &&
-                    (familyRecord.opportunity_school_years?.[idx]?.includes("25/26") ||
-                      (familyRecord.opportunity_names?.[idx] &&
-                        familyRecord.opportunity_names[idx].includes("Y25/26")))
+              {familyRecord.students &&
+                familyRecord.students.some(student => 
+                  student.opportunities.some(opp => 
+                    opp.is_won && opp.school_year?.includes("25/26")
+                  )
                 ) && (
                   <div className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-sm font-medium text-green-800">
                     <div className="mr-1 h-1.5 w-1.5 rounded-full bg-green-500"></div>
@@ -859,7 +516,7 @@ const FamilyDetail = () => {
               >
                 <Building className="h-3.5 w-3.5 text-muted-foreground" />
                 <span className="text-sm font-medium">
-                  {familyRecord.campus_name || familyRecord.campus_c || "Not Assigned"}
+                  {familyRecord.current_campus_name || "Not Assigned"}
                 </span>
               </Badge>
 
@@ -867,13 +524,8 @@ const FamilyDetail = () => {
               <div className="flex items-center border border-muted/40 rounded-full py-1.5 px-3">
                 <GraduationCap className="h-3.5 w-3.5 text-muted-foreground mr-1.5" />
                 <span className="text-sm font-medium">
-                  {familyRecord.opportunity_count || 0} Students
+                  {familyRecord.student_count || 0} Students
                 </span>
-              </div>
-
-              {/* Health District badge from screenshot */}
-              <div className="flex items-center p-2 px-4 rounded-full border bg-white">
-                <span className="text-sm font-medium">Health District</span>
               </div>
             </div>
           </div>
@@ -897,45 +549,44 @@ const FamilyDetail = () => {
                   <UserIcon className="h-4 w-4 mr-2 text-primary" />
                   Parent Contact Information
                 </h3>
-                {familyRecord.contact_count > 0 ? (
+                {familyRecord.contacts && familyRecord.contacts.length > 0 ? (
                   <div className="space-y-4">
-                    {familyRecord.contact_ids.map((id, index) => (
+                    {familyRecord.contacts.map((contact) => (
                       <div
-                        key={id}
+                        key={contact.id}
                         className="p-4 rounded-lg bg-card border border-muted/20 hover:border-muted/50 transition-colors"
                       >
                         <div className="flex items-start">
                           <Avatar className="h-12 w-12 mr-4">
-                            <div className="bg-primary text-primary-foreground rounded-full h-12 w-12 flex items-center justify-center">
-                              {familyRecord.contact_first_names[index]?.[0] || ""}
-                              {familyRecord.contact_last_names[index]?.[0] || ""}
-                            </div>
+                            <AvatarFallback className="bg-primary text-primary-foreground">
+                              {contact.first_name?.[0] || ""}
+                              {contact.last_name?.[0] || ""}
+                            </AvatarFallback>
                           </Avatar>
                           <div>
                             <h4 className="font-medium">
-                              {familyRecord.contact_first_names[index]}{" "}
-                              {familyRecord.contact_last_names[index]}
+                              {contact.first_name} {contact.last_name}
                             </h4>
                             <div className="space-y-2 mt-2">
-                              {familyRecord.contact_phones[index] && (
+                              {contact.phone && (
                                 <div className="flex items-center">
                                   <PhoneIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                                  <span>{familyRecord.contact_phones[index]}</span>
+                                  <span>{contact.phone}</span>
                                 </div>
                               )}
-                              {familyRecord.contact_emails[index] && (
+                              {contact.email && (
                                 <div className="flex items-center">
                                   <MailIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                                  <span>{familyRecord.contact_emails[index]}</span>
+                                  <span>{contact.email}</span>
                                 </div>
                               )}
-                              {familyRecord.contact_last_activity_dates[index] && (
+                              {contact.last_activity_date && (
                                 <div className="flex items-center">
                                   <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
                                   <span>
                                     Last Activity:{" "}
                                     {new Date(
-                                      familyRecord.contact_last_activity_dates[index]
+                                      contact.last_activity_date
                                     ).toLocaleDateString()}
                                   </span>
                                 </div>
@@ -985,13 +636,13 @@ const FamilyDetail = () => {
                       <div>
                         <div className="text-sm text-muted-foreground">Last Activity</div>
                         <div className="font-medium">
-                          {familyRecord.contact_count > 0 &&
-                          familyRecord.contact_last_activity_dates.some((date) => date)
+                          {familyRecord.contacts && familyRecord.contacts.length > 0 &&
+                          familyRecord.contacts.some(contact => contact.last_activity_date)
                             ? new Date(
                                 Math.max(
-                                  ...familyRecord.contact_last_activity_dates
-                                    .filter((date) => date)
-                                    .map((date) => new Date(date).getTime())
+                                  ...familyRecord.contacts
+                                    .filter(contact => contact.last_activity_date)
+                                    .map(contact => new Date(contact.last_activity_date).getTime())
                                 )
                               ).toLocaleDateString()
                             : "No activity"}
@@ -1002,22 +653,17 @@ const FamilyDetail = () => {
                       </div>
                     </div>
 
-                    {/* Open Tuition Offers */}
+                    {/* Student Count */}
                     <div className="flex items-center">
                       <GraduationCap className="h-4 w-4 mr-2 text-muted-foreground" />
                       <div>
-                        <div className="text-sm text-muted-foreground">Open Tuition Offers</div>
+                        <div className="text-sm text-muted-foreground">Students</div>
                         <div className="font-medium">
-                          {familyRecord.tuition_offer_count > 0
-                            ? `${
-                                familyRecord.tuition_offer_statuses.filter(
-                                  (status) =>
-                                    status && (status.includes("Active") || status.includes("Open"))
-                                ).length
-                              } out of ${familyRecord.tuition_offer_count}`
-                            : "0"}
+                          {familyRecord.student_count || 0}
                         </div>
-                        <div className="text-xs text-muted-foreground">Active tuition offers</div>
+                        <div className="text-xs text-muted-foreground">
+                          Total students in family
+                        </div>
                       </div>
                     </div>
 
@@ -1027,13 +673,14 @@ const FamilyDetail = () => {
                       <div>
                         <div className="text-sm text-muted-foreground">Family Since</div>
                         <div className="font-medium">
-                          {familyRecord.opportunity_count > 0 &&
-                          familyRecord.opportunity_created_dates.some((date) => date)
+                          {familyRecord.students && familyRecord.students.length > 0 &&
+                          familyRecord.students.some(student => student.opportunities && student.opportunities.length > 0)
                             ? new Date(
                                 Math.min(
-                                  ...familyRecord.opportunity_created_dates
-                                    .filter((date) => date)
-                                    .map((date) => new Date(date).getTime())
+                                  ...familyRecord.students
+                                    .flatMap(student => student.opportunities)
+                                    .filter(opp => opp.created_date)
+                                    .map(opp => new Date(opp.created_date).getTime())
                                 )
                               ).toLocaleDateString()
                             : "Unknown"}
@@ -1063,7 +710,7 @@ const FamilyDetail = () => {
         </div>
 
         {/* Notes Section */}
-        <div>
+        <div className="mt-8">
           <h2 className="text-2xl font-bold mb-4">Notes</h2>
           <Card>
             <CardContent className="p-6">
@@ -1073,28 +720,22 @@ const FamilyDetail = () => {
                   <TabsTrigger value="interview-notes">Family Interview Notes</TabsTrigger>
                 </TabsList>
                 <TabsContent value="lead-notes" className="mt-4">
-                  {familyRecord.opportunity_lead_notes &&
-                  familyRecord.opportunity_lead_notes.some((note) => note) ? (
+                  {leadNotes && leadNotes.length > 0 ? (
                     <div className="space-y-4">
-                      {familyRecord.opportunity_lead_notes.map((note, index) => {
-                        if (!note) return null;
-                        return (
-                          <div
-                            key={`lead-note-${index}`}
-                            className="border-l-4 border-primary p-4 bg-primary/5 rounded-md"
-                          >
-                            <div className="flex items-center mb-2">
-                              <ClipboardList className="h-4 w-4 mr-2 text-muted-foreground" />
-                              <h5 className="text-sm font-medium">
-                                {familyRecord.opportunity_names[index]
-                                  ? extractStudentName(familyRecord.opportunity_names[index])
-                                  : `Note ${index + 1}`}
-                              </h5>
-                            </div>
-                            <p className="text-sm text-muted-foreground">{note}</p>
+                      {leadNotes.map((noteItem, index) => (
+                        <div
+                          key={`lead-note-${index}`}
+                          className="border-l-4 border-primary p-4 bg-primary/5 rounded-md"
+                        >
+                          <div className="flex items-center mb-2">
+                            <ClipboardList className="h-4 w-4 mr-2 text-muted-foreground" />
+                            <h5 className="text-sm font-medium">
+                              {noteItem.studentName}
+                            </h5>
                           </div>
-                        );
-                      })}
+                          <p className="text-sm text-muted-foreground">{noteItem.note}</p>
+                        </div>
+                      ))}
                     </div>
                   ) : (
                     <div className="text-center py-8">
@@ -1103,28 +744,22 @@ const FamilyDetail = () => {
                   )}
                 </TabsContent>
                 <TabsContent value="interview-notes" className="mt-4">
-                  {familyRecord.opportunity_family_interview_notes &&
-                  familyRecord.opportunity_family_interview_notes.some((note) => note) ? (
+                  {familyInterviewNotes && familyInterviewNotes.length > 0 ? (
                     <div className="space-y-4">
-                      {familyRecord.opportunity_family_interview_notes.map((note, index) => {
-                        if (!note) return null;
-                        return (
-                          <div
-                            key={`interview-note-${index}`}
-                            className="border-l-4 border-secondary p-4 bg-secondary/5 rounded-md"
-                          >
-                            <div className="flex items-center mb-2">
-                              <MessageSquare className="h-4 w-4 mr-2 text-muted-foreground" />
-                              <h5 className="text-sm font-medium">
-                                {familyRecord.opportunity_names[index]
-                                  ? extractStudentName(familyRecord.opportunity_names[index])
-                                  : `Note ${index + 1}`}
-                              </h5>
-                            </div>
-                            <p className="text-sm text-muted-foreground">{note}</p>
+                      {familyInterviewNotes.map((noteItem, index) => (
+                        <div
+                          key={`interview-note-${index}`}
+                          className="border-l-4 border-secondary p-4 bg-secondary/5 rounded-md"
+                        >
+                          <div className="flex items-center mb-2">
+                            <MessageSquare className="h-4 w-4 mr-2 text-muted-foreground" />
+                            <h5 className="text-sm font-medium">
+                              {noteItem.studentName}
+                            </h5>
                           </div>
-                        );
-                      })}
+                          <p className="text-sm text-muted-foreground">{noteItem.note}</p>
+                        </div>
+                      ))}
                     </div>
                   ) : (
                     <div className="text-center py-8">
@@ -1138,83 +773,6 @@ const FamilyDetail = () => {
             </CardContent>
           </Card>
         </div>
-
-        {/* Tuition Section */}
-        <div>
-          <h2 className="text-2xl font-bold mb-4">Tuition Offers</h2>
-          <div className="space-y-4">
-            {familyRecord.tuition_offer_count > 0 ? (
-              familyRecord.tuition_offer_ids
-                .map((id, index) => ({ id, index }))
-                .filter((item) => {
-                  const status = familyRecord.tuition_offer_statuses[item.index];
-                  return status && (status.includes("Active") || status.includes("Open"));
-                })
-                .map(({ id, index }) => (
-                  <Card key={id}>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Tuition Offer #{index + 1}</CardTitle>
-                      <CardDescription>
-                        <Badge
-                          variant={
-                            familyRecord.tuition_offer_statuses[index]
-                              ?.toLowerCase()
-                              .includes("accepted")
-                              ? "default"
-                              : familyRecord.tuition_offer_statuses[index]
-                                    ?.toLowerCase()
-                                    .includes("declined")
-                                ? "destructive"
-                                : "outline"
-                          }
-                        >
-                          {familyRecord.tuition_offer_statuses[index] || "Unknown Status"}
-                        </Badge>
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <h5 className="text-sm font-medium mb-1">Family Contribution</h5>
-                          <p className="text-2xl font-semibold text-primary">
-                            $
-                            {(
-                              familyRecord.tuition_offer_family_contributions[index] || 0
-                            ).toLocaleString()}
-                          </p>
-                        </div>
-                        <div>
-                          <h5 className="text-sm font-medium mb-1">State Scholarship</h5>
-                          <p className="text-2xl font-semibold text-accent-foreground">
-                            $
-                            {(
-                              familyRecord.tuition_offer_state_scholarships[index] || 0
-                            ).toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="border-t pt-4">
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <GraduationCap className="h-4 w-4" />
-                        <span>
-                          Total Package: $
-                          {(
-                            (familyRecord.tuition_offer_family_contributions[index] || 0) +
-                            (familyRecord.tuition_offer_state_scholarships[index] || 0)
-                          ).toLocaleString()}
-                        </span>
-                      </div>
-                    </CardFooter>
-                  </Card>
-                ))
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No tuition offers found for this family.</p>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
 
       {/* Links / Resources Section */}
@@ -1224,13 +782,13 @@ const FamilyDetail = () => {
           {/* Salesforce Link */}
           <a
             href={
-              familyRecord.id
-                ? `https://primer.lightning.force.com/lightning/r/Account/${familyRecord.id}/view`
+              familyRecord.family_id
+                ? `https://primer.lightning.force.com/lightning/r/Account/${familyRecord.family_id}/view`
                 : "#"
             }
             target="_blank"
             rel="noopener noreferrer"
-            className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 ${!familyRecord.id ? "opacity-50 pointer-events-none" : ""}`}
+            className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 ${!familyRecord.family_id ? "opacity-50 pointer-events-none" : ""}`}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -1284,13 +842,13 @@ const FamilyDetail = () => {
           {/* Intercom Link */}
           <a
             href={
-              familyRecord.contact_emails && familyRecord.contact_emails[0]
-                ? `https://app.intercom.com/a/apps/default/users?email=${encodeURIComponent(familyRecord.contact_emails[0])}`
+              familyRecord.contacts && familyRecord.contacts[0]?.email
+                ? `https://app.intercom.com/a/apps/default/users?email=${encodeURIComponent(familyRecord.contacts[0].email)}`
                 : "#"
             }
             target="_blank"
             rel="noopener noreferrer"
-            className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 ${!familyRecord.contact_emails || !familyRecord.contact_emails[0] ? "opacity-50 pointer-events-none" : ""}`}
+            className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 ${!familyRecord.contacts || !familyRecord.contacts[0]?.email ? "opacity-50 pointer-events-none" : ""}`}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

@@ -98,20 +98,75 @@ const SAMPLE_ADDRESSES = {
       city: "Phoenix",
     },
   ],
-  LOI: [],
-  Lease: [],
-  "Build Out": [],
+  LOI: [
+    {
+      address: "1901 Bagby St, Houston, TX 77002",
+      status: "Terms negotiation",
+      state: "Texas",
+      city: "Houston",
+    },
+    {
+      address: "700 W 7th St, Austin, TX 78701",
+      status: "Terms negotiation",
+      state: "Texas",
+      city: "Austin",
+    },
+    {
+      address: "301 Pine St, Seattle, WA 98101",
+      status: "Financial negotiation",
+      state: "Washington",
+      city: "Seattle",
+    },
+  ],
+  Lease: [
+    {
+      address: "4300 University Way NE, Seattle, WA 98105",
+      status: "Document preparation",
+      state: "Washington",
+      city: "Seattle",
+    },
+    {
+      address: "1600 Amphitheatre Pkwy, Mountain View, CA 94043",
+      status: "Final review",
+      state: "California",
+      city: "Mountain View",
+    },
+  ],
+  "Build Out": [
+    {
+      address: "1 Market St, San Francisco, CA 94105",
+      status: "Construction planning",
+      state: "California",
+      city: "San Francisco",
+    },
+    {
+      address: "111 8th Ave, New York, NY 10011",
+      status: "Finishing touches",
+      state: "New York",
+      city: "New York",
+    },
+    {
+      address: "350 5th Ave, New York, NY 10118",
+      status: "Final preparations",
+      state: "New York",
+      city: "New York",
+    },
+  ],
 };
 
 // City data by state for filtering
-const CITIES_BY_STATE = {
+const CITIES_BY_STATE: Record<string, string[]> = {
   Florida: ["All Cities", "Bradenton", "Pensacola", "Miami", "Orlando", "Tampa"],
   Alabama: ["All Cities", "Tuscaloosa", "Montgomery", "Birmingham", "Mobile", "Huntsville"],
   Arizona: ["All Cities", "Phoenix", "Tempe", "Tucson", "Scottsdale", "Mesa"],
+  Texas: ["All Cities", "Houston", "Austin", "Dallas", "San Antonio", "Fort Worth"],
+  Washington: ["All Cities", "Seattle", "Tacoma", "Spokane", "Bellevue", "Everett"],
+  California: ["All Cities", "San Francisco", "Los Angeles", "San Diego", "Mountain View", "Sacramento"],
+  "New York": ["All Cities", "New York", "Buffalo", "Rochester", "Syracuse", "Albany"],
 };
 
 // All available states
-const STATES = ["All States", "Florida", "Alabama", "Arizona"];
+const STATES = ["All States", "Florida", "Alabama", "Arizona", "Texas", "Washington", "California", "New York"];
 
 // Mapping old phases to new stages for compatibility
 const mapPhaseToStage = (phase: PropertyPhase): string => {
@@ -218,8 +273,54 @@ const RealEstatePipeline: React.FC = () => {
   };
 
   // Filter properties based on selected campuses, state, and city
+  const filteredRealProperties = useMemo(() => {
+    if (!properties) return {};
+    
+    // Create an object to hold properties for each stage
+    const filtered: Record<string, RealEstateProperty[]> = {};
+
+    // Initialize empty arrays for each stage
+    STAGES.forEach((stage) => {
+      filtered[stage] = [];
+    });
+    
+    // Process each property from the real data
+    properties.forEach((property) => {
+      // Determine which stage this property belongs to
+      const phase = property.phase || "0. New Site";
+      const stage = mapPhaseToStage(phase as PropertyPhase);
+      
+      // Extract state and city from the property's market field
+      const marketParts = property.market?.split(', ') || [];
+      const propertyCity = marketParts[0] || '';
+      const propertyState = marketParts[1] || '';
+      
+      let includeProperty = true;
+
+      // Filter by state if not "All States"
+      if (selectedState !== "All States" && selectedState !== propertyState) {
+        includeProperty = false;
+      }
+
+      // Filter by city if not "All Cities"
+      if (includeProperty && selectedCity !== "All Cities" && selectedCity !== propertyCity) {
+        includeProperty = false;
+      }
+
+      if (includeProperty) {
+        if (!filtered[stage]) {
+          filtered[stage] = [];
+        }
+        filtered[stage].push(property);
+      }
+    });
+    
+    return filtered;
+  }, [properties, selectedState, selectedCity]);
+  
+  // For backward compatibility with the sample addresses display
   const filteredProperties = useMemo(() => {
-    // For demo purposes, we'll filter the sample data instead of actual properties
+    // Filter the sample data for UI demo purposes
     const filtered: Record<string, SampleProperty[]> = {};
 
     // Initialize empty arrays for each stage
@@ -375,16 +476,16 @@ const RealEstatePipeline: React.FC = () => {
                     <h3 className={`text-sm font-medium ${stageColors.text}`}>{stage}</h3>
                     <div className="flex items-center">
                       <span className={`text-xs ${stageColors.text}`}>
-                        {filteredProperties[stage]?.length || 0}
+                        {filteredRealProperties[stage]?.length || 0}
                       </span>
                     </div>
                   </div>
 
                   {/* Properties column */}
                   <div className="space-y-2">
-                    {filteredProperties[stage]?.length > 0 ? (
-                      // Show filtered properties for the stage
-                      filteredProperties[stage].map((property, index) => (
+                    {filteredRealProperties[stage]?.length > 0 ? (
+                      // Show filtered real properties for the stage
+                      filteredRealProperties[stage].map((property, index) => (
                         <div
                           key={index}
                           className="bg-white border border-gray-200 rounded-md shadow-sm hover:shadow transition-all cursor-pointer relative overflow-hidden mb-3"
@@ -392,11 +493,21 @@ const RealEstatePipeline: React.FC = () => {
                           <div className="p-3">
                             {/* Property name (bold, prominent) */}
                             <h4 className="font-medium text-gray-800 mb-1 text-sm">
-                              {property.address}
+                              {property.site_name || property.address || `Property #${property.id}`}
                             </h4>
 
+                            {/* Address when site name is available */}
+                            {property.site_name && property.address && (
+                              <p className="text-xs text-gray-700 mb-1">{property.address}</p>
+                            )}
+
                             {/* Status detail (smaller text) */}
-                            <p className="text-xs text-gray-500 mb-1">{property.status}</p>
+                            <p className="text-xs text-gray-500 mb-1">
+                              {getStatusDetail(property.phase as PropertyPhase)}
+                            </p>
+
+                            {/* Market info */}
+                            <p className="text-xs text-gray-500 mb-1">{property.market}</p>
 
                             {/* Color-coded tag for the stage - simplified to match reference image */}
                             <div className="mt-2 pt-1 border-t border-gray-100">

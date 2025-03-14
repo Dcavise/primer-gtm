@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { X, Search, ArrowRight, Users, Briefcase, Building } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase-client";
 import debounce from "lodash.debounce";
 
 /**
@@ -34,24 +33,79 @@ interface SearchResult {
   };
 }
 
-// Interface for local search data format from JSON
-interface LocalSearchItem {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  url: string;
-}
-
-// Interface for family search results from Supabase
-interface FamilySearchResult {
-  family_id: string;
-  family_name: string;
-  current_campus_c: string;
-  current_campus_name: string;
-  contact_count: number;
-  opportunity_count: number;
-}
+// Mock family data for search
+const mockFamilies = [
+  { 
+    id: "00170000013GHZXAA4", 
+    name: "Smith Family", 
+    campus: "Atlanta", 
+    contact_count: 2,
+    opportunity_count: 3
+  },
+  { 
+    id: "00170000013GHZYBB5", 
+    name: "Johnson Family", 
+    campus: "Miami", 
+    contact_count: 1,
+    opportunity_count: 2
+  },
+  { 
+    id: "00170000013GHZZCC6", 
+    name: "Williams Family", 
+    campus: "New York", 
+    contact_count: 3,
+    opportunity_count: 4
+  },
+  { 
+    id: "00170000013GHAADD7", 
+    name: "Brown Family", 
+    campus: "Birmingham", 
+    contact_count: 2,
+    opportunity_count: 1
+  },
+  { 
+    id: "00170000013GHBBEE8", 
+    name: "Garcia Family", 
+    campus: "Chicago", 
+    contact_count: 2,
+    opportunity_count: 2
+  },
+  { 
+    id: "00170000013GHCCFF9", 
+    name: "Miller Family", 
+    campus: "Atlanta", 
+    contact_count: 1,
+    opportunity_count: 1
+  },
+  { 
+    id: "00170000013GHDDGG0", 
+    name: "Davis Family", 
+    campus: "Miami", 
+    contact_count: 2,
+    opportunity_count: 3
+  },
+  { 
+    id: "00170000013GHEEHH1", 
+    name: "Rodriguez Family", 
+    campus: "New York", 
+    contact_count: 3,
+    opportunity_count: 2
+  },
+  { 
+    id: "00170000013GHFFII2", 
+    name: "Martinez Family", 
+    campus: "Birmingham", 
+    contact_count: 1,
+    opportunity_count: 1
+  },
+  { 
+    id: "00170000013GHGGJJ3", 
+    name: "Hernandez Family", 
+    campus: "Chicago", 
+    contact_count: 2,
+    opportunity_count: 3
+  },
+];
 
 interface SearchBoxProps {
   isOpen: boolean;
@@ -89,153 +143,67 @@ const SearchBox: React.FC<SearchBoxProps> = ({
     }
   }, [isOpen, initialQuery]);
 
+  // Function to search mock family data
+  const searchMockFamilies = (query: string) => {
+    setLoading(true);
+    
+    // Simulate network delay
+    setTimeout(() => {
+      const filteredFamilies = mockFamilies.filter(family => 
+        family.name.toLowerCase().includes(query.toLowerCase())
+      );
+      
+      // Convert to SearchResult format
+      const familyResults: SearchResult[] = filteredFamilies.map(family => ({
+        id: family.id,
+        title: family.name,
+        description: `${family.campus} - ${family.contact_count} contacts, ${family.opportunity_count} opportunities`,
+        category: "Family",
+        url: `/family-mock/${family.id}`,
+        extraData: {
+          contact_count: family.contact_count,
+          opportunity_count: family.opportunity_count,
+          current_campus_name: family.campus
+        }
+      }));
+      
+      setResults(familyResults);
+      setLoading(false);
+    }, 300);
+  };
+
   // Create a debounced version of the search function to avoid making too many requests
   // Using a memoized debounced function for search
-  const fetchResultsWithDebounce = useCallback(
-    (query: string) => {
-      // Create the debounced function inside the callback to avoid ESLint warnings
-      const debouncedFn = debounce(async (searchTerm: string) => {
-        if (!query.trim()) {
-          setResults([]);
-          return;
-        }
-
-        setLoading(true);
-        try {
-          // Use the searchFamilies method from the supabase client
-          let familyData = [];
-          try {
-            // Use the searchFamilies helper method which properly handles the schema
-            console.log(`Attempting to search for families with term: "${query}"`);
-            const { success, data, error } = await supabase.searchFamilies(query);
-
-            if (!success || error) {
-              console.warn("Error searching families:", error);
-              // Log more detailed error information if it's a JSON string
-              try {
-                const errorObj = typeof error === "string" ? JSON.parse(error) : error;
-                console.warn("Detailed error info:", errorObj);
-              } catch (e) {
-                // If it's not valid JSON, just log as-is
-                console.warn("Error details:", error);
-              }
-              throw new Error(typeof error === "string" ? error : "Search failed");
-            }
-
-            console.log(`Search successful, found ${data?.length || 0} results`);
-            familyData = data || [];
-          } catch (searchError) {
-            console.error(
-              "All database search attempts failed, falling back to local data:",
-              searchError
-            );
-            // Fall back to local data if RPC fails
-            const response = await fetch("/assets/data/searchbox.json");
-            const localData = await response.json();
-
-            // Using the LocalSearchItem interface defined at the top of the file
-
-            // Filter results based on search query and exclude campus staff profiles
-            familyData = localData.filter((item: LocalSearchItem) => {
-              // First, check if it's a campus staff profile (if so, exclude it)
-              if (item.category.toLowerCase().includes("campus staff")) {
-                return false;
-              }
-
-              // Then, check if it matches the search query
-              return (
-                item.title.toLowerCase().includes(query.toLowerCase()) ||
-                item.description.toLowerCase().includes(query.toLowerCase()) ||
-                item.category.toLowerCase().includes(query.toLowerCase())
-              );
-            });
-          }
-
-          // Check if we're dealing with local data or RPC data
-          const isLocalData = familyData.length > 0 && "title" in familyData[0];
-
-          // Convert family results to the SearchResult format
-          // Using the LocalSearchItem interface defined at the top of the file
-
-          const familyResults: SearchResult[] = isLocalData
-            ? familyData.map((item: LocalSearchItem) => ({
-                id: item.id,
-                title: item.title,
-                description: item.description,
-                category: item.category.includes("Family")
-                  ? "Family"
-                  : item.category.includes("Student")
-                    ? "Student"
-                    : "Campus",
-                url: item.url,
-              }))
-            : (familyData || []).map((family: FamilySearchResult) => ({
-                id: family.family_id,
-                title: family.family_name || "Unnamed Family",
-                description: "",
-                category: "Family",
-                url: `/family-detail/${family.family_id}`,
-                extraData: family,
-              }));
-
-          // In the future, you could add more searches here, such as:
-          // const { data: studentData } = await supabase.rpc('search_students', { search_term: query });
-          // const { data: campusData } = await supabase.rpc('search_campuses', { search_term: query });
-
-          // Combine all results (for now, just families)
-          const allResults = [...familyResults];
-
-          console.log("Search results:", allResults.length, "items found");
-
-          setResults(allResults);
-          setSelectedIndex(0); // Reset selection when results change
-        } catch (error) {
-          console.error("Error fetching search results:", error);
-          setResults([]);
-        } finally {
-          setLoading(false);
-        }
-      }, 300);
-
-      // Execute the debounced function
-      debouncedFn(query);
-
-      // Return the cancel function for cleanup
-      return debouncedFn.cancel;
-    },
-    [] // No dependencies needed here since we're using useState setters which are stable
-  );
-
-  // Simple wrapper for the debounced function that returns the cancel function
   const debouncedSearch = useCallback(
-    (query: string) => {
-      return fetchResultsWithDebounce(query);
-    },
-    [fetchResultsWithDebounce]
+    debounce((query: string) => {
+      if (!query.trim()) {
+        setResults([]);
+        return;
+      }
+      
+      searchMockFamilies(query);
+      
+      // If onSearch callback is provided, call it with the current query
+      if (onSearch) {
+        onSearch(query);
+      }
+    }, 300),
+    [onSearch]
   );
 
   // Call the debounced search function when the search query changes
   useEffect(() => {
-    let cancelFn: (() => void) | undefined;
-
     if (searchQuery.trim()) {
-      // Store the cancel function returned by fetchResultsWithDebounce
-      cancelFn = debouncedSearch(searchQuery);
-
-      // If onSearch callback is provided, call it with the current query
-      // This helps to synchronize the search query with the parent component
-      if (onSearch) {
-        onSearch(searchQuery);
-      }
+      debouncedSearch(searchQuery);
     } else {
       setResults([]);
     }
 
-    // Cancel the debounced function when the component unmounts or search query changes
+    // Clean up the debounced function when the component unmounts
     return () => {
-      if (cancelFn) cancelFn();
+      debouncedSearch.cancel();
     };
-  }, [searchQuery, debouncedSearch, onSearch, fetchResultsWithDebounce]);
+  }, [searchQuery, debouncedSearch]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -359,6 +327,9 @@ const SearchBox: React.FC<SearchBoxProps> = ({
                   </div>
                   <div className="flex-1">
                     <div className="font-medium">{result.title}</div>
+                    {result.extraData?.current_campus_name && (
+                      <div className="text-sm text-gray-500">{result.extraData.current_campus_name}</div>
+                    )}
                   </div>
                   <ArrowRight className="h-4 w-4 text-gray-400 mt-1 ml-2" />
                 </div>
