@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 // Import individual UI components
 import { Card } from "../components/ui/card";
 import { CardContent } from "../components/ui/card";
@@ -10,6 +10,7 @@ import { Popover } from "../components/ui/popover";
 import { PopoverContent } from "../components/ui/popover";
 import { PopoverTrigger } from "../components/ui/popover";
 import { Skeleton } from "../components/ui/skeleton";
+import { DollarSign as DollarSignIcon } from "lucide-react";
 import {
   XAxis,
   YAxis,
@@ -25,6 +26,7 @@ import { useFormattedLeadsMetrics } from "../hooks/useFormattedLeadsMetrics";
 import { useFormattedConvertedLeadsMetrics } from "../hooks/useFormattedConvertedLeadsMetrics";
 import { useFormattedClosedWonMetrics } from "../hooks/useFormattedClosedWonMetrics";
 import { useFormattedArrMetrics } from "../hooks/useFormattedArrMetrics";
+import { useFormattedCumulativeARRMetrics, FormattedCumulativeARRResponse } from "../hooks/useFormattedCumulativeARRMetrics";
 import { useTotalEnrolled } from "../hooks/useTotalEnrolled";
 import { useGradeBandEnrollment } from "../hooks/useGradeBandEnrollment";
 import { LoadingState } from "../components/LoadingState";
@@ -69,6 +71,14 @@ const AdmissionsAnalytics = () => {
 
   // Default lookback units based on period - specific to this component
   const lookbackUnits = periodType === "day" ? 30 : periodType === "week" ? 12 : 6;
+  
+  // Reset data processing state whenever period type or campus changes
+  useEffect(() => {
+    // Reset data processing state whenever period type or campus changes
+    if (selectedCampus || periodType) {
+      console.log("Selection changed, waiting for new data...");
+    }
+  }, [selectedCampus, periodType]);
 
   // This serves as documentation that the period selection is exclusive to this component
   // while the campus filter is global and can be used by other components
@@ -102,33 +112,9 @@ const AdmissionsAnalytics = () => {
     campusId: campusFilter,
   });
 
-  // Immediately log the grade band data after fetching
-  console.log("%c Grade Band Data READY TO USE:", "color: red; font-weight: bold;", {
-    gradeBandData,
-    loadingGradeBand,
-    gradeBandError,
-    campusFilter,
-  });
+  // No debug logs for grade band data
 
-  // Debug gradeBandData
-  useEffect(() => {
-    console.log("%c Grade Band Data in component:", "color: purple; font-weight: bold", {
-      gradeBandData,
-      loadingGradeBand,
-      gradeBandError,
-      dataLength: gradeBandData?.length || 0,
-      campusFilter,
-    });
-
-    // Check if data is in the expected format
-    if (gradeBandData) {
-      gradeBandData.forEach((item, index) => {
-        console.log(`Grade band item ${index}:`, item);
-      });
-    }
-  }, [gradeBandData, loadingGradeBand, gradeBandError, campusFilter]);
-
-  // Fetch leads metrics from the formatted Supabase view
+  // Fetch leads metrics data
   const {
     data: metricsData,
     loading: loadingMetrics,
@@ -138,8 +124,15 @@ const AdmissionsAnalytics = () => {
     lookbackUnits,
     campusId: campusFilter,
   });
+  
+  // Debug raw leads metrics data
+  useEffect(() => {
+    if (metricsData) {
+      console.log('RAW LEADS METRICS DATA:', metricsData);
+    }
+  }, [metricsData]);
 
-  // Fetch converted leads metrics from the Supabase view
+  // Fetch converted leads metrics data
   const {
     data: convertedMetricsData,
     loading: loadingConvertedMetrics,
@@ -149,8 +142,15 @@ const AdmissionsAnalytics = () => {
     lookbackUnits,
     campusId: campusFilter,
   });
+  
+  // Debug raw converted leads metrics data
+  useEffect(() => {
+    if (convertedMetricsData) {
+      console.log('RAW CONVERTED LEADS METRICS DATA:', convertedMetricsData);
+    }
+  }, [convertedMetricsData]);
 
-  // Fetch closed won metrics from the Supabase view
+  // Fetch closed won metrics data
   const {
     data: closedWonMetricsData,
     loading: loadingClosedWonMetrics,
@@ -160,8 +160,15 @@ const AdmissionsAnalytics = () => {
     lookbackUnits,
     campusId: campusFilter,
   });
+  
+  // Debug raw closed won metrics data
+  useEffect(() => {
+    if (closedWonMetricsData) {
+      console.log('RAW CLOSED WON METRICS DATA:', closedWonMetricsData);
+    }
+  }, [closedWonMetricsData]);
 
-  // Fetch ARR metrics from the Supabase view
+  // Fetch ARR metrics data
   const {
     data: arrMetricsData,
     loading: loadingArrMetrics,
@@ -171,6 +178,129 @@ const AdmissionsAnalytics = () => {
     lookbackUnits,
     campusId: campusFilter,
   });
+  
+  // Debug raw ARR metrics data
+  useEffect(() => {
+    if (arrMetricsData) {
+      console.log('RAW ARR METRICS DATA:', arrMetricsData);
+    }
+  }, [arrMetricsData]);
+  
+  // Fetch Cumulative ARR metrics data
+  const {
+    data: cumulativeArrMetricsData,
+    loading: loadingCumulativeArrMetrics,
+    error: cumulativeArrMetricsError,
+  } = useFormattedCumulativeARRMetrics({
+    period: periodType,
+    lookbackUnits,
+    campusId: campusFilter,
+  });
+  
+  // State for storing cumulative ARR data
+  const [cumulativeArrData, setCumulativeArrData] = useState<FormattedCumulativeARRResponse | null>(null);
+  
+  // Update cumulative ARR data when it changes
+  useEffect(() => {
+    if (cumulativeArrMetricsData) {
+      console.log('RAW CUMULATIVE ARR METRICS DATA:', cumulativeArrMetricsData);
+      setCumulativeArrData(cumulativeArrMetricsData);
+    }
+  }, [cumulativeArrMetricsData, selectedCampus]);
+
+  // A reusable function to format dates consistently across the entire component
+  const formatDateForDisplay = useCallback((period: string, index: number, totalPeriods: number) => {
+    try {
+      const dateObj = new Date(period);
+      
+      // Check for invalid date
+      if (isNaN(dateObj.getTime())) {
+        return period;
+      }
+      
+      // For the most recent period (index 0), use special labels based on period type
+      if (index === 0) {
+        if (periodType === "day") return "Today";
+        if (periodType === "week") return "Week to Date";
+        if (periodType === "month") return "Month to Date";
+      }
+      
+      // For all other periods, use MM/DD/YY format
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      const year = String(dateObj.getFullYear()).slice(2);
+      return `${month}/${day}/${year}`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return period;
+    }
+  }, [periodType]);
+
+  // Generate default date columns based on period type and metric type
+  const generateDefaultDateColumns = useCallback(
+    (metricType: "leads" | "converted" | "closedWon" | "arr" | "cumulativeArr" = "leads") => {
+      const today = new Date();
+      const result = [];
+
+      for (let i = 0; i < 5; i++) {
+        const date = new Date(today);
+
+        if (periodType === "day") {
+          date.setDate(date.getDate() - i);
+        } else if (periodType === "week") {
+          date.setDate(date.getDate() - i * 7);
+        } else {
+          // month
+          date.setMonth(date.getMonth() - i);
+        }
+
+        const period = date.toISOString().split('T')[0];
+        const displayDate = formatDateForDisplay(period, i, 5);
+
+        // Create the base object with common properties
+        const baseObject = {
+          period,
+          date: displayDate,
+        };
+
+        // Add the metric-specific property
+        if (metricType === "leads") {
+          result.push({
+            ...baseObject,
+            leadsCreated: 0,
+            percentChange: 0,
+          });
+        } else if (metricType === "converted") {
+          result.push({
+            ...baseObject,
+            convertedLeads: 0,
+            percentChange: 0,
+          });
+        } else if (metricType === "closedWon") {
+          result.push({
+            ...baseObject,
+            closedWon: 0,
+            percentChange: 0,
+          });
+        } else if (metricType === "arr") {
+          result.push({
+            ...baseObject,
+            arrAmount: 0,
+            percentChange: 0,
+          });
+        } else if (metricType === "cumulativeArr") {
+          result.push({
+            ...baseObject,
+            cumulativeArrAmount: 0,
+            percentChange: 0,
+          });
+        }
+      }
+
+      return result;
+    },
+    [periodType, formatDateForDisplay]
+  );
 
   // Helper to format values for display
   const formatValue = (value: number | null | undefined, isARR: boolean = false) => {
@@ -207,102 +337,57 @@ const AdmissionsAnalytics = () => {
     return change >= 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
   };
 
-  // Generate default date columns based on period type and metric type
-  const generateDefaultDateColumns = (
-    periodType: "day" | "week" | "month",
-    metricType: "leads" | "converted" | "closedWon" | "arr" = "leads"
-  ) => {
-    const today = new Date();
-    const result = [];
-
-    for (let i = 0; i < 5; i++) {
-      const date = new Date(today);
-
-      if (periodType === "day") {
-        date.setDate(date.getDate() - i);
-      } else if (periodType === "week") {
-        date.setDate(date.getDate() - i * 7);
-      } else {
-        // month
-        date.setMonth(date.getMonth() - i);
-      }
-
-      let displayDate = `${(date.getMonth() + 1).toString().padStart(2, "0")}/${date.getDate().toString().padStart(2, "0")}/${date.getFullYear().toString().slice(2)}`;
-
-      if (i === 0) {
-        if (periodType === "day") displayDate = "Today";
-        else if (periodType === "week") displayDate = "Week to Date";
-        else if (periodType === "month") displayDate = "Month to Date";
-      }
-
-      // Create the base object with common properties
-      const baseObject = {
-        period: date.toISOString(),
-        date: displayDate,
-      };
-
-      // Add the metric-specific property
-      if (metricType === "leads") {
-        result.push({
-          ...baseObject,
-          leadsCreated: 0,
-          percentChange: 0,
-        });
-      } else if (metricType === "converted") {
-        result.push({
-          ...baseObject,
-          leadsConverted: 0,
-          percentChange: 0,
-        });
-      } else if (metricType === "closedWon") {
-        result.push({
-          ...baseObject,
-          closedWon: 0,
-          percentChange: 0,
-        });
-      } else if (metricType === "arr") {
-        result.push({
-          ...baseObject,
-          arrAmount: 0,
-          percentChange: 0,
-        });
-      }
-    }
-
-    return result;
+  // Format ARR values specifically
+  const formatARR = (value: number | null | undefined) => {
+    return formatValue(value, true);
   };
 
   // Get a unified list of all periods from all data sources
   const allPeriods = useMemo(() => {
+    // Don't process until ALL data sources are loaded
+    if (loadingMetrics || loadingConvertedMetrics || 
+        loadingClosedWonMetrics || loadingArrMetrics || 
+        loadingCumulativeArrMetrics) {
+      console.log("Still loading data, returning empty periods array");
+      return [];
+    }
+    
     // Collect all unique periods from all data sources
     const periodSet = new Set<string>();
 
     // Add periods from leads metrics
-    if (metricsData && !loadingMetrics && metricsData.periods.length > 0) {
-      metricsData.periods.forEach((period) => periodSet.add(period));
+    if (metricsData?.timeSeriesData && metricsData.timeSeriesData.length > 0) {
+      metricsData.timeSeriesData.forEach((item) => {
+        if (item.period) periodSet.add(item.period);
+      });
     }
 
     // Add periods from converted leads metrics
-    if (
-      convertedMetricsData &&
-      !loadingConvertedMetrics &&
-      convertedMetricsData.periods.length > 0
-    ) {
-      convertedMetricsData.periods.forEach((period) => periodSet.add(period));
+    if (convertedMetricsData?.timeSeriesData && convertedMetricsData.timeSeriesData.length > 0) {
+      convertedMetricsData.timeSeriesData.forEach((item) => {
+        if (item.period) periodSet.add(item.period);
+      });
     }
 
     // Add periods from closed won metrics
-    if (
-      closedWonMetricsData &&
-      !loadingClosedWonMetrics &&
-      closedWonMetricsData.periods.length > 0
-    ) {
-      closedWonMetricsData.periods.forEach((period) => periodSet.add(period));
+    if (closedWonMetricsData?.timeSeriesData && closedWonMetricsData.timeSeriesData.length > 0) {
+      closedWonMetricsData.timeSeriesData.forEach((item) => {
+        if (item.period) periodSet.add(item.period);
+      });
     }
 
     // Add periods from ARR metrics
-    if (arrMetricsData && !loadingArrMetrics && arrMetricsData.periods.length > 0) {
-      arrMetricsData.periods.forEach((period) => periodSet.add(period));
+    if (arrMetricsData?.timeSeriesData && arrMetricsData.timeSeriesData.length > 0) {
+      arrMetricsData.timeSeriesData.forEach((item) => {
+        if (item.period) periodSet.add(item.period);
+      });
+    }
+    
+    // Add periods from cumulative ARR metrics
+    if (cumulativeArrMetricsData?.timeSeriesData && cumulativeArrMetricsData.timeSeriesData.length > 0) {
+      cumulativeArrMetricsData.timeSeriesData.forEach((item) => {
+        if (item.period) periodSet.add(item.period);
+      });
     }
 
     // Convert to array and sort
@@ -316,6 +401,7 @@ const AdmissionsAnalytics = () => {
         return dateB.getTime() - dateA.getTime();
       });
 
+      console.log("SORTED PERIODS:", allPeriodsArray);
       // Return only the 5 most recent periods
       return allPeriodsArray.slice(0, 5);
     }
@@ -331,123 +417,387 @@ const AdmissionsAnalytics = () => {
     loadingClosedWonMetrics,
     arrMetricsData,
     loadingArrMetrics,
+    cumulativeArrMetricsData,
+    loadingCumulativeArrMetrics,
   ]);
+  
+  // Debug allPeriods array
+  useEffect(() => {
+    console.log('ALL PERIODS:', allPeriods);
+  }, [allPeriods]);
 
   // Process data for the column display
   const columnData = useMemo(() => {
     if (!metricsData || loadingMetrics || allPeriods.length === 0) {
-      return generateDefaultDateColumns(periodType, "leads");
+      console.log("Missing data for columnData, using defaults");
+      return generateDefaultDateColumns("leads");
     }
 
-    // Map periods to display format
+    // Map periods to display format with standardized date formatting
     return allPeriods.map((period, index) => {
-      // Find the formatted date for this period
-      const periodItem = metricsData?.timeSeriesData?.find((item) => item.period === period);
-      let displayDate = periodItem?.formatted_date || "";
-
-      // For the most recent period, use a special label
-      if (index === 0) {
-        if (periodType === "day") displayDate = "Today";
-        else if (periodType === "week") displayDate = "Week to Date";
-        else if (periodType === "month") displayDate = "Month to Date";
-      }
+      // Ensure we have a numeric value for leadsCreated
+      const leadsCreated = metricsData?.totals?.[period] ?? 0;
+      const percentChange = metricsData?.changes?.percentage?.[period] ?? 0;
+      
+      console.log(`Period ${period}: formatted as ${formatDateForDisplay(period, index, allPeriods.length)}, leads=${leadsCreated}, change=${percentChange}%`);
 
       return {
         period,
-        date: displayDate || period, // Fallback to period if formatted_date is not available
-        leadsCreated: metricsData?.totals?.[period] ?? 0,
-        percentChange: metricsData?.changes?.percentage?.[period] ?? 0,
+        date: formatDateForDisplay(period, index, allPeriods.length),
+        leadsCreated,
+        percentChange,
       };
     });
-  }, [metricsData, loadingMetrics, periodType, allPeriods]);
+  }, [metricsData, loadingMetrics, allPeriods, formatDateForDisplay, generateDefaultDateColumns]);
+
+  // Update table headers to properly show column headers
+  const tableColumnHeaders = useMemo(() => {
+    if (columnData.length === 0) return [];
+    
+    // Create a copy and reverse to match UI order (older dates on left)
+    const reversedData = [...columnData].reverse();
+    
+    return reversedData.map(item => item.date);
+  }, [columnData]);
 
   // Process data for the converted leads display
   const convertedColumnData = useMemo(() => {
     if (!convertedMetricsData || loadingConvertedMetrics || allPeriods.length === 0) {
-      return generateDefaultDateColumns(periodType, "converted");
+      return generateDefaultDateColumns("converted");
     }
 
     // Map periods to display format
     return allPeriods.map((period, index) => {
-      // Find the formatted date for this period
       const periodItem = convertedMetricsData?.timeSeriesData?.find(
         (item) => item.period === period
       );
-      let displayDate = periodItem?.formatted_date || "";
-
-      // For the most recent period, use a special label
-      if (index === 0) {
-        if (periodType === "day") displayDate = "Today";
-        else if (periodType === "week") displayDate = "Week to Date";
-        else if (periodType === "month") displayDate = "Month to Date";
-      }
+      
+      // Ensure we have a numeric value
+      const convertedLeads = convertedMetricsData?.totals?.[period] ?? 0;
+      const percentChange =
+        convertedMetricsData?.changes?.percentage?.[period] ?? 0;
 
       return {
         period,
-        date: displayDate || period, // Fallback to period if formatted_date is not available
-        leadsConverted: convertedMetricsData?.totals?.[period] ?? 0,
-        percentChange: convertedMetricsData?.changes?.percentage?.[period] ?? 0,
+        date: formatDateForDisplay(period, index, allPeriods.length),
+        convertedLeads,
+        percentChange,
       };
     });
-  }, [convertedMetricsData, loadingConvertedMetrics, periodType, allPeriods]);
+  }, [convertedMetricsData, loadingConvertedMetrics, allPeriods, formatDateForDisplay, generateDefaultDateColumns]);
 
   // Process data for the closed won display
   const closedWonColumnData = useMemo(() => {
     if (!closedWonMetricsData || loadingClosedWonMetrics || allPeriods.length === 0) {
-      return generateDefaultDateColumns(periodType, "closedWon");
+      return generateDefaultDateColumns("closedWon");
     }
 
     // Map periods to display format
     return allPeriods.map((period, index) => {
-      // Find the formatted date for this period
       const periodItem = closedWonMetricsData?.timeSeriesData?.find(
         (item) => item.period === period
       );
-      let displayDate = periodItem?.formatted_date || "";
-
-      // For the most recent period, use a special label
-      if (index === 0) {
-        if (periodType === "day") displayDate = "Today";
-        else if (periodType === "week") displayDate = "Week to Date";
-        else if (periodType === "month") displayDate = "Month to Date";
-      }
+      
+      // Ensure we have a numeric value
+      const closedWon = closedWonMetricsData?.totals?.[period] ?? 0;
+      const percentChange =
+        closedWonMetricsData?.changes?.percentage?.[period] ?? 0;
 
       return {
         period,
-        date: displayDate || period, // Fallback to period if formatted_date is not available
-        closedWon: closedWonMetricsData?.totals?.[period] ?? 0,
-        percentChange: closedWonMetricsData?.changes?.percentage?.[period] ?? 0,
+        date: formatDateForDisplay(period, index, allPeriods.length),
+        closedWon,
+        percentChange,
       };
     });
-  }, [closedWonMetricsData, loadingClosedWonMetrics, periodType, allPeriods]);
+  }, [closedWonMetricsData, loadingClosedWonMetrics, allPeriods, formatDateForDisplay, generateDefaultDateColumns]);
 
   // Process data for the ARR display
   const arrColumnData = useMemo(() => {
     if (!arrMetricsData || loadingArrMetrics || allPeriods.length === 0) {
-      return generateDefaultDateColumns(periodType, "arr");
+      return generateDefaultDateColumns("arr");
     }
 
     // Map periods to display format
     return allPeriods.map((period, index) => {
-      // Find the formatted date for this period
-      const periodItem = arrMetricsData?.timeSeriesData?.find((item) => item.period === period);
-      let displayDate = periodItem?.formatted_date || "";
-
-      // For the most recent period, use a special label
-      if (index === 0) {
-        if (periodType === "day") displayDate = "Today";
-        else if (periodType === "week") displayDate = "Week to Date";
-        else if (periodType === "month") displayDate = "Month to Date";
-      }
+      const periodItem = arrMetricsData?.timeSeriesData?.find(
+        (item) => item.period === period
+      );
+      
+      // Ensure we have a numeric value
+      const arrAmount = arrMetricsData?.totals?.[period] ?? 0;
+      const percentChange = arrMetricsData?.changes?.percentage?.[period] ?? 0;
 
       return {
         period,
-        date: displayDate || period, // Fallback to period if formatted_date is not available
-        arrAmount: arrMetricsData?.totals?.[period] ?? 0,
-        percentChange: arrMetricsData?.changes?.percentage?.[period] ?? 0,
+        date: formatDateForDisplay(period, index, allPeriods.length),
+        arrAmount,
+        percentChange,
       };
     });
-  }, [arrMetricsData, loadingArrMetrics, periodType, allPeriods]);
+  }, [arrMetricsData, loadingArrMetrics, allPeriods, formatDateForDisplay, generateDefaultDateColumns]);
+
+  // Process data for the Cumulative ARR display
+  const cumulativeArrColumnData = useMemo(() => {
+    if (!cumulativeArrMetricsData || loadingCumulativeArrMetrics || allPeriods.length === 0) {
+      return generateDefaultDateColumns("cumulativeArr");
+    }
+
+    // Format and match periods in the UI to the data correctly
+    return allPeriods.map((uiPeriod, index) => {
+      // Format the date consistently
+      const displayDate = formatDateForDisplay(uiPeriod, index, allPeriods.length);
+      
+      const timeSeriesData = cumulativeArrMetricsData.timeSeriesData || [];
+      
+      // Try to find an exact match for the period in the data
+      const exactMatch = timeSeriesData.find(item => 
+        item.period === uiPeriod || 
+        new Date(item.period).toISOString().split('T')[0] === new Date(uiPeriod).toISOString().split('T')[0]
+      );
+      
+      if (exactMatch) {
+        console.log(`Found exact match for period ${uiPeriod}: ${exactMatch.total}`);
+        return {
+          period: uiPeriod,
+          date: displayDate,
+          cumulativeArrAmount: exactMatch.total || 0,
+          percentChange: 0, // We don't calculate changes for cumulative metrics
+        };
+      }
+      
+      // If no exact match, find the closest date that is less than or equal to the UI period
+      const sortedData = [...timeSeriesData].sort((a, b) => {
+        return new Date(b.period).getTime() - new Date(a.period).getTime();
+      });
+      
+      const closestMatch = sortedData.find(item => 
+        new Date(item.period).getTime() <= new Date(uiPeriod).getTime()
+      );
+      
+      if (closestMatch) {
+        console.log(`Found closest match for period ${uiPeriod}: ${closestMatch.period} with value ${closestMatch.total}`);
+        return {
+          period: uiPeriod,
+          date: displayDate,
+          cumulativeArrAmount: closestMatch.total || 0,
+          percentChange: 0,
+        };
+      }
+      
+      // If no match found at all, return 0
+      console.log(`No matching data found for period ${uiPeriod}`);
+      return {
+        period: uiPeriod,
+        date: displayDate,
+        cumulativeArrAmount: 0,
+        percentChange: 0,
+      };
+    });
+  }, [cumulativeArrMetricsData, loadingCumulativeArrMetrics, allPeriods, formatDateForDisplay, generateDefaultDateColumns]);
+
+  // Debug columnData
+  useEffect(() => {
+    console.log('PROCESSED COLUMN DATA:', columnData);
+  }, [columnData]);
+
+  // Debug convertedColumnData
+  useEffect(() => {
+    console.log('PROCESSED CONVERTED COLUMN DATA:', convertedColumnData);
+  }, [convertedColumnData]);
+
+  // Debug closedWonColumnData
+  useEffect(() => {
+    console.log('PROCESSED CLOSED WON COLUMN DATA:', closedWonColumnData);
+  }, [closedWonColumnData]);
+
+  // Debug arrColumnData
+  useEffect(() => {
+    console.log('PROCESSED ARR COLUMN DATA:', arrColumnData);
+  }, [arrColumnData]);
+
+  // Debug cumulativeArrColumnData
+  useEffect(() => {
+    console.log('PROCESSED CUMULATIVE ARR COLUMN DATA:', cumulativeArrColumnData);
+  }, [cumulativeArrColumnData]);
+  
+  // Calculate ARR data for the metrics table
+  const cumulativeArrRowData = useMemo(() => {
+    if (!cumulativeArrData) {
+      console.log("No cumulative ARR data available");
+      return null;
+    }
+    
+    console.log("BUILDING CUMULATIVE ARR ROW DATA WITH:", cumulativeArrData);
+    
+    const { periods, timeSeriesData, totals } = cumulativeArrData;
+    
+    // Format ARR values as currency
+    const formatARR = (value: number) => {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        maximumFractionDigits: 0,
+      }).format(value);
+    };
+    
+    // Get the periods that are used in the UI table
+    // We'll map our ARR data to these periods
+    const uiPeriods = allPeriods.slice(0, 5);
+    
+    // Match the cumulative ARR data to the periods used in the UI
+    return {
+      periods: uiPeriods,
+      rowData: {
+        id: 'cumulative-arr',
+        name: '25/26 Cumulative ARR',
+        description: 'Cumulative Annual Recurring Revenue for 25/26 school year',
+        icon: DollarSignIcon,
+        values: uiPeriods.map(uiPeriod => {
+          // Find the matching or nearest period in cumulative ARR data
+          let value = 0;
+          
+          // For debugging
+          console.log(`Looking for UI period ${uiPeriod} in ARR data`);
+          
+          // Try exact match first
+          const exactMatch = timeSeriesData.find(item => 
+            item.period === uiPeriod || 
+            new Date(item.period).toISOString().split('T')[0] === new Date(uiPeriod).toISOString().split('T')[0]
+          );
+          
+          if (exactMatch) {
+            console.log(`Found exact match for ${uiPeriod}:`, exactMatch);
+            value = exactMatch.total;
+          } else {
+            // If no exact match, find the most recent period before this one
+            const uiDate = new Date(uiPeriod);
+            const earlierPeriods = timeSeriesData
+              .filter(item => new Date(item.period) <= uiDate)
+              .sort((a, b) => new Date(b.period).getTime() - new Date(a.period).getTime());
+            
+            if (earlierPeriods.length > 0) {
+              console.log(`Found nearest match for ${uiPeriod}:`, earlierPeriods[0]);
+              value = earlierPeriods[0].total;
+            }
+          }
+          
+          // Use the campus filter if specified
+          if (selectedCampus && selectedCampus !== "all" && cumulativeArrData.getARRValue) {
+            value = cumulativeArrData.getARRValue(uiPeriod, selectedCampus);
+          }
+          
+          return {
+            rawValue: value,
+            displayValue: formatARR(value),
+          };
+        }),
+        // Current value is the latest (first in UI periods)
+        current: {
+          rawValue: uiPeriods.length > 0 ? totals[uiPeriods[0]] || 0 : 0,
+          displayValue: formatARR(uiPeriods.length > 0 ? totals[uiPeriods[0]] || 0 : 0),
+        },
+        // No meaningful change percentage for cumulative values
+        change: {
+          rawValue: 0,
+          displayValue: "$0",
+          percentageChange: 0,
+          isPositive: true,
+        },
+        valueFormatter: formatARR,
+      },
+    };
+  }, [cumulativeArrData, selectedCampus, allPeriods]);
+  
+  // Add this after all your hook calls but before any rendering logic
+  const [dataReady, setDataReady] = useState(false);
+
+  // Use an effect to track when data is fully loaded
+  useEffect(() => {
+    // Check if all required data is loaded and available
+    const allDataLoaded = !loadingMetrics && 
+                          !loadingConvertedMetrics && 
+                          !loadingClosedWonMetrics && 
+                          !loadingArrMetrics && 
+                          !loadingCumulativeArrMetrics &&
+                          !loadingTotalEnrolled &&
+                          !loadingGradeBand;
+    
+    const allDataAvailable = metricsData?.timeSeriesData?.length > 0 &&
+                            convertedMetricsData?.timeSeriesData?.length > 0 &&
+                            closedWonMetricsData?.timeSeriesData?.length > 0 &&
+                            arrMetricsData?.timeSeriesData?.length > 0 &&
+                            cumulativeArrMetricsData?.timeSeriesData?.length > 0;
+    
+    console.log("Data loading check:", { allDataLoaded, allDataAvailable });
+    
+    // Only set data as ready when everything is loaded
+    if (allDataLoaded && allDataAvailable) {
+      console.log("All data is now ready!");
+      setDataReady(true);
+    }
+  }, [
+    metricsData, 
+    convertedMetricsData, 
+    closedWonMetricsData, 
+    arrMetricsData, 
+    cumulativeArrMetricsData,
+    loadingMetrics,
+    loadingConvertedMetrics,
+    loadingClosedWonMetrics,
+    loadingArrMetrics,
+    loadingCumulativeArrMetrics,
+    loadingTotalEnrolled,
+    loadingGradeBand
+  ]);
+
+  // Reset data ready state whenever selections change
+  useEffect(() => {
+    setDataReady(false);
+    console.log("Reset data ready state due to selection change");
+  }, [selectedCampus, periodType]);
+
+  // Comprehensive loading check
+  const isFullyLoaded = useMemo(() => {
+    const dataLoaded = !loadingMetrics && 
+                      !loadingConvertedMetrics && 
+                      !loadingClosedWonMetrics && 
+                      !loadingArrMetrics && 
+                      !loadingCumulativeArrMetrics &&
+                      !loadingTotalEnrolled &&
+                      !loadingGradeBand;
+                      
+    const dataAvailable = metricsData?.timeSeriesData?.length > 0 &&
+                         convertedMetricsData?.timeSeriesData?.length > 0 &&
+                         closedWonMetricsData?.timeSeriesData?.length > 0 &&
+                         arrMetricsData?.timeSeriesData?.length > 0 &&
+                         cumulativeArrMetricsData?.timeSeriesData?.length > 0;
+                         
+    console.log("Data loading status:", {
+      dataLoaded, 
+      dataAvailable,
+      metricsLength: metricsData?.timeSeriesData?.length || 0,
+      convertedLength: convertedMetricsData?.timeSeriesData?.length || 0,
+      closedWonLength: closedWonMetricsData?.timeSeriesData?.length || 0,
+      arrLength: arrMetricsData?.timeSeriesData?.length || 0,
+      cumulativeArrLength: cumulativeArrMetricsData?.timeSeriesData?.length || 0
+    });
+    
+    return dataLoaded && dataAvailable;
+  }, [
+    loadingMetrics, 
+    loadingConvertedMetrics,
+    loadingClosedWonMetrics,
+    loadingArrMetrics,
+    loadingCumulativeArrMetrics,
+    loadingTotalEnrolled,
+    loadingGradeBand,
+    metricsData,
+    convertedMetricsData,
+    closedWonMetricsData,
+    arrMetricsData,
+    cumulativeArrMetricsData
+  ]);
 
   // If there's an error, show error state
   if (
@@ -455,6 +805,7 @@ const AdmissionsAnalytics = () => {
     convertedMetricsError ||
     closedWonMetricsError ||
     arrMetricsError ||
+    cumulativeArrMetricsError ||
     totalEnrolledError ||
     gradeBandError
   ) {
@@ -466,10 +817,26 @@ const AdmissionsAnalytics = () => {
           convertedMetricsError ||
           closedWonMetricsError ||
           arrMetricsError ||
+          cumulativeArrMetricsError ||
           totalEnrolledError ||
           gradeBandError
         }
       />
+    );
+  }
+
+  // Add this check to prevent rendering with incomplete data
+  if (!isFullyLoaded || !dataReady) {
+    console.log("Waiting for data to be fully loaded: isFullyLoaded =", isFullyLoaded, "dataReady =", dataReady);
+    return <LoadingState message="Loading dashboard data..." showSpinner={true} />;
+  }
+  
+  // Add this right before your return statement
+  if (!dataReady) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingState message="Loading dashboard data..." />
+      </div>
     );
   }
 
@@ -662,6 +1029,7 @@ const AdmissionsAnalytics = () => {
                       {["K-2", "3-5", "6-8"].map((band) => {
                         // Find the matching data item, if it exists
                         const dataItem =
+                        
                           gradeBandData && Array.isArray(gradeBandData)
                             ? gradeBandData.find((item) => item?.grade_band === band)
                             : null;
@@ -710,22 +1078,35 @@ const AdmissionsAnalytics = () => {
 
       {/* Metrics Table */}
       <div className="mb-8 bg-white rounded-lg border border-platinum shadow-sm">
-        {loadingMetrics ||
-        loadingConvertedMetrics ||
-        loadingClosedWonMetrics ||
-        loadingArrMetrics ? (
-          <div className="p-4">
-            <LoadingState />
-          </div>
-        ) : (
+        {/* This ensures we have valid data for display */}
+        {(() => {
+          const hasValidData = dataReady && 
+                              metricsData?.totals && 
+                              Object.keys(metricsData.totals).length > 0 &&
+                              convertedMetricsData?.totals && 
+                              Object.keys(convertedMetricsData.totals).length > 0;
+
+          if (!hasValidData) {
+            return <div className="p-4"><LoadingState message="Preparing dashboard data..." /></div>;
+          }
+          
+          return loadingMetrics ||
+          loadingConvertedMetrics ||
+          loadingClosedWonMetrics ||
+          loadingArrMetrics ||
+          loadingCumulativeArrMetrics ? (
+            <div className="p-4">
+              <LoadingState />
+            </div>
+          ) : (
           <div className="px-4 py-4">
             {/* Table Header */}
             <div className="flex border-b pb-3 mb-2 text-base font-medium text-slate-gray bg-gray-50 p-2 rounded-t">
-              <div className="w-1/6 pl-2">Metric</div>
+              <div className="w-1/3 pl-4 font-semibold">Metric</div>
               {/* Reverse column data for display to show older periods on the left */}
-              {[...columnData].reverse().map((item, index) => (
-                <div key={index} className="w-1/6 text-center font-medium">
-                  {item.date || "N/A"}
+              {tableColumnHeaders.map((headerText, columnIndex) => (
+                <div key={columnIndex} className="w-1/6 text-center font-medium">
+                  {headerText}
                 </div>
               ))}
               <div className="w-1/3 pr-2 pl-4 text-center">Trend</div>
@@ -807,7 +1188,7 @@ const AdmissionsAnalytics = () => {
                 {[...convertedColumnData].reverse().map((item, index) => (
                   <div key={index} className="w-1/6 text-center">
                     <div className="font-semibold text-eerie-black text-lg">
-                      {formatValue(item.leadsConverted ?? 0)}
+                      {formatValue(item.convertedLeads ?? 0)}
                     </div>
                     <div
                       className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block font-medium ${getChangeColor(item.percentChange ?? 0)}`}
@@ -866,7 +1247,6 @@ const AdmissionsAnalytics = () => {
                 </div>
               </div>
 
-              {/* Other Metrics Rows - Using sample data */}
               {/* New Closed Won Row - Uses real data */}
               <div className="flex py-3 items-center border-b border-platinum hover:bg-gray-50">
                 <div className="w-1/6 font-medium text-outer-space text-sm">New Closed Won</div>
@@ -934,7 +1314,6 @@ const AdmissionsAnalytics = () => {
                 </div>
               </div>
 
-              {/* Other Metrics Rows - Using sample data */}
               {/* ARR Added Row - Uses real data */}
               <div className="flex py-3 items-center hover:bg-gray-50">
                 <div className="w-1/6 font-medium text-outer-space text-sm">ARR Added</div>
@@ -1000,6 +1379,74 @@ const AdmissionsAnalytics = () => {
                   </ResponsiveContainer>
                 </div>
               </div>
+              
+              {/* Cumulative ARR Row */}
+              {cumulativeArrRowData && (
+                <div className="flex py-3 items-center border-t border-platinum hover:bg-gray-50">
+                  <div className="w-1/6 font-medium text-outer-space text-sm">25/26 Cumulative ARR</div>
+
+                  {/* Reverse column data for display to show older periods on the left */}
+                  {[...cumulativeArrColumnData].reverse().map((item, index) => (
+                    <div key={index} className="w-1/6 text-center">
+                      <div className="font-semibold text-eerie-black text-lg">
+                        {formatValue(item.cumulativeArrAmount ?? 0, true)}
+                      </div>
+                      <div
+                        className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block font-medium ${getChangeColor(item.percentChange ?? 0)}`}
+                      >
+                        {formatChange(item.percentChange ?? 0)}%
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Cumulative ARR Trend */}
+                  <div className="w-1/3 h-16 pl-4">
+                    <ResponsiveContainer width="100%" height="100%">
+                      {cumulativeArrMetricsData?.timeSeriesData && cumulativeArrMetricsData.timeSeriesData.length > 0 ? (
+                        <LineChart
+                          data={cumulativeArrMetricsData.timeSeriesData.filter((item) =>
+                            allPeriods.includes(item.period)
+                          )}
+                        >
+                          <XAxis dataKey="formatted_date" hide />
+                          <YAxis hide />
+                          <Line
+                            type="monotone"
+                            dataKey="total"
+                            stroke="#474b4f"
+                            strokeWidth={2}
+                            dot={{ r: 3, fill: "#474b4f", strokeWidth: 0 }}
+                            activeDot={{
+                              r: 4,
+                              fill: "#474b4f",
+                              stroke: "#fff",
+                              strokeWidth: 1,
+                            }}
+                          />
+                        </LineChart>
+                      ) : (
+                        <LineChart data={[{ formatted_date: "", total: 0 }]}>
+                          <XAxis dataKey="formatted_date" hide />
+                          <YAxis hide />
+                          <Line
+                            type="monotone"
+                            dataKey="total"
+                            stroke="#474b4f"
+                            strokeWidth={2}
+                            dot={{ r: 3, fill: "#474b4f", strokeWidth: 0 }}
+                            activeDot={{
+                              r: 4,
+                              fill: "#474b4f",
+                              stroke: "#fff",
+                              strokeWidth: 1,
+                            }}
+                          />
+                        </LineChart>
+                      )}
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
 
               {/* Any other metrics rows - Using sample data */}
               {admissionsMetrics
@@ -1027,7 +1474,7 @@ const AdmissionsAnalytics = () => {
                         <div key={index} className="w-1/6 text-center">
                           <div className="font-semibold text-eerie-black">{formatValue(value)}</div>
                           <div
-                            className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block ${getChangeColor(change)}`}
+                            className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block font-medium ${getChangeColor(change)}`}
                           >
                             {formatChange(change)}%
                           </div>
@@ -1065,7 +1512,8 @@ const AdmissionsAnalytics = () => {
                 ))}
             </div>
           </div>
-        )}
+        );
+        })()}
       </div>
     </div>
   );
